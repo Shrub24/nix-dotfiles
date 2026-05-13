@@ -30,6 +30,11 @@
     enableZshIntegration = true;
   };
 
+  programs.nix-your-shell = {
+    enable = true;
+    enableZshIntegration = true;
+  };
+
   nix = {
     package = pkgs.nix;
 

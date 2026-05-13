@@ -5,9 +5,19 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     direnv-instant.url = "github:Mic92/direnv-instant";
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     home-manager = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+    };
+    hermes-agent = {
+      url = "github:NousResearch/hermes-agent";
     };
   };
 
@@ -43,7 +53,13 @@
           inputs.home-manager.lib.homeManagerConfiguration {
             inherit pkgs;
             extraSpecialArgs = { inherit inputs; };
-            modules = [ ./home/default.nix ];
+            modules = [
+              ./home/default.nix
+              {
+                programs.pi.package = inputs.llm-agents.packages.${system}.pi;
+                programs.hermes.package = inputs.hermes-agent.packages.${system}.default;
+              }
+            ];
           };
       };
     };
