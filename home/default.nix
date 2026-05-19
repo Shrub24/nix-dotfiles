@@ -1,4 +1,12 @@
 {
+  config,
+  lib,
+  inputs,
+  pkgs,
+  ...
+}:
+
+{
   imports = [
     ./modules/core.nix
     ./modules/nix.nix
@@ -7,6 +15,11 @@
     ./modules/zsh.nix
     ./modules/pi.nix
     ./modules/hermes.nix
+    ./modules/bifrost.nix
+    ./modules/mise.nix
+    ./modules/zsh-abbr.nix
+    ./modules/navi.nix
+    ./modules/agents.nix
   ];
 
   programs.pi = {
@@ -39,8 +52,10 @@
         "npm:pi-rtk-optimizer"
         "git:github.com/elpapi42/pi-fork"
         "npm:pi-powerline-footer"
-        "npm:pi-rewind-hook"
+        "npm:pi-rewind"
         "npm:pi-vim"
+        "npm:pi-cymbal"
+        "git:github.com/badlogic/pi-telegram"
       ];
       "pi-fork" = {
         defaultEffort = "balanced";
@@ -54,6 +69,7 @@
           balanced = {
             provider = "minimax";
             id = "minimax-M2.7";
+            thinking = "medium";
           };
           deep = {
             provider = "opencode-go";
@@ -113,6 +129,18 @@
           command = "uvx";
           args = [ "mcp-nixos" ];
         };
+        semble = {
+          command = "uvx";
+          args = [
+            "--from"
+            "semble[mcp]"
+            "semble"
+          ];
+        };
+        codebase-memory = {
+          command = "codebase-memory-mcp";
+          args = [ ];
+        };
       };
     };
     search = {
@@ -149,6 +177,7 @@
         mcp = "allow";
         lsp_navigation = "allow";
         ast_grep_search = "allow";
+        "telegram_*" = "allow";
       };
       mcp = {
         "github:add_issue_comment" = "ask";
@@ -180,52 +209,25 @@
     };
   };
 
-  programs.hermes = {
+  programs.bifrost.enable = true;
+
+  programs.miseTools = {
     enable = true;
-    settings = {
-      model = {
-        default = "anthropic/claude-sonnet-4";
-      };
-    };
-    mcpServers = {
-      context7 = {
-        command = "pnpx";
-        args = [
-          "@upstash/context7-mcp"
-          "--api-key"
-          "\${CONTEXT7_API_KEY}"
-        ];
-      };
-      desktop-commander = {
-        command = "pnpx";
-        args = [
-          "@wonderwhy-er/desktop-commander@latest"
-        ];
-      };
-      jina-reader = {
-        url = "https://mcp.jina.ai/v1?include_tools=read_url,extract_pdf,parallel_read_url";
-        headers = {
-          Authorization = "Bearer \${JINA_TOKEN}";
-        };
-      };
-      github = {
-        url = "https://api.githubcopilot.com/mcp/";
-        headers = {
-          Authorization = "Bearer \${GITHUB_PAT}";
-        };
-      };
-      semgrep = {
-        command = "semgrep";
-        args = [ "mcp" ];
-      };
-      nixos = {
-        command = "uvx";
-        args = [ "mcp-nixos" ];
-      };
-      markdownify = {
-        command = "node";
-        args = [ "/home/saurabhj/Projects/dev/tools/markdownify-mcp/dist/index.js" ];
-      };
-    };
+    node = "lts";
+    pnpm = "latest";
+    bun = "latest";
   };
+
+  home.packages = [
+    inputs.codebase-memory-mcp.packages.${pkgs.stdenv.hostPlatform.system}.default
+  ];
+
+  # Bootstrap pi-telegram config from sops secret (one-shot, preserves runtime state)
+  home.activation.piTelegramBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    TOKEN_FILE=${config.sops.secrets.telegram_bot_token.path}
+    if [ ! -f ~/.pi/agent/telegram.json ] && [ -r "$TOKEN_FILE" ]; then
+      run mkdir -p ~/.pi/agent
+      run printf '{"botToken":"%s"}\n' "$(cat "$TOKEN_FILE")" > ~/.pi/agent/telegram.json
+    fi
+  '';
 }

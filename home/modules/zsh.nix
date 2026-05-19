@@ -64,9 +64,6 @@
       "edit" = "nvim";
       "vim" = "nvim";
       "vi" = "nvim";
-      "tree" = "eza --tree --level=2 --color=always --group-directories-first --icons";
-      "cat" = "bat";
-      "df" = "duf";
       "..." = "../..";
       "...." = "../../..";
     };
@@ -82,17 +79,18 @@
     '';
 
     initContent = lib.mkMerge [
+      (lib.mkOrder 100 ''
+        # Powerlevel10k instant prompt must run before anything that may print.
+        if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+          source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+        fi
+      '')
       (lib.mkOrder 500 ''
         for f in ~/.config/zshrc/conf.d/*.zsh(N); do
           source "$f"
         done
       '')
       ''
-        # Powerlevel10k instant prompt (must be near top)
-        if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
-          source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
-        fi
-
         . "$HOME/.local/bin/env"
 
         if [[ -t 0 ]]; then
@@ -129,14 +127,12 @@
     colors = "always";
     extraOptions = [
       "--group-directories-first"
-      "-l"
+      "-h"
     ];
   };
 
   home.sessionPath = [
     "${config.home.homeDirectory}/.local/bin"
-    "${config.home.homeDirectory}/.local/share/pnpm"
-    "${config.home.homeDirectory}/.bun/bin"
   ];
 
   home.sessionVariables = {
@@ -145,12 +141,5 @@
     LESS = "-R --use-color";
     BAT_THEME = "matugen-bat-colors";
     DOTNET_ROOT = "/usr/bin";
-    PNPM_HOME = "${config.home.homeDirectory}/.local/share/pnpm";
-    BUN_INSTALL = "${config.home.homeDirectory}/.bun";
-    NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.local";
   };
-
-  home.file.".npmrc".text = ''
-    prefix=${config.home.homeDirectory}/.local
-  '';
 }

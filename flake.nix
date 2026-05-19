@@ -19,6 +19,9 @@
     hermes-agent = {
       url = "github:NousResearch/hermes-agent";
     };
+    codebase-memory-mcp = {
+      url = "github:DeusData/codebase-memory-mcp";
+    };
   };
 
   outputs =
