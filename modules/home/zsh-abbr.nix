@@ -54,6 +54,30 @@
       nr = "nix run";
       nixos-rebuild = "sudo nixos-rebuild";
 
+      # ---- systemd ----
+      sc = "systemctl";
+      scu = "systemctl --user";
+      scs = "systemctl status";
+      scsr = "systemctl restart";
+      scst = "systemctl start";
+      scsp = "systemctl stop";
+      scr = "systemctl reload";
+      sce = "systemctl enable --now";
+      scd = "systemctl disable --now";
+      scf = "systemctl list-units --failed";
+      scl = "systemctl list-units";
+      scucl = "systemctl --user list-units";
+
+      # ---- journalctl ----
+      jc = "journalctl";
+      jcb = "journalctl -b";
+      jcf = "journalctl -f";
+      jce = "journalctl -xe";
+      jcu = "journalctl --user";
+      jcuf = "journalctl --user -f";
+      jcs = "journalctl -u";
+      jcus = "journalctl --user -u";
+
       # ---- Misc ----
       cat = "bat";
       du = "dust";

@@ -8,19 +8,14 @@
 
 {
   imports = [
-    ./modules/core.nix
-    ./modules/nix.nix
-    ./modules/direnv.nix
-    ./modules/sops.nix
-    ./modules/zsh.nix
-    ./modules/pi.nix
-    ./modules/hermes.nix
-    ./modules/bifrost.nix
-    ./modules/mise.nix
-    ./modules/zsh-abbr.nix
-    ./modules/navi.nix
-    ./modules/agents.nix
+    ../../modules
   ];
+
+  home.username = "saurabhj";
+  home.homeDirectory = "/home/saurabhj";
+  home.stateVersion = "25.11";
+
+  programs.home-manager.enable = true;
 
   programs.pi = {
     enable = true;
@@ -210,6 +205,10 @@
   };
 
   programs.bifrost.enable = true;
+  programs.agentTools.enable = true;
+  programs.devTools.enable = true;
+
+  home.packages = with pkgs; [ marp-cli ];
 
   programs.miseTools = {
     enable = true;
@@ -217,10 +216,6 @@
     pnpm = "latest";
     bun = "latest";
   };
-
-  home.packages = [
-    inputs.codebase-memory-mcp.packages.${pkgs.stdenv.hostPlatform.system}.default
-  ];
 
   # Bootstrap pi-telegram config from sops secret (one-shot, preserves runtime state)
   home.activation.piTelegramBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

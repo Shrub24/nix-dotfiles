@@ -21,7 +21,7 @@
 
   programs.direnv-instant = {
     enable = true;
-    enableZshIntegration = true;
+    enableZshIntegration = false;
     settings = {
       use_cache = true;
       mux_delay = 4;

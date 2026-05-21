@@ -4,13 +4,14 @@
   programs.zsh = {
     enable = true;
     dotDir = "${config.home.homeDirectory}/.config/zshrc";
-
+    enableCompletion = true;
+    zprof.enable = false;
     antidote = {
       enable = true;
       plugins = [
         "getantidote/use-omz"
         "romkatv/powerlevel10k"
-        "ohmyzsh/ohmyzsh path:lib"
+        # "ohmyzsh/ohmyzsh path:lib"
         "ohmyzsh/ohmyzsh path:plugins/dirhistory"
         "ohmyzsh/ohmyzsh path:plugins/copybuffer"
         "ohmyzsh/ohmyzsh path:plugins/copyfile"
@@ -25,8 +26,7 @@
         "Aloxaf/fzf-tab"
         "Freed-Wu/fzf-tab-source"
         "jeffreytse/zsh-vi-mode"
-        "zsh-users/zsh-completions path:src kind:fpath"
-        "MichaelAquilina/zsh-you-should-use"
+        # "zsh-users/zsh-completions path:src kind:fpath"
       ];
     };
 
@@ -34,7 +34,6 @@
       enable = true;
       strategy = [
         "history"
-        "completion"
       ];
     };
 
@@ -99,9 +98,26 @@
 
         zstyle ':bracketed-paste-magic' active-widgets '.self-*'
 
+        # Completion cache and matcher
+        zstyle ':completion:*' use-cache on
+        zstyle ':completion:*' cache-path "''${XDG_CACHE_HOME:-$HOME/.cache}/zsh/completion-cache"
+        zstyle ':completion:*' matcher-list \
+          'm:{a-z}={A-Za-z}' \
+          'r:|[._-]=* r:|=*' \
+          'l:|=* r:|=*'
+        zstyle ':completion:*' rehash true
+        zstyle ':completion:*' squeeze-slashes true
+        zstyle ':completion:*' special-dirs true
+
+        # Partial accept autosuggestion: Alt+F accepts one word
+        bindkey -M viins '^[f' forward-word
+
         # Powerlevel10k theme
         [[ ! -f ~/.config/zshrc/.p10k.zsh ]] || source ~/.config/zshrc/.p10k.zsh
       ''
+      (lib.mkOrder 2000 ''
+        eval "$(direnv-instant hook zsh)"
+      '')
     ];
   };
 
@@ -133,9 +149,14 @@
 
   home.sessionPath = [
     "${config.home.homeDirectory}/.local/bin"
+    "${config.home.homeDirectory}/.local/share/pnpm/bin"
+    "${config.home.homeDirectory}/.bun/bin"
   ];
 
   home.sessionVariables = {
+    QMD_EMBED_MODEL = "hf://Qwen/Qwen3-Embedding-0.6B-GGUF/Qwen3-Embedding-0.6B-f16.gguf";
+    PNPM_HOME = "${config.home.homeDirectory}/.local/share/pnpm";
+    BUN_INSTALL = "${config.home.homeDirectory}/.bun";
     GITHUB_USERNAME = "Shrub24";
     EDITOR = "nvim";
     LESS = "-R --use-color";

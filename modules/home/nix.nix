@@ -24,11 +24,15 @@
     comma
     nix-your-shell
     tokei
+    nix-search-tv-fzf
   ];
 
   programs.nix-index = {
     enable = true;
-    enableZshIntegration = true;
+  };
+
+  programs.nix-search-tv = {
+    enable = true;
   };
 
   programs.nix-your-shell = {
@@ -56,7 +60,8 @@
     };
   };
 
-  nixpkgs.config.allowUnfreePredicate = pkg:
+  nixpkgs.config.allowUnfreePredicate =
+    pkg:
     builtins.elem (lib.getName pkg) [
       "zsh-abbr"
     ];

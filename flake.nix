@@ -51,13 +51,21 @@
         homeConfigurations.saurabhj =
           let
             system = "x86_64-linux";
-            pkgs = inputs.nixpkgs.legacyPackages.${system};
+            pkgs = import inputs.nixpkgs {
+              inherit system;
+              overlays = [
+                (final: prev: {
+                  tokf = final.callPackage ./pkgs/tokf { };
+                  nix-search-tv-fzf = final.callPackage ./pkgs/nix-search-tv-fzf { };
+                })
+              ];
+            };
           in
           inputs.home-manager.lib.homeManagerConfiguration {
             inherit pkgs;
             extraSpecialArgs = { inherit inputs; };
             modules = [
-              ./home/default.nix
+              ./hosts/arch/home.nix
               {
                 programs.pi.package = inputs.llm-agents.packages.${system}.pi;
                 programs.hermes.package = inputs.hermes-agent.packages.${system}.default;

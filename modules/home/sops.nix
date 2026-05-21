@@ -17,6 +17,9 @@
       format = "dotenv";
       path = "${config.home.homeDirectory}/.secrets/zsh-secrets.env";
     };
+
+    # Pi telegram secret (YAML format via separate sops file)
+    secrets.telegram_bot_token.sopsFile = ../../secrets/pi-secrets.yaml;
   };
 
   home.packages = [ pkgs.sops ];

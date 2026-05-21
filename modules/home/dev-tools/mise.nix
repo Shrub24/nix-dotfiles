@@ -40,13 +40,18 @@ in
         node = config.programs.miseTools.node;
         pnpm = config.programs.miseTools.pnpm;
         bun = config.programs.miseTools.bun;
+        aube = "latest";
 
         "npm:ocx" = "latest";
         "npm:codeburn" = "latest";
         "npm:neovim" = "latest";
         "npm:matlab-language-server" = "latest";
         "npm:@fission-ai/openspec" = "latest";
-        "npm:@happier-dev/cli" = "latest";
+        # "npm:@happier-dev/cli" = "latest";
+        # "npm:@tobilu/qmd" = {
+        #   version = "latest";
+        #   aube_args = "--allow-build=better-sqlite3,node-llama-cpp,tree-sitter-go,tree-sitter-javascript,tree-sitter-python,tree-sitter-rust,tree-sitter-typescript";
+        # };
       };
     };
   };
