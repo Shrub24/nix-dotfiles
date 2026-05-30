@@ -1,6 +1,0 @@
-ruleDirs: []
-customLanguages:
-  matlab:
-    libraryPath: /nix/store/51a7716w8dvzw1q55z539c0q941sfjyg-matlab-tree-sitter-parser/lib/matlab.so
-    extensions: [.m]
-    expandoChar: _
