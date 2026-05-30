@@ -1,16 +1,12 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.programs.devTools;
-
-  matlabParser = pkgs.stdenv.mkDerivation {
-    name = "matlab-tree-sitter-parser";
-    phases = [ "installPhase" ];
-    installPhase = ''
-      mkdir -p $out/lib
-      ln -s ${pkgs.tree-sitter-grammars.tree-sitter-matlab}/parser $out/lib/matlab.so
-    '';
-  };
 in
 {
   options.programs.devTools = {
@@ -25,21 +21,13 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = with pkgs; [
-      ast-grep
-      tree-sitter
-      pkgs.tree-sitter-grammars.tree-sitter-matlab
-    ] ++ cfg.treeSitterGrammars;
+    home.packages =
+      with pkgs;
+      [
+        ast-grep
+        tree-sitter
+      ]
+      ++ cfg.treeSitterGrammars;
 
-    xdg.configFile."ast-grep/sgconfig.yml" = {
-      text = ''
-        ruleDirs: []
-        customLanguages:
-          matlab:
-            libraryPath: ${matlabParser}/lib/matlab.so
-            extensions: [.m]
-            expandoChar: _
-      '';
-    };
   };
 }

@@ -47,6 +47,7 @@ in
         "npm:neovim" = "latest";
         "npm:matlab-language-server" = "latest";
         "npm:@fission-ai/openspec" = "latest";
+        "npm:@getpaseo/cli" = "latest";
         # "npm:@happier-dev/cli" = "latest";
         # "npm:@tobilu/qmd" = {
         #   version = "latest";

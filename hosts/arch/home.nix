@@ -14,6 +14,7 @@
   home.username = "saurabhj";
   home.homeDirectory = "/home/saurabhj";
   home.stateVersion = "25.11";
+  home.enableNixpkgsReleaseCheck = false;
 
   programs.home-manager.enable = true;
 
@@ -205,8 +206,53 @@
   };
 
   programs.bifrost.enable = true;
+  programs.docsMcp.enable = true;
+  programs.qmd.enable = true;
   programs.agentTools.enable = true;
   programs.devTools.enable = true;
+
+  programs.agentmemory = {
+    enable = true;
+    hermesPlugin = {
+      enable = true;
+    };
+    opencodePlugin = {
+      enable = true;
+    };
+    settings = {
+      AGENTMEMORY_TOOLS = "core";
+      AGENTMEMORY_SLOTS = "true";
+      AGENTMEMORY_REFLECT = "true";
+      AGENTMEMORY_INJECT_CONTEXT = "true";
+      CONSOLIDATION_ENABLED = "true";
+      GRAPH_EXTRACTION_ENABLED = "true";
+      EMBEDDING_PROVIDER = "openai";
+      OPENAI_BASE_URL = "http://localhost:8765/v1";
+      OPENAI_EMBEDDING_MODEL = "embedding";
+      OPENAI_EMBEDDING_DIMENSIONS = "4096";
+      OPENAI_MODEL = "summariser";
+    };
+  };
+
+  programs.hermes-agent.enable = true;
+
+  programs.ssh.settings = {
+    "oci-melb-1" = {
+      HostName = "oci-melb-1";
+      User = "dev";
+    };
+    "do-admin-1" = {
+      HostName = "do-admin-1";
+      User = "dev";
+    };
+  };
+
+  programs.zsh.initContent = lib.mkAfter ''
+    # Auto-attach tmux on remote (SSH/mosh) login
+    if [[ -z "$TMUX" ]] && { [[ -n "$SSH_CONNECTION" ]] || [[ -n "$MOSH_SERVER" ]]; }; then
+      exec tmux new-session -A -s main
+    fi
+  '';
 
   home.packages = with pkgs; [ marp-cli ];
 
