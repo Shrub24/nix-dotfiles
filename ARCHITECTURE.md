@@ -40,11 +40,11 @@
 │           ├── bifrost/        # Bifrost MCP gateway
 │           │   ├── default.nix  # Systemd service (bunx) + config rendering
 │           │   └── config.json  # Config template with envsubst vars
-│           ├── tools.nix         # Agent CLI tools (tokf, codebase-memory-mcp)
+│           ├── tools.nix         # Agent CLI tools (snip, codebase-memory-mcp)
 │           └── agentmemory.nix  # Persistent memory daemon + systemd service
 │
 ├── pkgs/                        # Custom derivations (not in nixpkgs)
-│   ├── tokf/
+│   ├── snip/
 │   │   └── default.nix
 │   ├── nix-search-tv-fzf/
 │   │   └── default.nix
@@ -91,7 +91,7 @@
 - **Agent modules → `modules/home/agents/`** — concern-grouped under the home-manager tree, with `agents/default.nix` composing pi, hermes, docs-mcp, bifrost, tools, and agentmemory.
 - **Host compositions → `hosts/<hostname>/home.nix`** — the only place that sets host-specific identity (`home.username`, `home.stateVersion`) and enables programs. Imports `../../modules` to pull in all feature modules.
 - **`modules/default.nix` is the single module entry point** — imports `./home/nix.nix`, `./home/direnv.nix`, `./home/sops.nix`, `./home/zsh.nix`, `./home/zsh-abbr.nix`, `./home/opencode.nix`, `./home/tmux.nix`, `./home/dev-tools`, and `./home/agents`. Host configs only need `imports = [../../modules]`.
-- **`flake.nix` is pure wiring** — inputs, the local overlay (tokf, nix-search-tv-fzf, iii-engine, agentmemory), the dev shell, and the per-host `homeConfigurations` block. No module logic lives here.
+- **`flake.nix` is pure wiring** — inputs, the local overlay (snip, nix-search-tv-fzf, iii-engine, agentmemory), the dev shell, and the per-host `homeConfigurations` block. No module logic lives here.
 - **`pkgs/` flake overlay** — all custom packages are registered via `perSystem` overlay in `flake.nix` so they're available as `pkgs.<name>` everywhere.
 
 ## Data Flow

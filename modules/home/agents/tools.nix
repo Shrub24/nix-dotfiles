@@ -1,4 +1,10 @@
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 
 let
   cfg = config.programs.agentTools;
@@ -6,12 +12,12 @@ let
 in
 {
   options.programs.agentTools = {
-    enable = lib.mkEnableOption "AI agent CLI tools (tokf, codebase-memory-mcp, kreuzberg-cli)";
+    enable = lib.mkEnableOption "AI agent CLI tools (snip, codebase-memory-mcp, kreuzberg-cli)";
   };
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
-      tokf
+      snip
       inputs.codebase-memory-mcp.packages.${system}.default
       pkgs.kreuzberg-cli
     ];

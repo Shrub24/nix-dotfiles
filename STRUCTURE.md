@@ -44,7 +44,7 @@
 │           └── agentmemory.nix
 │
 ├── pkgs/                        # Custom Nix derivations
-│   ├── tokf/
+│   ├── snip/
 │   │   └── default.nix
 │   ├── nix-search-tv-fzf/
 │   │   └── default.nix
@@ -126,7 +126,7 @@
 
 **`pkgs/`:**
 - Purpose: Custom Nix derivations not available in nixpkgs
-- Contains: One directory per package (`tokf/`, `nix-search-tv-fzf/`, `iii-engine/`, `agentmemory/`)
+- Contains: One directory per package (`snip/`, `nix-search-tv-fzf/`, `iii-engine/`, `agentmemory/`)
 
 **`secrets/`:**
 - Purpose: Encrypted secrets managed by sops-nix
@@ -170,7 +170,7 @@
 - `modules/home/agents/hermes.nix`: hermes-agent — imports flake module from `hermes-agent-src` input; integrates with agentmemory as memory provider when both are enabled
 - `modules/home/agents/docs-mcp.nix`: Grounded Docs MCP Server — systemd service, bunx, sops.env template
 - `modules/home/agents/bifrost/default.nix`: Bifrost MCP gateway — systemd service via bunx, sops-template config
-- `modules/home/agents/tools.nix`: Agent CLI tools — tokf derivation, codebase-memory-mcp from flake input
+- `modules/home/agents/tools.nix`: Agent CLI tools — snip derivation, codebase-memory-mcp from flake input
 - `modules/home/agents/agentmemory.nix`: Agentmemory persistent memory daemon — defines `programs.agentmemory.*` options, systemd service, optional Hermes plugin deployment
 
 **Secrets (sops-encrypted):**
@@ -179,11 +179,11 @@
 - `secrets/zsh-secrets.env`: Legacy dotenv (superseded by agents.yaml + sops template)
 
 **Overlay:**
-- `pkgs/tokf/default.nix`: Custom tokf package
+- `pkgs/snip/default.nix`: Custom snip package
 - `pkgs/nix-search-tv-fzf/default.nix`: nstv — fzf wrapper around nix-search-tv
 - `pkgs/iii-engine/default.nix`: III engine package
 - `pkgs/agentmemory/default.nix`: Agentmemory npm package — persistent memory for AI agents, wraps `@agentmemory/agentmemory` from npm registry, wraps with iii-engine in PATH
-- `flake.nix` (lines 60-67): Overlay registrations for all four packages
+- `flake.nix` (lines 60-67): Overlay registrations for all custom packages
 
 ## Naming Conventions
 

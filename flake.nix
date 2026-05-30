@@ -92,7 +92,7 @@
               inherit system;
               overlays = [
                 (final: prev: {
-                  tokf = final.callPackage ./pkgs/tokf { };
+                  snip = final.callPackage ./pkgs/snip { };
                   nix-search-tv-fzf = final.callPackage ./pkgs/nix-search-tv-fzf { };
                   iii-engine = final.callPackage ./pkgs/iii-engine {
                     inherit (agentmemorySources."iii-engine") version;
