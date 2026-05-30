@@ -21,6 +21,7 @@
     nix-ld
     nix-fast-build
     nix-update
+    niks3-hook
     comma
     nix-your-shell
     tokei

@@ -93,12 +93,6 @@ in
         format = "yaml";
         key = "openai_api_key";
       };
-      MINIMAX_API_KEY = {
-        sopsFile = yamlSecrets;
-        format = "yaml";
-        key = "minimax_api_key";
-      };
-
       GEMINI_API_KEY = {
         sopsFile = yamlSecrets;
         format = "yaml";
@@ -109,6 +103,12 @@ in
         sopsFile = yamlSecrets;
         format = "yaml";
         key = "deepseek_api_key";
+      };
+
+      NIKS3_AUTH_TOKEN = {
+        sopsFile = ../../secrets/niks3-secrets.yaml;
+        format = "yaml";
+        key = "niks3_auth_token";
       };
 
       # Pi telegram secret (remains in its own YAML file)
@@ -138,12 +138,18 @@ in
     templates."bifrost.env" = {
       path = "${homeDir}/.config/bifrost/.env";
       content = ''
-        # bifrost runtime secrets — managed by sops
+        # bifrost runtime secrets -- managed by sops
         GEMINI_API_KEY=${config.sops.placeholder.GEMINI_API_KEY}
         DEEPSEEK_API_KEY=${config.sops.placeholder.DEEPSEEK_API_KEY}
         CROFAI_API_KEY=${config.sops.placeholder.CROFAI_API_KEY}
         OPENROUTER_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
       '';
+    };
+
+    # niks3 auth token for auto-upload post-build-hook
+    templates."niks3-auth-token" = {
+      path = "${homeDir}/.config/niks3/auth-token";
+      content = config.sops.placeholder.NIKS3_AUTH_TOKEN;
     };
   };
 

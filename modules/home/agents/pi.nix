@@ -8,21 +8,6 @@
 let
   cfg = config.programs.pi;
 
-  kreuzberg-cli = pkgs.stdenv.mkDerivation {
-    pname = "kreuzberg-cli";
-    version = "4.9.7";
-    src = pkgs.fetchurl {
-      url = "https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.9.7/kreuzberg-cli-x86_64-unknown-linux-gnu.tar.gz";
-      hash = "sha256-WTqB5tTrKGnzlVf7tSeDuMpj4YstitGn+9dvOW5rl5o=";
-    };
-    sourceRoot = "kreuzberg-cli-x86_64-unknown-linux-gnu";
-    installPhase = ''
-      mkdir -p $out/bin
-      cp kreuzberg $out/bin/
-      chmod +x $out/bin/kreuzberg
-    '';
-  };
-
   # Permission defaults that survive user partial overrides via recursiveUpdate
   defaultPermissions = {
     defaultPolicy = {
@@ -541,7 +526,6 @@ in
       cfg.package
       pkgs.python314Packages.ddgs
       pkgs.tesseract
-      kreuzberg-cli
       pkgs.maple-mono.NF-unhinted
     ];
 

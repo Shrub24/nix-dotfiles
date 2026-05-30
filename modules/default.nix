@@ -1,6 +1,7 @@
 {
   imports = [
     ./home/nix.nix
+    ./home/niks3.nix
     ./home/direnv.nix
     ./home/sops.nix
     ./home/shell
