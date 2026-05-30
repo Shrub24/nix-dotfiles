@@ -15,29 +15,26 @@ in
     functions = {
       _fzf_preview_router = ''
         set -l cand $argv[1]
-        set -l cmd_buffer $argv[2]
+        set -l base_buffer $argv[2] 
 
-        # Route 1: It's a Subcommand or Flag (Does not exist on disk)
         if not test -e "$cand"; and not test -L "$cand"
-          
-          # Ask Fish what the next level of flags are
-          set -l comps (complete -C "$cmd_buffer $cand " 2>/dev/null)
+          # We use the clean base_buffer (e.g., "git ") + cand ("commit") + space
+          set -l comps (complete -C "$base_buffer $cand" 2>/dev/null)
           
           if test -n "$comps"
             echo "$comps" | sed 's/\t/  /g' | column -t | bat -p --color=always
             return
           end
 
-          # TLDR Fallback for dead-end commands
           set -l base_cmd (string split " " -- $cand)[1]
           if command -v tldr >/dev/null
             tldr --color=always "$cand" 2>/dev/null; or tldr --color=always "$base_cmd" 2>/dev/null
           end
           return
         end
-
         pistol "$cand"
       '';
+
       _fzf_complete_lookahead = ''
         set -l cmd_buffer (commandline -cp)
 
@@ -45,22 +42,55 @@ in
           return
         end
 
-        set -l fzf_out (complete -C "$cmd_buffer " | fzf \
-          --layout=reverse \
-          --height=50% \
-          --ansi \
-          --tiebreak=index \
-          --preview "_fzf_preview_router {1} \"$cmd_buffer\"" \
-          --preview-window="right:55%:wrap"
-        )
+        # 1. Identify the exact token we are currently typing (e.g., "$S" or "commi")
+        set -l current_token (commandline -ct)
 
-        if test -n "$fzf_out"
-          set -l selection (string split \t -- $fzf_out)[1]
-          commandline -i "$selection "
+        # 2. Extract the "Base Context" by subtracting the token from the end of the buffer.
+        set -l token_len (string length -- "$current_token")
+        set -l buf_len (string length -- "$cmd_buffer")
+        set -l cut_pos (math $buf_len - $token_len)
+
+        set -l base_buffer ""
+        if test $cut_pos -gt 0
+          set base_buffer (string sub -l $cut_pos -- "$cmd_buffer")
+        end
+
+        # 3. Launch FZF
+        set -l fzf_raw (complete -C "$cmd_buffer" | fzf \
+          --query="$current_token" \
+          --expect=right \
+          --preview "_fzf_preview_router {1} \"$base_buffer\"" \
+          --preview-window="right:55%:wrap" | string collect)
+
+        if test -z "$fzf_raw"
+          return
+        end
+
+        set -l fzf_out (string split \n -- "$fzf_raw")
+        set -l key $fzf_out[1]
+        set -l raw_selection $fzf_out[2]
+
+        if test -n "$raw_selection"
+          set -l selection (string split \t -- $raw_selection)[1]
+          
+          commandline -t "$selection"
+
+          if test "$key" = "right"
+            if not string match -q "*/" "$selection"
+              commandline -i " "
+            end
+            # Recurse instantly for continuous navigation
+            _fzf_complete_lookahead
+          else
+            if not string match -q "*/" "$selection"
+              commandline -i " "
+            end
+          end
         end
 
         commandline -f repaint
       '';
+
     };
 
     plugins = with pkgs.fishPlugins; [

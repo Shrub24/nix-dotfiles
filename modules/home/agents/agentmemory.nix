@@ -7,7 +7,13 @@
 }:
 
 let
-  inherit (lib) mkEnableOption mkOption mkIf types literalExpression;
+  inherit (lib)
+    mkEnableOption
+    mkOption
+    mkIf
+    types
+    literalExpression
+    ;
   cfg = config.programs.agentmemory;
   stateDir = cfg.stateDir;
 in
@@ -71,66 +77,86 @@ in
 
     sops.templates."agentmemory.env" = {
       path = "${stateDir}/.env";
-      content = let
-        settingsEnv = lib.concatStringsSep "\n" (
-          lib.mapAttrsToList (name: value: "${name}=${value}") cfg.settings
-        );
-      in ''
-        HOME=${config.home.homeDirectory}
-        AGENTMEMORY_URL=http://localhost:3111
-        AGENTMEMORY_VIEWER_URL=http://localhost:3113
-        ${settingsEnv}
-        OPENAI_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
-      '';
+      content =
+        let
+          settingsEnv = lib.concatStringsSep "\n" (
+            lib.mapAttrsToList (name: value: "${name}=${value}") cfg.settings
+          );
+        in
+        ''
+          HOME=${config.home.homeDirectory}
+          AGENTMEMORY_URL=http://localhost:3111
+          AGENTMEMORY_VIEWER_URL=http://localhost:3113
+          ${settingsEnv}
+          OPENAI_API_KEY=sk-placeholder
+        '';
     };
 
     home.activation.agentmemoryConfig = lib.hm.dag.entryAfter [ "sops-nix" ] ''
       systemctl --user try-restart agentmemory 2>/dev/null || true
     '';
 
-    home.file."${config.home.homeDirectory}/.hermes/plugins/agentmemory" = mkIf (cfg.hermesPlugin.enable) {
-      source = builtins.fetchTree {
-        type = "github";
-        owner = "rohitg00";
-        repo = "agentmemory";
-        rev = cfg.hermesPlugin.rev;
-      } + "/integrations/hermes";
-      recursive = true;
-      onChange = ''systemctl --user restart hermes-agent || true'';
-    };
+    home.file."${config.home.homeDirectory}/.hermes/plugins/agentmemory" =
+      mkIf (cfg.hermesPlugin.enable)
+        {
+          source =
+            builtins.fetchTree {
+              type = "github";
+              owner = "rohitg00";
+              repo = "agentmemory";
+              rev = cfg.hermesPlugin.rev;
+            }
+            + "/integrations/hermes";
+          recursive = true;
+          onChange = "systemctl --user restart hermes-agent || true";
+        };
 
-    home.file.".dotfiles/apps/opencode/plugins/agentmemory-capture.ts" = mkIf (cfg.opencodePlugin.enable) {
-      source = builtins.fetchTree {
-        type = "github";
-        owner = "rohitg00";
-        repo = "agentmemory";
-        rev = cfg.opencodePlugin.rev;
-      } + "/plugin/opencode/agentmemory-capture.ts";
-    };
+    home.file.".dotfiles/apps/opencode/plugins/agentmemory-capture.ts" =
+      mkIf (cfg.opencodePlugin.enable)
+        {
+          source =
+            builtins.fetchTree {
+              type = "github";
+              owner = "rohitg00";
+              repo = "agentmemory";
+              rev = cfg.opencodePlugin.rev;
+            }
+            + "/plugin/opencode/agentmemory-capture.ts";
+        };
 
     home.file.".dotfiles/apps/opencode/commands/recall.md" = mkIf (cfg.opencodePlugin.enable) {
-      source = builtins.fetchTree {
-        type = "github";
-        owner = "rohitg00";
-        repo = "agentmemory";
-        rev = cfg.opencodePlugin.rev;
-      } + "/plugin/opencode/commands/recall.md";
+      source =
+        builtins.fetchTree {
+          type = "github";
+          owner = "rohitg00";
+          repo = "agentmemory";
+          rev = cfg.opencodePlugin.rev;
+        }
+        + "/plugin/opencode/commands/recall.md";
     };
 
     home.file.".dotfiles/apps/opencode/commands/remember.md" = mkIf (cfg.opencodePlugin.enable) {
-      source = builtins.fetchTree {
-        type = "github";
-        owner = "rohitg00";
-        repo = "agentmemory";
-        rev = cfg.opencodePlugin.rev;
-      } + "/plugin/opencode/commands/remember.md";
+      source =
+        builtins.fetchTree {
+          type = "github";
+          owner = "rohitg00";
+          repo = "agentmemory";
+          rev = cfg.opencodePlugin.rev;
+        }
+        + "/plugin/opencode/commands/remember.md";
     };
 
     systemd.user.services.agentmemory = {
       Unit = {
         Description = "agentmemory — persistent memory daemon";
-        After = [ "sops-nix.service" "network-online.target" ];
-        Wants = [ "sops-nix.service" "network-online.target" ];
+        After = [
+          "sops-nix.service"
+          "network-online.target"
+        ];
+        Wants = [
+          "sops-nix.service"
+          "network-online.target"
+        ];
       };
 
       Service = {
@@ -143,7 +169,9 @@ in
         StandardError = "journal";
       };
 
-      Install = { WantedBy = [ "default.target" ]; };
+      Install = {
+        WantedBy = [ "default.target" ];
+      };
     };
   };
 }

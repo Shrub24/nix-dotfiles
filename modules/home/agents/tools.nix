@@ -6,13 +6,14 @@ let
 in
 {
   options.programs.agentTools = {
-    enable = lib.mkEnableOption "AI agent CLI tools (tokf, codebase-memory-mcp, etc.)";
+    enable = lib.mkEnableOption "AI agent CLI tools (tokf, codebase-memory-mcp, kreuzberg-cli)";
   };
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
       tokf
       inputs.codebase-memory-mcp.packages.${system}.default
+      pkgs.kreuzberg-cli
     ];
   };
 }

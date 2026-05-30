@@ -85,7 +85,7 @@
         "priority": 10,
         "scope": "global",
         "cel_expression": "model == 'summariser'",
-        "fallbacks": ["crofai/deepseek-v4-pro-precision"],
+        "fallbacks": ["crof/deepseek-v4-pro-precision"],
         "targets": [
           {
             "provider": "deepseek",

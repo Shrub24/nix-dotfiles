@@ -1,12 +1,21 @@
-{ lib, buildNpmPackage, fetchurl, makeWrapper, iii-engine, nodejs }:
+{
+  lib,
+  buildNpmPackage,
+  fetchurl,
+  makeWrapper,
+  iii-engine,
+  version,
+  srcHash,
+  npmDepsHash,
+}:
 
 buildNpmPackage rec {
   pname = "agentmemory";
-  version = "0.9.21";
+  inherit version npmDepsHash;
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@agentmemory/agentmemory/-/agentmemory-${version}.tgz";
-    hash = "sha256-M/qn1BNhIS7o+Bx1/3y90WAuKULbbrMbtIFHmoth1Dw=";
+    hash = srcHash;
   };
 
   sourceRoot = "package";
@@ -15,9 +24,10 @@ buildNpmPackage rec {
     cp ${./package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-O7ffF55gU/iYSEolwbIl4CY6mZ/Im7thKSuUeJoi15Q=";
-
-  npmFlags = [ "--legacy-peer-deps" "--ignore-scripts" ];
+  npmFlags = [
+    "--legacy-peer-deps"
+    "--ignore-scripts"
+  ];
   dontNpmBuild = true;
 
   nativeBuildInputs = [ makeWrapper ];
@@ -26,6 +36,8 @@ buildNpmPackage rec {
     wrapProgram $out/bin/agentmemory \
       --prefix PATH : ${lib.makeBinPath [ iii-engine ]}
   '';
+
+  passthru.updateScript = ./update.sh;
 
   meta = {
     description = "Persistent memory for AI coding agents — powered by iii-engine";

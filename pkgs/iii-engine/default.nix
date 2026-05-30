@@ -1,7 +1,12 @@
-{ lib, stdenv, fetchurl }:
+{
+  lib,
+  stdenv,
+  fetchurl,
+  version,
+  hash,
+}:
 
 let
-  version = "0.11.2";
   target = "x86_64-unknown-linux-gnu";
 in
 stdenv.mkDerivation {
@@ -10,7 +15,7 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/iii-hq/iii/releases/download/iii/v${version}/iii-${target}.tar.gz";
-    hash = "sha256-nIPEd4i070vutl3ZvzfpT5k3cM09uHRGTDzhzckjUs0=";
+    inherit hash;
   };
 
   sourceRoot = ".";

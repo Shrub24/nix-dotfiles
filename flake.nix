@@ -26,6 +26,10 @@
     codebase-memory-mcp = {
       url = "github:DeusData/codebase-memory-mcp";
     };
+    niks3 = {
+      url = "github:Mic92/niks3";
+    };
+
     fish-abbreviation-tips = {
       url = "github:Gazorby/fish-abbreviation-tips";
       flake = false;
@@ -83,14 +87,23 @@
         homeConfigurations.saurabhj =
           let
             system = "x86_64-linux";
+            agentmemorySources = import ./pkgs/agentmemory/sources.nix;
             pkgs = import inputs.nixpkgs {
               inherit system;
               overlays = [
                 (final: prev: {
                   tokf = final.callPackage ./pkgs/tokf { };
                   nix-search-tv-fzf = final.callPackage ./pkgs/nix-search-tv-fzf { };
-                  iii-engine = final.callPackage ./pkgs/iii-engine { };
-                  agentmemory = final.callPackage ./pkgs/agentmemory { };
+                  iii-engine = final.callPackage ./pkgs/iii-engine {
+                    inherit (agentmemorySources."iii-engine") version;
+                    hash = agentmemorySources."iii-engine".srcHash;
+                  };
+                  agentmemory = final.callPackage ./pkgs/agentmemory {
+                    inherit (agentmemorySources.agentmemory) version npmDepsHash;
+                    srcHash = agentmemorySources.agentmemory.srcHash;
+                  };
+                  kreuzberg-cli = final.callPackage ./pkgs/kreuzberg-cli { };
+                  niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
                 })
               ];
             };
