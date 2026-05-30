@@ -1,5 +1,5 @@
 {
-  "__SCHEMA__": "https://www.getbifrost.ai/schema",
+  "$schema": "https://www.getbifrost.ai/schema",
   "client": {
     "drop_excess_requests": true,
     "enforce_auth_on_inference": false
@@ -13,91 +13,160 @@
     "type": "sqlite",
     "config": { "path": "./config.db" }
   },
+  "providers": {
+    "gemini": {
+      "keys": [
+        {
+          "name": "gemini-primary",
+          "value": "env.GEMINI_API_KEY",
+          "weight": 1,
+          "models": ["*"]
+        }
+      ]
+    },
+    "deepseek": {
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "allowed_requests": {
+          "list_models": true,
+          "chat_completion": true,
+          "chat_completion_stream": true
+        }
+      },
+      "network_config": {
+        "base_url": "https://api.deepseek.com"
+      },
+      "keys": [
+        {
+          "name": "deepseek-primary",
+          "value": "env.DEEPSEEK_API_KEY",
+          "weight": 1,
+          "models": ["*"]
+        }
+      ]
+    },
+    "crofai": {
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "allowed_requests": {
+          "list_models": true,
+          "chat_completion": true,
+          "chat_completion_stream": true
+        }
+      },
+      "network_config": {
+        "base_url": "https://crof.ai"
+      },
+      "keys": [
+        {
+          "name": "crofai-primary",
+          "value": "env.CROFAI_API_KEY",
+          "weight": 1,
+          "models": ["*"]
+        }
+      ]
+    },
+    "openrouter": {
+      "keys": [
+        {
+          "name": "openrouter-primary",
+          "value": "env.OPENROUTER_API_KEY",
+          "weight": 1,
+          "models": ["*"]
+        }
+      ]
+    }
+  },
+  "governance": {
+    "routing_rules": [
+      {
+        "id": "summariser",
+        "name": "summariser",
+        "priority": 10,
+        "scope": "global",
+        "cel_expression": "model == 'summariser'",
+        "fallbacks": ["crofai/deepseek-v4-pro-precision"],
+        "targets": [
+          {
+            "provider": "deepseek",
+            "model": "deepseek-v4-pro",
+            "weight": 1.0
+          }
+        ]
+      },
+      {
+        "id": "image",
+        "name": "image",
+        "priority": 20,
+        "scope": "global",
+        "cel_expression": "model == 'image'",
+        "fallbacks": ["moonshotai/kimi-k2.6:free", "qwen/qwen3.5-flash-02-23"],
+        "targets": [
+          {
+            "provider": "openrouter",
+            "model": "xiaomi/mimo-v2.5",
+            "weight": 1.0
+          }
+        ]
+      },
+      {
+        "id": "embedding",
+        "name": "embedding",
+        "cel_expression": "model == 'embedding'",
+        "priority": 30,
+        "scope": "global",
+        "targets": [
+          {
+            "provider": "openrouter",
+            "model": "qwen/qwen3-embedding-8b",
+            "weight": 1.0
+          }
+        ]
+      },
+      {
+        "id": "budget",
+        "name": "budget",
+        "priority": 40,
+        "scope": "global",
+        "cel_expression": "model == 'budget'",
+        "fallbacks": ["deepseek/deepseek-v4-flash"],
+        "targets": [
+          {
+            "provider": "crofai",
+            "model": "deepseek-v4-flash",
+            "weight": 1.0
+          }
+        ]
+      }
+    ]
+  },
+
   "mcp": {
     "tool_manager_config": { "code_mode_binding_level": "server" },
     "client_configs": [
       {
-        "name": "jcodemunch",
-        "connection_type": "stdio",
-        "stdio_config": {
-          "command": "jcodemunch-mcp",
-          "envs": [
-            "HOME",
-            "PATH",
-            "GOOGLE_API_KEY",
-            "GOOGLE_EMBED_MODEL",
-            "JCODEMUNCH_SUMMARIZER_PROVIDER",
-            "MINIMAX_API_KEY"
-          ]
-        },
-        "tools_to_execute": ["*"],
-        "is_code_mode_client": true
-      },
-      {
-        "name": "jdocmunch",
-        "connection_type": "stdio",
-        "stdio_config": {
-          "command": "jdocmunch-mcp",
-          "envs": [
-            "HOME",
-            "PATH",
-            "GOOGLE_API_KEY",
-            "GOOGLE_EMBED_MODEL",
-            "JDOCMUNCH_SUMMARIZER_PROVIDER",
-            "MINIMAX_API_KEY"
-          ]
-        },
-        "tools_to_execute": ["*"],
-        "is_code_mode_client": true
-      },
-      {
-        "name": "context7",
-        "connection_type": "stdio",
-        "stdio_config": {
-          "command": "pnpx",
-          "args": ["@upstash/context7-mcp", "--api-key", "${CONTEXT7_API_KEY}"],
-          "envs": ["HOME", "PATH", "CONTEXT7_API_KEY"]
-        },
-        "tools_to_execute": ["*"]
-      },
-      {
-        "name": "gh-grep",
+        "name": "gh_grep",
         "connection_type": "http",
         "connection_string": "https://mcp.grep.app",
         "tools_to_execute": ["*"]
       },
       {
-        "name": "desktop-commander",
-        "connection_type": "stdio",
-        "stdio_config": {
-          "command": "pnpx",
-          "args": ["@wonderwhy-er/desktop-commander@latest"],
-          "envs": ["HOME", "PATH"]
-        },
-        "tools_to_execute": ["*"],
-        "is_code_mode_client": true
-      },
-      {
-        "name": "jina-reader",
-        "connection_type": "http",
-        "connection_string": "https://mcp.jina.ai/v1?include_tools=read_url,extract_pdf,parallel_read_url",
-        "auth_type": "headers",
-        "headers": { "Authorization": "Bearer ${JINA_TOKEN}" },
-        "tools_to_execute": ["*"]
-      },
-      {
         "name": "tavily",
         "connection_type": "http",
-        "connection_string": "https://mcp.tavily.com/mcp/?tavilyApiKey=${TAVILY_API_KEY}",
+        "connection_string": "https://mcp.tavily.com/mcp/?tavilyApiKey=__TAVILY_API_KEY__",
         "tools_to_execute": ["*"]
       },
       {
         "name": "brave_search",
         "connection_type": "stdio",
         "stdio_config": {
-          "command": "pnpx",
-          "args": ["@brave/brave-search-mcp-server"],
-          "envs": ["HOME", "PATH", "BRAVE_API_KEY"]
+          "command": "bunx",
+          "args": [
+            "@brave/brave-search-mcp-server",
+            "--brave-api-key",
+            "__BRAVE_API_KEY__"
+          ],
+          "envs": ["HOME", "PATH"]
         },
         "tools_to_execute": ["*"]
       },
@@ -106,47 +175,9 @@
         "connection_type": "http",
         "connection_string": "https://api.githubcopilot.com/mcp/",
         "auth_type": "headers",
-        "headers": { "Authorization": "Bearer ${GITHUB_PAT}" },
+        "headers": { "Authorization": "Bearer __GITHUB_PAT__" },
         "tools_to_execute": ["*"],
         "is_code_mode_client": true
-      },
-      {
-        "name": "firecrawl",
-        "connection_type": "stdio",
-        "stdio_config": {
-          "command": "pnpx",
-          "args": ["firecrawl-mcp"],
-          "envs": ["HOME", "PATH", "FIRECRAWL_API_KEY"]
-        },
-        "tools_to_execute": ["*"]
-      },
-      {
-        "name": "kreuzberg",
-        "connection_type": "stdio",
-        "stdio_config": {
-          "command": "kreuzberg",
-          "args": ["mcp"],
-          "envs": ["HOME", "PATH"]
-        },
-        "tools_to_execute": ["*"],
-        "is_code_mode_client": true
-      }
-    ]
-  },
-  "governance": {
-    "virtual_keys": [
-      {
-        "id": "web-research",
-        "name": "web-research",
-        "value": "sk-bf-web-research",
-        "description": "Web search, content extraction, and web scraping",
-        "mcp_configs": [
-          { "mcp_client_name": "brave_search", "tools_to_execute": ["*"] },
-          { "mcp_client_name": "tavily", "tools_to_execute": ["*"] },
-          { "mcp_client_name": "jina_reader", "tools_to_execute": ["*"] },
-          { "mcp_client_name": "firecrawl", "tools_to_execute": ["*"] },
-          { "mcp_client_name": "gh_grep", "tools_to_execute": ["*"] }
-        ]
       }
     ]
   }

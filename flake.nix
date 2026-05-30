@@ -2,7 +2,7 @@
   description = "saurabhj's Nix configuration — dendritic home-manager";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     direnv-instant.url = "github:Mic92/direnv-instant";
     sops-nix = {
@@ -19,8 +19,40 @@
     hermes-agent = {
       url = "github:NousResearch/hermes-agent";
     };
+    hermes-agent-src = {
+      url = "github:yzx9/hermes-agent/feat/home-manager";
+      flake = false;
+    };
     codebase-memory-mcp = {
       url = "github:DeusData/codebase-memory-mcp";
+    };
+    fish-abbreviation-tips = {
+      url = "github:Gazorby/fish-abbreviation-tips";
+      flake = false;
+    };
+    fish-ai = {
+      url = "github:Realiserad/fish-ai";
+      flake = false;
+    };
+    fish-autopair = {
+      url = "github:jorgebucaran/autopair.fish";
+      flake = false;
+    };
+    fish-done = {
+      url = "github:franciscolourenco/done";
+      flake = false;
+    };
+    fish-fifc = {
+      url = "github:gazorby/fifc";
+      flake = false;
+    };
+    fish-replay = {
+      url = "github:jorgebucaran/replay.fish";
+      flake = false;
+    };
+    fish-sponge = {
+      url = "github:meaningful-ooo/sponge";
+      flake = false;
     };
   };
 
@@ -57,18 +89,23 @@
                 (final: prev: {
                   tokf = final.callPackage ./pkgs/tokf { };
                   nix-search-tv-fzf = final.callPackage ./pkgs/nix-search-tv-fzf { };
+                  iii-engine = final.callPackage ./pkgs/iii-engine { };
+                  agentmemory = final.callPackage ./pkgs/agentmemory { };
                 })
               ];
             };
           in
           inputs.home-manager.lib.homeManagerConfiguration {
             inherit pkgs;
-            extraSpecialArgs = { inherit inputs; };
+            extraSpecialArgs = {
+              inherit inputs;
+              repoRoot = "/home/saurabhj/.dotfiles/nix";
+              appsDir = "/home/saurabhj/.dotfiles/apps";
+            };
             modules = [
               ./hosts/arch/home.nix
               {
                 programs.pi.package = inputs.llm-agents.packages.${system}.pi;
-                programs.hermes.package = inputs.hermes-agent.packages.${system}.default;
               }
             ];
           };
