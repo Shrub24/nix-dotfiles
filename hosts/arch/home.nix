@@ -40,7 +40,7 @@
       enable = true;
     };
     settings = {
-      AGENTMEMORY_TOOLS = "core";
+      AGENTMEMORY_TOOLS = "all";
       AGENTMEMORY_SLOTS = "true";
       AGENTMEMORY_REFLECT = "true";
       AGENTMEMORY_INJECT_CONTEXT = "true";

@@ -20,7 +20,7 @@
           "name": "gemini-primary",
           "value": "env.GEMINI_API_KEY",
           "weight": 1,
-          "models": ["*"]
+          "models": []
         }
       ]
     },
@@ -45,7 +45,28 @@
         }
       ]
     },
-    "crofai": {
+    "opencode_go": {
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "allowed_requests": {
+          "list_models": true,
+          "chat_completion": true,
+          "chat_completion_stream": true
+        }
+      },
+      "network_config": {
+        "base_url": "https://opencode.ai/zen/go"
+      },
+      "keys": [
+        {
+          "name": "opencode-go-primary",
+          "value": "env.OPENCODE_API_KEY",
+          "weight": 1,
+          "models": ["*"]
+        }
+      ]
+    },
+    "crof": {
       "custom_provider_config": {
         "base_provider_type": "openai",
         "allowed_requests": {
@@ -72,13 +93,28 @@
           "name": "openrouter-primary",
           "value": "env.OPENROUTER_API_KEY",
           "weight": 1,
-          "models": ["*"]
+          "models": ["qwen/qwen3*", "xiaomi/mimo-v2.5*", "*:free"]
         }
       ]
     }
   },
   "governance": {
     "routing_rules": [
+      {
+        "id": "coder",
+        "name": "coder",
+        "priority": 1,
+        "scope": "global",
+        "cel_expression": "model == 'coder' || model == 'main'",
+        "fallbacks": ["opencode_go/mimo-v2.5-pro"],
+        "targets": [
+          {
+            "provider": "openrouter",
+            "model": "moonshotai/kimi-k2.6:free",
+            "weight": 1.0
+          }
+        ]
+      },
       {
         "id": "summariser",
         "name": "summariser",
@@ -100,7 +136,10 @@
         "priority": 20,
         "scope": "global",
         "cel_expression": "model == 'image'",
-        "fallbacks": ["moonshotai/kimi-k2.6:free", "qwen/qwen3.5-flash-02-23"],
+        "fallbacks": [
+          "openrouter/moonshotai/kimi-k2.6:free",
+          "qwen/qwen3.5-flash-02-23"
+        ],
         "targets": [
           {
             "provider": "openrouter",
@@ -128,56 +167,15 @@
         "name": "budget",
         "priority": 40,
         "scope": "global",
-        "cel_expression": "model == 'budget'",
+        "cel_expression": "model == 'budget' || model == 'explorer'",
         "fallbacks": ["deepseek/deepseek-v4-flash"],
         "targets": [
           {
-            "provider": "crofai",
+            "provider": "opencode_go",
             "model": "deepseek-v4-flash",
             "weight": 1.0
           }
         ]
-      }
-    ]
-  },
-
-  "mcp": {
-    "tool_manager_config": { "code_mode_binding_level": "server" },
-    "client_configs": [
-      {
-        "name": "gh_grep",
-        "connection_type": "http",
-        "connection_string": "https://mcp.grep.app",
-        "tools_to_execute": ["*"]
-      },
-      {
-        "name": "tavily",
-        "connection_type": "http",
-        "connection_string": "https://mcp.tavily.com/mcp/?tavilyApiKey=__TAVILY_API_KEY__",
-        "tools_to_execute": ["*"]
-      },
-      {
-        "name": "brave_search",
-        "connection_type": "stdio",
-        "stdio_config": {
-          "command": "bunx",
-          "args": [
-            "@brave/brave-search-mcp-server",
-            "--brave-api-key",
-            "__BRAVE_API_KEY__"
-          ],
-          "envs": ["HOME", "PATH"]
-        },
-        "tools_to_execute": ["*"]
-      },
-      {
-        "name": "github",
-        "connection_type": "http",
-        "connection_string": "https://api.githubcopilot.com/mcp/",
-        "auth_type": "headers",
-        "headers": { "Authorization": "Bearer __GITHUB_PAT__" },
-        "tools_to_execute": ["*"],
-        "is_code_mode_client": true
       }
     ]
   }

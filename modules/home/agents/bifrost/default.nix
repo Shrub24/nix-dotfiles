@@ -31,6 +31,7 @@ in
         EnvironmentFile = "%h/.config/bifrost/.env";
         ExecStart = "${pkgs.bun}/bin/bunx @maximhq/bifrost --port 8765";
         WorkingDirectory = "%h/.config/bifrost";
+        KillSignal = "SIGKILL";
         Restart = "on-failure";
         RestartSec = "5s";
         StandardOutput = "journal";
@@ -42,7 +43,9 @@ in
     };
 
     home.activation.bifrostConfig = lib.hm.dag.entryAfter [ "sops-nix" ] ''
-      systemctl --user try-restart bifrost.service 2>/dev/null || true
+      systemctl --user stop bifrost.service 2>/dev/null || true
+      rm -f "$HOME/.config/bifrost/config.db"
+      systemctl --user start bifrost.service 2>/dev/null || true
     '';
   };
 }

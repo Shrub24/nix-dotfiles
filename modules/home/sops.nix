@@ -10,6 +10,7 @@ let
   inherit (lib) mkDefault;
   homeDir = config.home.homeDirectory;
   yamlSecrets = ../../secrets/agents.yaml;
+  bifrostGenerated = import ./agents/bifrost/generated.nix { inherit lib; };
 in
 
 {
@@ -125,14 +126,13 @@ in
       path = "${homeDir}/.config/bifrost/config.json";
       content =
         lib.replaceStrings
-          [ "__JINA_TOKEN__" "__TAVILY_API_KEY__" "__GITHUB_PAT__" "__BRAVE_API_KEY__" ]
+          [ "__TAVILY_API_KEY__" "__GITHUB_PAT__" "__BRAVE_API_KEY__" ]
           [
-            config.sops.placeholder.JINA_TOKEN
             config.sops.placeholder.TAVILY_API_KEY
             config.sops.placeholder.GITHUB_PAT
             config.sops.placeholder.BRAVE_API_KEY
           ]
-          (builtins.readFile ./agents/bifrost/config.json);
+          (builtins.toJSON bifrostGenerated.bifrostConfig);
     };
 
     templates."bifrost.env" = {
@@ -143,6 +143,7 @@ in
         DEEPSEEK_API_KEY=${config.sops.placeholder.DEEPSEEK_API_KEY}
         CROFAI_API_KEY=${config.sops.placeholder.CROFAI_API_KEY}
         OPENROUTER_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
+        OPENCODE_API_KEY=${config.sops.placeholder.OPENCODE_API_KEY}
       '';
     };
 
