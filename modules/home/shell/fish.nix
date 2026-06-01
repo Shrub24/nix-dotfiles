@@ -181,12 +181,6 @@ in
       # fifc config
       bind -M insert ctrl-space _fzf_complete_lookahead
       bind -M default ctrl-space _fzf_complete_lookahead
-      # bind -M insert \t _fifc
-      # set -U fifc_fzf_opts $FZF_DEFAULT_OPTS "--height=50% --layout=reverse --border --inline-info"
-      # fifc -n 'test -e "$fifc_candidate"' -p 'pistol "$fifc_candidate"'
-      # fifc -n 'not test -e "$fifc_candidate"' -p 'complete -C "$fifc_commandline $fifc_candidate" | string replace -r "\t" "  " | column -t | bat -p --color=always'
-
-      # fifc -n 'test -n "$fifc_candidate"' -p 'complete -C "$fifc_commandline $fifc_candidate " | column -c 80'
 
       fish_vi_key_bindings
       set fish_cursor_default block
@@ -212,4 +206,9 @@ in
   programs.zoxide.enableFishIntegration = true;
   programs.eza.enableFishIntegration = true;
   programs.pay-respects.enableFishIntegration = true;
+
+  xdg.configFile."fish/completions/hermes.fish".source =
+    pkgs.runCommand "hermes-fish-completions" { } ''
+      ${inputs.hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.default}/bin/hermes completion fish > $out
+    '';
 }

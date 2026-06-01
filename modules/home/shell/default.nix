@@ -28,7 +28,10 @@
     pistol
   ];
 
-  programs.fzf.enable = true;
+  programs.fzf = {
+    enable = true;
+    enableFishIntegration = false;
+  };
   programs.zoxide.enable = true;
   programs.eza = {
     enable = true;
