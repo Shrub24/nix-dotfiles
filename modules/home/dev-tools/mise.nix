@@ -34,6 +34,7 @@ in
     programs.mise = {
       enable = true;
       enableZshIntegration = true;
+      enableFishIntegration = true;
       package = pkgs.mise;
 
       globalConfig.tools = lib.filterAttrs (_: v: v != null) {

@@ -20,12 +20,38 @@
 
   programs.niks3 = {
     enableAutoUploadService = true;
-    serverUrl = "https://cache.shrublab.xyz";
   };
 
   programs.pi.enable = false;
 
   programs.bifrost.enable = true;
+  programs.aichat = {
+    enable = true;
+    settings = {
+      model = "bifrost:coder";
+      clients = [
+        {
+          type = "openai-compatible";
+          name = "bifrost";
+          api_base = "http://localhost:8765/v1";
+          api_key = "bifrost-local";
+          models = [
+            {
+              name = "coder";
+              max_input_tokens = 131072;
+            }
+          ];
+        }
+      ];
+    };
+  };
+  programs.lazyjournal = {
+    enable = true;
+    sshHosts = [
+      "do-admin-1"
+      "oci-melb-1"
+    ];
+  };
   programs.docsMcp.enable = true;
   programs.qmd.enable = true;
   programs.agentTools.enable = true;

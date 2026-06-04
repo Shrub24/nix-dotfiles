@@ -14,7 +14,7 @@ in
 
     serverUrl = lib.mkOption {
       type = lib.types.str;
-      default = "https://cache.shrublab.xyz";
+      default = "http://oci-melb-1:5751";
       description = "niks3 cache server URL to upload to.";
     };
 

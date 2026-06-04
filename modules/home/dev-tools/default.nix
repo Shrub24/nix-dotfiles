@@ -1,11 +1,13 @@
-{ pkgs, ... }: {
+{ pkgs, ... }:
+{
   imports = [
     ./languages.nix
     ./mise.nix
     ./navi.nix
+    ./lazyjournal.nix
   ];
 
   home.packages = with pkgs; [
-    sysz
+    isd
   ];
 }

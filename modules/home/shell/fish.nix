@@ -122,14 +122,6 @@ in
         name = "sponge";
         src = inputs.fish-sponge;
       }
-      # {
-      #   name = "fifc";
-      #   src = inputs.fish-fifc;
-      # }
-      {
-        name = "fish-ai";
-        src = inputs.fish-ai;
-      }
       {
         name = "replay-fish";
         src = inputs.fish-replay;
@@ -146,12 +138,6 @@ in
       end
 
       fish_add_path --append /usr/local/bin /usr/bin /bin /usr/sbin /sbin
-
-      set -gx FZF_DEFAULT_COMMAND 'fd -LH --exclude .git'
-      set -gx FZF_DEFAULT_OPTS "--bind=tab:accept --layout=reverse --height=~75% --style=full --tiebreak=index \
-        --ansi --border=rounded --highlight-line --info=inline-right \
-        --color=bg:-1,bg+:0,fg:-1,fg+:-1,gutter:-1,border:4,scrollbar:4 \
-        --color=hl:4,hl+:4,header:3,separator:3,info:5,marker:5,pointer:5,spinner:5,prompt:4,query:7:regular"
     '';
 
     interactiveShellInit = ''
@@ -163,17 +149,13 @@ in
         replay "set -a; source $HOME/.config/sops-nix/secrets/rendered/zsh-secrets.env; set +a"
       end
 
-      # fancy ctrl z
+      # fancy ctrl z + sudo
       bind \cz 'if jobs -q; fg; else; commandline -f repaint; end'
       bind \cs 'commandline -i "sudo "; commandline -f execute'
 
-      set -gx fzf_history_opts   $FZF_DEFAULT_OPTS
-      set -gx fzf_directory_opts $FZF_DEFAULT_OPTS
-      set -gx fzf_variables_opts $FZF_DEFAULT_OPTS
-      set -gx fzf_processes_opts $FZF_DEFAULT_OPTS
-
       set fzf_preview_dir_cmd eza --all --color=always
       set fzf_preview_file_cmd bat --color=always --style=numbers
+      set fzf_diff_highlighter delta --paging=never --width=20
 
       bind -M insert \t complete-and-search
       bind -M default \t complete-and-search
@@ -208,7 +190,10 @@ in
   programs.pay-respects.enableFishIntegration = true;
 
   xdg.configFile."fish/completions/hermes.fish".source =
-    pkgs.runCommand "hermes-fish-completions" { } ''
-      ${inputs.hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.default}/bin/hermes completion fish > $out
-    '';
+    pkgs.runCommand "hermes-fish-completions" { }
+      ''
+        ${
+          inputs.hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.default
+        }/bin/hermes completion fish > $out
+      '';
 }
