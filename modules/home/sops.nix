@@ -10,7 +10,6 @@ let
   inherit (lib) mkDefault;
   homeDir = config.home.homeDirectory;
   yamlSecrets = ../../secrets/agents.yaml;
-  bifrostGenerated = import ./agents/bifrost/generated.nix { inherit lib; };
 in
 
 {
@@ -29,6 +28,9 @@ in
       OPENROUTER_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
       OPENCODE_API_KEY=${config.sops.placeholder.OPENCODE_API_KEY}
       SOURCEGRAPH_TOKEN=${config.sops.placeholder.SOURCEGRAPH_TOKEN}
+      TAVILY_API_KEY=${config.sops.placeholder.TAVILY_API_KEY}
+      BRAVE_API_KEY=${config.sops.placeholder.BRAVE_API_KEY}
+      FIRECRAWL_API_KEY=${config.sops.placeholder.FIRECRAWL_API_KEY}
     '';
 
     # --- individual YAML-backed secrets ---
@@ -121,19 +123,6 @@ in
     templates."docs-mcp.env".content = ''
       OPENAI_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
     '';
-
-    templates."bifrost-config.json" = {
-      path = "${homeDir}/.config/bifrost/config.json";
-      content =
-        lib.replaceStrings
-          [ "__TAVILY_API_KEY__" "__GITHUB_PAT__" "__BRAVE_API_KEY__" ]
-          [
-            config.sops.placeholder.TAVILY_API_KEY
-            config.sops.placeholder.GITHUB_PAT
-            config.sops.placeholder.BRAVE_API_KEY
-          ]
-          (builtins.toJSON bifrostGenerated.bifrostConfig);
-    };
 
     templates."bifrost.env" = {
       path = "${homeDir}/.config/bifrost/.env";

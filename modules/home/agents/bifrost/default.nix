@@ -7,6 +7,8 @@
 
 let
   cfg = config.programs.bifrost;
+  bifrostGenerated = import ./generated.nix { inherit lib; };
+  bifrostConfigJson = builtins.toJSON bifrostGenerated.bifrostConfig;
 in
 {
   options.programs.bifrost = {
@@ -14,10 +16,17 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    xdg.configFile."bifrost/config.json".text = bifrostConfigJson;
+
     systemd.user.services.bifrost = {
       Unit = {
         Description = "Maxim HQ Bifrost MCP Gateway";
-        After = [ "sops-nix.service" "graphical-session.target" ];
+        After = [
+          "sops-nix.service"
+          "graphical-session.target"
+        ];
+        X-Restart-Triggers = [ (builtins.hashString "sha256" bifrostConfigJson) ];
+        X-SwitchMethod = "restart";
       };
       Service = {
         Environment = [
@@ -29,6 +38,7 @@ in
           "BIFROST_ALLOWED_ORIGINS=http://localhost:*"
         ];
         EnvironmentFile = "%h/.config/bifrost/.env";
+        ExecStartPre = "${pkgs.coreutils}/bin/rm -f %h/.config/bifrost/config.db";
         ExecStart = "${pkgs.bun}/bin/bunx @maximhq/bifrost --port 8765";
         WorkingDirectory = "%h/.config/bifrost";
         KillSignal = "SIGKILL";
@@ -41,11 +51,5 @@ in
         WantedBy = [ "default.target" ];
       };
     };
-
-    home.activation.bifrostConfig = lib.hm.dag.entryAfter [ "sops-nix" ] ''
-      systemctl --user stop bifrost.service 2>/dev/null || true
-      rm -f "$HOME/.config/bifrost/config.db"
-      systemctl --user start bifrost.service 2>/dev/null || true
-    '';
   };
 }

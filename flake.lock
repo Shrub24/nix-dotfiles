@@ -112,22 +112,6 @@
         "type": "github"
       }
     },
-    "fish-ai": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1780031183,
-        "narHash": "sha256-ZSFoE9/UesA6GVSYyRKAfj7+uw1gTZ/E08zAHPizAAQ=",
-        "owner": "Realiserad",
-        "repo": "fish-ai",
-        "rev": "8e5733f20610b900ac52e26a863490fee066263f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Realiserad",
-        "repo": "fish-ai",
-        "type": "github"
-      }
-    },
     "fish-autopair": {
       "flake": false,
       "locked": {
@@ -617,7 +601,6 @@
         "codebase-memory-mcp": "codebase-memory-mcp",
         "direnv-instant": "direnv-instant",
         "fish-abbreviation-tips": "fish-abbreviation-tips",
-        "fish-ai": "fish-ai",
         "fish-autopair": "fish-autopair",
         "fish-done": "fish-done",
         "fish-fifc": "fish-fifc",

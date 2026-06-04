@@ -1,25 +1,28 @@
 {
   coder = {
     priority = 1;
-    matches = [ "coder" "main" ];
-    fallbacks = [ "opencode_go/mimo-v2.5-pro" ];
+    matches = [
+      "coder"
+      "main"
+    ];
+    fallbacks = [ "crof/mimo-v2.5-pro" ];
     targets = [
       {
-        provider = "openrouter";
-        model = "moonshotai/kimi-k2.6:free";
+        provider = "opencode_go";
+        model = "mimo-v2.5-pro";
         weight = 1.0;
       }
     ];
     opencodeModels = {
       coder = {
-        name = "Bifrost Coder";
+        name = "Coder";
         context = 262144;
         output = 131072;
         inputModalities = [ "text" ];
         outputModalities = [ "text" ];
       };
       main = {
-        name = "Bifrost Main";
+        name = "Main";
         context = 262144;
         output = 131072;
         inputModalities = [ "text" ];
@@ -31,7 +34,7 @@
   summariser = {
     priority = 10;
     matches = [ "summariser" ];
-    fallbacks = [ "crof/deepseek-v4-pro-precision" ];
+    fallbacks = [ "crof/deepseek-v4-pro" ];
     targets = [
       {
         provider = "deepseek";
@@ -41,7 +44,7 @@
     ];
     opencodeModels = {
       summariser = {
-        name = "Bifrost Summariser";
+        name = "Summariser";
         context = 1000000;
         output = 131072;
         inputModalities = [ "text" ];
@@ -54,7 +57,6 @@
     priority = 20;
     matches = [ "image" ];
     fallbacks = [
-      "openrouter/moonshotai/kimi-k2.6:free"
       "qwen/qwen3.5-flash-02-23"
     ];
     targets = [
@@ -82,7 +84,10 @@
 
   budget = {
     priority = 40;
-    matches = [ "budget" "explorer" ];
+    matches = [
+      "budget"
+      "explorer"
+    ];
     fallbacks = [ "deepseek/deepseek-v4-flash" ];
     targets = [
       {
@@ -93,14 +98,14 @@
     ];
     opencodeModels = {
       budget = {
-        name = "Bifrost Budget";
+        name = "Budget";
         context = 1000000;
         output = 384000;
         inputModalities = [ "text" ];
         outputModalities = [ "text" ];
       };
       explorer = {
-        name = "Bifrost Explorer";
+        name = "Explorer";
         context = 1000000;
         output = 384000;
         inputModalities = [ "text" ];

@@ -3,8 +3,7 @@
 let
   aliases = import ./aliases.nix;
 
-  mkCelExpression = matches:
-    lib.concatStringsSep " || " (map (model: "model == '${model}'") matches);
+  mkCelExpression = matches: lib.concatStringsSep " || " (map (model: "model == '${model}'") matches);
 
   routingRules = lib.mapAttrsToList (
     id: spec:
@@ -34,8 +33,7 @@ let
   };
 
   opencodeModels = lib.foldl' (
-    acc: spec:
-    acc // lib.mapAttrs (_: mkOpencodeModel) spec.opencodeModels
+    acc: spec: acc // lib.mapAttrs (_: mkOpencodeModel) spec.opencodeModels
   ) { } (builtins.attrValues aliases);
 
   bifrostConfig = {
@@ -51,7 +49,9 @@ let
     config_store = {
       enabled = true;
       type = "sqlite";
-      config = { path = "./config.db"; };
+      config = {
+        path = "./config.db";
+      };
     };
     providers = {
       gemini = {
@@ -133,7 +133,12 @@ let
             name = "openrouter-primary";
             value = "env.OPENROUTER_API_KEY";
             weight = 1;
-            models = [ "qwen/qwen3*" "xiaomi/mimo-v2.5*" "*:free" ];
+            models = [
+              "qwen/qwen3-embedding-8b"
+              "xiaomi/mimo-v2.5-pro"
+              "moonshotai/kimi-k2.6:free"
+              "xiaomi/mimo-v2.5"
+            ];
           }
         ];
       };
@@ -144,7 +149,12 @@ let
   };
 in
 {
-  inherit aliases bifrostConfig opencodeModels routingRules;
+  inherit
+    aliases
+    bifrostConfig
+    opencodeModels
+    routingRules
+    ;
 
   opencodeExtraConfig = {
     "$schema" = "https://opencode.ai/config.json";

@@ -34,10 +34,6 @@
       url = "github:Gazorby/fish-abbreviation-tips";
       flake = false;
     };
-    fish-ai = {
-      url = "github:Realiserad/fish-ai";
-      flake = false;
-    };
     fish-autopair = {
       url = "github:jorgebucaran/autopair.fish";
       flake = false;
