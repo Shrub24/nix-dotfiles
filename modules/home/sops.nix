@@ -19,7 +19,6 @@ in
     age.keyFile = "${homeDir}/.config/sops/age/keys.txt";
 
     # --- shell environment (generated from YAML-backed placeholders) ---
-    # Replaces the old zsh-secrets-env dotenv secret.
     templates."zsh-secrets.env".content = ''
       GITHUB_PAT=${config.sops.placeholder.GITHUB_PAT}
       GITHUB_TOKEN=${config.sops.placeholder.GITHUB_TOKEN}
@@ -31,6 +30,9 @@ in
       TAVILY_API_KEY=${config.sops.placeholder.TAVILY_API_KEY}
       BRAVE_API_KEY=${config.sops.placeholder.BRAVE_API_KEY}
       FIRECRAWL_API_KEY=${config.sops.placeholder.FIRECRAWL_API_KEY}
+      NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
+      CURSOR_API_KEY=${config.sops.placeholder.CURSOR_API_KEY}
+      NIXBUILDNET_ACCESS_TOKENS=${config.sops.placeholder.NIXBUILDNET_ACCESS_TOKENS}
     '';
 
     # --- individual YAML-backed secrets ---
@@ -107,6 +109,22 @@ in
         format = "yaml";
         key = "deepseek_api_key";
       };
+      NEURALWATT_API_KEY = {
+        sopsFile = yamlSecrets;
+        format = "yaml";
+        key = "neuralwatt_api_key";
+      };
+      CURSOR_API_KEY = {
+        sopsFile = yamlSecrets;
+        format = "yaml";
+        key = "cursor_api_key";
+      };
+
+      NIXBUILDNET_ACCESS_TOKENS = {
+        sopsFile = ../../secrets/nixbuild.yaml;
+        format = "yaml";
+        key = "nixbuildnet_access_token";
+      };
 
       NIKS3_AUTH_TOKEN = {
         sopsFile = ../../secrets/niks3-secrets.yaml;
@@ -124,15 +142,25 @@ in
       OPENAI_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
     '';
 
-    templates."bifrost.env" = {
-      path = "${homeDir}/.config/bifrost/.env";
+    templates."litellm.env" = {
+      path = "${homeDir}/.config/litellm/.env";
       content = ''
-        # bifrost runtime secrets -- managed by sops
+        # litellm runtime secrets -- managed by sops
         GEMINI_API_KEY=${config.sops.placeholder.GEMINI_API_KEY}
         DEEPSEEK_API_KEY=${config.sops.placeholder.DEEPSEEK_API_KEY}
         CROFAI_API_KEY=${config.sops.placeholder.CROFAI_API_KEY}
+        NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
         OPENROUTER_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
         OPENCODE_API_KEY=${config.sops.placeholder.OPENCODE_API_KEY}
+      '';
+    };
+
+    # nixbuild.net SSH config: passes access token via SetEnv
+    templates."ssh-nixbuild-config" = {
+      path = "${homeDir}/.ssh/config.d/10-nixbuild.net.conf";
+      content = ''
+        Host eu.nixbuild.net
+          SetEnv NIXBUILDNET_ACCESS_TOKENS=${config.sops.placeholder.NIXBUILDNET_ACCESS_TOKENS}
       '';
     };
 

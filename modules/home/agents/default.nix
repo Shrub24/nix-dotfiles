@@ -3,7 +3,7 @@
     ./pi.nix
     ./hermes.nix
     ./docs-mcp.nix
-    ./bifrost
+    ./litellm
     ./tools.nix
     ./agentmemory.nix
     ./qmd.nix

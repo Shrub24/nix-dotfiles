@@ -10,5 +10,7 @@
   iii-engine = {
     version = "0.11.2";
     srcHash = "sha256-nIPEd4i070vutl3ZvzfpT5k3cM09uHRGTDzhzckjUs0=";
+    initHash = "sha256-OtAc/pSV0dPWZw6Spdbk2vxTA76rM+0Qj3+SUhtuBJw=";
+    workerHash = "sha256-+TilB9YyAd8+jsfHeAU7qFCfL1SnaFbi6C6crV7wlM0=";
   };
 }

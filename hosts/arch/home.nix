@@ -24,17 +24,20 @@
 
   programs.pi.enable = false;
 
-  programs.bifrost.enable = true;
+  programs.litellm = {
+    enable = true;
+    headroom.enable = false;
+  };
   programs.aichat = {
     enable = true;
     settings = {
-      model = "bifrost:coder";
+      model = "litellm:coder";
       clients = [
         {
           type = "openai-compatible";
-          name = "bifrost";
+          name = "litellm";
           api_base = "http://localhost:8765/v1";
-          api_key = "bifrost-local";
+          api_key = "litellm-local";
           models = [
             {
               name = "coder";
@@ -66,7 +69,7 @@
       enable = true;
     };
     settings = {
-      AGENTMEMORY_TOOLS = "all";
+      AGENTMEMORY_TOOLS = "core";
       AGENTMEMORY_SLOTS = "true";
       AGENTMEMORY_REFLECT = "true";
       AGENTMEMORY_INJECT_CONTEXT = "true";

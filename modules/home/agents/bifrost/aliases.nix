@@ -8,7 +8,7 @@
     fallbacks = [ "crof/mimo-v2.5-pro" ];
     targets = [
       {
-        provider = "opencode_go";
+        provider = "crof";
         model = "mimo-v2.5-pro";
         weight = 1.0;
       }
@@ -91,7 +91,7 @@
     fallbacks = [ "deepseek/deepseek-v4-flash" ];
     targets = [
       {
-        provider = "opencode_go";
+        provider = "crof";
         model = "deepseek-v4-flash";
         weight = 1.0;
       }

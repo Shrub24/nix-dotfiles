@@ -29,6 +29,13 @@ in
       description = "agentmemory package to use.";
     };
 
+    iiiPackage = mkOption {
+      type = types.package;
+      default = pkgs.iii-engine;
+      defaultText = literalExpression "pkgs.iii-engine";
+      description = "iii-engine package to expose for agentmemory runtime and worker management.";
+    };
+
     stateDir = mkOption {
       type = types.str;
       default = "${config.home.homeDirectory}/.agentmemory";
@@ -73,7 +80,10 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages = [ cfg.package ];
+    home.packages = [
+      cfg.package
+      cfg.iiiPackage
+    ];
 
     sops.templates."agentmemory.env" = {
       path = "${stateDir}/.env";

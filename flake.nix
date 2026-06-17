@@ -93,12 +93,16 @@
                   iii-engine = final.callPackage ./pkgs/iii-engine {
                     inherit (agentmemorySources."iii-engine") version;
                     hash = agentmemorySources."iii-engine".srcHash;
+                    initHash = agentmemorySources."iii-engine".initHash;
+                    workerHash = agentmemorySources."iii-engine".workerHash;
                   };
                   agentmemory = final.callPackage ./pkgs/agentmemory {
                     inherit (agentmemorySources.agentmemory) version npmDepsHash;
                     srcHash = agentmemorySources.agentmemory.srcHash;
                   };
                   kreuzberg-cli = final.callPackage ./pkgs/kreuzberg-cli { };
+                  headroom-ai = final.python3Packages.callPackage ./pkgs/headroom-ai { };
+                  litellm-with-headroom = final.callPackage ./pkgs/litellm-with-headroom { };
                   niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
                 })
               ];

@@ -49,6 +49,8 @@
         "https://nix-community.cachix.org"
         "https://cache.numtide.com"
         "https://cache.shrublab.xyz"
+      ];
+      trusted-substituters = [
         "ssh-ng://eu.nixbuild.net"
       ];
       extra-trusted-public-keys = [

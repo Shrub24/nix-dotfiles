@@ -41,12 +41,24 @@ echo "[6] Computing npm dependency hash..."
 AGENTMEMORY_NPM_DEPS_HASH="$(prefetch-npm-deps "$DIR/package-lock.json")"
 echo "  npmDepsHash: $AGENTMEMORY_NPM_DEPS_HASH"
 
-echo "[7] Downloading iii-engine tarball..."
+echo "[7] Downloading iii-engine tarballs (main + init + worker)..."
+III_BASE_URL="https://github.com/iii-hq/iii/releases/download/iii/v${III_ENGINE_VERSION}"
+
 III_TARGET="x86_64-unknown-linux-gnu"
-III_URL="https://github.com/iii-hq/iii/releases/download/iii/v${III_ENGINE_VERSION}/iii-${III_TARGET}.tar.gz"
-curl -fsSL "$III_URL" -o "$WORKDIR/iii.tar.gz"
+III_INIT_TARGET="x86_64-unknown-linux-musl"   # install script picks musl for iii-init
+III_WORKER_TARGET="x86_64-unknown-linux-gnu"  # iii-worker always glibc on x86_64
+
+curl -fsSL "${III_BASE_URL}/iii-${III_TARGET}.tar.gz" -o "$WORKDIR/iii.tar.gz"
 III_SRC_HASH="$(nix hash file --sri --type sha256 "$WORKDIR/iii.tar.gz")"
 echo "  iii-engine source hash (SRI): $III_SRC_HASH"
+
+curl -fsSL "${III_BASE_URL}/iii-init-${III_INIT_TARGET}.tar.gz" -o "$WORKDIR/iii-init.tar.gz"
+III_INIT_HASH="$(nix hash file --sri --type sha256 "$WORKDIR/iii-init.tar.gz")"
+echo "  iii-init source hash (SRI): $III_INIT_HASH"
+
+curl -fsSL "${III_BASE_URL}/iii-worker-${III_WORKER_TARGET}.tar.gz" -o "$WORKDIR/iii-worker.tar.gz"
+III_WORKER_HASH="$(nix hash file --sri --type sha256 "$WORKDIR/iii-worker.tar.gz")"
+echo "  iii-worker source hash (SRI): $III_WORKER_HASH"
 
 echo "[8] Writing sources.nix..."
 cat >"$DIR/sources.nix" <<EOF
@@ -62,6 +74,8 @@ cat >"$DIR/sources.nix" <<EOF
   iii-engine = {
     version = "${III_ENGINE_VERSION}";
     srcHash = "${III_SRC_HASH}";
+    initHash = "${III_INIT_HASH}";
+    workerHash = "${III_WORKER_HASH}";
   };
 }
 EOF
