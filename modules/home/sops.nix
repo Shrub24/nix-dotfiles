@@ -32,7 +32,6 @@ in
       FIRECRAWL_API_KEY=${config.sops.placeholder.FIRECRAWL_API_KEY}
       NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
       CURSOR_API_KEY=${config.sops.placeholder.CURSOR_API_KEY}
-      NIXBUILDNET_ACCESS_TOKENS=${config.sops.placeholder.NIXBUILDNET_ACCESS_TOKENS}
     '';
 
     # --- individual YAML-backed secrets ---
@@ -120,12 +119,6 @@ in
         key = "cursor_api_key";
       };
 
-      NIXBUILDNET_ACCESS_TOKENS = {
-        sopsFile = ../../secrets/nixbuild.yaml;
-        format = "yaml";
-        key = "nixbuildnet_access_token";
-      };
-
       NIKS3_AUTH_TOKEN = {
         sopsFile = ../../secrets/niks3-secrets.yaml;
         format = "yaml";
@@ -152,15 +145,6 @@ in
         NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
         OPENROUTER_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
         OPENCODE_API_KEY=${config.sops.placeholder.OPENCODE_API_KEY}
-      '';
-    };
-
-    # nixbuild.net SSH config: passes access token via SetEnv
-    templates."ssh-nixbuild-config" = {
-      path = "${homeDir}/.ssh/config.d/10-nixbuild.net.conf";
-      content = ''
-        Host eu.nixbuild.net
-          SetEnv NIXBUILDNET_ACCESS_TOKENS=${config.sops.placeholder.NIXBUILDNET_ACCESS_TOKENS}
       '';
     };
 

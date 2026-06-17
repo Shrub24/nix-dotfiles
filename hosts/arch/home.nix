@@ -26,7 +26,7 @@
 
   programs.litellm = {
     enable = true;
-    headroom.enable = false;
+    headroom.enable = true;
   };
   programs.aichat = {
     enable = true;

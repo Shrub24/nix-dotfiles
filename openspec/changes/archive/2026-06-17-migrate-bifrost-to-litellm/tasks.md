@@ -32,4 +32,4 @@
 - [x] 5.1 Verify `nix eval .#homeConfigurations.saurabhj.activationPackage.drvPath`
 - [x] 5.2 Verify `nix build .#homeConfigurations.saurabhj.activationPackage --no-link`
 - [x] 5.3 Verify the generated LiteLLM config, env template, and OpenCode provider overlay render to the expected paths and values
-- [ ] 5.4 Verify parity aliases (`coder`, `main`, `summariser`, `budget`, `explorer`, `embedding`) resolve through LiteLLM as expected
+- [x] 5.4 Verify parity aliases (`coder`, `main`, `summariser`, `budget`, `explorer`, `embedding`) resolve through LiteLLM as expected

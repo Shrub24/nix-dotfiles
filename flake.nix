@@ -5,6 +5,10 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     direnv-instant.url = "github:Mic92/direnv-instant";
+    system-manager = {
+      url = "github:numtide/system-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -79,42 +83,41 @@
           };
         };
 
-      flake = {
-        homeConfigurations.saurabhj =
-          let
-            system = "x86_64-linux";
-            agentmemorySources = import ./pkgs/agentmemory/sources.nix;
-            pkgs = import inputs.nixpkgs {
-              inherit system;
-              overlays = [
-                (final: prev: {
-                  snip = final.callPackage ./pkgs/snip { };
-                  nix-search-tv-fzf = final.callPackage ./pkgs/nix-search-tv-fzf { };
-                  iii-engine = final.callPackage ./pkgs/iii-engine {
-                    inherit (agentmemorySources."iii-engine") version;
-                    hash = agentmemorySources."iii-engine".srcHash;
-                    initHash = agentmemorySources."iii-engine".initHash;
-                    workerHash = agentmemorySources."iii-engine".workerHash;
-                  };
-                  agentmemory = final.callPackage ./pkgs/agentmemory {
-                    inherit (agentmemorySources.agentmemory) version npmDepsHash;
-                    srcHash = agentmemorySources.agentmemory.srcHash;
-                  };
-                  kreuzberg-cli = final.callPackage ./pkgs/kreuzberg-cli { };
-                  headroom-ai = final.python3Packages.callPackage ./pkgs/headroom-ai { };
-                  litellm-with-headroom = final.callPackage ./pkgs/litellm-with-headroom { };
-                  niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
-                })
-              ];
+      flake = let
+          system = "x86_64-linux";
+          agentmemorySources = import ./pkgs/agentmemory/sources.nix;
+          overlay = final: prev: {
+            snip = final.callPackage ./pkgs/snip { };
+            nix-search-tv-fzf = final.callPackage ./pkgs/nix-search-tv-fzf { };
+            iii-engine = final.callPackage ./pkgs/iii-engine {
+              inherit (agentmemorySources."iii-engine") version;
+              hash = agentmemorySources."iii-engine".srcHash;
+              initHash = agentmemorySources."iii-engine".initHash;
+              workerHash = agentmemorySources."iii-engine".workerHash;
             };
-          in
-          inputs.home-manager.lib.homeManagerConfiguration {
+            agentmemory = final.callPackage ./pkgs/agentmemory {
+              inherit (agentmemorySources.agentmemory) version npmDepsHash;
+              srcHash = agentmemorySources.agentmemory.srcHash;
+            };
+            kreuzberg-cli = final.callPackage ./pkgs/kreuzberg-cli { };
+            headroom-ai = final.python3Packages.callPackage ./pkgs/headroom-ai { };
+            litellm-with-headroom = final.callPackage ./pkgs/litellm-with-headroom { };
+            niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
+          };
+          pkgs = import inputs.nixpkgs {
+            inherit system;
+            overlays = [ overlay ];
+          };
+          commonSpecialArgs = {
+            inherit inputs;
+            repoRoot = "/home/saurabhj/.dotfiles/nix";
+            appsDir = "/home/saurabhj/.dotfiles/apps";
+          };
+        in
+        {
+          homeConfigurations.saurabhj = inputs.home-manager.lib.homeManagerConfiguration {
             inherit pkgs;
-            extraSpecialArgs = {
-              inherit inputs;
-              repoRoot = "/home/saurabhj/.dotfiles/nix";
-              appsDir = "/home/saurabhj/.dotfiles/apps";
-            };
+            extraSpecialArgs = commonSpecialArgs;
             modules = [
               ./hosts/arch/home.nix
               {
@@ -122,6 +125,12 @@
               }
             ];
           };
-      };
+
+          systemConfigs.arch = inputs.system-manager.lib.makeSystemConfig {
+            modules = [ ./hosts/arch/system.nix ];
+            specialArgs = commonSpecialArgs;
+            overlays = [ overlay ];
+          };
+        };
     };
 }
