@@ -3,6 +3,7 @@
   nix.enable = true;
 
   nix.settings = {
+    "trusted-users" = [ "root" "saurabhj" ];
     "extra-substituters" = [
       "https://nix-community.cachix.org"
       "https://cache.numtide.com"
@@ -22,6 +23,10 @@
       "flakes"
     ];
     "auto-optimise-store" = true;
+    "always-allow-substitutes" = true;
+    "builders-use-substitutes" = true;
+    "max-jobs" = "auto";
+    "extra-nix-path" = "nixpkgs=flake:nixpkgs";
     "keep-derivations" = true;
     "warn-dirty" = false;
     "accept-flake-config" = true;
