@@ -1,22 +1,15 @@
 {
   lib,
   buildGoModule,
-  fetchFromGitHub,
+  version,
+  src,
 }:
 
 let
   pname = "snip";
-  version = "0.17.0";
 in
 buildGoModule (finalAttrs: {
-  inherit pname version;
-
-  src = fetchFromGitHub {
-    owner = "edouard-claude";
-    repo = pname;
-    rev = "v${finalAttrs.version}";
-    hash = "sha256-YPdOXJ2YavJijdXHBnqMKEorBv2jDSZxwhzRig8HXvk=";
-  };
+  inherit pname version src;
 
   vendorHash = "sha256-2MxFZqjNuLzcuu+bsLyOyHIakCxh7j0FUx8LsjZRhrY=";
 
@@ -31,7 +24,7 @@ buildGoModule (finalAttrs: {
   meta = {
     description = "Config-driven CLI filter that compresses command output before it reaches an LLM context";
     homepage = "https://github.com/edouard-claude/snip";
-    changelog = "https://github.com/edouard-claude/snip/releases/tag/v${finalAttrs.version}";
+    changelog = "https://github.com/edouard-claude/snip/releases/tag/${src.rev}";
     license = lib.licenses.mit;
     mainProgram = "snip";
     platforms = lib.platforms.linux;

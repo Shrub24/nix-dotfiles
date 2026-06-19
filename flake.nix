@@ -58,6 +58,9 @@
       url = "github:meaningful-ooo/sponge";
       flake = false;
     };
+    nvfetcher = {
+      url = "github:berberman/nvfetcher";
+    };
   };
 
   outputs =
@@ -78,32 +81,69 @@
               deadnix
               nixfmt
               nix-output-monitor
+              nvfetcher
             ];
             NIX_CONFIG = "experimental-features = nix-command flakes";
           };
+
+          apps.nvfetcher-update = {
+            type = "app";
+            program =
+              let
+                nvfu = pkgs.writeShellScriptBin "nvfetcher-update" ''
+                  exec ${pkgs.nvfetcher}/bin/nvfetcher \
+                    -c nvfetcher.toml \
+                    -o pkgs/_sources \
+                    "$@"
+                '';
+              in
+              "${nvfu}/bin/nvfetcher-update";
+            meta.description = "Run nvfetcher to update pkgs/_sources/generated.nix and generated.json";
+          };
         };
 
-      flake = let
+      flake =
+        let
           system = "x86_64-linux";
           agentmemorySources = import ./pkgs/agentmemory/sources.nix;
-          overlay = final: prev: {
-            snip = final.callPackage ./pkgs/snip { };
-            nix-search-tv-fzf = final.callPackage ./pkgs/nix-search-tv-fzf { };
-            iii-engine = final.callPackage ./pkgs/iii-engine {
-              inherit (agentmemorySources."iii-engine") version;
-              hash = agentmemorySources."iii-engine".srcHash;
-              initHash = agentmemorySources."iii-engine".initHash;
-              workerHash = agentmemorySources."iii-engine".workerHash;
+          overlay =
+            final: prev:
+            let
+              generatedSources = import ./pkgs/_sources/generated.nix {
+                inherit (final)
+                  fetchgit
+                  fetchurl
+                  fetchFromGitHub
+                  dockerTools
+                  ;
+              };
+            in
+            {
+              snip = final.callPackage ./pkgs/snip {
+                inherit (generatedSources.snip) version src;
+              };
+              nix-search-tv-fzf = final.callPackage ./pkgs/nix-search-tv-fzf { };
+              iii-engine = final.callPackage ./pkgs/iii-engine {
+                inherit (agentmemorySources."iii-engine") version;
+                hash = agentmemorySources."iii-engine".srcHash;
+                initHash = agentmemorySources."iii-engine".initHash;
+                workerHash = agentmemorySources."iii-engine".workerHash;
+              };
+              agentmemory = final.callPackage ./pkgs/agentmemory {
+                inherit (agentmemorySources.agentmemory) version npmDepsHash;
+                srcHash = agentmemorySources.agentmemory.srcHash;
+              };
+              kreuzberg-cli = final.callPackage ./pkgs/kreuzberg-cli {
+                inherit (generatedSources.kreuzberg-cli) version src;
+              };
+              headroom-ai = final.python3Packages.callPackage ./pkgs/headroom-ai {
+                inherit (generatedSources.headroom-ai) version;
+              };
+              litellm-with-headroom = final.callPackage ./pkgs/litellm-with-headroom {
+                headroom = final.headroom-ai;
+              };
+              niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
             };
-            agentmemory = final.callPackage ./pkgs/agentmemory {
-              inherit (agentmemorySources.agentmemory) version npmDepsHash;
-              srcHash = agentmemorySources.agentmemory.srcHash;
-            };
-            kreuzberg-cli = final.callPackage ./pkgs/kreuzberg-cli { };
-            headroom-ai = final.python3Packages.callPackage ./pkgs/headroom-ai { };
-            litellm-with-headroom = final.callPackage ./pkgs/litellm-with-headroom { };
-            niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
-          };
           pkgs = import inputs.nixpkgs {
             inherit system;
             overlays = [ overlay ];

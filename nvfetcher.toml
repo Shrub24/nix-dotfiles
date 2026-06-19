@@ -1,0 +1,28 @@
+# nvfetcher.toml — declarative package source definitions
+#
+# nvfetcher generates pkgs/_sources/generated.nix + generated.json
+# with up-to-date version, URL, and hash metadata.
+#
+# Run: nix run .#nvfetcher-update
+# Or:  nix develop -c nvfetcher -c nvfetcher.toml -o pkgs/_sources
+#
+# Excluded packages (managed by other workflows):
+#   agentmemory        — pkgs/agentmemory/sources.nix + update.sh
+#   iii-engine         — pkgs/agentmemory/sources.nix + update.sh
+#   hermes-agent-src   — separate flake input (flake = false)
+#   fish plugin inputs — separate flake inputs (flake = false)
+
+[snip]
+src.github = "edouard-claude/snip"
+fetch.github = "edouard-claude/snip"
+
+[kreuzberg-cli]
+src.github = "kreuzberg-dev/kreuzberg"
+fetch.url = "https://github.com/kreuzberg-dev/kreuzberg/releases/download/$ver/kreuzberg-cli-x86_64-unknown-linux-gnu.tar.gz"
+
+[headroom-ai]
+src.pypi = "headroom-ai"
+# fetch.url instead of fetch.pypi because headroom-ai's sdist uses underscores
+# in the filename (headroom_ai-$ver.tar.gz) while nvfetcher's pypi fetcher
+# constructs the URL with hyphens; the derivation will stay wheel-based.
+fetch.url = "https://pypi.org/packages/source/h/headroom-ai/headroom_ai-$ver.tar.gz"

@@ -1,12 +1,12 @@
 {
   python3,
   litellm,
+  headroom,
   writeText,
   writeShellScriptBin,
 }:
 
 let
-  headroom = python3.pkgs.callPackage ../headroom-ai { };
   python = python3.withPackages (
     _:
     [

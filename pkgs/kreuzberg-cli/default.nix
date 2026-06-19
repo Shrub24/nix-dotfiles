@@ -1,17 +1,13 @@
 {
   lib,
   stdenv,
-  fetchurl,
+  version,
+  src,
 }:
 
 stdenv.mkDerivation {
   pname = "kreuzberg-cli";
-  version = "4.9.7";
-
-  src = fetchurl {
-    url = "https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.9.7/kreuzberg-cli-x86_64-unknown-linux-gnu.tar.gz";
-    hash = "sha256-WTqB5tTrKGnzlVf7tSeDuMpj4YstitGn+9dvOW5rl5o=";
-  };
+  inherit version src;
 
   sourceRoot = "kreuzberg-cli-x86_64-unknown-linux-gnu";
 

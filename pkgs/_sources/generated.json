@@ -1,0 +1,53 @@
+{
+    "headroom-ai": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "headroom-ai",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-7KPCXwwDg+X6RmzUQ2zpL5u0FgUCL7aq0sN53Qja2vg=",
+            "type": "url",
+            "url": "https://pypi.org/packages/source/h/headroom-ai/headroom_ai-0.26.0.tar.gz"
+        },
+        "version": "0.26.0"
+    },
+    "kreuzberg-cli": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "kreuzberg-cli",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-7l2MYN1X3e72lT/qdCjWwhVynDstgHdw8rKInfd+yyM=",
+            "type": "url",
+            "url": "https://github.com/kreuzberg-dev/kreuzberg/releases/download/v5.0.0-rc.13/kreuzberg-cli-x86_64-unknown-linux-gnu.tar.gz"
+        },
+        "version": "v5.0.0-rc.13"
+    },
+    "snip": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "snip",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "edouard-claude",
+            "repo": "snip",
+            "rev": "v0.18.0",
+            "sha256": "sha256-JwsfqL3NTxNTPRUlHGG9Hk6zjYERZTkgX21S6Ramm+8=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v0.18.0"
+    }
+}

@@ -1,4 +1,5 @@
 {
+  version,
   lib,
   stdenv,
   fetchurl,
@@ -13,15 +14,15 @@
   tiktoken,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage {
   pname = "headroom-ai";
-  version = "0.25.0";
+  inherit version;
 
   format = "wheel";
 
   src = fetchurl {
-    url = "https://files.pythonhosted.org/packages/aa/cb/84969342e34fda736e8a8aa0bf614b46ffc2a4129011b7c66142faee26d0/headroom_ai-0.25.0-cp310-abi3-manylinux_2_28_x86_64.whl";
-    hash = "sha256-ICrjH5N+iZMzlEGzY6Lkfrv0NQLiKkR7LGQ9OQhW9Nw=";
+    url = "https://files.pythonhosted.org/packages/64/6f/14cc372e9a6ac6704c219ad106a7fc19d864dd040c31247923a9c8157600/headroom_ai-0.26.0-cp310-abi3-manylinux_2_28_x86_64.whl";
+    hash = "sha256-tsIOtq9CaX4arMmxv9EC2VFeFlZzNU61dRdHOhfBWyg=";
   };
 
   nativeBuildInputs = [
