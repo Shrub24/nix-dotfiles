@@ -31,6 +31,20 @@
   };
 
   routes = {
+    "glm-5.2" = {
+      mode = "chat";
+      chain = [
+        {
+          upstream = "neuralwatt";
+          model = "glm-5.2";
+        }
+        {
+          upstream = "opencode-go";
+          model = "glm-5.2";
+        }
+      ];
+
+    };
     "mimo-v2.5-pro" = {
       mode = "chat";
       chain = [
@@ -123,6 +137,7 @@
       output = 131072;
       inputModalities = [ "text" ];
       outputModalities = [ "text" ];
+      autogenerateVariants = true;
     };
 
     main = {
@@ -131,6 +146,7 @@
       output = 131072;
       inputModalities = [ "text" ];
       outputModalities = [ "text" ];
+      autogenerateVariants = true;
     };
 
     summariser = {
@@ -139,6 +155,7 @@
       output = 131072;
       inputModalities = [ "text" ];
       outputModalities = [ "text" ];
+      autogenerateVariants = true;
     };
 
     budget = {
@@ -147,6 +164,7 @@
       output = 384000;
       inputModalities = [ "text" ];
       outputModalities = [ "text" ];
+      autogenerateVariants = true;
     };
 
     explorer = {
@@ -155,6 +173,7 @@
       output = 384000;
       inputModalities = [ "text" ];
       outputModalities = [ "text" ];
+      autogenerateVariants = true;
     };
   };
 }

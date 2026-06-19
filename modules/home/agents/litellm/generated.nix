@@ -69,17 +69,51 @@ let
     ) routes
   );
 
-  opencodeModels = lib.mapAttrs (_: model: {
-    name = model.name;
-    limit = {
-      context = model.context;
-      output = model.output;
+  mkVariants = {
+    none = {
+      reasoningEffort = "none";
+      reasoningSummary = "auto";
+      textVerbosity = "medium";
     };
-    modalities = {
-      input = model.inputModalities;
-      output = model.outputModalities;
+    low = {
+      reasoningEffort = "low";
+      reasoningSummary = "auto";
+      textVerbosity = "medium";
     };
-  }) clientModels;
+    medium = {
+      reasoningEffort = "medium";
+      reasoningSummary = "auto";
+      textVerbosity = "medium";
+    };
+    high = {
+      reasoningEffort = "high";
+      reasoningSummary = "detailed";
+      textVerbosity = "medium";
+    };
+    xhigh = {
+      reasoningEffort = "xhigh";
+      reasoningSummary = "detailed";
+      textVerbosity = "medium";
+    };
+  };
+
+  opencodeModels = lib.mapAttrs (
+    _: model:
+    {
+      name = model.name;
+      limit = {
+        context = model.context;
+        output = model.output;
+      };
+      modalities = {
+        input = model.inputModalities;
+        output = model.outputModalities;
+      };
+    }
+    // lib.optionalAttrs (model.autogenerateVariants or false) {
+      variants = mkVariants;
+    }
+  ) clientModels;
 in
 {
   inherit
