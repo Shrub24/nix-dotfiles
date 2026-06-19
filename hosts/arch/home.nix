@@ -85,17 +85,6 @@
 
   programs.hermes-agent.enable = true;
 
-  programs.ssh.settings = {
-    "oci-melb-1" = {
-      HostName = "oci-melb-1";
-      User = "dev";
-    };
-    "do-admin-1" = {
-      HostName = "do-admin-1";
-      User = "dev";
-    };
-  };
-
   programs.zsh.initContent = lib.mkAfter ''
     # Auto-attach tmux on remote (SSH/mosh) login
     if [[ -z "$TMUX" ]] && { [[ -n "$SSH_CONNECTION" ]] || [[ -n "$MOSH_SERVER" ]]; }; then
@@ -103,7 +92,10 @@
     fi
   '';
 
-  home.packages = with pkgs; [ marp-cli ];
+  home.packages = with pkgs; [
+    marp-cli
+    system-manager
+  ];
 
   programs.miseTools = {
     enable = true;

@@ -10,16 +10,19 @@
         ServerAliveCountMax 3
         StrictHostKeyChecking accept-new
         SendEnv NIXBUILDNET_ACCESS_TOKENS
+        Compression no
+        IPQoS throughput
+        TCPKeepAlive no
     '';
     mode = "0644";
   };
 
-  environment.etc."nix/nixbuild.net.env.example" = {
-    text = ''
-      NIXBUILDNET_ACCESS_TOKENS=token-1 token-2
-    '';
-    mode = "0644";
-  };
+  # environment.etc."nix/nixbuild.net.env.example" = {
+  #   text = ''
+  #     NIXBUILDNET_ACCESS_TOKENS=token-1 token-2
+  #   '';
+  #   mode = "0644";
+  # };
 
   systemd.services.nix-daemon.serviceConfig.EnvironmentFile = [
     "-/etc/nix/nixbuild.net.env"
