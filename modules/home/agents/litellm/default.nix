@@ -66,8 +66,23 @@ in
       };
     };
 
+    home.file.".local/bin/litellm-sync-posting".executable = true;
+    home.file.".local/bin/litellm-sync-posting".text = ''
+      #!${pkgs.bash}/bin/bash
+      set -euo pipefail
+      OPENAPI_PATH="$(mktemp).json"
+      ${pkgs.curl}/bin/curl -sf http://127.0.0.1:${toString cfg.port}/openapi.json > "$OPENAPI_PATH"
+      ${pkgs.posting}/bin/posting import "$OPENAPI_PATH" \
+        -o "$HOME/.local/share/posting/litellm.json" \
+        -t openapi
+      echo "Collection synced."
+    '';
+
     home.activation.litellmConfig = lib.hm.dag.entryAfter [ "sops-nix" ] ''
       systemctl --user try-restart litellm.service 2>/dev/null || true
+      # sync posting collection after service is ready
+      sleep 1
+      "$HOME/.local/bin/litellm-sync-posting" 2>/dev/null || true
     '';
   };
 }

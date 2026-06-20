@@ -128,7 +128,11 @@ in
   litellmConfig = {
     model_list = modelEntries;
     litellm_settings = {
+      callbacks = [ "arize_phoenix" ];
       drop_params = true;
+    };
+    environment_variables = {
+      PHOENIX_COLLECTOR_ENDPOINT = "http://oci-melb-1:4317";
     };
     router_settings = {
       routing_strategy = "simple-shuffle";

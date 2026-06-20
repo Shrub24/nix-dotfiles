@@ -18,6 +18,11 @@
 
   programs.home-manager.enable = true;
 
+  targets.genericLinux = {
+    enable = true;
+    gpu.enable = true;
+  };
+
   programs.niks3 = {
     enableAutoUploadService = true;
   };

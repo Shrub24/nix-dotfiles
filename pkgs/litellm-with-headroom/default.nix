@@ -14,6 +14,7 @@ let
       headroom
     ]
     ++ litellm.optional-dependencies.proxy
+    ++ [ python3.pkgs.opentelemetry-sdk python3.pkgs.opentelemetry-exporter-otlp ]
   );
   launcher = writeText "litellm-with-headroom.py" ''
     import argparse
