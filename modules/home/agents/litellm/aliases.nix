@@ -63,10 +63,6 @@
       mode = "chat";
       chain = [
         {
-          upstream = "opencode-go";
-          model = "minimax-m3";
-        }
-        {
           upstream = "deepseek";
           model = "deepseek-v4-pro";
         }
@@ -109,7 +105,7 @@
       mode = "chat";
       chain = [
         {
-          upstream = "crof";
+          upstream = "opencode-go";
           model = "deepseek-v4-flash";
         }
         {
@@ -133,46 +129,37 @@
   clientModels = {
     coder = {
       name = "Coder";
-      context = 262144;
-      output = 131072;
-      inputModalities = [ "text" ];
-      outputModalities = [ "text" ];
+      registryModel = [ "xiaomi/mimo-v2.5-pro" ];
       autogenerateVariants = true;
     };
 
     main = {
       name = "Main";
-      context = 262144;
-      output = 131072;
-      inputModalities = [ "text" ];
-      outputModalities = [ "text" ];
+      registryModel = [ "xiaomi/mimo-v2.5-pro" ];
       autogenerateVariants = true;
     };
 
     summariser = {
       name = "Summariser";
-      context = 1000000;
-      output = 131072;
-      inputModalities = [ "text" ];
-      outputModalities = [ "text" ];
+      registryModel = [ "deepseek/deepseek-v4-pro" ];
       autogenerateVariants = true;
     };
 
     budget = {
       name = "Budget";
-      context = 1000000;
-      output = 384000;
-      inputModalities = [ "text" ];
-      outputModalities = [ "text" ];
+      registryModel = [ "deepseek/deepseek-v4-flash" ];
       autogenerateVariants = true;
     };
 
     explorer = {
       name = "Explorer";
-      context = 1000000;
-      output = 384000;
-      inputModalities = [ "text" ];
-      outputModalities = [ "text" ];
+      registryModel = [ "deepseek/deepseek-v4-flash" ];
+      autogenerateVariants = true;
+    };
+
+    "glm-5.2" = {
+      name = "GLM 5.2";
+      registryModel = [ "zhipuai/glm-5.2" ];
       autogenerateVariants = true;
     };
   };

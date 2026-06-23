@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -31,9 +32,10 @@ in
   };
 
   config = lib.mkIf config.programs.miseTools.enable {
+    home.packages = [ inputs.llm-agents.packages.${pkgs.system}.openspec ];
+
     programs.mise = {
       enable = true;
-      enableZshIntegration = true;
       enableFishIntegration = true;
       package = pkgs.mise;
 
@@ -47,8 +49,8 @@ in
         "npm:codeburn" = "latest";
         "npm:neovim" = "latest";
         "npm:matlab-language-server" = "latest";
-        "npm:@fission-ai/openspec" = "latest";
         "npm:@getpaseo/cli" = "latest";
+        "npm:@rama_nigg/open-cursor" = "latest";
         # "npm:@happier-dev/cli" = "latest";
         # "npm:@tobilu/qmd" = {
         #   version = "latest";

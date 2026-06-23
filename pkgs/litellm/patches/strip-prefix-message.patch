@@ -1,0 +1,16 @@
+--- a/litellm/llms/openai/openai.py
++++ b/litellm/llms/openai/openai.py
+@@ -208,7 +208,12 @@ class OpenAIChatCompletion(BaseLLMChatCompletion):
+     def _transform_messages(
+         self, messages: List[AllMessageValues], model: str
+     ) -> List[AllMessageValues]:
+-        return messages
++        from litellm.litellm_core_utils.prompt_templates.common_utils import (
++            convert_prefix_message_to_non_prefix_messages,
++        )
++
++        return convert_prefix_message_to_non_prefix_messages(messages)
++
+ 
+     def map_openai_params(
+         self,

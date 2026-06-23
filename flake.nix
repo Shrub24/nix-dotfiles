@@ -139,14 +139,30 @@
               headroom-ai = final.python3Packages.callPackage ./pkgs/headroom-ai {
                 inherit (generatedSources.headroom-ai) version;
               };
-              litellm-with-headroom = final.callPackage ./pkgs/litellm-with-headroom {
+              byterover-cli = final.callPackage ./pkgs/byterover { };
+              litellm-with-headroom = final.callPackage ./pkgs/litellm {
                 headroom = final.headroom-ai;
               };
+              # Patch litellm to tolerate empty-choices stream chunks from vLLM-backed APIs
+              litellm = prev.litellm.overridePythonAttrs (old: {
+                patches = (old.patches or [ ]) ++ [
+                  ./pkgs/litellm/patches/streaming-empty-choices.patch
+                  ./pkgs/litellm/patches/strip-prefix-message.patch
+                ];
+              });
               niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
+              litellm-oci = final.callPackage ./pkgs/litellm-oci {
+                streaming-patch = ./pkgs/litellm/patches/streaming-empty-choices.patch;
+                strip-prefix-patch = ./pkgs/litellm/patches/strip-prefix-message.patch;
+              };
             };
           pkgs = import inputs.nixpkgs {
             inherit system;
             overlays = [ overlay ];
+          };
+          homepage = import ./lib/web-services.nix {
+            inherit pkgs;
+            lib = pkgs.lib;
           };
           commonSpecialArgs = {
             inherit inputs;
@@ -171,6 +187,16 @@
             specialArgs = commonSpecialArgs;
             overlays = [ overlay ];
           };
+
+          homepageServices = homepage.toHomepage homepage.catalog;
+          homepageServicesYAML = pkgs.writeText "homepage-services.yaml" (
+            builtins.toJSON (homepage.toHomepage homepage.catalog)
+          );
+          webServices = homepage.catalog;
+          webServiceCatalog = homepage.normalize homepage.catalog;
+          webServiceCatalogJSON = pkgs.writeText "web-service-catalog.json" (
+            builtins.toJSON (homepage.toCatalogJSON homepage.catalog)
+          );
         };
     };
 }

@@ -10,6 +10,10 @@ let
   litellmGenerated = (import ./generated.nix) { inherit lib; };
   yamlFormat = pkgs.formats.yaml { };
   litellmConfigFile = yamlFormat.generate "litellm-config.yaml" litellmGenerated.litellmConfig;
+
+  webServices = (import ../../../../lib/web-services.nix { inherit lib pkgs; }).services;
+
+  ociImage = pkgs.litellm-oci;
 in
 {
   options.programs.litellm = {
@@ -17,9 +21,13 @@ in
 
     headroom.enable = lib.mkEnableOption "global Headroom callback middleware for LiteLLM";
 
+    database.enable = lib.mkEnableOption "PostgreSQL database backend (admin UI, spend tracking, virtual keys)";
+
+    oci.enable = lib.mkEnableOption "run LiteLLM via OCI container (podman) instead of nix-built binary";
+
     port = lib.mkOption {
       type = lib.types.port;
-      default = 8765;
+      default = webServices.litellm.port;
       description = "HTTP port for the LiteLLM gateway.";
     };
 
@@ -27,7 +35,7 @@ in
       type = lib.types.package;
       default = if cfg.headroom.enable then pkgs."litellm-with-headroom" else pkgs.litellm;
       defaultText = lib.literalExpression ''if config.programs.litellm.headroom.enable then pkgs."litellm-with-headroom" else pkgs.litellm'';
-      description = "LiteLLM package to run for the local gateway.";
+      description = "LiteLLM package to run for the local gateway (ignored when oci.enable is true).";
     };
   };
 
@@ -40,7 +48,8 @@ in
         After = [
           "sops-nix.service"
           "network-online.target"
-        ];
+        ]
+        ++ lib.optionals cfg.oci.enable [ "podman.service" ];
         Wants = [ "network-online.target" ];
         X-Restart-Triggers = [
           litellmConfigFile
@@ -49,17 +58,40 @@ in
         X-SwitchMethod = "restart";
       };
 
-      Service = {
-        Type = "simple";
-        Environment = [ "HOME=%h" ];
-        EnvironmentFile = [ config.sops.templates."litellm.env".path ];
-        ExecStart = "${lib.getExe cfg.package} --config %h/.config/litellm/config.yaml --host 127.0.0.1 --port ${toString cfg.port}";
-        WorkingDirectory = "%h/.config/litellm";
-        Restart = "on-failure";
-        RestartSec = "5s";
-        StandardOutput = "journal";
-        StandardError = "journal";
-      };
+      Service =
+        if cfg.oci.enable then
+          {
+            Type = "simple";
+            Environment = [ "HOME=%h" ];
+            EnvironmentFile = [ config.sops.templates."litellm.env".path ];
+            ExecStartPre = "${pkgs.podman}/bin/podman load -i ${ociImage}";
+            ExecStart = ''
+              ${pkgs.podman}/bin/podman run --rm --network host \
+                --name litellm \
+                -v %h/.config/litellm/config.yaml:/app/config.yaml:ro \
+                --env-file ${config.sops.templates."litellm.env".path} \
+                -e LITELLM_PORT=${toString cfg.port} \
+                localhost/litellm-patched:latest
+            '';
+            ExecStop = "${pkgs.podman}/bin/podman stop litellm";
+            TimeoutStartSec = 600;
+            Restart = "on-failure";
+            RestartSec = "5s";
+            StandardOutput = "journal";
+            StandardError = "journal";
+          }
+        else
+          {
+            Type = "simple";
+            Environment = [ "HOME=%h" ];
+            EnvironmentFile = [ config.sops.templates."litellm.env".path ];
+            ExecStart = "${lib.getExe cfg.package} --config %h/.config/litellm/config.yaml --host 127.0.0.1 --port ${toString cfg.port}";
+            WorkingDirectory = "%h/.config/litellm";
+            Restart = "on-failure";
+            RestartSec = "5s";
+            StandardOutput = "journal";
+            StandardError = "journal";
+          };
 
       Install = {
         WantedBy = [ "default.target" ];

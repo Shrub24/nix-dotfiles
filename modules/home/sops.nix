@@ -32,6 +32,8 @@ in
       FIRECRAWL_API_KEY=${config.sops.placeholder.FIRECRAWL_API_KEY}
       NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
       CURSOR_API_KEY=${config.sops.placeholder.CURSOR_API_KEY}
+      LITELLM_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
+      OPENCODE_LITELLM_API_KEY=${config.sops.placeholder.OPENCODE_LITELLM_API_KEY}
     '';
 
     # --- individual YAML-backed secrets ---
@@ -119,6 +121,30 @@ in
         key = "cursor_api_key";
       };
 
+      LITELLM_MASTER_KEY = {
+        sopsFile = yamlSecrets;
+        format = "yaml";
+        key = "litellm_master_key";
+      };
+
+      LITELLM_API_KEY = {
+        sopsFile = yamlSecrets;
+        format = "yaml";
+        key = "litellm_api_key";
+      };
+
+      LITELLM_DATABASE_PASSWORD = {
+        sopsFile = yamlSecrets;
+        format = "yaml";
+        key = "litellm_database_password";
+      };
+
+      OPENCODE_LITELLM_API_KEY = {
+        sopsFile = yamlSecrets;
+        format = "yaml";
+        key = "opencode_litellm_api_key";
+      };
+
       NIKS3_AUTH_TOKEN = {
         sopsFile = ../../secrets/niks3-secrets.yaml;
         format = "yaml";
@@ -132,13 +158,23 @@ in
     # --- service output templates ---
 
     templates."docs-mcp.env".content = ''
-      OPENAI_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
+      OPENAI_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
+    '';
+
+    templates."hermes.env".content = ''
+      OPENAI_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
+    '';
+
+    templates."aichat.env".content = ''
+      LITELLM_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
     '';
 
     templates."litellm.env" = {
       path = "${homeDir}/.config/litellm/.env";
       content = ''
         # litellm runtime secrets -- managed by sops
+        LITELLM_MASTER_KEY=${config.sops.placeholder.LITELLM_MASTER_KEY}
+        ${lib.optionalString config.programs.litellm.database.enable "DATABASE_URL=postgresql://litellm:${config.sops.placeholder.LITELLM_DATABASE_PASSWORD}@oci-melb-1:5432/litellm?sslmode=disable"}
         GEMINI_API_KEY=${config.sops.placeholder.GEMINI_API_KEY}
         DEEPSEEK_API_KEY=${config.sops.placeholder.DEEPSEEK_API_KEY}
         CROFAI_API_KEY=${config.sops.placeholder.CROFAI_API_KEY}

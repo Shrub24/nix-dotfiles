@@ -28,6 +28,13 @@
     nix-search-tv-fzf
   ];
 
+  programs.nix-init = {
+    enable = true;
+    settings = {
+      nixpkgs = "builtins.getFlake \"nixpkgs\"";
+    };
+  };
+
   programs.nix-index = {
     enable = true;
   };
@@ -71,5 +78,6 @@
     builtins.elem (lib.getName pkg) [
       "zsh-abbr"
       "iii-engine"
+      "byterover-cli"
     ];
 }

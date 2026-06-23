@@ -26,7 +26,7 @@
     "always-allow-substitutes" = true;
     "builders-use-substitutes" = true;
     "max-jobs" = "auto";
-    "extra-nix-path" = "nixpkgs=flake:nixpkgs";
+    "nix-path" = "nixpkgs=flake:nixpkgs";
     "keep-derivations" = true;
     "warn-dirty" = false;
     "accept-flake-config" = true;

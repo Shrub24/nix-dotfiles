@@ -16,6 +16,7 @@ let
     ;
   cfg = config.programs.agentmemory;
   stateDir = cfg.stateDir;
+  webServices = (import ../../../lib/web-services.nix { inherit lib pkgs; }).services;
 in
 
 {
@@ -96,7 +97,7 @@ in
         ''
           HOME=${config.home.homeDirectory}
           AGENTMEMORY_URL=http://localhost:3111
-          AGENTMEMORY_VIEWER_URL=http://localhost:3113
+          AGENTMEMORY_VIEWER_URL=http://localhost:${toString webServices.agentmemory.port}
           ${settingsEnv}
           OPENAI_API_KEY=sk-placeholder
         '';

@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -7,6 +8,7 @@
 
 let
   cfg = config.programs.qmd;
+  webServices = (import ../../../lib/web-services.nix { inherit lib pkgs; }).services;
 in
 {
   options.programs.qmd = {
@@ -14,18 +16,26 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 8181;
+      default = webServices.qmd.port;
       description = "HTTP port for the qmd MCP server.";
     };
 
     package = lib.mkOption {
-      type = lib.types.str;
-      default = "@tobilu/qmd@latest";
-      description = "npm package to run via bunx.";
+      type = lib.types.package;
+      default = inputs.llm-agents.packages.${pkgs.system}.qmd;
+      description = "qmd package to run.";
     };
 
     gpu = lib.mkOption {
-      type = lib.types.nullOr (lib.types.enum [ "auto" "metal" "vulkan" "cuda" "false" ]);
+      type = lib.types.nullOr (
+        lib.types.enum [
+          "auto"
+          "metal"
+          "vulkan"
+          "cuda"
+          "false"
+        ]
+      );
       default = null;
       description = "llama.cpp GPU backend override. null = default (auto).";
     };
@@ -41,7 +51,7 @@ in
 
       Service = {
         Type = "exec";
-        ExecStart = "${pkgs.bun}/bin/bunx ${cfg.package} mcp --http --port ${toString cfg.port}";
+        ExecStart = "${cfg.package}/bin/qmd mcp --http --port ${toString cfg.port}";
         Restart = "on-failure";
         RestartSec = "10s";
         Environment = lib.optional (cfg.gpu != null) "QMD_LLAMA_GPU=${cfg.gpu}";

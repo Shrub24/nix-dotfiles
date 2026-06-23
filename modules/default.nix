@@ -7,6 +7,7 @@
     ./home/shell
     ./home/opencode.nix
     ./home/tmux.nix
+    ./home/wezterm.nix
     ./home/dev-tools
     ./home/agents
     ./home/remote

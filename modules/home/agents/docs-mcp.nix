@@ -7,6 +7,7 @@
 
 let
   cfg = config.programs.docsMcp;
+  webServices = (import ../../../lib/web-services.nix { inherit lib pkgs; }).services;
 in
 {
   options.programs.docsMcp = {
@@ -14,7 +15,7 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 6280;
+      default = webServices.docs-mcp.port;
       description = "HTTP port for the docs-mcp-server.";
     };
 
@@ -42,7 +43,7 @@ in
         Restart = "on-failure";
         RestartSec = "10s";
         Environment = [
-          "OPENAI_API_BASE=http://localhost:8765/v1"
+          "OPENAI_API_BASE=http://localhost:${toString config.programs.litellm.port}/v1"
           "DOCS_MCP_EMBEDDING_MODEL=embedding"
           "DOCS_MCP_EMBEDDINGS_VECTOR_DIMENSION=4096"
         ];

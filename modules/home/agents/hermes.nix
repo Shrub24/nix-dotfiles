@@ -19,6 +19,9 @@ in
   programs.hermes-agent = {
     enable = lib.mkDefault false;
     package = lib.mkDefault inputs.hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.default;
+    environmentFiles = [
+      config.sops.templates."hermes.env".path
+    ];
     mcpServers = lib.mkMerge [
       (lib.mkIf (config.programs.agentmemory.enable or false) {
         agentmemory = {

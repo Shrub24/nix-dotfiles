@@ -31,7 +31,9 @@
 
   programs.litellm = {
     enable = true;
+    database.enable = true;
     headroom.enable = true;
+    oci.enable = true;
   };
   programs.aichat = {
     enable = true;
@@ -42,7 +44,6 @@
           type = "openai-compatible";
           name = "litellm";
           api_base = "http://localhost:8765/v1";
-          api_key = "litellm-local";
           models = [
             {
               name = "coder";
@@ -53,6 +54,7 @@
       ];
     };
   };
+  home.sessionVariables.AICHAT_ENV_FILE = config.sops.templates."aichat.env".path;
   programs.lazyjournal = {
     enable = true;
     sshHosts = [
