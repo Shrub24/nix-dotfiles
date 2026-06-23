@@ -70,6 +70,15 @@ let
       ui.path = "/";
       health.path = "/";
     };
+
+    web-catalog = {
+      name = "Web Catalog";
+      port = 8123;
+      icon = "mdi-code-json";
+      description = "Service catalog JSON endpoint";
+      ui.path = "/";
+      health.path = "/";
+    };
   };
 
   # ── Normalization ───────────────────────────────────────────────────

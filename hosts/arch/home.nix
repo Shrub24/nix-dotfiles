@@ -66,6 +66,7 @@
   programs.qmd.enable = true;
   programs.agentTools.enable = true;
   programs.devTools.enable = true;
+  programs.webCatalog.enable = true;
 
   programs.agentmemory = {
     enable = true;

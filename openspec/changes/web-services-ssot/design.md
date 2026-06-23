@@ -15,6 +15,7 @@ The current state:
 - Keep the catalog scoped to service-local facts only (no Cloudflare, TLS, OIDC, reverse proxy config)
 - Only services with a `ui.path` have a derived `uiUrl` (consumers use this to filter for homepage inclusion)
 - Expose catalog-only flake outputs (`webServices`, `webServiceCatalog`, `webServiceCatalogJSON`); homepage rendering is a consumer concern
+- Serve the catalog JSON over HTTP on `0.0.0.0:8123` so remote consumers (homelab flake) can fetch it over tailnet without importing the dotfiles flake
 
 **Non-Goals:**
 - Public internet routing, TLS, or access policy (belongs in homelab repo's `web-services.nix`)
@@ -65,9 +66,27 @@ The current state:
 
 **Rationale**: Keeps the repo format-agnostic. The catalog is JSON; consumers render to whatever format they need.
 
+### 7. Serve catalog over HTTP on 0.0.0.0
+**Decision**: Run a `python3 -m http.server` systemd user service on `0.0.0.0:8123` that serves the catalog JSON file. The server binds 0.0.0.0 so it's automatically reachable on the tailnet IP without extra configuration.
+
+**Rationale**: Importing the dotfiles flake as a flake input drags in nixpkgs, home-manager, flake-parts, sops-nix, and 10+ other inputs — all to read 4 port numbers. Serving the catalog JSON over HTTP lets the homelab fetch it with `builtins.fetchurl` at build time or a runtime HTTP call, with zero flake dependencies. The services are already running on tailnet; serving the catalog alongside them is natural.
+
+**Alternatives considered**:
+- Separate minimal catalog flake repo — rejected because it decouples the catalog from the services it describes, creating drift risk.
+- Piggyback on an existing service (qmd, agentmemory) — rejected because it couples the catalog's availability to another service's health and adds routing complexity.
+
+### 8. Catalog server is self-referential
+**Decision**: The `web-catalog` service is itself an entry in the catalog (`services.web-catalog`), with `port = 8123`, `ui.path = "/"`, and `health.path = "/"`.
+
+**Rationale**: Makes the catalog self-discoverable — a consumer that knows the catalog URL can learn the catalog server's own metadata (port, description) from the catalog itself. The python http.server directory listing at `/` serves as both the UI and health endpoint (200 = healthy).
+
+**Trade-off**: Slightly circular (the catalog describes the server that serves the catalog), but the port is statically defined in the data file, so there's no runtime dependency loop.
+
 ## Risks / Trade-offs
 
 - **[Port drift between catalog and modules]** → Mitigate by wiring modules to reference catalog ports where practical. Full wiring is optional; partial wiring still reduces drift.
 - **[Catalog grows beyond scope]** → Mitigate by keeping the schema minimal. Cloud/routing fields belong in the homelab repo, not here.
 - **[Homepage JSON format limitation]** → JSON output is less human-readable than indented YAML. Trade-off is acceptable since the file is machine-consumed.
 - **[New `lib/` directory]** → Introduces a new top-level directory. Acceptable since it follows the repo's pattern of concern-separated directories.
+- **[HTTP server security]** → The catalog server binds 0.0.0.0, making it reachable on all interfaces including tailnet. The catalog contains only localhost service metadata (ports, paths) — no secrets, no routing info. Acceptable risk; tailnet itself provides network-level access control.
+- **[Self-referential catalog entry]** → The catalog server describes itself. No runtime dependency loop since the port is statically defined in the data file, not derived from the running server.

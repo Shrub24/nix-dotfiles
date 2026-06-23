@@ -33,3 +33,14 @@
 - [x] 5.3 Run `nix build .#webServiceCatalogJSON` and verify JSON catalog contents
 - [x] 5.4 Run `nix flake check` and verify all checks pass
 - [x] 5.5 Run `nix fmt` on all modified files
+
+## 6. HTTP Serving
+
+- [x] 6.1 Add `web-catalog` service entry to `lib/web-services.nix` (`port = 8123`, `ui.path = "/"`, `health.path = "/"`, `icon`, `description`)
+- [x] 6.2 Create `modules/home/agents/web-catalog.nix` module: systemd user service running `python3 -m http.server` on `0.0.0.0:8123`, serving `homelab-services.json` from a Nix store path
+- [x] 6.3 Import `web-catalog.nix` in `modules/home/agents/default.nix`
+- [x] 6.4 Enable `programs.webCatalog` in `hosts/arch/home.nix`
+- [x] 6.5 Verify `nix eval .#webServices --json` now shows 5 services including `web-catalog`
+- [x] 6.6 Run `nix flake check` and verify all checks pass
+- [x] 6.7 Update `docs/web-services-catalog.md` with HTTP serving documentation
+- [x] 6.8 Run `nix fmt` on all modified files

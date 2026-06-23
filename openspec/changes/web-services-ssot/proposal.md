@@ -9,6 +9,8 @@ Service ports, endpoint paths, and display metadata are currently duplicated acr
 - Replace the current `homepage.nix` with derived homepage output from the catalog.
 - Expose flake outputs: `webServices` (raw), `webServiceCatalog` (normalized), `webServiceCatalogJSON` (JSON file).
 - Wire service modules to reference catalog ports where practical (litellm, docs-mcp, qmd, agentmemory).
+- Serve the catalog JSON over HTTP on `0.0.0.0:8123` via a systemd user service, making it accessible on tailnet without importing the flake.
+- The catalog server is itself a catalog entry (`web-catalog`), making the catalog self-discoverable.
 - Homepage rendering is a consumer concern — this repo exposes the catalog only, not rendered homepage output.
 
 ## Capabilities
@@ -21,8 +23,9 @@ Service ports, endpoint paths, and display metadata are currently duplicated acr
 
 ## Impact
 
-- **New files**: `lib/web-services.nix` (catalog data + normalization logic).
+- **New files**: `lib/web-services.nix` (catalog data + normalization logic), `modules/home/agents/web-catalog.nix` (HTTP server module).
 - **Removed files**: `homepage.nix` (replaced by derived output from catalog).
-- **Modified files**: `flake.nix` (new flake outputs, import catalog), service modules under `modules/home/agents/` (port references where practical).
+- **Modified files**: `flake.nix` (new flake outputs, import catalog), service modules under `modules/home/agents/` (port references where practical), `modules/home/agents/default.nix` (import web-catalog module).
 - **Flake outputs**: `webServices`, `webServiceCatalog`, `webServiceCatalogJSON` (new).
-- **Consumers**: homelab flake imports this repo as a flake input and consumes `webServiceCatalog` / `webServiceCatalogJSON` for its cloud homepage dashboard. Homepage rendering is performed by the consumer, not this repo.
+- **HTTP endpoint**: Catalog JSON served at `http://<tailnet-ip>:8123/homelab-services.json` — primary consumption path for remote consumers.
+- **Consumers**: homelab flake fetches the catalog JSON over HTTP (tailnet) for its cloud homepage dashboard. No flake input import required. Homepage rendering is performed by the consumer, not this repo.

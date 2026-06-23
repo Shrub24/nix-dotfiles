@@ -64,3 +64,18 @@ The system SHALL NOT include public internet routing, TLS, Cloudflare, OIDC, or 
 #### Scenario: No routing fields in catalog
 - **WHEN** the catalog is inspected
 - **THEN** it contains no fields for `subdomain`, `primaryDomain`, `cloudflare`, `oidc`, `access`, or `tls`
+
+### Requirement: Catalog is served over HTTP
+The system SHALL serve the normalized catalog JSON over HTTP on `0.0.0.0` at the catalog server's port, making it accessible on tailnet without importing the flake.
+
+#### Scenario: Catalog JSON is served at a known path
+- **WHEN** a consumer sends an HTTP GET request to `http://<host>:<port>/homelab-services.json`
+- **THEN** the response is a JSON document containing `{ version, services }` with normalized service entries
+
+#### Scenario: Catalog server binds all interfaces
+- **WHEN** the catalog server module is enabled
+- **THEN** the HTTP server binds to `0.0.0.0` (all interfaces), making it reachable on tailnet
+
+#### Scenario: Catalog server is a catalog entry
+- **WHEN** the catalog is inspected
+- **THEN** it contains a `web-catalog` service entry with `port`, `ui.path`, and `health.path` matching the catalog server's configuration

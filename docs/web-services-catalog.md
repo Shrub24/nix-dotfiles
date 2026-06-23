@@ -2,8 +2,10 @@
 
 A single source of truth (SSOT) for localhost web service metadata — ports,
 schemes, endpoint paths, and display info. Defined in
-[`lib/web-services.nix`](../lib/web-services.nix) and exposed as flake outputs
-for downstream consumers (e.g., the homelab flake's homepage dashboard).
+[`lib/web-services.nix`](../lib/web-services.nix), exposed as flake outputs for
+local inspection, and **served over HTTP on `0.0.0.0:8123`** for remote
+consumers (e.g., the homelab flake's homepage dashboard) to fetch over tailnet
+without importing the dotfiles flake.
 
 ## Why a catalog?
 
@@ -75,6 +77,7 @@ filter for homepage inclusion.
 | `docs-mcp`    | 6280 | `/` | —        | —             |
 | `qmd`         | 8181 | `/` | —        | —             |
 | `agentmemory` | 3113 | `/` | `/`      | —             |
+| `web-catalog` | 8123 | `/` | `/`      | —             |
 
 ## URL derivation
 
@@ -124,35 +127,55 @@ Each entry in `.#webServiceCatalog` has:
 Fields with no corresponding endpoint path are `null` (e.g., `healthUrl = null`
 for docs-mcp).
 
-## Consuming from another flake
+## HTTP serving (primary consumption path)
 
-Add this repo as a flake input, then access the outputs:
+The catalog JSON is served over HTTP by a systemd user service
+(`modules/home/agents/web-catalog.nix`). The server binds `0.0.0.0:8123`,
+making it automatically reachable on tailnet without extra configuration.
+
+**Endpoint:** `http://<tailnet-ip>:8123/homelab-services.json`
+
+The server is a `python3 -m http.server` serving a Nix store path containing
+the rendered `homelab-services.json` file. The catalog server is itself a
+catalog entry (`web-catalog`), making the catalog self-discoverable.
+
+### Consuming over HTTP (recommended)
+
+Fetch the catalog JSON at build time or runtime — no flake import required:
 
 ```nix
-# flake.nix (consumer — e.g., homelab)
-inputs.dotfiles-nix.url = "github:Shrub24/nix-dotfiles";
-
-outputs = { self, dotfiles-nix, ... }:
-  let
-    catalog = dotfiles-nix.webServiceCatalog;
-    jsonFile = dotfiles-nix.webServiceCatalogJSON;
-  in
-  {
-    # Example: render homepage services from the catalog
-    homepageServices = builtins.map
-      (s: {
-        ${s.name} = {
-          href = s.uiUrl;
-          icon = s.icon;
-          description = s.description;
-        } // (if s.healthUrl != null then { siteMonitor = s.healthUrl; } else { });
-      })
-      (builtins.filter (s: s.uiUrl != null) catalog);
-  };
+# homelab flake.nix — build-time fetch
+let
+  catalogJson = builtins.readFile (builtins.fetchurl
+    "http://100.x.y.z:8123/homelab-services.json");
+  catalog = (builtins.fromJSON catalogJson).services;
+in
+{
+  # Example: render homepage services from the catalog
+  homepageServices = builtins.map
+    (s: {
+      ${s.name} = {
+        href = s.uiUrl;
+        icon = s.icon;
+        description = s.description;
+      } // (if s.healthUrl != null then { siteMonitor = s.healthUrl; } else { });
+    })
+    (builtins.filter (s: s.uiUrl != null) catalog);
+}
 ```
 
-The `webServiceCatalogJSON` output is a Nix store path — useful for
-non-Nix consumers or scripts that want to read the catalog at runtime.
+### Consuming via flake input (alternative)
+
+If you prefer a build-time Nix dependency (proper pinning via lock), add this
+repo as a flake input. Note this imports the full dotfiles flake with all its
+inputs:
+
+```nix
+inputs.dotfiles-nix.url = "github:Shrub24/nix-dotfiles";
+
+# Access: inputs.dotfiles-nix.webServiceCatalog
+# Access: inputs.dotfiles-nix.webServiceCatalogJSON
+```
 
 ## Module port wiring
 
@@ -172,7 +195,7 @@ in
 }
 ```
 
-Wired modules: `litellm`, `docs-mcp`, `qmd`, `agentmemory`.
+Wired modules: `litellm`, `docs-mcp`, `qmd`, `agentmemory`, `web-catalog`.
 
 ## Adding a new service
 
@@ -228,8 +251,20 @@ Wired modules: `litellm`, `docs-mcp`, `qmd`, `agentmemory`.
 6. **JSON is valid YAML** — `webServiceCatalogJSON` uses `builtins.toJSON`.
    Consumers that need YAML can convert (JSON is a YAML subset).
 
+7. **Serve over HTTP on 0.0.0.0** — the catalog JSON is served by a
+   `python3 -m http.server` systemd user service on `0.0.0.0:8123`. Binding
+   0.0.0.0 makes it reachable on tailnet automatically. This avoids forcing
+   consumers to import the dotfiles flake (with 10+ inputs) just to read port
+   numbers.
+
+8. **Catalog server is self-referential** — the `web-catalog` service is itself
+   a catalog entry. A consumer that knows the catalog URL can discover the
+   server's own metadata from the catalog itself. No runtime dependency loop —
+   the port is statically defined in the data file.
+
 ## Reference
 
 - Catalog source: [`lib/web-services.nix`](../lib/web-services.nix)
+- HTTP server module: [`modules/home/agents/web-catalog.nix`](../modules/home/agents/web-catalog.nix)
 - OpenSpec change: [`openspec/changes/web-services-ssot/`](../openspec/changes/web-services-ssot/)
 - Spec: [`openspec/changes/web-services-ssot/specs/web-service-catalog/spec.md`](../openspec/changes/web-services-ssot/specs/web-service-catalog/spec.md)
