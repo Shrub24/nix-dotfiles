@@ -7,9 +7,9 @@ Service ports, endpoint paths, and display metadata are currently duplicated acr
 - Introduce a `lib/web-services.nix` data file as the canonical SSOT for localhost web service metadata (ports, scheme, endpoint paths, display info).
 - Add a normalization function that merges defaults and derives `baseUrl`, `uiUrl`, `healthUrl`, and `openapiUrl` per service.
 - Replace the current `homepage.nix` with derived homepage output from the catalog.
-- Expose flake outputs: `webServices` (raw), `webServiceCatalog` (normalized), `webServiceCatalogJSON` (JSON file), `homepageServices` (homepage format), `homepageServicesYAML` (rendered file).
+- Expose flake outputs: `webServices` (raw), `webServiceCatalog` (normalized), `webServiceCatalogJSON` (JSON file).
 - Wire service modules to reference catalog ports where practical (litellm, docs-mcp, qmd, agentmemory).
-- Homepage rendering rule: only services with a `ui.path` appear on the homepage.
+- Homepage rendering is a consumer concern — this repo exposes the catalog only, not rendered homepage output.
 
 ## Capabilities
 
@@ -24,5 +24,5 @@ Service ports, endpoint paths, and display metadata are currently duplicated acr
 - **New files**: `lib/web-services.nix` (catalog data + normalization logic).
 - **Removed files**: `homepage.nix` (replaced by derived output from catalog).
 - **Modified files**: `flake.nix` (new flake outputs, import catalog), service modules under `modules/home/agents/` (port references where practical).
-- **Flake outputs**: `homepageServices`, `homepageServicesYAML` (existing, now derived), plus new `webServices`, `webServiceCatalog`, `webServiceCatalogJSON`.
-- **Consumers**: homelab flake imports this repo as a flake input and consumes `homepageServices` / `homepageServicesYAML` for its cloud homepage dashboard.
+- **Flake outputs**: `webServices`, `webServiceCatalog`, `webServiceCatalogJSON` (new).
+- **Consumers**: homelab flake imports this repo as a flake input and consumes `webServiceCatalog` / `webServiceCatalogJSON` for its cloud homepage dashboard. Homepage rendering is performed by the consumer, not this repo.

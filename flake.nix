@@ -188,10 +188,6 @@
             overlays = [ overlay ];
           };
 
-          homepageServices = homepage.toHomepage homepage.catalog;
-          homepageServicesYAML = pkgs.writeText "homepage-services.yaml" (
-            builtins.toJSON (homepage.toHomepage homepage.catalog)
-          );
           webServices = homepage.catalog;
           webServiceCatalog = homepage.normalize homepage.catalog;
           webServiceCatalogJSON = pkgs.writeText "web-service-catalog.json" (

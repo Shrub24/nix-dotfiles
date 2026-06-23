@@ -39,23 +39,8 @@ The system SHALL derive `baseUrl`, `uiUrl`, `healthUrl`, and `openapiUrl` from s
 - **WHEN** a service has `openapi.path = "/openapi.json"` and `baseUrl = "http://localhost:8765"`
 - **THEN** the normalized catalog entry has `openapiUrl = "http://localhost:8765/openapi.json"`
 
-### Requirement: Homepage output only includes services with UI endpoints
-The system SHALL render homepage services output containing only services that have a `ui.path` attribute.
-
-#### Scenario: Service with UI appears on homepage
-- **WHEN** a service has `ui.path = "/"`
-- **THEN** the homepage output includes that service with `href` set to the derived `uiUrl`
-
-#### Scenario: Service without UI is excluded from homepage
-- **WHEN** a service does not have a `ui.path` attribute
-- **THEN** the homepage output does not include that service
-
-#### Scenario: Homepage service includes siteMonitor when health URL exists
-- **WHEN** a service has both `ui.path` and `health.path`
-- **THEN** the homepage entry includes `siteMonitor` set to the derived `healthUrl`
-
 ### Requirement: Flake outputs expose catalog and derived formats
-The system SHALL expose flake outputs for the raw catalog, normalized catalog, JSON catalog, and homepage formats.
+The system SHALL expose flake outputs for the raw catalog, normalized catalog, and JSON catalog. Homepage rendering is a consumer concern and is NOT exposed as a flake output.
 
 #### Scenario: Raw catalog output
 - **WHEN** a consumer accesses `.#webServices`
@@ -69,13 +54,9 @@ The system SHALL expose flake outputs for the raw catalog, normalized catalog, J
 - **WHEN** a consumer accesses `.#webServiceCatalogJSON`
 - **THEN** it returns a Nix store path to a JSON file containing the normalized catalog
 
-#### Scenario: Homepage services output
-- **WHEN** a consumer accesses `.#homepageServices`
-- **THEN** it returns a homepage-compatible attrset grouped by service group
-
-#### Scenario: Homepage YAML output
-- **WHEN** a consumer accesses `.#homepageServicesYAML`
-- **THEN** it returns a Nix store path to a YAML/JSON file in homepage services format
+#### Scenario: No homepage output is exposed
+- **WHEN** a consumer inspects the flake outputs
+- **THEN** there is no `homepageServices` or `homepageServicesYAML` output
 
 ### Requirement: Catalog is scoped to service-local facts
 The system SHALL NOT include public internet routing, TLS, Cloudflare, OIDC, or reverse proxy configuration in the catalog.

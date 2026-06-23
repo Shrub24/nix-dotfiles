@@ -11,9 +11,8 @@
 - [x] 2.2 Expose `webServices` output (raw SSOT attrset)
 - [x] 2.3 Expose `webServiceCatalog` output (normalized list with derived URLs)
 - [x] 2.4 Expose `webServiceCatalogJSON` output (Nix store path to JSON file)
-- [x] 2.5 Update `homepageServices` output to use `toHomepage` derivation from catalog
-- [x] 2.6 Update `homepageServicesYAML` output to use derived homepage output
-- [x] 2.7 Remove `mkHomepageServices` output (superseded by catalog approach)
+- [x] 2.5 Remove `homepageServices` and `homepageServicesYAML` outputs (homepage rendering is a consumer concern)
+- [x] 2.6 Remove `mkHomepageServices` output (superseded by catalog approach)
 
 ## 3. Cleanup
 
@@ -31,8 +30,6 @@
 
 - [x] 5.1 Run `nix eval .#webServices --json` and verify 4 services are present
 - [x] 5.2 Run `nix eval .#webServiceCatalog --json` and verify derived URLs are correct
-- [x] 5.3 Run `nix eval .#homepageServices --json` and verify only services with `ui.path` appear
-- [x] 5.4 Run `nix build .#homepageServicesYAML` and verify output file contents
-- [x] 5.5 Run `nix build .#webServiceCatalogJSON` and verify JSON catalog contents
-- [x] 5.6 Run `nix flake check` and verify all checks pass
-- [x] 5.7 Run `nix fmt` on all modified files
+- [x] 5.3 Run `nix build .#webServiceCatalogJSON` and verify JSON catalog contents
+- [x] 5.4 Run `nix flake check` and verify all checks pass
+- [x] 5.5 Run `nix fmt` on all modified files

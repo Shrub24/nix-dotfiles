@@ -11,10 +11,10 @@ The current state:
 
 **Goals:**
 - Establish a single source of truth for localhost web service metadata (ports, scheme, endpoint paths, display info)
-- Derive homepage output, JSON catalog, and module port references from one catalog
+- Derive JSON catalog and module port references from one catalog
 - Keep the catalog scoped to service-local facts only (no Cloudflare, TLS, OIDC, reverse proxy config)
-- Only services with a `ui.path` appear on the homepage
-- Maintain backward-compatible flake outputs (`homepageServices`, `homepageServicesYAML`)
+- Only services with a `ui.path` have a derived `uiUrl` (consumers use this to filter for homepage inclusion)
+- Expose catalog-only flake outputs (`webServices`, `webServiceCatalog`, `webServiceCatalogJSON`); homepage rendering is a consumer concern
 
 **Non-Goals:**
 - Public internet routing, TLS, or access policy (belongs in homelab repo's `web-services.nix`)
@@ -33,10 +33,10 @@ The current state:
 - A Home Manager module with `programs.webServices` options — rejected as over-engineering for a static data file.
 - Putting it under `modules/` — rejected because it's data, not a feature module.
 
-### 2. `ui.path` presence drives homepage inclusion
-**Decision**: A service appears on the homepage if and only if it has a `ui.path` attribute. No separate `includeInHomepage` boolean.
+### 2. `ui.path` presence drives derived `uiUrl`
+**Decision**: A service has a derived `uiUrl` if and only if it has a `ui.path` attribute. No separate `includeInHomepage` boolean.
 
-**Rationale**: Presence-based is simpler and self-documenting. Services without a browser UI (e.g., API-only endpoints) stay in the catalog for port/config reuse but are naturally excluded from homepage rendering.
+**Rationale**: Presence-based is simpler and self-documenting. Services without a browser UI (e.g., API-only endpoints) stay in the catalog for port/config reuse but have `uiUrl = null`. Consumers use `uiUrl != null` to filter for homepage inclusion.
 
 **Alternatives considered**:
 - `includeInHomepage = true/false` boolean — rejected as redundant with `ui.path` presence.
@@ -52,15 +52,18 @@ The current state:
 
 **Rationale**: All services share `scheme = "http"` and `host = "localhost"`. Defaults avoid repetition while allowing future per-service overrides (e.g., a service on a different host).
 
-### 5. Backward-compatible flake outputs
-**Decision**: Keep existing `homepageServices` and `homepageServicesYAML` outputs. Add new `webServices`, `webServiceCatalog`, `webServiceCatalogJSON` outputs.
+### 5. Catalog-only flake outputs
+**Decision**: Expose only `webServices` (raw catalog), `webServiceCatalog` (normalized list), and `webServiceCatalogJSON` (JSON file). Do not expose rendered homepage output.
 
-**Rationale**: The homelab flake already consumes `homepageServices` and `homepageServicesYAML`. Keeping them avoids breaking the downstream consumer while adding new outputs for other use cases.
+**Rationale**: This repo is a SSOT catalog. Homepage rendering is a consumer concern — the homelab flake can filter the catalog by `uiUrl != null` and render its own homepage format. Exposing rendered homepage output would couple this repo to a specific consumer's format.
+
+**Alternatives considered**:
+- Also expose `homepageServices` / `homepageServicesYAML` — rejected because it couples this repo to gethomepage.dev's format and blurs the SSOT boundary.
 
 ### 6. JSON is valid YAML for homepage
-**Decision**: Use `builtins.toJSON` for the rendered homepage YAML file. JSON is a subset of YAML and homepage's parser accepts it.
+**Decision**: The `webServiceCatalogJSON` output uses `builtins.toJSON`. Consumers that need YAML can convert from JSON (JSON is a subset of YAML).
 
-**Rationale**: nixpkgs' `lib.generators.toYAML` produces identical JSON output for list structures. Using `builtins.toJSON` is simpler and equally valid.
+**Rationale**: Keeps the repo format-agnostic. The catalog is JSON; consumers render to whatever format they need.
 
 ## Risks / Trade-offs
 
