@@ -1,39 +1,55 @@
 {
   lib,
-  buildNpmPackage,
-  fetchFromGitHub,
-  importNpmLock,
+  stdenv,
+  fetchurl,
+  autoPatchelfHook,
+  makeWrapper,
+  glibc,
   nix-update-script,
 }:
 
-buildNpmPackage (finalAttrs: {
+stdenv.mkDerivation (finalAttrs: {
   pname = "byterover-cli";
   version = "3.16.1";
-  __structuredAttrs = true;
-  strictDeps = true;
 
-  src = fetchFromGitHub {
-    owner = "campfirein";
-    repo = "byterover-cli";
-    tag = "v${finalAttrs.version}";
-    hash = "sha256-p2sSvlL8zUd4k3ex0Am0Tds5jwbmrtoZmoLRPt+fidM=";
+  src = fetchurl {
+    url = "https://storage.googleapis.com/brv-releases/channels/stable/brv-linux-x64.tar.gz";
+    hash = "sha256-V3EVPa6XGqFFJ5FtI486lwtbAKULVHwZw1Tz+oRbRu4=";
   };
 
-  npmDeps = importNpmLock {
-    npmRoot = finalAttrs.src;
-  };
+  nativeBuildInputs = [
+    autoPatchelfHook
+    makeWrapper
+  ];
 
-  npmFlags = [ "--legacy-peer-deps" ];
+  buildInputs = [
+    glibc
+    stdenv.cc.cc.lib
+  ];
+
+  dontStrip = true;
+
+  installPhase = ''
+    runHook preInstall
+
+    mkdir -p $out/lib/byterover-cli
+    cp -r . $out/lib/byterover-cli
+
+    makeWrapper $out/lib/byterover-cli/bin/node $out/bin/brv \
+      --add-flags "$out/lib/byterover-cli/bin/run.js"
+
+    runHook postInstall
+  '';
 
   passthru.updateScript = nix-update-script { };
 
   meta = {
     description = "ByteRover CLI (brv) - The portable memory layer for autonomous coding agents";
     homepage = "https://github.com/campfirein/byterover-cli";
-    changelog = "https://github.com/campfirein/byterover-cli/blob/${finalAttrs.src.rev}/CHANGELOG.md";
+    changelog = "https://github.com/campfirein/byterover-cli/releases/tag/v${finalAttrs.version}";
     license = lib.licenses.elastic20;
     maintainers = with lib.maintainers; [ ];
     mainProgram = "brv";
-    platforms = lib.platforms.all;
+    platforms = [ "x86_64-linux" ];
   };
 })

@@ -103,6 +103,7 @@
   home.packages = with pkgs; [
     marp-cli
     system-manager
+    byterover-cli
   ];
 
   programs.miseTools = {
