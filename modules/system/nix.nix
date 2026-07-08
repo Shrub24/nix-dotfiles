@@ -3,7 +3,10 @@
   nix.enable = true;
 
   nix.settings = {
-    "trusted-users" = [ "root" "saurabhj" ];
+    "trusted-users" = [
+      "root"
+      "saurabhj"
+    ];
     "extra-substituters" = [
       "https://nix-community.cachix.org"
       "https://cache.numtide.com"
@@ -30,5 +33,8 @@
     "keep-derivations" = true;
     "warn-dirty" = false;
     "accept-flake-config" = true;
+    "download-buffer-size" = 268435456;
+    "http-connections" = 64;
+    "max-substitution-jobs" = 16;
   };
 }

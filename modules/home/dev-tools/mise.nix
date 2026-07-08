@@ -32,7 +32,7 @@ in
   };
 
   config = lib.mkIf config.programs.miseTools.enable {
-    home.packages = [ inputs.llm-agents.packages.${pkgs.system}.openspec ];
+    home.packages = [ inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.openspec ];
 
     programs.mise = {
       enable = true;

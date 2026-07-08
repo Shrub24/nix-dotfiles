@@ -17,12 +17,10 @@
     mode = "0644";
   };
 
-  # environment.etc."nix/nixbuild.net.env.example" = {
-  #   text = ''
-  #     NIXBUILDNET_ACCESS_TOKENS=token-1 token-2
-  #   '';
-  #   mode = "0644";
-  # };
+  environment.etc."nix/nixbuild.net.env" = {
+    source = "/home/saurabhj/.config/nix/nixbuild.net.env";
+    mode = "symlink";
+  };
 
   systemd.services.nix-daemon.serviceConfig.EnvironmentFile = [
     "-/etc/nix/nixbuild.net.env"

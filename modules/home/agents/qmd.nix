@@ -22,7 +22,7 @@ in
 
     package = lib.mkOption {
       type = lib.types.package;
-      default = inputs.llm-agents.packages.${pkgs.system}.qmd;
+      default = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.qmd;
       description = "qmd package to run.";
     };
 

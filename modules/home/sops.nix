@@ -145,6 +145,12 @@ in
         key = "opencode_litellm_api_key";
       };
 
+      NIXBUILDNET_ACCESS_TOKENS = {
+        sopsFile = ../../secrets/nixbuild.yaml;
+        format = "yaml";
+        key = "nixbuildnet_access_token";
+      };
+
       NIKS3_AUTH_TOKEN = {
         sopsFile = ../../secrets/niks3-secrets.yaml;
         format = "yaml";
@@ -181,6 +187,14 @@ in
         NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
         OPENROUTER_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
         OPENCODE_API_KEY=${config.sops.placeholder.OPENCODE_API_KEY}
+      '';
+    };
+
+    # nixbuild.net access token for nix-daemon (symlinked from system-manager)
+    templates."nixbuild.net.env" = {
+      path = "${homeDir}/.config/nix/nixbuild.net.env";
+      content = ''
+        NIXBUILDNET_ACCESS_TOKENS=${config.sops.placeholder.NIXBUILDNET_ACCESS_TOKENS}
       '';
     };
 
