@@ -1,0 +1,5 @@
+- Thin wrapper module installs pkgs.mutagen from nixpkgs as a Home Manager module.
+- Module is located at modules/home/remote/mutagen.nix, imported via remote/default.nix → modules/default.nix.
+- Minimal scope: package only, with explicit room for future aliases and environment variables.
+- Document structure: Reason, Raw Concept, Narrative (Structure, Dependencies, Highlights, Rules).
+- Entities: pkgs.mutagen, module import chain ensures composability with the remote module group.

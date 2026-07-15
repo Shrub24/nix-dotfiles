@@ -1,0 +1,7 @@
+- Dual-layer Nix configuration for non-NixOS Arch Linux: system-manager handles daemon/root; home-manager manages user environment.
+- flake-parts composes the flake; nh CLI used for both layers (nh home switch, nh os switch).
+- Dendritic module pattern: small single-concern modules under modules/home/ (also modules/system/ for system layer).
+- Core dependencies: nixpkgs-unstable, home-manager, system-manager, sops-nix, nix-direnv, llm-agents, hermes-agent, codebase-memory-mcp, niks3, nvfetcher, plus fish plugin flakes.
+- Commands and tooling: nh for switching, sops-nix for user-scoped secrets, nix-direnv for automatic dev shells, nixfmt for formatting, statix/deadnix for linting, nix-output-monitor, comma, manix, nix-index.
+- GC policy: automatic weekly via home-manager user timer (nh-clean), retains 7 days of generations, auto-optimise-store enabled.
+- Structure summary: flake.nix (entry, 19 inputs, overlay, dev shell) → hosts/arch/home.nix and hosts/arch/system.nix → modules/default.nix (home) and modules/system/default.nix (system) → feature modules → config applied.

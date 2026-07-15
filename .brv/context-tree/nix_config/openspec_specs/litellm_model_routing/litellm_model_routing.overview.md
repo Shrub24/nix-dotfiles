@@ -1,0 +1,6 @@
+- Six logical model aliases preserved at parity: coder, main, summariser, budget, explorer, embedding.
+- Routing is achieved solely through built‑in LiteLLM routing and fallback features (no custom hooks, Redis, or quota‑aware routing).
+- Deployments must use explicit, provider‑qualified model definitions like openai/<model>, with api_base and api_key provided.
+- Forbidden to rely on custom provider names such as crof or opencode_go; ensures LiteLLM‑native semantics.
+- Primary targets and fallback ordering are preserved from the original Bifrost configuration.
+- Document structure: Reason, Raw Concept, Narrative (Structure, Dependencies, Highlights, Rules).

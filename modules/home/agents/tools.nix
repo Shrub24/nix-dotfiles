@@ -18,7 +18,6 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
       brave-search-cli
-      snip
       inputs.codebase-memory-mcp.packages.${system}.default
       pkgs.kreuzberg-cli
     ];

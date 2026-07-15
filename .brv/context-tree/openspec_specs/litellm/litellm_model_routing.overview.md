@@ -1,0 +1,5 @@
+- Migrates Bifrost model routing to LiteLLM while preserving six logical model aliases: coder, main, summariser, budget, explorer, embedding
+- Uses explicit LiteLLM provider semantics (e.g., `openai/<model>`) with primary and fallback deployments
+- Phase‑1 relies solely on built‑in LiteLLM routing; no custom Python routing hooks, Redis state, or quota‑aware policies
+- Fallback ordering retained from original Bifrost configuration
+- Rules: logical aliases must be preserved at parity; deployments must use LiteLLM‑native provider names; primary route failure triggers configured fallback

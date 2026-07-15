@@ -33,7 +33,6 @@
     enable = true;
     database.enable = true;
     headroom.enable = true;
-    oci.enable = true;
   };
   programs.aichat = {
     enable = true;
@@ -69,7 +68,8 @@
   programs.webCatalog.enable = true;
 
   programs.agentmemory = {
-    enable = true;
+    # Moving primary memory to byterover; keep module config dormant for now.
+    enable = false;
     hermesPlugin = {
       enable = true;
     };

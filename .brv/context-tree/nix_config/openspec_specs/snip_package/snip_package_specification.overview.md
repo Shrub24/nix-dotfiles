@@ -1,0 +1,6 @@
+- Pinned custom derivation of `snip` from upstream release `github.com/edouard-claude/snip`
+- Replaces the `tokf` tool in the active agent tool set for shell command filtering
+- `snip` CLI exposed through the Home Manager agent tools bundle (module `modules/home/agents/`, package `pkgs/snip/`)
+- `tokf` fully removed from the package set; direct verification that `snip` binary is runnable
+- Builds from the repository’s custom package overlay, not the system environment
+- Four requirements: pinned derivation, CLI exposure, tokf removal, and binary verification

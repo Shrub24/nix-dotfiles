@@ -1,0 +1,19 @@
+- **Document purpose**: Technical specification for how the Nix daemon accesses required configuration (substituters, trusted keys, `nixbuild.net`) at system scope, avoiding dependency on user shell environments.
+- **Key change**: Daemon-visible Nix policy (substituters, trusted keys) moved from user‑scoped Home Manager to system‑scoped configuration (`flake.nix`), making it available to daemon‑scoped and root‑scoped execution.
+- **Operational flow**: Nix daemon → reads system‑scoped substituter/trusted key policy → accesses `nixbuild.net` (via `ssh-ng://eu.nixbuild.net`) without an interactive user shell.
+- **Document structure**: 
+  - `## Reason` – brief intro to the spec’s purpose.
+  - `## Raw Concept` – task description, list of changes, affected file (`flake.nix`), end‑to‑end flow, timestamp and author.
+  - `## Narrative` – sub‑sections covering:
+    - `### Structure` – the two core requirements: system‑scoped daemon‑visible policy, daemon‑visible `nixbuild.net` access.
+    - `### Dependencies` – system‑scoped config layer, `nixbuild.net` protocol (`ssh-ng://`).
+    - `### Highlights` – key observations about substituters/keys at system scope and execution‑scope independence.
+    - `### Rules` – two normative SHALL rules.
+- **Notable decisions / patterns**:
+  - **Separation of scopes**: Strictly distinguish between user‑level Nix settings (Home Manager) and daemon‑level settings (system scope), ensuring the daemon never relies on a user shell session.
+  - **Daemon‑visible binary cache**: The `nixbuild.net` remote store is declared in a way that works for both daemon‑scoped and root‑scoped Nix commands, using `ssh-ng://eu.nixbuild.net`.
+  - **Policy location**: Substituter policy and trusted public keys are placed in the system‑scoped configuration precisely because they are consumed by the Nix daemon.
+- **Formal rules (SHALL)**:
+  - Settings consumed by the Nix daemon, including daemon‑level substituter policy and trusted keys, SHALL be declared in the system‑scoped configuration layer.
+  - The system SHALL provide `nixbuild.net` access configuration that is visible to daemon‑scoped or root‑scoped Nix execution without depending on an interactive user shell session.
+- **Entities**: Nix daemon, system scope, user scope (Home Manager), `nixbuild.net`, `ssh-ng://eu.nixbuild.net`, substituters, trusted keys, `flake.nix`, add‑system‑manager change.

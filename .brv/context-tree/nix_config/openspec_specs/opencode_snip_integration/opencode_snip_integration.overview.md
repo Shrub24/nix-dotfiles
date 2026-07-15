@@ -1,0 +1,5 @@
+- Registers the `opencode-snip` plugin in the managed OpenCode plugin list (config at `apps/opencode/opencode.jsonc`)
+- Shell command rewriting driven by `snip` on PATH; prefixes supported commands, passes unsupported ones through unchanged
+- No fallback alteration for commands that `snip` does not rewrite – preserves normal execution
+- Depends on `snip` being installed via Home Manager (see snip package spec)
+- Three requirements: plugin registration, snip‑backed filtering, and passthrough behaviour

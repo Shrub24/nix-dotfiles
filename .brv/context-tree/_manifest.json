@@ -1,0 +1,171 @@
+{
+  "active_context": [
+    {
+      "order": 2,
+      "path": "openspec_specs/_index.md",
+      "tokens": 1680,
+      "type": "summary"
+    },
+    {
+      "abstractPath": "nix_config/architecture/architecture.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/architecture/architecture.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/canonical_spec_index.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/canonical_spec_index.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/daemon_nix_config/daemon_nix_config.abstract.md",
+      "abstractTokens": 42,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/daemon_nix_config/daemon_nix_config.md",
+      "tokens": 42,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/litellm_client_integration/litellm_client_integration.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/litellm_client_integration/litellm_client_integration.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/litellm_gateway/litellm_gateway_specification.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/litellm_gateway/litellm_gateway_specification.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/litellm_model_routing/litellm_model_routing.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/litellm_model_routing/litellm_model_routing.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/mutagen/mutagen_specification.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/mutagen/mutagen_specification.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/nvfetcher_package_sources/nvfetcher_package_sources.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/nvfetcher_package_sources/nvfetcher_package_sources.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/opencode_snip_integration/opencode_snip_integration.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/opencode_snip_integration/opencode_snip_integration.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/snip_package/snip_package_specification.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/snip_package/snip_package_specification.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/ssh_client/ssh_client_specification.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/ssh_client/ssh_client_specification.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/system_manager_foundation/system_manager_foundation.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/system_manager_foundation/system_manager_foundation.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/openspec_specs/tmux/tmux_specification.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/openspec_specs/tmux/tmux_specification.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/overview/repo_overview.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/overview/repo_overview.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "nix_config/structure/codebase_structure.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "nix_config/structure/codebase_structure.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "openspec_specs/litellm/litellm_client_integration.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "openspec_specs/litellm/litellm_client_integration.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "openspec_specs/litellm/litellm_gateway.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "openspec_specs/litellm/litellm_gateway.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "openspec_specs/litellm/litellm_model_routing.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "openspec_specs/litellm/litellm_model_routing.md",
+      "tokens": 0,
+      "type": "context"
+    },
+    {
+      "abstractPath": "openspec_specs/overview/spec_index.abstract.md",
+      "abstractTokens": 0,
+      "importance": 50,
+      "path": "openspec_specs/overview/spec_index.md",
+      "tokens": 0,
+      "type": "context"
+    }
+  ],
+  "generated_at": "2026-07-15T21:33:39.173Z",
+  "lane_tokens": {
+    "contexts": 42,
+    "stubs": 0,
+    "summaries": 1680
+  },
+  "source_fingerprint": "57cbcd6353ef6b799861fdfb39e6b4567e2440d418b9a040078c6753f90ca4cc",
+  "total_tokens": 1722,
+  "version": 1
+}

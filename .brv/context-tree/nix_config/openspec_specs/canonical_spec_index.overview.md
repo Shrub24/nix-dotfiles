@@ -1,0 +1,4 @@
+- Index of all 10 active canonical specs in the nix‑dotfiles repository, covering tmux, ssh-client, mutagen, snip-package, opencode-snip-integration, nvfetcher-package-sources, litellm-gateway, litellm-model-routing, litellm-client-integration, daemon-nix-config, system-manager-foundation
+- Each spec defines Purpose, Requirements, and Scenarios using RFC 2119 SHALL language with WHEN/THEN scenario format
+- Source changes span five archived initiatives: tmux-ssh-mutagen-modules, migrate-tokf-to-snip, add-system-manager, archive/2026-06-17-migrate-bifrost-to-litellm, archive/add-nvfetcher-for-packages
+- Specs are canonical – they reflect current truth after changes are archived; status of all listed specs is active

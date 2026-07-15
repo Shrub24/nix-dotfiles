@@ -136,6 +136,7 @@
       -- Key bindings
       config.keys = {
         { key = "A", mods = "CTRL|SHIFT", action = act.EmitEvent("toggle-opencode") },
+        { key = "S", mods = "CTRL|SHIFT", action = act.ShowLauncherArgs { flags = "DOMAINS" } },
         { key = "Delete", mods = "NONE", action = act.SendString("\x1b[3~") },
       }
     '';

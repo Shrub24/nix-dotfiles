@@ -3,24 +3,30 @@
   lib,
   runCommand,
   writeShellScript,
-  writeShellScriptBin,
-  writeText,
-  streaming-patch,
-  strip-prefix-patch,
 }:
 
 let
+  ociImages = import ../../policy/oci-images.nix;
+  ref = ociImages.litellm-database;
+
+  # Parse "repo:tag@sha256:digest" into components
+  atParts = lib.splitString "@" ref;
+  imageDigest = lib.last atParts;
+  repoTag = lib.head atParts;
+  tagSep = builtins.match "([^:]+):(.+)" repoTag;
+  imageName = builtins.elemAt tagSep 0;
+  imageTag = builtins.elemAt tagSep 1;
+
   baseImage = dockerTools.pullImage {
-    imageName = "ghcr.io/berriai/litellm-database";
-    imageDigest = "sha256:598664e0bed053e774d5dbd18745ddce890e8c6909390ccf669beae443a9d984";
-    hash = "sha256-/9K1dpdydpAeL1G3FcG+EJYVnwpIff9d6Sb+JTO9pO0=";
-    finalImageTag = "v1.89.3";
+    inherit imageName imageDigest;
+    hash = "sha256-wnjXARKZqiJF+wbkMpOgM9gIoTfbtZpiocEkqMXPXRo=";
+    finalImageTag = imageTag;
   };
 
   patchFiles = runCommand "litellm-patches" { } ''
     mkdir -p $out/patches
-    cp ${streaming-patch} $out/patches/streaming-empty-choices.patch
-    cp ${strip-prefix-patch} $out/patches/strip-prefix-message.patch
+    cp ${./patches/streaming-empty-choices.patch} $out/patches/streaming-empty-choices.patch
+    cp ${./patches/strip-prefix-message.patch} $out/patches/strip-prefix-message.patch
   '';
 
   # Custom entrypoint that applies patches then runs litellm
@@ -39,13 +45,6 @@ let
       touch "$PATCH_MARKER"
     fi
 
-    # Run prisma generate + db push if DATABASE_URL is set
-    if [ -n "''${DATABASE_URL:-}" ]; then
-      PRISMA_SCHEMA="/app/.venv/lib/python3.13/site-packages/litellm/proxy/schema.prisma"
-      /app/.venv/bin/prisma generate --schema "$PRISMA_SCHEMA" 2>/dev/null || true
-      /app/.venv/bin/prisma db push --schema "$PRISMA_SCHEMA" --accept-data-loss 2>/dev/null || true
-    fi
-
     exec /app/.venv/bin/litellm --config /app/config.yaml --port "''${LITELLM_PORT:-4000}" "$@"
   '';
 
@@ -58,7 +57,9 @@ let
 
     config = {
       Entrypoint = [ entrypoint ];
-      ExposedPorts = { "4000/tcp" = { }; };
+      ExposedPorts = {
+        "4000/tcp" = { };
+      };
     };
   };
 in

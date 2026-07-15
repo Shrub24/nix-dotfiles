@@ -1,0 +1,6 @@
+- LiteLLM gateway is managed as a Home Manager user service that auto‑starts and reads runtime secrets from a sops‑managed environment file.
+- Rendered static proxy configuration is consumed from repo‑managed Nix configuration; any change to config or secrets triggers an automatic service restart.
+- Exposes an OpenAI‑compatible endpoint locally, preserving the existing local gateway contract.
+- Optional global Headroom ASGI middleware (CompressionMiddleware) can be mounted through a wrapper.
+- Document structure: Reason, Raw Concept, Narrative (Structure, Dependencies, Highlights, Rules).
+- Entities: sops‑nix for secrets, Headroom.integrations.asgi.CompressionMiddleware for optional middleware.

@@ -1,0 +1,5 @@
+- Declarative tmux configuration enabled via `programs.tmux.*` Home Manager module
+- Module lives at `modules/home/tmux.nix` and is imported from `modules/default.nix`
+- Generates `~/.config/tmux/tmux.conf` when `programs.tmux.enable = true`
+- Supports user extensions through `extraConfig` option
+- Single-requirement specification with three scenarios covering enablement, default extraConfig, and import chain

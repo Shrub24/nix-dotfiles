@@ -20,9 +20,4 @@ fetch.github = "edouard-claude/snip"
 src.github = "kreuzberg-dev/kreuzberg"
 fetch.url = "https://github.com/kreuzberg-dev/kreuzberg/releases/download/$ver/kreuzberg-cli-x86_64-unknown-linux-gnu.tar.gz"
 
-[headroom-ai]
-src.pypi = "headroom-ai"
-# fetch.url instead of fetch.pypi because headroom-ai's sdist uses underscores
-# in the filename (headroom_ai-$ver.tar.gz) while nvfetcher's pypi fetcher
-# constructs the URL with hyphens; the derivation will stay wheel-based.
-fetch.url = "https://pypi.org/packages/source/h/headroom-ai/headroom_ai-$ver.tar.gz"
+

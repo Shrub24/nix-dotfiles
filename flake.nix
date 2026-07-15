@@ -61,6 +61,9 @@
     nvfetcher = {
       url = "github:berberman/nvfetcher";
     };
+    fsel = {
+      url = "github:Mjoyufull/fsel";
+    };
   };
 
   outputs =
@@ -136,13 +139,7 @@
               kreuzberg-cli = final.callPackage ./pkgs/kreuzberg-cli {
                 inherit (generatedSources.kreuzberg-cli) version src;
               };
-              headroom-ai = final.python3Packages.callPackage ./pkgs/headroom-ai {
-                inherit (generatedSources.headroom-ai) version;
-              };
               byterover-cli = final.callPackage ./pkgs/byterover { };
-              litellm-with-headroom = final.callPackage ./pkgs/litellm {
-                headroom = final.headroom-ai;
-              };
               # Patch litellm to tolerate empty-choices stream chunks from vLLM-backed APIs
               litellm = prev.litellm.overridePythonAttrs (old: {
                 patches = (old.patches or [ ]) ++ [
@@ -151,10 +148,7 @@
                 ];
               });
               niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
-              litellm-oci = final.callPackage ./pkgs/litellm-oci {
-                streaming-patch = ./pkgs/litellm/patches/streaming-empty-choices.patch;
-                strip-prefix-patch = ./pkgs/litellm/patches/strip-prefix-message.patch;
-              };
+              litellm-oci = final.callPackage ./pkgs/litellm/oci.nix { };
             };
           pkgs = import inputs.nixpkgs {
             inherit system;

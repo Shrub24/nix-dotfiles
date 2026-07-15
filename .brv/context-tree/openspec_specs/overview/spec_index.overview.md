@@ -1,0 +1,6 @@
+- Index tracks 10 active canonical specs across tmux, SSH, mutagen, snip, OpenCode, LiteLLM, system-manager, and nvfetcher domains
+- Specs originate from five source changes (add-system-manager, migrate-tokf-to-snip, tmux-ssh-mutagen-modules, archive/2026-06-17-migrate-bifrost-to-litellm, archive/2026-06-19-add-nvfetcher-for-packages)
+- Table structure in INDEX.md maps capability name → status → source change → source spec path
+- Each spec is self‑contained with Purpose, Requirements, and Scenarios; source changes archive after merge
+- Status can be active, draft, or retired; nvfetcher-package-sources spec currently TBD
+- Rules: specs are updated after source change archives; canonical specs represent current truth

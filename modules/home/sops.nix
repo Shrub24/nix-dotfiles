@@ -34,6 +34,7 @@ in
       CURSOR_API_KEY=${config.sops.placeholder.CURSOR_API_KEY}
       LITELLM_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
       OPENCODE_LITELLM_API_KEY=${config.sops.placeholder.OPENCODE_LITELLM_API_KEY}
+      OPENAI_COMPATIBLE_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
     '';
 
     # --- individual YAML-backed secrets ---
@@ -181,6 +182,7 @@ in
         # litellm runtime secrets -- managed by sops
         LITELLM_MASTER_KEY=${config.sops.placeholder.LITELLM_MASTER_KEY}
         ${lib.optionalString config.programs.litellm.database.enable "DATABASE_URL=postgresql://litellm:${config.sops.placeholder.LITELLM_DATABASE_PASSWORD}@oci-melb-1:5432/litellm?sslmode=disable"}
+        ${lib.optionalString config.programs.litellm.headroom.enable "HEADROOM_API_BASE=http://127.0.0.1:${toString config.programs.litellm.headroomPort}"}
         GEMINI_API_KEY=${config.sops.placeholder.GEMINI_API_KEY}
         DEEPSEEK_API_KEY=${config.sops.placeholder.DEEPSEEK_API_KEY}
         CROFAI_API_KEY=${config.sops.placeholder.CROFAI_API_KEY}

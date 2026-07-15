@@ -1,5 +1,7 @@
 {
   lib,
+  headroomEnable ? false,
+  headroomPort ? 8787,
 }:
 
 let
@@ -175,7 +177,8 @@ in
   litellmConfig = {
     model_list = modelEntries;
     general_settings = {
-      store_model_in_db = false;
+      store_prompts_in_spend_logs = true;
+      store_model_in_db = true;
     };
     litellm_settings = {
       callbacks = [ "arize_phoenix" ];
@@ -184,10 +187,24 @@ in
     environment_variables = {
       PHOENIX_COLLECTOR_ENDPOINT = "http://oci-melb-1:4317";
     };
+    # guardrails injected below via optionalAttrs
     router_settings = {
       routing_strategy = "simple-shuffle";
       fallbacks = builtins.filter (mapping: mapping != { }) fallbackMappings;
     };
+  }
+  // lib.optionalAttrs headroomEnable {
+    guardrails = [
+      {
+        guardrail_name = "headroom-compression";
+        litellm_params = {
+          guardrail = "headroom";
+          mode = "pre_call";
+          api_base = "http://127.0.0.1:${toString headroomPort}";
+          default_on = true;
+        };
+      }
+    ];
   };
 
   opencodeExtraConfig = {
@@ -201,6 +218,15 @@ in
           apiKey = "{env:OPENCODE_LITELLM_API_KEY}";
         };
         models = opencodeModels;
+      };
+    };
+  }
+  // lib.optionalAttrs headroomEnable {
+    mcp = {
+      headroom = {
+        type = "remote";
+        url = "http://127.0.0.1:${toString headroomPort}/mcp";
+        enabled = true;
       };
     };
   };

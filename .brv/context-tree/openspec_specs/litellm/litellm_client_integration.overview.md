@@ -1,0 +1,4 @@
+- OpenCode provider configuration targets the local LiteLLM gateway endpoint via declarative Home Manager overlay generation
+- Local AI clients (OpenCode, aichat, agentmemory) are wired to LiteLLM without imperative local edits
+- Bifrost‑specific runtime wiring is retired once LiteLLM parity is active
+- Rules: OpenCode endpoint must point to local LiteLLM gateway; overlay must expose parity logical models; consistent LiteLLM‑native downstream naming is required; Bifrost wiring is decommissioned after migration

@@ -34,8 +34,7 @@ Dual-layer flake configuration managed via flakes — system-manager for daemon/
     ├── iii-engine/
     ├── agentmemory/
     ├── kreuzberg-cli/
-    ├── headroom-ai/
-    └── litellm-with-headroom/
+    └── litellm/
 ```
 
 **Dendritic pattern**: Small, focused modules each owning one concern. System modules own daemon/root configuration; home modules own user-scoped concerns.

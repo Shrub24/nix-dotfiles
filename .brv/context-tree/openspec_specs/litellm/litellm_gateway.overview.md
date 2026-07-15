@@ -1,0 +1,6 @@
+- LiteLLM gateway runs as a Home Manager‑managed user service with declarative configuration and sops‑encrypted secrets
+- Enabling via `programs.litellm.enable` renders config and environment file to user config dir; service auto‑restarts on config/env changes
+- Exposes an OpenAI‑compatible proxy endpoint for local AI clients
+- Optional global Headroom ASGI `CompressionMiddleware` can be mounted when `headroom` is explicitly enabled
+- Dependencies: sops‑nix for API key secrets, Home Manager for service lifecycle
+- Rules: API keys are read from generated environment file; config changes trigger managed restarts; middleware is optional and only added when enabled

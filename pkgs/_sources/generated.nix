@@ -6,14 +6,6 @@
   dockerTools,
 }:
 {
-  headroom-ai = {
-    pname = "headroom-ai";
-    version = "0.26.0";
-    src = fetchurl {
-      url = "https://pypi.org/packages/source/h/headroom-ai/headroom_ai-0.26.0.tar.gz";
-      sha256 = "sha256-7KPCXwwDg+X6RmzUQ2zpL5u0FgUCL7aq0sN53Qja2vg=";
-    };
-  };
   kreuzberg-cli = {
     pname = "kreuzberg-cli";
     version = "v5.0.0-rc.13";

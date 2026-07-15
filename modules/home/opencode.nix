@@ -6,7 +6,11 @@
 }:
 
 let
-  litellmGenerated = (import ./agents/litellm/generated.nix) { inherit lib; };
+  litellmGenerated = (import ./agents/litellm/generated.nix) {
+    inherit lib;
+    headroomEnable = config.programs.litellm.headroom.enable;
+    headroomPort = config.programs.litellm.headroomPort;
+  };
 in
 {
   home.file.".config/opencode".source =

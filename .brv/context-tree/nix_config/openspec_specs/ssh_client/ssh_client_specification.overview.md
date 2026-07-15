@@ -1,0 +1,6 @@
+- Declarative SSH client configuration through `programs.ssh.*` Home Manager module
+- Module at `modules/home/remote/ssh.nix`, imported by `modules/home/remote/default.nix`
+- Generates `~/.ssh/config` with global defaults and host‑specific blocks (defined in `hosts/arch/home.nix`)
+- Explicitly **prohibits** management of secrets: never creates/stores `known_hosts`, `authorized_keys`, or private key material
+- `IdentityFile` may reference existing user‑managed keys; external secret management (e.g., sops‑nix) is expected
+- Structured as two requirements: core config generation and no‑secret rules, each with three scenarios

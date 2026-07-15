@@ -1,0 +1,5 @@
+- Adds a declarative system‑scoped configuration layer for non‑NixOS hosts, separate from the existing Home Manager user‑scoped config
+- Explicit privilege boundary: system modules and host entrypoints are organized independently from user modules
+- New system‑scoped outputs introduced in `flake.nix`
+- Depends on system‑manager or equivalent non‑NixOS tooling
+- Two requirements, each with a scenario: existence of the system layer and distinct structure from user config

@@ -1,0 +1,7 @@
+- Dendritic architecture with 7 principles: derivations in pkgs/, feature modules by concern, host compositions for identity, module options pattern, flake.nix as pure wiring, modules/default.nix as single entry, YAML-backed secrets.
+- Module options pattern: modules define options via mkOption; host configs set values (e.g., pi.nix programs.pi.* options configured in hosts/arch/home.nix).
+- Centralized secrets: secrets/agents.yaml holds all API keys (github, google, openrouter, jina, tavily, brave, firecrawl, context7, openai, minimax, crofai, opencode). sops-nix placeholder declarations in modules/home/sops.nix. Templates render at activation: zsh-secrets.env, docs-mcp.env, bifrost-config.json, agentmemory.env.
+- Four systemd user services: Bifrost MCP gateway (port 8765, bunx), Docs MCP (port 6280, bunx + OpenAI embeddings), Hermes gateway daemon, Agentmemory persistent memory (port 3111, viewer 3113). Hermes integrates Agentmemory via @agentmemory/mcp MCP server.
+- Data flow: flake.nix (inputs + overlay + homeConfigurations) → hosts/arch/home.nix (identity + program enables) → modules/default.nix → feature modules → sops templates rendered at activation → systemd services started.
+- Pi agent example: module defines options, host sets provider/models/MCP/permissions, module renders config to ~/.pi/agent/.
+- No module logic in flake.nix; pure wiring only.

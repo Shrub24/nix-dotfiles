@@ -1,19 +1,4 @@
 {
-    "headroom-ai": {
-        "cargoLock": null,
-        "date": null,
-        "extract": null,
-        "name": "headroom-ai",
-        "passthru": null,
-        "pinned": false,
-        "src": {
-            "name": null,
-            "sha256": "sha256-7KPCXwwDg+X6RmzUQ2zpL5u0FgUCL7aq0sN53Qja2vg=",
-            "type": "url",
-            "url": "https://pypi.org/packages/source/h/headroom-ai/headroom_ai-0.26.0.tar.gz"
-        },
-        "version": "0.26.0"
-    },
     "kreuzberg-cli": {
         "cargoLock": null,
         "date": null,

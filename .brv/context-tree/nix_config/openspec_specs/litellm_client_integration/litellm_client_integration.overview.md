@@ -1,0 +1,5 @@
+- OpenCode provider configuration is declaratively generated to target the local LiteLLM gateway, exposing the same logical models.
+- Local AI clients aichat and agentmemory can be migrated declaratively without imperatively editing configuration.
+- Bifrost‑specific runtime wiring (generated provider/runtime configs) is retired once LiteLLM parity is active.
+- Document structure: Reason, Raw Concept, Narrative (Structure, Dependencies, Highlights, Rules).
+- Key dependency: LiteLLM gateway must be running; consistent use of LiteLLM‑native downstream provider naming.

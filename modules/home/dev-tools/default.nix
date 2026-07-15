@@ -1,4 +1,7 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
+let
+  system = pkgs.stdenv.hostPlatform.system;
+in
 {
   imports = [
     ./languages.nix
@@ -11,5 +14,8 @@
     posting
     isd
     crun
+    jjui
+    skopeo
+    inputs.fsel.packages.${system}.default
   ];
 }
