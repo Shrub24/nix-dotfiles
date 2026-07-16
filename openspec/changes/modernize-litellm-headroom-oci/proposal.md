@@ -12,6 +12,9 @@ LiteLLM is pinned to a pre-Headroom-guardrail OCI release, while the current Hea
 - Add `policy/oci-images.nix` and Renovate configuration to update flake inputs and pinned OCI image references.
 - Remove obsolete Headroom ASGI/Python derivations and their stale nvfetcher metadata.
 - Remove the obsolete non-OCI LiteLLM runtime option and package fallback.
+- Generate a Headroom context-limit catalog from the existing client model metadata without duplicating pricing configuration.
+- Build a pinned Headroom 0.31.0 `proxy,code` image from the official tagged Dockerfile in this repository's GitHub Actions and publish it to the user's GHCR namespace.
+- Run Headroom's stdio MCP bridge against the shared proxy from OpenCode instead of registering the proxy's HTTP MCP endpoint directly.
 
 ## Capabilities
 

@@ -87,6 +87,7 @@ in
           "podman.service"
         ]
         ++ lib.optionals cfg.headroom.enable [ "headroom.service" ];
+        Requires = lib.optionals cfg.headroom.enable [ "headroom.service" ];
         Wants = [ "network-online.target" ];
         X-Restart-Triggers = [
           litellmConfigFile
@@ -121,6 +122,10 @@ in
       };
     };
 
+    home.file.".local/share/headroom/models.json" = lib.mkIf cfg.headroom.enable {
+      text = builtins.toJSON litellmGenerated.headroomCatalog;
+    };
+
     home.file.".local/bin/headroom" = lib.mkIf cfg.headroom.enable {
       executable = true;
       text = ''
@@ -131,7 +136,7 @@ in
           echo "Start it with: systemctl --user start headroom.service" >&2
           exit 1
         fi
-        exec ${pkgs.podman}/bin/podman exec headroom headroom "$@"
+        exec ${pkgs.podman}/bin/podman exec --env HEADROOM_CONTEXT_TOOL=lean-ctx headroom headroom "$@"
       '';
     };
 

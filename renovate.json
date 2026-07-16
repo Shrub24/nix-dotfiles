@@ -1,8 +1,26 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "automerge": false,
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 6am on monday"
+    ]
+  },
   "enabledManagers": [
     "nix",
+    "github-actions",
     "custom.regex"
   ],
   "nix": {
@@ -20,17 +38,41 @@
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Update HEADROOM_VERSION in the Headroom image publisher workflow",
+      "managerFilePatterns": [
+        "/\.github\/workflows\/publish-headroom-image\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+) versioning=(?<versioning>[^\\s]+)\\s+HEADROOM_VERSION: \\\"(?<currentValue>[^\\\"]+)\\\""
+      ]
     }
   ],
   "packageRules": [
     {
-      "matchManagers": ["nix"],
+      "matchManagers": [
+        "nix"
+      ],
       "groupName": "nix flake inputs"
     },
     {
-      "matchManagers": ["custom.regex"],
+      "matchManagers": [
+        "custom.regex"
+      ],
       "groupName": "OCI image refs",
       "commitMessageTopic": "OCI image refs"
+    },
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchPackageNames": [
+        "headroomlabs-ai/headroom"
+      ],
+      "groupName": "Headroom image publisher",
+      "commitMessageTopic": "Headroom image publisher"
     }
   ]
 }

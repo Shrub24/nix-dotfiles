@@ -21,3 +21,12 @@ The system SHALL retain the Nix content hash required by `dockerTools.pullImage`
 #### Scenario: LiteLLM upstream reference is updated
 - **WHEN** the pinned LiteLLM upstream OCI reference changes
 - **THEN** the corresponding `dockerTools.pullImage` content hash SHALL be regenerated and validated before the derived image is accepted
+
+### Requirement: Headroom image is published from an upstream release
+The repository SHALL provide a GitHub Actions workflow that builds the official Headroom Dockerfile from an explicitly pinned upstream release with proxy and code extras, then publishes a versioned image to the user's GHCR namespace.
+
+#### Scenario: The selected Headroom release is published
+- **WHEN** the image-publisher workflow runs for its configured Headroom release
+- **THEN** it SHALL build from the official tagged upstream source
+- **AND** it SHALL enable `proxy,code` extras
+- **AND** it SHALL publish a versioned image that can subsequently be pinned in the OCI policy

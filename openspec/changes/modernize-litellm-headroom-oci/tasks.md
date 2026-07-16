@@ -47,10 +47,27 @@
   - refs: `modules/home/opencode.nix`, `modules/home/agents/litellm/generated.nix`
   - criteria: OpenCode uses the single shared proxy endpoint only when Headroom is enabled; no parallel Headroom stdio MCP service is configured
   - verify: inspect rendered OpenCode config and list Headroom MCP tools after switch
+- [x] 3.5 Generate Headroom's 0.27-compatible context-limit catalog from existing client model metadata and select lean-ctx for explicit managed CLI wrapping.
+  - refs: `modules/home/agents/litellm/generated.nix`, `modules/home/agents/litellm/default.nix`
+  - criteria: all configured LiteLLM aliases have generated context limits; pricing is omitted; `HEADROOM_CONTEXT_TOOL=lean-ctx` is passed only for CLI wrapping
+  - verify: inspect the rendered `models.json` and managed wrapper
+- [x] 3.6 Add a Renovate-managed GitHub Actions Headroom image publisher that builds the official v0.31.0 Dockerfile with `proxy,code` extras and publishes to the user's GHCR namespace.
+  - refs: `.github/workflows/`, `renovate.json`
+  - criteria: the workflow builds from an explicit upstream tag, publishes a versioned image, and does not require a fork
+  - verify: inspect the rendered workflow and Renovate custom manager; do not run or publish the workflow yet
+- [x] 3.7 Replace OpenCode's remote Headroom MCP configuration with the `headroom mcp serve --proxy-url` stdio bridge, gated on `headroom.enable`.
+  - refs: `modules/home/agents/litellm/generated.nix`
+  - criteria: the bridge invokes `headroom` from `PATH`, targets the local proxy, and no remote `/mcp` entry remains
+  - verify: inspect the generated OpenCode configuration; runtime discovery is deferred to the user
+- [ ] 3.8 After the image publisher has produced the initial GHCR image, pin that image by digest in the OCI policy and run the Headroom sidecar in cache mode.
+  - refs: `policy/oci-images.nix`, `modules/home/agents/litellm/default.nix`
+  - depends: 3.6
+  - criteria: the service uses the user-owned v0.31.0 `proxy,code` image and explicitly selects cache mode
+  - verify: user deploys and smoke-tests the published image
 
 ## 4. Validation and reconciliation
 
-- [x] 4.1 Run Nix formatting and evaluate the Home Manager activation package.
+- [ ] 4.1 Run Nix formatting and evaluate the Home Manager activation package.
   - verify: `nixfmt` on changed Nix files and `nix eval .#homeConfigurations.saurabhj.activationPackage`
 - [ ] 4.2 Switch the Home Manager generation and smoke-test LiteLLM, Headroom health, Headroom MCP retrieval, OpenCode MCP discovery, database startup, and a guarded completion request.
   - verify: `nh home switch` plus scoped HTTP/OpenCode checks

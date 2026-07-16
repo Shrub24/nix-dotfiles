@@ -22,3 +22,19 @@ The system SHALL provide a host command for supported Headroom operational comma
 #### Scenario: User runs a Headroom learning command
 - **WHEN** the managed Headroom service is running and the user invokes `headroom learn`
 - **THEN** the command SHALL execute against the managed container and its persistent Headroom state
+
+### Requirement: Headroom receives authoritative context limits
+The system SHALL generate Headroom's model context-limit catalog from the same LiteLLM client model metadata used for OpenCode.
+
+#### Scenario: A LiteLLM model alias is compressed
+- **WHEN** Headroom receives a compression request for a configured LiteLLM model alias
+- **THEN** its generated catalog SHALL provide that alias's context limit
+- **AND** the catalog SHALL omit provider pricing that is not declared in the source metadata
+
+### Requirement: The managed Headroom CLI selects lean-ctx for wrapping
+The system SHALL select `lean-ctx` when the managed Headroom CLI is used for an explicit `headroom wrap` command.
+
+#### Scenario: An operator invokes the wrapper command
+- **WHEN** an operator invokes `headroom wrap ...` through the managed CLI wrapper
+- **THEN** the wrapper SHALL set `HEADROOM_CONTEXT_TOOL=lean-ctx`
+- **AND** it SHALL continue to use the managed Headroom container

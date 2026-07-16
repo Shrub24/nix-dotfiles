@@ -45,6 +45,22 @@ Let the v1.92.0-or-newer LiteLLM database image run its built-in tracked migrati
 
 Remove `programs.litellm.oci.enable` and the unused non-OCI `package` fallback. The gateway depends on the OCI image for its supported database/Prisma runtime, so retaining a switch that selects an unvalidated path only creates dead configuration surface.
 
+### Headroom context catalog
+
+Headroom 0.27 reads custom model limits from its legacy `~/.headroom/models.json` location. Generate that file from the existing `clientModels` and models.dev-derived context limits, keyed by LiteLLM-facing model aliases. Omit pricing: provider-specific pricing is neither present in the source metadata nor required for context curation.
+
+`HEADROOM_CONTEXT_TOOL=lean-ctx` applies only to explicit `headroom wrap` commands; it does not affect the LiteLLM guardrail proxy. The managed CLI wrapper passes this choice for optional wrapper use without adding a second proxy or changing OpenCode configuration.
+
+### Headroom 0.31 image publisher
+
+The official Headroom code image is frozen at 0.27.0 and the successor registry package is not presently readable. Rather than fork upstream or package the Python/Rust application in Nix, a GitHub Actions workflow in this repository SHALL build the official Dockerfile directly from an upstream release tag with `HEADROOM_EXTRAS=proxy,code` and publish a versioned image to the user's GHCR namespace. The deployed service consumes that resulting image by immutable digest through the existing OCI policy.
+
+The workflow's explicit upstream version is Renovate-managed. Publishing the image and recording its digest are distinct steps: the initial image must be published before the policy can be pinned to it.
+
+### Stdio MCP bridge
+
+OpenCode SHALL launch `headroom mcp serve --proxy-url http://127.0.0.1:<port>` through the managed `headroom` command on `PATH`. This bridge uses its local store first, then retrieves from the shared proxy store, preserving access to originals compressed by LiteLLM without requiring OpenCode to speak the proxy HTTP MCP transport directly.
+
 ## Risks / Trade-offs
 
 - [New LiteLLM image changes proxy/Prisma behavior] → Pin version and digest; validate database startup, virtual-key authorization, routing fallbacks, and rollback by restoring the prior policy ref.

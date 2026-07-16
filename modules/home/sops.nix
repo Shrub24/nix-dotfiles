@@ -33,6 +33,7 @@ in
       NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
       CURSOR_API_KEY=${config.sops.placeholder.CURSOR_API_KEY}
       LITELLM_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
+      LITELLM_MASTER_KEY=${config.sops.placeholder.LITELLM_MASTER_KEY}
       OPENCODE_LITELLM_API_KEY=${config.sops.placeholder.OPENCODE_LITELLM_API_KEY}
       OPENAI_COMPATIBLE_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
     '';

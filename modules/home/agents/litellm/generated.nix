@@ -163,11 +163,20 @@ let
       variants = mkVariants;
     }
   ) clientModels;
+
+  # ── Headroom 0.27 context-limit catalog ─────────────────────────────
+  # ponytail: minimal OpenAI-compatible provider namespace; no pricing (not in source metadata)
+  headroomCatalog = {
+    openai = {
+      context_limits = lib.mapAttrs (_: model: model.limit.context) opencodeModels;
+    };
+  };
 in
 {
   inherit
     aliases
     clientModels
+    headroomCatalog
     opencodeModels
     providerLabel
     routes
@@ -201,7 +210,7 @@ in
           guardrail = "headroom";
           mode = "pre_call";
           api_base = "http://127.0.0.1:${toString headroomPort}";
-          default_on = true;
+          default_on = false;
         };
       }
     ];
@@ -224,8 +233,14 @@ in
   // lib.optionalAttrs headroomEnable {
     mcp = {
       headroom = {
-        type = "remote";
-        url = "http://127.0.0.1:${toString headroomPort}/mcp";
+        type = "local";
+        command = "headroom";
+        args = [
+          "mcp"
+          "serve"
+          "--proxy-url"
+          "http://127.0.0.1:${toString headroomPort}"
+        ];
         enabled = true;
       };
     };
