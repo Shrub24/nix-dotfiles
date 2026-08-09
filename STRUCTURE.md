@@ -12,6 +12,7 @@
 ├── .envrc                       # direnv: `use flake . --impure`
 ├── .sops.yaml                   # sops-nix encryption rules
 ├── .gitignore
+├── niri.config.kdl.imperative-backup  # Pre-migration niri config backup
 │
 ├── hosts/                       # Per-machine configurations
 │   └── arch/
@@ -26,7 +27,8 @@
 │       ├── zsh.nix              # Zsh shell config
 │       ├── zsh-abbr.nix         # Zsh abbreviations
 │       ├── tmux.nix             # tmux session settings
-│       ├── opencode.nix         # OpenCode/agents symlinks
+│       ├── opencode.nix         # OpenCode/agents symlinks → ../apps
+│       ├── niri.nix             # niri compositor + Noctalia shell
 │       ├── dev-tools/           # Dev tools (languages, mise, navi)
 │       │   ├── default.nix
 │       │   ├── languages.nix
@@ -68,10 +70,6 @@
 │       ├── agentmemory/         # Agent memory system proposal
 │       └── archive/            # Archived proposals
 │
-├── raw/                         # Live symlink targets (not in nix store)
-│   ├── agents/                  # → ~/.agents via opencode.nix
-│   └── opencode/               # → ~/.config/opencode via opencode.nix
-│
 ├── .skills/                     # Dendritic skills cache
 │   └── dendritic-nix/
 │       └── references/
@@ -96,7 +94,7 @@
 - Key files: `modules/default.nix` — single import point for host configs
 
 **`modules/home/`:**
-- Purpose: Core feature modules (nix, direnv, sops, zsh, opencode, tmux) at top level
+- Purpose: Core feature modules (nix, direnv, sops, zsh, opencode, tmux, niri) at top level
 - Contains: Flat `.nix` files for single-concern modules plus two subdirectories
 
 **`modules/home/dev-tools/`:**
@@ -104,8 +102,8 @@
 - Contains: `default.nix` composing languages, mise, navi; also installs `sysz`
 
 **`modules/home/agents/`:**
-- Purpose: AI agent configurations (pi, hermes, docs-mcp, Bifrost, tools, agentmemory)
-- Contains: `default.nix` composing pi, hermes, docs-mcp, bifrost, tools, agentmemory
+- Purpose: AI agent configurations (pi, hermes, docs-mcp, Bifrost, tools, agentmemory, litellm)
+- Contains: `default.nix` composing pi, hermes, docs-mcp, bifrost, tools, agentmemory, litellm
 
 **`modules/home/agents/bifrost/`:**
 - Purpose: Bifrost MCP gateway module with config template
@@ -120,21 +118,28 @@
 - Uses: nix package `pkgs.agentmemory` (npm-based), sops template for API keys
 - Features: Hermes plugin integration deploys memory provider to `~/.hermes/plugins/agentmemory`
 
+**`modules/home/agents/litellm/`:**
+- Purpose: LiteLLM LLM gateway + Headroom context compression sidecar
+- Contains: `default.nix` (systemd services, activation hooks), `generated.nix` (config/model catalog, guardrail + MCP bridge config), `aliases.nix` (model aliases)
+- Uses: OCI image from `pkgs/litellm/oci.nix` (patched `litellm-database`), official Headroom 0.33.0-code OCI image, podman runtime, sops template for API keys
+- Design: OCI retained because Prisma client/database migrations are impractical to package natively; image loaded once at activation, not per-start; `StartLimitBurst`/`StartLimitIntervalSec` on both services prevent runaway restart loops; native LiteLLM pre-call guardrail active (`default_on = true`); stdio MCP bridge exposes `headroom_retrieve` to OpenCode
+
 **`modules/home/opencode.nix`:**
 - Purpose: Creates out-of-store symlinks for OpenCode and agent configs
-- Links: `~/.config/opencode` → `raw/opencode`, `~/.agents` → `raw/agents`
+- Links: `~/.config/opencode` → `${appsDir}/opencode`, `~/.agents` → `${appsDir}/agents` (`appsDir = /home/saurabhj/.dotfiles/apps`, sibling of the repo via `extraSpecialArgs`)
+
+**`modules/home/niri.nix`:**
+- Purpose: Wayland desktop session — niri compositor + Noctalia shell
+- Uses: `wayland.windowManager.niri` (native HM module; structured `settings` + verbatim KDL `extraConfig`); `programs.noctalia` from `inputs.noctalia.homeModules.default` with `package = pkgs.noctalia` (nixpkgs prebuilt)
+- Note: `xdg.configFile."niri/config.kdl".force = true` replaces the imperative config; pre-migration backup at `niri.config.kdl.imperative-backup`
 
 **`pkgs/`:**
 - Purpose: Custom Nix derivations not available in nixpkgs
-- Contains: One directory per package (`snip/`, `nix-search-tv-fzf/`, `iii-engine/`, `agentmemory/`)
+- Contains: One directory per package (`snip/`, `nix-search-tv-fzf/`, `iii-engine/`, `agentmemory/`, `litellm/`)
 
 **`secrets/`:**
 - Purpose: Encrypted secrets managed by sops-nix
 - Contains: `agents.yaml` (central YAML store), `pi-secrets.yaml` (telegram token), `zsh-secrets.env` (legacy), `bifrost/` gateway secrets
-
-**`raw/`:**
-- Purpose: Live files referenced as symlink targets by `opencode.nix`
-- Contains: `agents/` (agent skills/configs), `opencode/` (OpenCode config and plugins)
 
 **`openspec/changes/`:**
 - Purpose: OpenSpec change proposals
@@ -151,6 +156,7 @@
 - `modules/home/nix.nix`: Nix CLI settings, experimental features, GC policy, unfree whitelist (zsh-abbr, iii-engine)
 - `modules/home/direnv.nix`: direnv + direnv-instant configuration (imports direnv-instant flake module)
 - `modules/home/sops.nix`: sops-nix with YAML-backed placeholders from `secrets/agents.yaml`, renders 4 templates
+- `modules/home/niri.nix`: niri compositor + Noctalia shell — `wayland.windowManager.niri` (`settings` + `extraConfig`), `programs.noctalia` (`package = pkgs.noctalia`), force-replaces imperative `~/.config/niri/config.kdl`
 - `.sops.yaml`: Encryption key and file rules for sops
 
 **Shell:**
@@ -158,7 +164,7 @@
 - `modules/home/zsh-abbr.nix`: Zsh abbreviations — git, Nix, file system, systemd, journalctl, global pipe shortcuts
 
 **OpenCode:**
-- `modules/home/opencode.nix`: Symlinks `~/.config/opencode` and `~/.agents` to `raw/` directory
+- `modules/home/opencode.nix`: Out-of-store symlinks — `~/.config/opencode` → `${appsDir}/opencode`, `~/.agents` → `${appsDir}/agents` (appsDir = `../apps`, sibling of repo)
 
 **Development Tools:**
 - `modules/home/dev-tools/languages.nix`: ast-grep, tree-sitter, matlab grammar, writes `~/.config/ast-grep/sgconfig.yml`
@@ -172,6 +178,7 @@
 - `modules/home/agents/bifrost/default.nix`: Bifrost MCP gateway — systemd service via bunx, sops-template config
 - `modules/home/agents/tools.nix`: Agent CLI tools — snip derivation, codebase-memory-mcp from flake input
 - `modules/home/agents/agentmemory.nix`: Agentmemory persistent memory daemon — defines `programs.agentmemory.*` options, systemd service, optional Hermes plugin deployment
+- `modules/home/agents/litellm/default.nix`: LiteLLM gateway + Headroom sidecar — OCI via podman, one-time image load at activation, restart burst limits, sops template for env
 
 **Secrets (sops-encrypted):**
 - `secrets/agents.yaml`: Central YAML store — all API keys (github, google, openrouter, jina, tavily, brave, firecrawl, context7, openai, minimax, crofai, opencode)
@@ -183,6 +190,8 @@
 - `pkgs/nix-search-tv-fzf/default.nix`: nstv — fzf wrapper around nix-search-tv
 - `pkgs/iii-engine/default.nix`: III engine package
 - `pkgs/agentmemory/default.nix`: Agentmemory npm package — persistent memory for AI agents, wraps `@agentmemory/agentmemory` from npm registry, wraps with iii-engine in PATH
+- `pkgs/litellm/oci.nix`: LiteLLM patched OCI image — pulls `litellm-database` base, applies compatibility patches via custom entrypoint
+- `pkgs/litellm/patches/`: Build-time patches for litellm (streaming empty-choices, prefix-message stripping)
 - `flake.nix` (lines 60-67): Overlay registrations for all custom packages
 
 ## Naming Conventions

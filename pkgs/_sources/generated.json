@@ -1,18 +1,18 @@
 {
-    "kreuzberg-cli": {
+    "xberg-cli": {
         "cargoLock": null,
         "date": null,
         "extract": null,
-        "name": "kreuzberg-cli",
+        "name": "xberg-cli",
         "passthru": null,
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-7l2MYN1X3e72lT/qdCjWwhVynDstgHdw8rKInfd+yyM=",
+            "sha256": "sha256-NoEf6MaTwAwKsGiPSRgOAZG7tqtn7J7+yNwGP7AUolc=",
             "type": "url",
-            "url": "https://github.com/kreuzberg-dev/kreuzberg/releases/download/v5.0.0-rc.13/kreuzberg-cli-x86_64-unknown-linux-gnu.tar.gz"
+            "url": "https://github.com/xberg-io/xberg/releases/download/v1.0.12/xberg-cli-x86_64-unknown-linux-gnu.tar.gz"
         },
-        "version": "v5.0.0-rc.13"
+        "version": "v1.0.12"
     },
     "snip": {
         "cargoLock": null,
@@ -34,5 +34,20 @@
             "type": "github"
         },
         "version": "v0.18.0"
+    },
+    "litellm": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "litellm",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-dzrfVQPuF5MolonImTlKg9+BIpk3YNms14LjKqeY250=",
+            "type": "url",
+            "url": "https://files.pythonhosted.org/packages/source/l/litellm/litellm-1.92.0.tar.gz"
+        },
+        "version": "1.92.0"
     }
 }

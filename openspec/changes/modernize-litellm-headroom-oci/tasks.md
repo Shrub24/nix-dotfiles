@@ -39,9 +39,9 @@
   - depends: 1.1, 1.2, 2.2
   - criteria: the guardrail defaults on and is rendered only when `headroom.enable` is true, targets the local sidecar, and no ASGI middleware path remains
   - verify: inspect rendered LiteLLM config and response guardrail header/log entry
-- [x] 3.3 Add the declarative host Headroom CLI wrapper for managed-container operational commands, including `learn`.
+- [ ] 3.3 Add the declarative host Headroom CLI wrapper for managed-container operational commands, including `learn`.
   - refs: `modules/home/agents/litellm/default.nix`
-  - criteria: the wrapper delegates to the managed container and uses its persistent state rather than starting an ad-hoc image
+  - criteria: the wrapper delegates to the managed container through its `python3 -m headroom.cli` entrypoint and uses its persistent state rather than starting an ad-hoc image
   - verify: inspect wrapper command and run its harmless status/help path after switch
 - [x] 3.4 Add the Headroom proxy `/mcp` endpoint as an enabled remote MCP server in the generated OpenCode configuration, gated on `headroom.enable`.
   - refs: `modules/home/opencode.nix`, `modules/home/agents/litellm/generated.nix`
@@ -51,25 +51,29 @@
   - refs: `modules/home/agents/litellm/generated.nix`, `modules/home/agents/litellm/default.nix`
   - criteria: all configured LiteLLM aliases have generated context limits; pricing is omitted; `HEADROOM_CONTEXT_TOOL=lean-ctx` is passed only for CLI wrapping
   - verify: inspect the rendered `models.json` and managed wrapper
-- [x] 3.6 Add a Renovate-managed GitHub Actions Headroom image publisher that builds the official v0.31.0 Dockerfile with `proxy,code` extras and publishes to the user's GHCR namespace.
-  - refs: `.github/workflows/`, `renovate.json`
-  - criteria: the workflow builds from an explicit upstream tag, publishes a versioned image, and does not require a fork
-  - verify: inspect the rendered workflow and Renovate custom manager; do not run or publish the workflow yet
+- [x] 3.6 Remove obsolete self-published Headroom image wiring now that the official upstream `:code` image is used.
+  - refs: `renovate.json`, `policy/oci-images.nix`
+  - criteria: no publisher workflow or publisher-specific Renovate manager/rule remains; the upstream tag-and-digest policy pin and its Renovate manager remain
+  - verify: validate `renovate.json` and inspect the policy manager
 - [x] 3.7 Replace OpenCode's remote Headroom MCP configuration with the `headroom mcp serve --proxy-url` stdio bridge, gated on `headroom.enable`.
   - refs: `modules/home/agents/litellm/generated.nix`
   - criteria: the bridge invokes `headroom` from `PATH`, targets the local proxy, and no remote `/mcp` entry remains
   - verify: inspect the generated OpenCode configuration; runtime discovery is deferred to the user
-- [ ] 3.8 After the image publisher has produced the initial GHCR image, pin that image by digest in the OCI policy and run the Headroom sidecar in cache mode.
+- [x] 3.8 Pin the official Headroom `:code` image by digest and select Headroom's coding savings profile.
   - refs: `policy/oci-images.nix`, `modules/home/agents/litellm/default.nix`
-  - depends: 3.6
-  - criteria: the service uses the user-owned v0.31.0 `proxy,code` image and explicitly selects cache mode
-  - verify: user deploys and smoke-tests the published image
+  - criteria: the service uses the official upstream `:code` image and explicitly selects `HEADROOM_SAVINGS_PROFILE=coding` (which selects cache mode)
+  - verify: user deploys and smoke-tests the upstream image
+- [x] 3.9 Simplify LiteLLM route registry metadata and common fallback-chain declarations.
+  - refs: `modules/home/agents/litellm/aliases.nix`, `modules/home/agents/litellm/generated.nix`
+  - criteria: each client-consumed route owns one explicit opaque `registryModel` string; each client model resolves to a generated LiteLLM route; `clientModels` has no registry metadata; string chain entries use the route key as their target model; structured entries retain exact upstream/model overrides
+  - verify: evaluate the generated LiteLLM and Headroom configuration, confirming unchanged targets and context limits for existing client aliases
 
 ## 4. Validation and reconciliation
 
-- [ ] 4.1 Run Nix formatting and evaluate the Home Manager activation package.
+- [x] 4.1 Run Nix formatting and evaluate the Home Manager activation package.
   - verify: `nixfmt` on changed Nix files and `nix eval .#homeConfigurations.saurabhj.activationPackage`
 - [ ] 4.2 Switch the Home Manager generation and smoke-test LiteLLM, Headroom health, Headroom MCP retrieval, OpenCode MCP discovery, database startup, and a guarded completion request.
   - verify: `nh home switch` plus scoped HTTP/OpenCode checks
-- [ ] 4.3 Reconcile the implementation with proposal, design, and specs; run strict OpenSpec validation.
+  - notes: the prior Kreuzberg build blocker is resolved. As of 2026-08-06, runtime smoke tests are blocked because PostgreSQL at `oci-melb-1:5432` remains in recovery and rejects connections; LiteLLM's native migration step fails, then the container exits before binding port 8765.
+- [x] 4.3 Reconcile the implementation with proposal, design, and specs; run strict OpenSpec validation.
   - verify: `openspec validate --strict`

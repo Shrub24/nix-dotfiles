@@ -8,6 +8,7 @@
     ./home/opencode.nix
     ./home/tmux.nix
     ./home/wezterm.nix
+    ./home/niri.nix
     ./home/dev-tools
     ./home/agents
     ./home/remote

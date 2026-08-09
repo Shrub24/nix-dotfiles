@@ -2,5 +2,5 @@
 # Update with skopeo inspect + Renovate regex manager.
 {
   litellm-database = "ghcr.io/berriai/litellm-database:v1.92.0@sha256:64d3547e0b131bf4638342e52c12bc46d6f1d9b8498e4b731ff31be5ab316ea9";
-  headroom-code = "ghcr.io/chopratejas/headroom:code@sha256:e86f664eca715ca53505f3f2c73a66d82aa56d3d09b39bb2b75f6b131f3e1568";
+  headroom-code = "ghcr.io/headroomlabs-ai/headroom:0.33.0-code@sha256:f450aa2de66ead24e65223ac8763efca2b87725b04e4ac8fd21a4d05af775099";
 }

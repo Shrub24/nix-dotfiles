@@ -24,12 +24,24 @@ The system SHALL provide a host command for supported Headroom operational comma
 - **THEN** the command SHALL execute against the managed container and its persistent Headroom state
 
 ### Requirement: Headroom receives authoritative context limits
-The system SHALL generate Headroom's model context-limit catalog from the same LiteLLM client model metadata used for OpenCode.
+The system SHALL generate Headroom's model context-limit catalog from the LiteLLM route registry metadata selected by OpenCode client models.
 
 #### Scenario: A LiteLLM model alias is compressed
 - **WHEN** Headroom receives a compression request for a configured LiteLLM model alias
 - **THEN** its generated catalog SHALL provide that alias's context limit
 - **AND** the catalog SHALL omit provider pricing that is not declared in the source metadata
+
+### Requirement: LiteLLM route metadata is canonical
+Each LiteLLM route SHALL declare one explicit models.dev registry identifier. A string fallback-chain entry SHALL target the route's logical model identifier; a structured entry SHALL remain available when an upstream target differs.
+
+#### Scenario: A route uses standard provider targets
+- **WHEN** a route has string upstream entries in its fallback chain
+- **THEN** generated LiteLLM deployments SHALL target the route key for each such entry
+- **AND** client model metadata SHALL resolve from that route's registry identifier
+
+#### Scenario: A route uses a provider-specific target name
+- **WHEN** a fallback-chain entry declares an explicit target model
+- **THEN** generated LiteLLM deployments SHALL use that explicit target rather than the route key
 
 ### Requirement: The managed Headroom CLI selects lean-ctx for wrapping
 The system SHALL select `lean-ctx` when the managed Headroom CLI is used for an explicit `headroom wrap` command.

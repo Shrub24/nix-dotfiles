@@ -6,6 +6,12 @@
       apiKeyEnv = "CROFAI_API_KEY";
     };
 
+    volcengine = {
+      providerFamily = "openai";
+      apiBase = "https://ark.cn-beijing.volces.com/api/coding/v3";
+      apiKeyEnv = "VOLCENGINE_API_KEY";
+    };
+
     deepseek = {
       providerFamily = "deepseek";
       apiKeyEnv = "DEEPSEEK_API_KEY";
@@ -33,48 +39,32 @@
   routes = {
     "glm-5.2" = {
       mode = "chat";
+      registryModel = "zhipuai/glm-5.2";
       chain = [
-        {
-          upstream = "neuralwatt";
-          model = "glm-5.2";
-        }
-        {
-          upstream = "opencode-go";
-          model = "glm-5.2";
-        }
+        "volcengine"
+        "neuralwatt"
+        "opencode-go"
       ];
-
     };
     "mimo-v2.5-pro" = {
       mode = "chat";
+      registryModel = "xiaomi/mimo-v2.5-pro";
       chain = [
-        {
-          upstream = "crof";
-          model = "mimo-v2.5-pro";
-        }
-        {
-          upstream = "opencode-go";
-          model = "mimo-v2.5-pro";
-        }
+        "opencode-go"
       ];
     };
 
     "deepseek-v4-pro" = {
       mode = "chat";
+      registryModel = "deepseek/deepseek-v4-pro";
       chain = [
-        {
-          upstream = "deepseek";
-          model = "deepseek-v4-pro";
-        }
-        {
-          upstream = "crof";
-          model = "deepseek-v4-pro";
-        }
+        "deepseek"
       ];
     };
 
     "multimodal-default" = {
       mode = "chat";
+      registryModel = "minimax/minimax-m3";
       chain = [
         {
           upstream = "opencode-go";
@@ -86,13 +76,14 @@
         }
         {
           upstream = "openrouter";
-          model = "qwen/qwen3.5-flash-02-23";
+          model = "qwen/qwen3.7-flash";
         }
       ];
     };
 
     "qwen3-embedding-8b" = {
       mode = "embedding";
+      registryModel = "qwen/qwen3-embedding-8b";
       chain = [
         {
           upstream = "openrouter";
@@ -103,63 +94,53 @@
 
     "deepseek-v4-flash" = {
       mode = "chat";
+      registryModel = "deepseek/deepseek-v4-flash";
       chain = [
-        {
-          upstream = "opencode-go";
-          model = "deepseek-v4-flash";
-        }
-        {
-          upstream = "deepseek";
-          model = "deepseek-v4-flash";
-        }
+        "opencode-go"
+        "deepseek"
       ];
     };
   };
 
   aliases = {
-    coder = "mimo-v2.5-pro";
-    main = "mimo-v2.5-pro";
+    coder = "deepseek-v4-flash";
+    main = "deepseek-v4-flash";
     summariser = "deepseek-v4-pro";
     image = "multimodal-default";
     embedding = "qwen3-embedding-8b";
     budget = "deepseek-v4-flash";
     explorer = "deepseek-v4-flash";
+    "glm-5.2" = "glm-5.2";
   };
 
   clientModels = {
     coder = {
       name = "Coder";
-      registryModel = [ "xiaomi/mimo-v2.5-pro" ];
       autogenerateVariants = true;
     };
 
     main = {
       name = "Main";
-      registryModel = [ "xiaomi/mimo-v2.5-pro" ];
       autogenerateVariants = true;
     };
 
     summariser = {
       name = "Summariser";
-      registryModel = [ "deepseek/deepseek-v4-pro" ];
       autogenerateVariants = true;
     };
 
     budget = {
       name = "Budget";
-      registryModel = [ "deepseek/deepseek-v4-flash" ];
       autogenerateVariants = true;
     };
 
     explorer = {
       name = "Explorer";
-      registryModel = [ "deepseek/deepseek-v4-flash" ];
       autogenerateVariants = true;
     };
 
     "glm-5.2" = {
       name = "GLM 5.2";
-      registryModel = [ "zhipuai/glm-5.2" ];
       autogenerateVariants = true;
     };
   };

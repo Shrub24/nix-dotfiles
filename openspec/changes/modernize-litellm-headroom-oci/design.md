@@ -23,15 +23,15 @@ Headroom's official `:code` image contains the proxy and tree-sitter code compre
 
 ### Pinned official `:code` Headroom image
 
-Use `ghcr.io/chopratejas/headroom:code` at a version tag and immutable digest. It supplies `proxy` and `code`, including tree-sitter compression and MCP support, without rebuilding Python dependencies when the service starts. `mcp` need not be installed separately because the proxy image exposes `/mcp`. A custom `proxy,code,ml,mcp` image was rejected: ML adds substantial Torch startup and memory cost, while MCP is already available from the proxy.
+Use `ghcr.io/headroomlabs-ai/headroom:0.33.0-code` at a version tag and immutable digest. The official upstream registry now publishes code-aware images directly — no self-publish workflow is needed. The image supplies `proxy` and `code`, including tree-sitter compression and MCP support, without rebuilding Python dependencies when the service starts. `mcp` need not be installed separately because the proxy image exposes `/mcp`. A custom `proxy,code,ml,mcp` image was rejected: ML adds substantial Torch startup and memory cost, while MCP is already available from the proxy.
 
 ### Native guardrail rather than ASGI middleware
 
-Render LiteLLM's `headroom` pre-call guardrail with `default_on = true` and the local sidecar base URL only when `programs.litellm.headroom.enable` is true. Native guardrails preserve LiteLLM lifecycle, audit, spend-log, virtual-key, bypass, and per-request semantics. The old ASGI path is incompatible as a concurrent integration because it can double-compress requests and bypasses guardrail observability. The host remains Headroom-disabled until the Renovate policy is present and the LiteLLM OCI base image has been upgraded to v1.92.0 or newer.
+Render LiteLLM's `headroom` pre-call guardrail with `default_on = true` and the local sidecar base URL only when `programs.litellm.headroom.enable` is true. Native guardrails preserve LiteLLM lifecycle, audit, spend-log, virtual-key, bypass, and per-request semantics. The old ASGI path is incompatible as a concurrent integration because it can double-compress requests and bypasses guardrail observability. The guardrail is now active with LiteLLM v1.92.0 and Headroom 0.33.0.
 
 ### One Headroom proxy, remote OpenCode MCP
 
-Expose `http://127.0.0.1:<headroom-port>/mcp` to OpenCode as a remote MCP server. Do not spawn `headroom mcp serve`: proxy `/mcp` shares the same CompressionStore as guardrail compression, so `headroom_retrieve` can recover the canonical original. Provide a thin host `headroom` command wrapper that delegates supported operational commands, including `learn`, to the persistent container. Mount Headroom's state directory; mount only documented agent-state directories needed by selected CLI workflows.
+Expose `http://127.0.0.1:<headroom-port>/mcp` to OpenCode as a remote MCP server. Do not spawn `headroom mcp serve`: proxy `/mcp` shares the same CompressionStore as guardrail compression, so `headroom_retrieve` can recover the canonical original. Provide a thin host `headroom` command wrapper that delegates supported operational commands, including `learn`, to the persistent container. The official image exposes its CLI as `python3 -m headroom.cli`, so the wrapper must invoke that module rather than assuming a `headroom` executable exists in the image. Mount Headroom's state directory; mount only documented agent-state directories needed by selected CLI workflows.
 
 ### OCI policy file plus Renovate
 
@@ -51,11 +51,15 @@ Headroom 0.27 reads custom model limits from its legacy `~/.headroom/models.json
 
 `HEADROOM_CONTEXT_TOOL=lean-ctx` applies only to explicit `headroom wrap` commands; it does not affect the LiteLLM guardrail proxy. The managed CLI wrapper passes this choice for optional wrapper use without adding a second proxy or changing OpenCode configuration.
 
-### Headroom 0.31 image publisher
+### Route-owned registry metadata and concise fallback chains
 
-The official Headroom code image is frozen at 0.27.0 and the successor registry package is not presently readable. Rather than fork upstream or package the Python/Rust application in Nix, a GitHub Actions workflow in this repository SHALL build the official Dockerfile directly from an upstream release tag with `HEADROOM_EXTRAS=proxy,code` and publish a versioned image to the user's GHCR namespace. The deployed service consumes that resulting image by immutable digest through the existing OCI policy.
+Each route owns one explicit opaque models.dev `registryModel` identifier. It is metadata for context-limit lookup, not a provider/model schema to normalize. Client model declarations remain presentation-only and resolve their metadata through their selected route.
 
-The workflow's explicit upstream version is Renovate-managed. Publishing the image and recording its digest are distinct steps: the initial image must be published before the policy can be pinned to it.
+The route key is the stable LiteLLM-facing logical model identifier. A string item in a route's fallback `chain` names an upstream and targets that route key; an attribute set remains available when an upstream requires a distinct target model. This avoids duplicating the common model name while retaining explicit registry metadata and exact overrides for provider-qualified upstream targets.
+
+### Headroom 0.33 image publisher
+
+The official Headroom code image is now published upstream at `ghcr.io/headroomlabs-ai/headroom` with `:code` tags. The previously planned GitHub Actions workflow to self-publish images to the user's GHCR namespace is no longer needed. The deployed service consumes the official image by immutable digest through the existing OCI policy.
 
 ### Stdio MCP bridge
 

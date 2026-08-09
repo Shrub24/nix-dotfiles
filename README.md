@@ -33,7 +33,7 @@ Dual-layer flake configuration managed via flakes — system-manager for daemon/
     ├── nix-search-tv-fzf/
     ├── iii-engine/
     ├── agentmemory/
-    ├── kreuzberg-cli/
+    ├── xberg-cli/
     └── litellm/
 ```
 

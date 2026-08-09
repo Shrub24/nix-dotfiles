@@ -17,6 +17,10 @@
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    noctalia = {
+      url = "github:noctalia-dev/noctalia";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
     };
@@ -63,6 +67,10 @@
     };
     fsel = {
       url = "github:Mjoyufull/fsel";
+    };
+    keypeek = {
+      url = "github:srwi/keypeek";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -136,19 +144,14 @@
                 inherit (agentmemorySources.agentmemory) version npmDepsHash;
                 srcHash = agentmemorySources.agentmemory.srcHash;
               };
-              kreuzberg-cli = final.callPackage ./pkgs/kreuzberg-cli {
-                inherit (generatedSources.kreuzberg-cli) version src;
+              xberg-cli = final.callPackage ./pkgs/xberg-cli {
+                inherit (generatedSources.xberg-cli) version src;
               };
               byterover-cli = final.callPackage ./pkgs/byterover { };
-              # Patch litellm to tolerate empty-choices stream chunks from vLLM-backed APIs
-              litellm = prev.litellm.overridePythonAttrs (old: {
-                patches = (old.patches or [ ]) ++ [
-                  ./pkgs/litellm/patches/streaming-empty-choices.patch
-                  ./pkgs/litellm/patches/strip-prefix-message.patch
-                ];
-              });
-              niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
+              codexbar = final.callPackage ./pkgs/codexbar { };
               litellm-oci = final.callPackage ./pkgs/litellm/oci.nix { };
+              niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
+              keypeek = inputs.keypeek.packages.${system}.default;
             };
           pkgs = import inputs.nixpkgs {
             inherit system;

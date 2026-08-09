@@ -81,6 +81,7 @@
   ];
 
   home.sessionVariables = {
+    UV_TOOL_PYTHON_PREFERENCE = "only-managed";
     QMD_EMBED_MODEL = "hf://Qwen/Qwen3-Embedding-0.6B-GGUF/Qwen3-Embedding-0.6B-f16.gguf";
     PNPM_HOME = "${config.home.homeDirectory}/.local/share/pnpm";
     BUN_INSTALL = "${config.home.homeDirectory}/.bun";
@@ -89,6 +90,7 @@
     LESS = "-R --use-color";
     BAT_THEME = "matugen-bat-colors";
     DOTNET_ROOT = "/usr/bin";
+    OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS = true;
   };
 
   programs.pistol = {

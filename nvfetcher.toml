@@ -16,8 +16,12 @@
 src.github = "edouard-claude/snip"
 fetch.github = "edouard-claude/snip"
 
-[kreuzberg-cli]
-src.github = "kreuzberg-dev/kreuzberg"
-fetch.url = "https://github.com/kreuzberg-dev/kreuzberg/releases/download/$ver/kreuzberg-cli-x86_64-unknown-linux-gnu.tar.gz"
+[xberg-cli]
+src.github = "xberg-io/xberg"
+fetch.url = "https://github.com/xberg-io/xberg/releases/download/$ver/xberg-cli-x86_64-unknown-linux-gnu.tar.gz"
+
+[litellm]
+src.pypi = "litellm"
+fetch.pypi = "litellm"
 
 

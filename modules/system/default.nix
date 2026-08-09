@@ -5,5 +5,6 @@
     ./network.nix
     ./boot.nix
     ./ssh.nix
+    ./greeter.nix
   ];
 }

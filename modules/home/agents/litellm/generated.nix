@@ -20,17 +20,10 @@ let
     builtins.readFile (
       builtins.fetchurl {
         url = "https://models.dev/models.json";
-        sha256 = "sha256-pgMmJ08jSV8EvCxX7iRkuoGQ/q1HeRRC1NXa3qgxOmA=";
+        sha256 = "sha256-6e/r7w1vMUi6CCYOhFBm2c3HOTXD87NNkdKXQCe9exQ=";
       }
     )
   );
-
-  registryLookup = builtins.mapAttrs (_: m: {
-    context_length = m.limit.context or null;
-    max_output = m.limit.output or null;
-    input_modalities = m.modalities.input or null;
-    output_modalities = m.modalities.output or null;
-  }) modelRegistry;
 
   defaultContext = 128000;
   defaultOutput = 16384;
@@ -39,23 +32,8 @@ let
     output = [ "text" ];
   };
 
-  resolveRegistryMeta =
-    ids:
-    let
-      idList = if builtins.isString ids then [ ids ] else ids;
-      findFirstValid =
-        list:
-        if list == [ ] then
-          { }
-        else
-          let
-            head = builtins.head list;
-            tail = builtins.tail list;
-            entry = registryLookup.${head} or { };
-          in
-          if entry.context_length != null && entry.max_output != null then entry else findFirstValid tail;
-    in
-    findFirstValid idList;
+  # ponytail: accept one registry id string; caller already validates type
+  resolveRegistryMeta = id: modelRegistry.${id} or { };
 
   # ── LiteLLM config generation ──────────────────────────────────────
 
@@ -80,6 +58,17 @@ let
     in
     base // lib.optionalAttrs (upstream ? apiBase) { api_base = upstream.apiBase; };
 
+  # ponytail: string chain entry = upstream name; model defaults to the route key
+  normalizeEntry =
+    routeName: entry:
+    if builtins.isString entry then
+      {
+        upstream = entry;
+        model = routeName;
+      }
+    else
+      entry;
+
   routeGroupName =
     routeName: chainIndex:
     if chainIndex == 0 then routeName else "${routeName}__fallback${toString chainIndex}";
@@ -90,14 +79,20 @@ let
       let
         route = routes.${routeName};
       in
-      lib.imap0 (chainIndex: deployment: {
-        model_name = routeGroupName aliasName chainIndex;
-        litellm_params = mkParams deployment;
-        model_info = {
-          mode = route.mode;
-          id = "${routeName}__${deployment.upstream}";
-        };
-      }) route.chain
+      lib.imap0 (
+        chainIndex: rawEntry:
+        let
+          deployment = normalizeEntry routeName rawEntry;
+        in
+        {
+          model_name = routeGroupName aliasName chainIndex;
+          litellm_params = mkParams deployment;
+          model_info = {
+            mode = route.mode;
+            id = "${routeName}__${deployment.upstream}";
+          };
+        }
+      ) route.chain
     ) aliases
   );
 
@@ -141,22 +136,38 @@ let
       reasoningEffort = "xhigh";
       textVerbosity = "medium";
     };
+    max = {
+      reasoningEffort = "max";
+      textVerbosity = "medium";
+    };
   };
 
   opencodeModels = lib.mapAttrs (
-    _: model:
+    aliasName: model:
     let
-      meta = resolveRegistryMeta (model.registryModel or [ ]);
+      routeName = aliases.${aliasName} or aliasName;
+      route =
+        routes.${routeName} or (throw "clientModel '${aliasName}': route '${routeName}' does not exist");
+      registryModel =
+        route.registryModel
+          or (throw "clientModel '${aliasName}': route '${routeName}' lacks registryModel");
+      meta =
+        if builtins.isString registryModel then
+          resolveRegistryMeta registryModel
+        else
+          throw "clientModel '${aliasName}': registryModel is ${builtins.typeOf registryModel}, expected string";
+      limit_ = meta.limit or { };
+      modalities_ = meta.modalities or { };
     in
     {
       name = model.name;
       limit = {
-        context = meta.context_length or defaultContext;
-        output = meta.max_output or defaultOutput;
+        context = limit_.context or defaultContext;
+        output = limit_.output or defaultOutput;
       };
       modalities = {
-        input = meta.input_modalities or defaultModalities.input;
-        output = meta.output_modalities or defaultModalities.output;
+        input = modalities_.input or defaultModalities.input;
+        output = modalities_.output or defaultModalities.output;
       };
     }
     // lib.optionalAttrs (model.autogenerateVariants or false) {
@@ -210,7 +221,7 @@ in
           guardrail = "headroom";
           mode = "pre_call";
           api_base = "http://127.0.0.1:${toString headroomPort}";
-          default_on = false;
+          default_on = true;
         };
       }
     ];

@@ -23,7 +23,6 @@ in
       GITHUB_PAT=${config.sops.placeholder.GITHUB_PAT}
       GITHUB_TOKEN=${config.sops.placeholder.GITHUB_TOKEN}
       GEMINI_API_KEY=${config.sops.placeholder.GEMINI_API_KEY}
-      CROFAI_API_KEY=${config.sops.placeholder.CROFAI_API_KEY}
       OPENROUTER_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
       OPENCODE_API_KEY=${config.sops.placeholder.OPENCODE_API_KEY}
       SOURCEGRAPH_TOKEN=${config.sops.placeholder.SOURCEGRAPH_TOKEN}
@@ -36,11 +35,17 @@ in
       LITELLM_MASTER_KEY=${config.sops.placeholder.LITELLM_MASTER_KEY}
       OPENCODE_LITELLM_API_KEY=${config.sops.placeholder.OPENCODE_LITELLM_API_KEY}
       OPENAI_COMPATIBLE_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
+      VOLCENGINE_API_KEY=${config.sops.placeholder.VOLCENGINE_API_KEY}
     '';
 
     # --- individual YAML-backed secrets ---
 
     secrets = {
+      VOLCENGINE_API_KEY = {
+        sopsFile = yamlSecrets;
+        format = "yaml";
+        key = "volcengine_api_key";
+      };
       SOURCEGRAPH_TOKEN = {
         sopsFile = yamlSecrets;
         format = "yaml";
@@ -56,11 +61,11 @@ in
         format = "yaml";
         key = "github_token";
       };
-      CROFAI_API_KEY = {
-        sopsFile = yamlSecrets;
-        format = "yaml";
-        key = "crofai_api_key";
-      };
+      # CROFAI_API_KEY = {
+      #   sopsFile = yamlSecrets;
+      #   format = "yaml";
+      #   key = "crofai_api_key";
+      # };
       OPENROUTER_API_KEY = {
         sopsFile = yamlSecrets;
         format = "yaml";
@@ -186,8 +191,8 @@ in
         ${lib.optionalString config.programs.litellm.headroom.enable "HEADROOM_API_BASE=http://127.0.0.1:${toString config.programs.litellm.headroomPort}"}
         GEMINI_API_KEY=${config.sops.placeholder.GEMINI_API_KEY}
         DEEPSEEK_API_KEY=${config.sops.placeholder.DEEPSEEK_API_KEY}
-        CROFAI_API_KEY=${config.sops.placeholder.CROFAI_API_KEY}
         NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
+        VOLCENGINE_API_KEY=${config.sops.placeholder.VOLCENGINE_API_KEY}
         OPENROUTER_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
         OPENCODE_API_KEY=${config.sops.placeholder.OPENCODE_API_KEY}
       '';

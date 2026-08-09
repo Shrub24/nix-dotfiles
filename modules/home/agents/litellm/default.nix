@@ -48,27 +48,31 @@ in
       "d %h/.local/share/headroom 0755 - - -"
     ];
 
-    # ── Headroom sidecar ─────────────────────────────────────────────
+    # ── Headroom sidecar (OCI, no nixpkgs equivalent) ───────────────
     systemd.user.services.headroom = lib.mkIf cfg.headroom.enable {
       Unit = {
         Description = "Headroom context compression sidecar";
         After = [ "network-online.target" ];
         Wants = [ "network-online.target" ];
+        StartLimitBurst = 3;
+        StartLimitIntervalSec = 120;
       };
 
       Service = {
         Type = "simple";
+        ExecStartPre = "${pkgs.podman}/bin/podman pull --quiet ${ociImages.headroom-code}";
         ExecStart = ''
-          ${pkgs.podman}/bin/podman run --rm --network host \
+          ${pkgs.podman}/bin/podman run --rm --replace --network host \
             --name headroom \
             -v %h/.local/share/headroom:/home/headroom/.headroom \
             -e HEADROOM_TELEMETRY=off \
+            -e HEADROOM_SAVINGS_PROFILE=coding \
             ${ociImages.headroom-code} \
             --host 127.0.0.1 --port ${toString cfg.headroomPort} --code-aware
         '';
         ExecStop = "${pkgs.podman}/bin/podman stop headroom";
         Restart = "on-failure";
-        RestartSec = "5s";
+        RestartSec = "10s";
         StandardOutput = "journal";
         StandardError = "journal";
       };
@@ -78,17 +82,19 @@ in
       };
     };
 
+    # ── LiteLLM gateway (OCI with one-time image load) ─────────────
     systemd.user.services.litellm = {
       Unit = {
         Description = "LiteLLM local gateway";
         After = [
           "sops-nix.service"
           "network-online.target"
-          "podman.service"
         ]
         ++ lib.optionals cfg.headroom.enable [ "headroom.service" ];
         Requires = lib.optionals cfg.headroom.enable [ "headroom.service" ];
         Wants = [ "network-online.target" ];
+        StartLimitBurst = 3;
+        StartLimitIntervalSec = 120;
         X-Restart-Triggers = [
           litellmConfigFile
           config.sops.templates."litellm.env".path
@@ -100,9 +106,8 @@ in
         Type = "simple";
         Environment = [ "HOME=%h" ];
         EnvironmentFile = [ config.sops.templates."litellm.env".path ];
-        ExecStartPre = "${pkgs.podman}/bin/podman load -i ${ociImage}";
         ExecStart = ''
-          ${pkgs.podman}/bin/podman run --rm --network host \
+          ${pkgs.podman}/bin/podman run --rm --replace --network host \
             --name litellm \
             -v %h/.config/litellm/config.yaml:/app/config.yaml:ro \
             --env-file ${config.sops.templates."litellm.env".path} \
@@ -122,6 +127,13 @@ in
       };
     };
 
+    # One-time image load at activation — avoids unpacking tarball on every restart
+    home.activation.litellmImageLoad = lib.hm.dag.entryAfter [ "sops-nix" ] ''
+      if ! ${pkgs.podman}/bin/podman image inspect localhost/litellm-patched:latest >/dev/null 2>&1; then
+        ${pkgs.podman}/bin/podman load -i ${ociImage} >/dev/null 2>&1 || true
+      fi
+    '';
+
     home.file.".local/share/headroom/models.json" = lib.mkIf cfg.headroom.enable {
       text = builtins.toJSON litellmGenerated.headroomCatalog;
     };
@@ -136,7 +148,7 @@ in
           echo "Start it with: systemctl --user start headroom.service" >&2
           exit 1
         fi
-        exec ${pkgs.podman}/bin/podman exec --env HEADROOM_CONTEXT_TOOL=lean-ctx headroom headroom "$@"
+        exec ${pkgs.podman}/bin/podman exec --env HEADROOM_CONTEXT_TOOL=lean-ctx headroom python3 -m headroom.cli "$@"
       '';
     };
 

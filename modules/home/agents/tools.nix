@@ -12,14 +12,14 @@ let
 in
 {
   options.programs.agentTools = {
-    enable = lib.mkEnableOption "AI agent CLI tools (snip, codebase-memory-mcp, kreuzberg-cli)";
+    enable = lib.mkEnableOption "AI agent CLI tools (snip, codebase-memory-mcp, xberg-cli)";
   };
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
       brave-search-cli
       inputs.codebase-memory-mcp.packages.${system}.default
-      pkgs.kreuzberg-cli
+      pkgs.xberg-cli
     ];
   };
 }

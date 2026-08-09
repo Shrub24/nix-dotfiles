@@ -1,7 +1,9 @@
-{ config, pkgs, ... }: {
+{ config, pkgs, ... }:
+{
   programs.navi = {
     enable = true;
     enableZshIntegration = true;
+    enableFishIntegration = true;
 
     settings = {
       style = {
