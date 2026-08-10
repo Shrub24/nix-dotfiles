@@ -76,7 +76,6 @@ filter for homepage inclusion.
 | `litellm`     | 8765 | `/` | `/health` | `/openapi.json` |
 | `docs-mcp`    | 6280 | `/` | —        | —             |
 | `qmd`         | 8181 | `/` | —        | —             |
-| `agentmemory` | 3113 | `/` | `/`      | —             |
 | `web-catalog` | 8123 | `/` | `/`      | —             |
 
 ## URL derivation
@@ -195,7 +194,7 @@ in
 }
 ```
 
-Wired modules: `litellm`, `docs-mcp`, `qmd`, `agentmemory`, `web-catalog`.
+Wired modules: `litellm`, `docs-mcp`, `qmd`, `web-catalog`.
 
 ## Adding a new service
 

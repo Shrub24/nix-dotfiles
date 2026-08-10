@@ -23,15 +23,6 @@ in
       config.sops.templates."hermes.env".path
     ];
     mcpServers = lib.mkMerge [
-      (lib.mkIf (config.programs.agentmemory.enable or false) {
-        agentmemory = {
-          command = "agentmemory";
-          args = [ "mcp" ];
-          env = {
-            AGENTMEMORY_URL = "http://localhost:3111";
-          };
-        };
-      })
       (lib.mkIf (config.programs.docsMcp.enable or false) {
         docs = {
           url = "http://localhost:${toString config.programs.docsMcp.port}/mcp";
@@ -121,9 +112,6 @@ in
         nudge_interval = 0;
         memory_char_limit = 1200;
         user_char_limit = 800;
-      }
-      // lib.optionalAttrs (config.programs.agentmemory.enable or false) {
-        provider = "agentmemory";
       };
     };
   };

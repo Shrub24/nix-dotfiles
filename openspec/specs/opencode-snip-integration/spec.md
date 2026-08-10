@@ -1,8 +1,8 @@
 <!--
 canonical-spec: opencode-snip-integration
 status: active
-source-change: migrate-tokf-to-snip
-source-spec: openspec/changes/migrate-tokf-to-snip/specs/opencode-snip-integration/spec.md
+source-change: archive/2026-08-09-migrate-tokf-to-snip
+source-spec: openspec/changes/archive/2026-08-09-migrate-tokf-to-snip/specs/opencode-snip-integration/spec.md
 -->
 
 

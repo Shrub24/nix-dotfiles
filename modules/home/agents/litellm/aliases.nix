@@ -64,7 +64,7 @@
 
     "multimodal-default" = {
       mode = "chat";
-      registryModel = "minimax/minimax-m3";
+      registryModel = "minimax/MiniMax-M3";
       chain = [
         {
           upstream = "opencode-go";

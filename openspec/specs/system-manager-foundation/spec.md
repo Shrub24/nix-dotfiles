@@ -1,8 +1,8 @@
 <!--
 canonical-spec: system-manager-foundation
 status: active
-source-change: add-system-manager
-source-spec: openspec/changes/add-system-manager/specs/system-manager-foundation/spec.md
+source-change: archive/2026-06-17-add-system-manager
+source-spec: openspec/changes/archive/2026-06-17-add-system-manager/specs/system-manager-foundation/spec.md
 -->
 
 

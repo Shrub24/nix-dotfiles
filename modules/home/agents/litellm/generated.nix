@@ -142,8 +142,7 @@ let
     };
   };
 
-  opencodeModels = lib.mapAttrs (
-    aliasName: model:
+  mkHeadroomModel = aliasName:
     let
       routeName = aliases.${aliasName} or aliasName;
       route =
@@ -160,7 +159,6 @@ let
       modalities_ = meta.modalities or { };
     in
     {
-      name = model.name;
       limit = {
         context = limit_.context or defaultContext;
         output = limit_.output or defaultOutput;
@@ -169,6 +167,14 @@ let
         input = modalities_.input or defaultModalities.input;
         output = modalities_.output or defaultModalities.output;
       };
+      inherit registryModel;
+    };
+
+  opencodeModels = lib.mapAttrs (
+    aliasName: model:
+    mkHeadroomModel aliasName
+    // {
+      name = model.name;
     }
     // lib.optionalAttrs (model.autogenerateVariants or false) {
       variants = mkVariants;
@@ -179,15 +185,18 @@ let
   # ponytail: minimal OpenAI-compatible provider namespace; no pricing (not in source metadata)
   headroomCatalog = {
     openai = {
-      context_limits = lib.mapAttrs (_: model: model.limit.context) opencodeModels;
+      context_limits = lib.mapAttrs (_: model: model.limit.context) headroomModels;
     };
   };
+  headroomModels = lib.mapAttrs (aliasName: _: mkHeadroomModel aliasName) aliases;
+  headroomModelAliasMap = lib.mapAttrs (_: model: model.registryModel) headroomModels;
 in
 {
   inherit
     aliases
     clientModels
     headroomCatalog
+    headroomModelAliasMap
     opencodeModels
     providerLabel
     routes

@@ -21,6 +21,14 @@
       url = "github:noctalia-dev/noctalia";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    noctalia-greeter = {
+      url = "github:noctalia-dev/noctalia-greeter/v1.2.1";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    monique = {
+      url = "github:ToRvaLDz/monique";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
     };
@@ -116,7 +124,6 @@
       flake =
         let
           system = "x86_64-linux";
-          agentmemorySources = import ./pkgs/agentmemory/sources.nix;
           overlay =
             final: prev:
             let
@@ -134,24 +141,23 @@
                 inherit (generatedSources.snip) version src;
               };
               nix-search-tv-fzf = final.callPackage ./pkgs/nix-search-tv-fzf { };
-              iii-engine = final.callPackage ./pkgs/iii-engine {
-                inherit (agentmemorySources."iii-engine") version;
-                hash = agentmemorySources."iii-engine".srcHash;
-                initHash = agentmemorySources."iii-engine".initHash;
-                workerHash = agentmemorySources."iii-engine".workerHash;
-              };
-              agentmemory = final.callPackage ./pkgs/agentmemory {
-                inherit (agentmemorySources.agentmemory) version npmDepsHash;
-                srcHash = agentmemorySources.agentmemory.srcHash;
-              };
               xberg-cli = final.callPackage ./pkgs/xberg-cli {
                 inherit (generatedSources.xberg-cli) version src;
               };
               byterover-cli = final.callPackage ./pkgs/byterover { };
               codexbar = final.callPackage ./pkgs/codexbar { };
+              nirius = final.callPackage ./pkgs/nirius { };
               litellm-oci = final.callPackage ./pkgs/litellm/oci.nix { };
               niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
-              keypeek = inputs.keypeek.packages.${system}.default;
+              keypeek = inputs.keypeek.packages.${system}.default.overrideAttrs (old: {
+                patches = (old.patches or [ ]) ++ [ ./pkgs/keypeek/zmk-default-vid-pid.patch ];
+                postInstall = (old.postInstall or "") + ''
+                  install -Dm644 ${inputs.keypeek}/cargo-appimage.desktop \
+                    "$out/share/applications/keypeek.desktop"
+                  install -Dm644 resources/icon.svg \
+                    "$out/share/icons/hicolor/scalable/apps/keypeek.svg"
+                '';
+              });
             };
           pkgs = import inputs.nixpkgs {
             inherit system;

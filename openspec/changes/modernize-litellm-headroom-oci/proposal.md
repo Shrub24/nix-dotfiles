@@ -6,6 +6,7 @@ LiteLLM is pinned to a pre-Headroom-guardrail OCI release, while the current Hea
 
 - Upgrade the patched LiteLLM database OCI base image to a pinned release that supports native Headroom guardrails.
 - Replace the runtime `python:slim` + `pip install` Headroom sidecar with the pinned official Headroom code-aware OCI image.
+- Bound Headroom's local compression workers and disable its unselected Kompress fallback to prevent host CPU oversubscription.
 - Enable Headroom as LiteLLM's default pre-call guardrail and persist its compression state.
 - Expose the Headroom proxy's shared MCP endpoint to OpenCode for compression, retrieval, and statistics tools.
 - Provide a declarative host CLI wrapper for operational Headroom commands such as `learn`.

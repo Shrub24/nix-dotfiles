@@ -1,0 +1,38 @@
+diff --git a/src/device_discovery.rs b/src/device_discovery.rs
+index 2d51464..e7f14be 100644
+--- a/src/device_discovery.rs
++++ b/src/device_discovery.rs
+@@ -4,4 +4,6 @@ use std::collections::HashSet;
+ const VIA_USAGE_PAGE: u16 = 0xff60;
++const ZMK_DEFAULT_VID: u16 = 0x1D50;
++const ZMK_DEFAULT_PID: u16 = 0x615E;
+ 
+ /// Identifiers for the virtual keyboard. They must match `resources/mock_keyboard.json`
+ /// and are deliberately outside the ranges real boards use.
+@@ -275,5 +277,7 @@ fn is_vial_device(dev: &HidInfo) -> bool {
+ fn is_probable_zmk_hid(dev: &HidInfo) -> bool {
+-    dev.manufacturer
++    (dev.vendor_id == ZMK_DEFAULT_VID && dev.product_id == ZMK_DEFAULT_PID)
++        || dev
++            .manufacturer
+         .as_deref()
+         .is_some_and(|m| m.to_ascii_lowercase().contains("zmk"))
+         || dev
+@@ -428,4 +432,17 @@ mod tests {
+         };
+         assert!(is_probable_zmk_hid(&hid));
+     }
++
++    #[test]
++    fn probable_zmk_hid_detects_default_zmk_vid_pid() {
++        let hid = HidInfo {
++            vendor_id: 0x1D50,
++            product_id: 0x615E,
++            usage_page: VIA_USAGE_PAGE,
++            manufacturer: None,
++            product: Some("Sofle".to_string()),
++            serial_number: None,
++        };
++        assert!(is_probable_zmk_hid(&hid));
++    }
+ }

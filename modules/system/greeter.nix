@@ -1,13 +1,28 @@
-{ pkgs, ... }:
+{
+  inputs,
+  pkgs,
+  ...
+}:
 let
+  noctaliaGreeterPackage =
+    inputs.noctalia-greeter.packages.${pkgs.stdenv.hostPlatform.system}.default;
+
+  dbusRunSession = pkgs.writeShellApplication {
+    name = "dbus-run-session";
+    text = ''
+      exec ${pkgs.dbus}/bin/dbus-run-session \
+        --config-file=${pkgs.dbus}/share/dbus-1/session.conf "$@"
+    '';
+  };
+
   noctaliaGreeterSession = pkgs.writeShellApplication {
     name = "greetd-noctalia-session";
     runtimeInputs = [
       pkgs.cage
-      pkgs.dbus
+      dbusRunSession
       pkgs.wlr-randr
     ];
-    text = ''exec ${pkgs.noctalia-greeter}/bin/noctalia-greeter-session "$@"'';
+    text = ''exec ${noctaliaGreeterPackage}/bin/noctalia-greeter-session "$@"'';
   };
 
   niriSession = pkgs.writeText "niri.desktop" ''
@@ -19,11 +34,19 @@ let
     DesktopNames=niri
   '';
 
+  niriUwsmLauncher = pkgs.writeShellApplication {
+    name = "niri-uwsm-session";
+    text = ''
+      exec ${pkgs.systemd}/bin/systemd-cat --identifier=niri-uwsm \
+        ${pkgs.uwsm}/bin/uwsm start -N "Niri (UWSM)" -D niri -e -- ${pkgs.niri}/bin/niri
+    '';
+  };
+
   niriUwsmSession = pkgs.writeText "niri-uwsm.desktop" ''
     [Desktop Entry]
     Name=Niri (UWSM)
     Comment=A scrollable-tiling Wayland compositor
-    Exec=${pkgs.uwsm}/bin/uwsm start -N "Niri (UWSM)" -D niri -e -- ${pkgs.niri}/bin/niri
+    Exec=${niriUwsmLauncher}/bin/niri-uwsm-session
     Type=Application
     DesktopNames=niri;
     TryExec=${pkgs.uwsm}/bin/uwsm
@@ -51,5 +74,18 @@ in
     [default_session]
     command = "${noctaliaGreeterSession}/bin/greetd-noctalia-session"
     user = "greeter"
+  '';
+
+  environment.etc."polkit-1/rules.d/50-noctalia-greeter.rules".text = ''
+    polkit.addRule(function(action, subject) {
+      if (
+        action.id == "org.noctalia.greeter.apply-appearance" &&
+        subject.user == "saurabhj" &&
+        subject.local &&
+        subject.active
+      ) {
+        return polkit.Result.YES;
+      }
+    });
   '';
 }

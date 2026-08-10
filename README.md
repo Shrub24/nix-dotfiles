@@ -31,8 +31,6 @@ Dual-layer flake configuration managed via flakes — system-manager for daemon/
 └── pkgs/                   # Local package derivations
     ├── snip/
     ├── nix-search-tv-fzf/
-    ├── iii-engine/
-    ├── agentmemory/
     ├── xberg-cli/
     └── litellm/
 ```

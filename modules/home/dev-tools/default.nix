@@ -11,6 +11,7 @@ in
   ];
 
   home.packages = with pkgs; [
+    zotero
     posting
     isd
     crun

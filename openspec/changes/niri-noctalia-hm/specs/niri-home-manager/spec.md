@@ -43,6 +43,28 @@ System-manager SHALL install Niri and Niri (UWSM) session entries whose commands
 - **WHEN** the user selects `Niri (UWSM)` in the greeter
 - **THEN** UWSM resolves the managed niri binary without depending on the systemd user manager's `PATH`
 
+### Requirement: Monitor profiles have one runtime authority
+Home Manager SHALL install and start Monique, and niri SHALL include Monique's mutable `monitors.kdl` without defining competing inline output blocks.
+
+#### Scenario: Monique applies a hotplug profile
+- **WHEN** a monitor topology changes
+- **THEN** `moniqued` selects and writes the applicable profile to `~/.config/niri/monitors.kdl`, and niri reloads it through the Home Manager-declared include
+
+#### Scenario: Competing output managers are absent
+- **WHEN** the desktop session starts
+- **THEN** Shikane is not autostarted and no Home Manager-managed niri output block overrides Monique's state
+
+### Requirement: Nirius utilities use the current upstream release
+The configuration SHALL package nirius 0.9.0 from its tagged SourceHut release and start `niriusd` with the managed niri session.
+
+#### Scenario: Nirius daemon starts with niri
+- **WHEN** the niri session starts
+- **THEN** `niriusd` connects to niri and the `nirius` CLI can issue utility commands
+
+#### Scenario: Nixpkgs trails upstream
+- **WHEN** nixpkgs provides an older nirius release
+- **THEN** the project-local package remains pinned to the verified 0.9.0 source and Cargo dependency hashes
+
 ## ADDED Requirements
 
 ### Requirement: Home-manager module import

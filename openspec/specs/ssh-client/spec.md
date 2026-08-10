@@ -1,8 +1,8 @@
 <!--
 canonical-spec: ssh-client
 status: active
-source-change: tmux-ssh-mutagen-modules
-source-spec: openspec/changes/tmux-ssh-mutagen-modules/specs/ssh-client/spec.md
+source-change: archive/2026-08-09-tmux-ssh-mutagen-modules
+source-spec: openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/ssh-client/spec.md
 -->
 
 

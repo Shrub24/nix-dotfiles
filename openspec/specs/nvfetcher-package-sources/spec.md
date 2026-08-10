@@ -1,7 +1,13 @@
-# nvfetcher-package-sources Specification
+<!--
+canonical-spec: nvfetcher-package-sources
+status: active
+source-change: archive/2026-06-19-add-nvfetcher-for-packages
+source-spec: openspec/changes/archive/2026-06-19-add-nvfetcher-for-packages/specs/nvfetcher-package-sources/spec.md
+-->
 
 ## Purpose
-TBD - created by archiving change add-nvfetcher-for-packages. Update Purpose after archive.
+
+Defines the canonical requirements for nvfetcher-managed package sources.
 ## Requirements
 ### Requirement: Selected package sources are managed through nvfetcher metadata
 The repository SHALL define committed nvfetcher source metadata for the selected package set consisting of `snip`, `kreuzberg-cli`, and `headroom-ai`.
@@ -30,4 +36,3 @@ The `headroom-ai` package SHALL preserve its wheel-based build model while adopt
 #### Scenario: Maintainer builds headroom-ai after migration
 - **WHEN** the `headroom-ai` derivation is evaluated after nvfetcher integration
 - **THEN** it still uses the wheel-based packaging path while sourcing its nvfetcher-managed version metadata from the generated metadata path
-

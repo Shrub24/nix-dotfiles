@@ -25,6 +25,10 @@ Headroom's official `:code` image contains the proxy and tree-sitter code compre
 
 Use `ghcr.io/headroomlabs-ai/headroom:0.33.0-code` at a version tag and immutable digest. The official upstream registry now publishes code-aware images directly — no self-publish workflow is needed. The image supplies `proxy` and `code`, including tree-sitter compression and MCP support, without rebuilding Python dependencies when the service starts. `mcp` need not be installed separately because the proxy image exposes `/mcp`. A custom `proxy,code,ml,mcp` image was rejected: ML adds substantial Torch startup and memory cost, while MCP is already available from the proxy.
 
+Run at most two local compression workers and disable Kompress plus its fallback. `--code-aware` enables structural compression but does not disable the image's other default compressors; without an explicit bound, the proxy sizes its compression thread pool from host CPU count. Two workers are sufficient for the single-user local gateway and prevent CPU oversubscription; increase only after measured throughput requires it.
+
+Mirror the official Docker filesystem contract for the persistent proxy: set `HOME`, `HEADROOM_WORKSPACE_DIR`, and `HEADROOM_CONFIG_DIR` under `/tmp/headroom-home`, then mount the managed host state directory at `/tmp/headroom-home/.headroom`. The image runs as root, so mounting state at an unrelated `/home/headroom` path does not persist proxy logs or state.
+
 ### Native guardrail rather than ASGI middleware
 
 Render LiteLLM's `headroom` pre-call guardrail with `default_on = true` and the local sidecar base URL only when `programs.litellm.headroom.enable` is true. Native guardrails preserve LiteLLM lifecycle, audit, spend-log, virtual-key, bypass, and per-request semantics. The old ASGI path is incompatible as a concurrent integration because it can double-compress requests and bypasses guardrail observability. The guardrail is now active with LiteLLM v1.92.0 and Headroom 0.33.0.
@@ -49,7 +53,7 @@ Remove `programs.litellm.oci.enable` and the unused non-OCI `package` fallback. 
 
 Headroom 0.27 reads custom model limits from its legacy `~/.headroom/models.json` location. Generate that file from the existing `clientModels` and models.dev-derived context limits, keyed by LiteLLM-facing model aliases. Omit pricing: provider-specific pricing is neither present in the source metadata nor required for context curation.
 
-`HEADROOM_CONTEXT_TOOL=lean-ctx` applies only to explicit `headroom wrap` commands; it does not affect the LiteLLM guardrail proxy. The managed CLI wrapper passes this choice for optional wrapper use without adding a second proxy or changing OpenCode configuration.
+Headroom no longer integrates `rtk` or `lean-ctx`; OpenCode owns its own context tooling. The managed wrapper is retained only for operational Headroom commands and the stdio MCP bridge.
 
 ### Route-owned registry metadata and concise fallback chains
 

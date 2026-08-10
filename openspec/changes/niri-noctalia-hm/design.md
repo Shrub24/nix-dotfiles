@@ -46,6 +46,18 @@ The pre-migration `config.kdl` is committed to the repo (`niri.config.kdl.impera
 **D7 — System-manager owns the login boundary.**
 `modules/system/greeter.nix` configures greetd for Noctalia Greeter and installs niri session entries through tmpfiles. Session commands use absolute nix-store paths so greetd and UWSM do not depend on a login-shell `PATH`.
 
+**D8 — Monique owns mutable monitor profiles.**
+Home Manager installs Monique from its upstream flake and starts `moniqued`, but does not manage Monique's `monitors.kdl`, settings, or profile JSON. The store-linked niri config declares an unmarked optional include for `monitors.kdl`; Monique recognizes it as user-authored and does not try to mutate `config.kdl`. Inline niri output blocks and Shikane autostart are removed so only one hotplug daemon applies layouts.
+*Rationale*: monitor topology changes across docks and locations; Monique keeps desired state in a persistent config while providing a Niri-native editor and hotplug profiles. Nix owns the tool and boundary, not frequently changing hardware state.
+
+**D9 — Nirius follows upstream while nixpkgs trails.**
+`pkgs/nirius/default.nix` reuses the nixpkgs Rust packaging pattern but pins SourceHut tag `nirius-0.9.0` with fixed source and Cargo hashes. The overlay exposes it as `pkgs.nirius`; Home Manager installs both binaries and niri starts `niriusd` directly.
+*Rationale*: nixpkgs currently provides 0.8.0 and upstream has no flake. A small project-local derivation is less machinery than another source-management workflow and can be deleted once nixpkgs catches up.
+
+**D10 — Noctalia Greeter follows its upstream flake and keeps mutable sync state.**
+The greeter package is pinned independently at 1.2.1 and shared by system-manager and Home Manager. System-manager owns the greetd session, declarative `greeter.toml`, and a polkit rule allowing only the active local user to apply appearance state without prompting; Noctalia owns mutable `sync.toml` and synchronized appearance/output assets. UWSM output is sent to the journal rather than the greeter VT.
+*Rationale*: the pinned nixpkgs greeter predates output-layout sync and clean VT logging; one upstream package avoids helper/protocol drift without updating all of nixpkgs.
+
 ## Risks / Trade-offs
 
 - [niri option/KDL drift] → `checkConfig` validates against the same nixpkgs niri binary used by the session entries.
@@ -53,3 +65,4 @@ The pre-migration `config.kdl` is committed to the repo (`niri.config.kdl.impera
 - [GUI overrides in `~/.local/state/noctalia/settings.toml` silently override declarative config] → documented precedence boundary (see specs — noctalia-shell); clear the state file during early iteration.
 - [First switch replaces the imperative config.kdl] → D6 backup; home-manager activation is the atomic point.
 - [Early login environment lacks Home Manager profile paths] → greetd, niri, and UWSM session commands use absolute store paths.
+- [Monique runtime state is outside Git] → keep `~/.config/monique` and `~/.config/niri/monitors.kdl` in normal user backups; do not store-link files Monique must write.

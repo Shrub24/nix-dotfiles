@@ -62,15 +62,6 @@ let
       ui.path = "/";
     };
 
-    agentmemory = {
-      name = "Agentmemory";
-      port = 3113;
-      icon = "si-n8n";
-      description = "Persistent memory viewer";
-      ui.path = "/";
-      health.path = "/";
-    };
-
     web-catalog = {
       name = "Web Catalog";
       port = 8123;

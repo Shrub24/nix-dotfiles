@@ -34,6 +34,20 @@
   - refs: `modules/home/agents/litellm/default.nix`, `policy/oci-images.nix`
   - criteria: startup needs no runtime package installation; proxy is local-only and code-aware
   - verify: inspect generated user unit and query the proxy health endpoint after switch
+- [ ] 3.1a Bound Headroom compression workers and disable the unselected Kompress fallback.
+  - refs: `modules/home/agents/litellm/default.nix`
+  - criteria: the sidecar uses at most two compression workers and does not fall back to Kompress
+  - verify: inspect the generated unit and confirm bounded Headroom threads after switch
+- [x] 3.1b Align the Headroom sidecar's persistent-state mount with the official Docker filesystem contract.
+  - refs: `modules/home/agents/litellm/default.nix`
+  - criteria: Headroom's configured home, workspace, config, and mounted state path resolve to the same persistent directory
+  - verify: after switch, `/health` reports a state/log path under the managed host mount
+- [x] 3.1c Upgrade to the current official Headroom `:code` OCI image.
+  - refs: `policy/oci-images.nix`
+  - criteria: the policy contains the current version tag and immutable manifest digest
+- [x] 3.1d Bound total Headroom CPU use and remove its redundant local rate limit.
+  - refs: `modules/home/agents/litellm/default.nix`
+  - criteria: the systemd service caps the whole container at two CPUs and the loopback proxy does not apply an independent request-rate limit
 - [x] 3.2 After tasks 1.1, 1.2, and 2.2 are verified, render LiteLLM's native `headroom` pre-call guardrail and order LiteLLM after the enabled Headroom proxy.
   - refs: `modules/home/agents/litellm/generated.nix`, `modules/home/sops.nix`, `modules/home/agents/litellm/default.nix`
   - depends: 1.1, 1.2, 2.2
@@ -47,9 +61,13 @@
   - refs: `modules/home/opencode.nix`, `modules/home/agents/litellm/generated.nix`
   - criteria: OpenCode uses the single shared proxy endpoint only when Headroom is enabled; no parallel Headroom stdio MCP service is configured
   - verify: inspect rendered OpenCode config and list Headroom MCP tools after switch
-- [x] 3.5 Generate Headroom's 0.27-compatible context-limit catalog from existing client model metadata and select lean-ctx for explicit managed CLI wrapping.
+- [ ] 3.5 Generate Headroom's context-limit catalog from existing route metadata and remove obsolete context-tool integration.
   - refs: `modules/home/agents/litellm/generated.nix`, `modules/home/agents/litellm/default.nix`
-  - criteria: all configured LiteLLM aliases have generated context limits; pricing is omitted; `HEADROOM_CONTEXT_TOOL=lean-ctx` is passed only for CLI wrapping
+  - criteria: all configured LiteLLM aliases have generated context limits; no Headroom context-tool environment or wrapper integration remains
+- [ ] 3.5a Generate Headroom's pricing alias map from the canonical route registry metadata.
+  - refs: `modules/home/agents/litellm/generated.nix`, `modules/home/agents/litellm/default.nix`
+  - criteria: every served LiteLLM alias maps to its route's explicit registry model without duplicated metadata
+  - verify: inspect `HEADROOM_MODEL_ALIAS_MAP` in the running container
   - verify: inspect the rendered `models.json` and managed wrapper
 - [x] 3.6 Remove obsolete self-published Headroom image wiring now that the official upstream `:code` image is used.
   - refs: `renovate.json`, `policy/oci-images.nix`

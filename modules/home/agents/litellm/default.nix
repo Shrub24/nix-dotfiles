@@ -12,6 +12,7 @@ let
     headroomEnable = cfg.headroom.enable;
     headroomPort = cfg.headroomPort;
   };
+  headroomModelAliasMap = builtins.toJSON litellmGenerated.headroomModelAliasMap;
   yamlFormat = pkgs.formats.yaml { };
   litellmConfigFile = yamlFormat.generate "litellm-config.yaml" litellmGenerated.litellmConfig;
 
@@ -60,15 +61,23 @@ in
 
       Service = {
         Type = "simple";
+        CPUQuota = "200%";
         ExecStartPre = "${pkgs.podman}/bin/podman pull --quiet ${ociImages.headroom-code}";
         ExecStart = ''
           ${pkgs.podman}/bin/podman run --rm --replace --network host \
             --name headroom \
-            -v %h/.local/share/headroom:/home/headroom/.headroom \
+            --workdir /tmp/headroom-home \
+            -v %h/.local/share/headroom:/tmp/headroom-home/.headroom \
+            -e HOME=/tmp/headroom-home \
+            -e HEADROOM_WORKSPACE_DIR=/tmp/headroom-home/.headroom \
+            -e HEADROOM_CONFIG_DIR=/tmp/headroom-home/.headroom/config \
+            -e HEADROOM_MODEL_ALIAS_MAP='${headroomModelAliasMap}' \
             -e HEADROOM_TELEMETRY=off \
             -e HEADROOM_SAVINGS_PROFILE=coding \
             ${ociImages.headroom-code} \
-            --host 127.0.0.1 --port ${toString cfg.headroomPort} --code-aware
+            --host 127.0.0.1 --port ${toString cfg.headroomPort} --code-aware \
+            --compression-max-workers 2 --disable-kompress --disable-kompress-fallback \
+            --no-rate-limit
         '';
         ExecStop = "${pkgs.podman}/bin/podman stop headroom";
         Restart = "on-failure";
@@ -148,7 +157,7 @@ in
           echo "Start it with: systemctl --user start headroom.service" >&2
           exit 1
         fi
-        exec ${pkgs.podman}/bin/podman exec --env HEADROOM_CONTEXT_TOOL=lean-ctx headroom python3 -m headroom.cli "$@"
+        exec ${pkgs.podman}/bin/podman exec headroom python3 -m headroom.cli "$@"
       '';
     };
 

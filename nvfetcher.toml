@@ -7,8 +7,6 @@
 # Or:  nix develop -c nvfetcher -c nvfetcher.toml -o pkgs/_sources
 #
 # Excluded packages (managed by other workflows):
-#   agentmemory        — pkgs/agentmemory/sources.nix + update.sh
-#   iii-engine         — pkgs/agentmemory/sources.nix + update.sh
 #   hermes-agent-src   — separate flake input (flake = false)
 #   fish plugin inputs — separate flake inputs (flake = false)
 

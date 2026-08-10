@@ -32,7 +32,7 @@
   programs.litellm = {
     enable = true;
     database.enable = true;
-    headroom.enable = true;
+    headroom.enable = false;
   };
   programs.aichat = {
     enable = true;
@@ -66,30 +66,6 @@
   programs.agentTools.enable = true;
   programs.devTools.enable = true;
   programs.webCatalog.enable = true;
-
-  programs.agentmemory = {
-    # Moving primary memory to byterover; keep module config dormant for now.
-    enable = false;
-    hermesPlugin = {
-      enable = true;
-    };
-    opencodePlugin = {
-      enable = true;
-    };
-    settings = {
-      AGENTMEMORY_TOOLS = "core";
-      AGENTMEMORY_SLOTS = "true";
-      AGENTMEMORY_REFLECT = "true";
-      AGENTMEMORY_INJECT_CONTEXT = "true";
-      CONSOLIDATION_ENABLED = "true";
-      GRAPH_EXTRACTION_ENABLED = "true";
-      EMBEDDING_PROVIDER = "openai";
-      OPENAI_BASE_URL = "http://localhost:8765";
-      OPENAI_EMBEDDING_MODEL = "embedding";
-      OPENAI_EMBEDDING_DIMENSIONS = "4096";
-      OPENAI_MODEL = "summariser";
-    };
-  };
 
   programs.hermes-agent.enable = true;
 

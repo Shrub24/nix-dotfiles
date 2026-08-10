@@ -30,11 +30,19 @@ The system SHALL apply niri window rules for Noctalia: floating settings window 
 - **THEN** it is floating with a fixed 1080x920 default size and rounded corners
 
 ### Requirement: Noctalia provides the greetd greeter
-System-manager SHALL configure greetd to run `noctalia-greeter-session`, provide its runtime dependencies, and create its persistent state through tmpfiles.
+System-manager SHALL configure greetd to run upstream Noctalia Greeter 1.2.1, provide its runtime dependencies, create its persistent state through tmpfiles, and authorize only the active local user to apply appearance state without a polkit prompt. Home Manager SHALL provide the matching appearance-sync helper, while synchronized state remains separate from declarative greeter settings.
 
 #### Scenario: Login greeter starts
 - **WHEN** greetd starts
 - **THEN** Noctalia Greeter renders and lists the system-managed Wayland sessions
+
+#### Scenario: Appearance sync
+- **WHEN** Noctalia synchronizes greeter appearance
+- **THEN** theme, wallpaper, and supported output state are written to mutable greeter sync state without modifying declarative `greeter.toml`
+
+#### Scenario: Session handoff
+- **WHEN** greetd starts the Niri UWSM session
+- **THEN** UWSM output is preserved in the journal and not displayed on the greeter VT
 
 ### Requirement: Shell controls are bound to keys
 The system SHALL bind Noctalia IPC commands to the keys formerly used by DMS: volume, brightness, mute, settings/control-center toggle, launcher, and lock screen via `noctalia msg`.

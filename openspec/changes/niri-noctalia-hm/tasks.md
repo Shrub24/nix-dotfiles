@@ -26,3 +26,24 @@
 ## 5. Docs
 
 - [x] 5.1 Update `ARCHITECTURE.md` and `STRUCTURE.md` for the new `modules/home/niri.nix` module, noctalia input, and the retired `raw/` symlink pattern (now `appsDir`/`../apps`)
+
+## 6. Monique Monitor Profiles
+
+- [x] 6.1 Add the upstream `monique` flake input with nixpkgs following the project input
+- [x] 6.2 Install Monique and manage `moniqued` as a Home Manager user service with graphical-session lifecycle
+- [x] 6.3 Add an unmarked optional `monitors.kdl` include, remove inline niri output blocks, and mask the legacy Shikane XDG autostart
+- [x] 6.4 Build and switch Home Manager; verify the service starts and niri validates the generated config
+- [x] 6.5 Update architecture documentation with the Monique ownership boundary and runtime state paths
+
+## 7. Nirius Utilities
+
+- [x] 7.1 Add `pkgs/nirius/default.nix` pinned to SourceHut release 0.9.0 with fixed source and Cargo hashes
+- [x] 7.2 Register `pkgs.nirius` in the overlay, install it with the niri module, and start `niriusd` at session startup
+- [x] 7.3 Build and switch Home Manager; verify `nirius` and `niriusd`, then update architecture documentation
+
+## 8. Greeter Integration
+
+- [x] 8.1 Pin upstream `noctalia-greeter` 1.2.1 as a flake input and use the same package for system-manager and Home Manager
+- [ ] 8.2 Route UWSM startup output to the journal and verify a clean greeter-to-session transition
+- [ ] 8.3 Enable Noctalia appearance sync, restart the shell, and confirm greeter theme/output state is written
+- [ ] 8.4 Diagnose and fix Noctalia lock-screen PAM authentication without weakening the system PAM policy

@@ -3,6 +3,11 @@
   pkgs,
   ...
 }:
+let
+  moniquePackage = inputs.monique.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  noctaliaGreeterPackage =
+    inputs.noctalia-greeter.packages.${pkgs.stdenv.hostPlatform.system}.default;
+in
 {
   imports = [
     inputs.noctalia.homeModules.default
@@ -36,54 +41,6 @@
             open-on-output = "DP-1";
           };
         }
-        # Migrated from DMS dms/outputs.kdl.
-        {
-          output = {
-            _args = [ "BOE 0x0BBE 0x00000005" ];
-            mode = "2560x1600@240.002";
-            scale = 1.5;
-            position._props = {
-              x = 0;
-              y = 0;
-            };
-          };
-        }
-        {
-          output = {
-            _args = [ "ViewSonic Corporation VX2758A-2K XLK242420244" ];
-            mode = "2560x1440@184.999";
-            scale = 1;
-            position._props = {
-              x = 0;
-              y = 0;
-            };
-            focus-at-startup = { };
-          };
-        }
-        {
-          output = {
-            _args = [ "Microstep MSI MP273Q E2 PB6H465800196" ];
-            mode = "2560x1440@99.668";
-            scale = 1;
-            position._props = {
-              x = 1515;
-              y = 0;
-            };
-            focus-at-startup = { };
-          };
-        }
-        {
-          output = {
-            _args = [ "PNP(AOC) CU34G4 2SES4HA001302" ];
-            mode = "3440x1440@180.000";
-            scale = 1;
-            position._props = {
-              x = 1707;
-              y = 0;
-            };
-            focus-at-startup = { };
-          };
-        }
 
         {
           spawn-at-startup = [
@@ -104,6 +61,7 @@
         {
           spawn-at-startup = [ "noctalia-hide-action-bar" ];
         }
+        { spawn-at-startup = [ "${pkgs.nirius}/bin/niriusd" ]; }
       ];
 
       gestures.hot-corners.off = { };
@@ -251,6 +209,8 @@
 
     # Binds and window rules stay verbatim KDL.
     extraConfig = ''
+      include optional=true "monitors.kdl"
+
       layer-rule {
         match namespace="^noctalia-backdrop"
         place-within-backdrop true
@@ -617,6 +577,7 @@
       shell = {
         corner_radius_scale = 1.5;
         polkit_agent = true;
+        greeter_sync.auto_sync = true;
         external_ip_enabled = true;
         font_family = "Exo 2";
         password_style = "random";
@@ -1028,14 +989,45 @@
   # force: pre-existing imperative file, backed up at niri.config.kdl.imperative-backup
   xdg.configFile."niri/config.kdl".force = true;
 
+  # force: unmanaged regular file; Monique replaces Shikane as the hotplug daemon.
+  xdg.configFile."autostart/shikane.desktop" = {
+    force = true;
+    text = ''
+      [Desktop Entry]
+      Hidden=true
+    '';
+  };
+
   xdg.configFile."autostart/DankMaterialShell.desktop".text = ''
     [Desktop Entry]
     Hidden=true
   '';
 
+  systemd.user.services.moniqued = {
+    Unit = {
+      Description = "Monique daemon - Auto-apply monitor profiles on hotplug";
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
+    };
+
+    Service = {
+      Type = "simple";
+      ExecStart = "${moniquePackage}/bin/moniqued";
+      Restart = "on-failure";
+      RestartSec = "5";
+    };
+
+    Install = {
+      WantedBy = [ "graphical-session.target" ];
+    };
+  };
+
   home.packages = [
+    moniquePackage
     pkgs.codexbar
+    pkgs.nirius
     pkgs.keypeek
+    noctaliaGreeterPackage
     (pkgs.writeShellApplication {
       name = "noctalia-bar-swap";
       runtimeInputs = [

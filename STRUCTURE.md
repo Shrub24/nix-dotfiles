@@ -28,7 +28,7 @@
 │       ├── zsh-abbr.nix         # Zsh abbreviations
 │       ├── tmux.nix             # tmux session settings
 │       ├── opencode.nix         # OpenCode/agents symlinks → ../apps
-│       ├── niri.nix             # niri compositor + Noctalia shell
+│       ├── niri.nix             # niri compositor + Noctalia shell + Monique
 │       ├── dev-tools/           # Dev tools (languages, mise, navi)
 │       │   ├── default.nix
 │       │   ├── languages.nix
@@ -42,19 +42,13 @@
 │           ├── bifrost/
 │           │   ├── default.nix
 │           │   └── config.json
-│           ├── tools.nix
-│           └── agentmemory.nix
+│           └── tools.nix
 │
 ├── pkgs/                        # Custom Nix derivations
 │   ├── snip/
 │   │   └── default.nix
-│   ├── nix-search-tv-fzf/
-│   │   └── default.nix
-│   ├── iii-engine/
-│   │   └── default.nix
-│   └── agentmemory/
-│       ├── default.nix
-│       └── package-lock.json
+│   └── nix-search-tv-fzf/
+│       └── default.nix
 │
 ├── secrets/                     # Encrypted secrets (sops-nix)
 │   ├── agents.yaml              # Central YAML secrets store
@@ -102,8 +96,8 @@
 - Contains: `default.nix` composing languages, mise, navi; also installs `sysz`
 
 **`modules/home/agents/`:**
-- Purpose: AI agent configurations (pi, hermes, docs-mcp, Bifrost, tools, agentmemory, litellm)
-- Contains: `default.nix` composing pi, hermes, docs-mcp, bifrost, tools, agentmemory, litellm
+- Purpose: AI agent configurations (pi, hermes, docs-mcp, Bifrost, tools, litellm)
+- Contains: `default.nix` composing pi, hermes, docs-mcp, bifrost, tools, litellm
 
 **`modules/home/agents/bifrost/`:**
 - Purpose: Bifrost MCP gateway module with config template
@@ -112,11 +106,6 @@
 **`modules/home/agents/docs-mcp.nix`:**
 - Purpose: Grounded Docs MCP Server — systemd service on port 6280
 - Uses: bunx with OpenAI-compatible embedding model, sops template for API key
-
-**`modules/home/agents/agentmemory.nix`:**
-- Purpose: Agentmemory persistent memory daemon — systemd service on port 3111
-- Uses: nix package `pkgs.agentmemory` (npm-based), sops template for API keys
-- Features: Hermes plugin integration deploys memory provider to `~/.hermes/plugins/agentmemory`
 
 **`modules/home/agents/litellm/`:**
 - Purpose: LiteLLM LLM gateway + Headroom context compression sidecar
@@ -129,13 +118,13 @@
 - Links: `~/.config/opencode` → `${appsDir}/opencode`, `~/.agents` → `${appsDir}/agents` (`appsDir = /home/saurabhj/.dotfiles/apps`, sibling of the repo via `extraSpecialArgs`)
 
 **`modules/home/niri.nix`:**
-- Purpose: Wayland desktop session — niri compositor + Noctalia shell
-- Uses: `wayland.windowManager.niri` (native HM module; structured `settings` + verbatim KDL `extraConfig`); `programs.noctalia` from `inputs.noctalia.homeModules.default` with `package = pkgs.noctalia` (nixpkgs prebuilt)
-- Note: `xdg.configFile."niri/config.kdl".force = true` replaces the imperative config; pre-migration backup at `niri.config.kdl.imperative-backup`
+- Purpose: Wayland desktop session — niri compositor + Noctalia shell + Monique monitor profiles
+- Uses: `wayland.windowManager.niri` (native HM module; structured `settings` + verbatim KDL `extraConfig`); `programs.noctalia` from `inputs.noctalia.homeModules.default` with `package = pkgs.noctalia` (nixpkgs prebuilt); Monique from `inputs.monique` (nixpkgs follows) with a `moniqued` user service bound to `graphical-session.target`
+- Note: `xdg.configFile."niri/config.kdl".force = true` replaces the imperative config; pre-migration backup at `niri.config.kdl.imperative-backup`; niri includes Monique's runtime `monitors.kdl` (`include optional=true`) with no inline `output` blocks; Shikane XDG autostart masked via `xdg.configFile."autostart/shikane.desktop"` (`force = true`, `Hidden=true`); `~/.config/niri/monitors.kdl` and `~/.config/monique/` are Monique-owned, outside Git
 
 **`pkgs/`:**
 - Purpose: Custom Nix derivations not available in nixpkgs
-- Contains: One directory per package (`snip/`, `nix-search-tv-fzf/`, `iii-engine/`, `agentmemory/`, `litellm/`)
+- Contains: One directory per package (`snip/`, `nix-search-tv-fzf/`, `litellm/`)
 
 **`secrets/`:**
 - Purpose: Encrypted secrets managed by sops-nix
@@ -148,15 +137,15 @@
 ## Key File Locations
 
 **Entry Points:**
-- `flake.nix`: Flake entry point — defines inputs (9 flake inputs), flake-parts based overlay, dev shell, `homeConfigurations.saurabhj`
-- `hosts/arch/home.nix`: Host entry point — imports `../../modules`, sets identity, enables pi/bifrost/docsMcp/agentTools/agentmemory/hermes-agent/devTools/miseTools
+- `flake.nix`: Flake entry point — defines pinned inputs, flake-parts based overlay, dev shell, `homeConfigurations.saurabhj`
+- `hosts/arch/home.nix`: Host entry point — imports `../../modules`, sets identity, enables pi/bifrost/docsMcp/agentTools/hermes-agent/devTools/miseTools
 - `modules/default.nix`: Module entry point — imports all home feature modules/groups
 
 **Configuration:**
-- `modules/home/nix.nix`: Nix CLI settings, experimental features, GC policy, unfree whitelist (zsh-abbr, iii-engine)
+- `modules/home/nix.nix`: Nix CLI settings, experimental features, GC policy, unfree whitelist (zsh-abbr, byterover-cli)
 - `modules/home/direnv.nix`: direnv + direnv-instant configuration (imports direnv-instant flake module)
 - `modules/home/sops.nix`: sops-nix with YAML-backed placeholders from `secrets/agents.yaml`, renders 4 templates
-- `modules/home/niri.nix`: niri compositor + Noctalia shell — `wayland.windowManager.niri` (`settings` + `extraConfig`), `programs.noctalia` (`package = pkgs.noctalia`), force-replaces imperative `~/.config/niri/config.kdl`
+- `modules/home/niri.nix`: niri compositor + Noctalia shell + Monique — `wayland.windowManager.niri` (`settings` + `extraConfig`), `programs.noctalia` (`package = pkgs.noctalia`), `moniqued` user service, force-replaces imperative `~/.config/niri/config.kdl`, includes Monique's `monitors.kdl`, masks Shikane autostart
 - `.sops.yaml`: Encryption key and file rules for sops
 
 **Shell:**
@@ -173,11 +162,10 @@
 
 **Agents:**
 - `modules/home/agents/pi.nix`: pi coding agent — full option tree for settings, MCP, search, permissions, subagents
-- `modules/home/agents/hermes.nix`: hermes-agent — imports flake module from `hermes-agent-src` input; integrates with agentmemory as memory provider when both are enabled
+- `modules/home/agents/hermes.nix`: hermes-agent — imports flake module from `hermes-agent-src` input
 - `modules/home/agents/docs-mcp.nix`: Grounded Docs MCP Server — systemd service, bunx, sops.env template
 - `modules/home/agents/bifrost/default.nix`: Bifrost MCP gateway — systemd service via bunx, sops-template config
 - `modules/home/agents/tools.nix`: Agent CLI tools — snip derivation, codebase-memory-mcp from flake input
-- `modules/home/agents/agentmemory.nix`: Agentmemory persistent memory daemon — defines `programs.agentmemory.*` options, systemd service, optional Hermes plugin deployment
 - `modules/home/agents/litellm/default.nix`: LiteLLM gateway + Headroom sidecar — OCI via podman, one-time image load at activation, restart burst limits, sops template for env
 
 **Secrets (sops-encrypted):**
@@ -188,8 +176,6 @@
 **Overlay:**
 - `pkgs/snip/default.nix`: Custom snip package
 - `pkgs/nix-search-tv-fzf/default.nix`: nstv — fzf wrapper around nix-search-tv
-- `pkgs/iii-engine/default.nix`: III engine package
-- `pkgs/agentmemory/default.nix`: Agentmemory npm package — persistent memory for AI agents, wraps `@agentmemory/agentmemory` from npm registry, wraps with iii-engine in PATH
 - `pkgs/litellm/oci.nix`: LiteLLM patched OCI image — pulls `litellm-database` base, applies compatibility patches via custom entrypoint
 - `pkgs/litellm/patches/`: Build-time patches for litellm (streaming empty-choices, prefix-message stripping)
 - `flake.nix` (lines 60-67): Overlay registrations for all custom packages
@@ -197,7 +183,7 @@
 ## Naming Conventions
 
 **Files:**
-- Nix modules: Lowercase, kebab-case, `.nix` extension — `zsh-abbr.nix`, `languages.nix`, `docs-mcp.nix`, `agentmemory.nix`
+- Nix modules: Lowercase, kebab-case, `.nix` extension — `zsh-abbr.nix`, `languages.nix`, `docs-mcp.nix`
 - Config files: Standard names — `config.json`, `.sops.yaml`
 - Documentation: Uppercase — `ARCHITECTURE.md`, `STRUCTURE.md`, `README.md`
 
@@ -205,7 +191,7 @@
 - Module groupings: Lowercase, kebab-case — `dev-tools/`, `home/`, `agents/`
 - Host directories: Lowercase — `arch/`
 - Submodule directories: Same as module name — `bifrost/` contains `default.nix`
-- Package directories: Lowercase, kebab-case — `nix-search-tv-fzf/`, `agentmemory/`, `iii-engine/`
+- Package directories: Lowercase, kebab-case — `nix-search-tv-fzf/`
 
 ## Module Structure Pattern
 
@@ -235,7 +221,7 @@ For multi-file agents: `modules/home/agents/<agent-name>/` with `default.nix`
 
 **New secret:** Add key to `secrets/agents.yaml` (YAML format) — declare sops placeholder + secret in `modules/home/sops.nix`
 
-**New systemd user service:** Add to `modules/home/agents/` — follow the pattern in `bifrost/default.nix`, `docs-mcp.nix`, or `agentmemory.nix`
+**New systemd user service:** Add to `modules/home/agents/` — follow the pattern in `bifrost/default.nix` or `docs-mcp.nix`
 
 **Pinned flake input:** Add to `inputs` in `flake.nix`, pass via `extraSpecialArgs`
 

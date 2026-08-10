@@ -77,7 +77,6 @@
     pkg:
     builtins.elem (lib.getName pkg) [
       "zsh-abbr"
-      "iii-engine"
       "byterover-cli"
     ];
 }

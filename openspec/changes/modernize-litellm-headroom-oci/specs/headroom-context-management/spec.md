@@ -9,6 +9,14 @@ The system SHALL run a Home Manager-managed Headroom proxy from a pinned officia
 - **AND** the service SHALL use a pinned image that includes proxy and code-compression capabilities
 - **AND** the proxy SHALL persist its Headroom state outside the container lifecycle
 
+### Requirement: Headroom compression resources are bounded
+The system SHALL bound local Headroom compression workers and SHALL not enable the unselected Kompress fallback.
+
+#### Scenario: Headroom starts on a multi-core host
+- **WHEN** the managed Headroom proxy starts
+- **THEN** it SHALL use no more than two compression workers
+- **AND** it SHALL use structural code-aware compression without falling back to Kompress
+
 ### Requirement: Headroom proxy exposes shared retrieval tools
 The system SHALL expose the enabled Headroom proxy's streamable HTTP MCP endpoint to local clients so compressed originals can be retrieved through the same compression store.
 
@@ -42,11 +50,3 @@ Each LiteLLM route SHALL declare one explicit models.dev registry identifier. A 
 #### Scenario: A route uses a provider-specific target name
 - **WHEN** a fallback-chain entry declares an explicit target model
 - **THEN** generated LiteLLM deployments SHALL use that explicit target rather than the route key
-
-### Requirement: The managed Headroom CLI selects lean-ctx for wrapping
-The system SHALL select `lean-ctx` when the managed Headroom CLI is used for an explicit `headroom wrap` command.
-
-#### Scenario: An operator invokes the wrapper command
-- **WHEN** an operator invokes `headroom wrap ...` through the managed CLI wrapper
-- **THEN** the wrapper SHALL set `HEADROOM_CONTEXT_TOOL=lean-ctx`
-- **AND** it SHALL continue to use the managed Headroom container
