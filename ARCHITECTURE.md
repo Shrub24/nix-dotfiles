@@ -29,7 +29,7 @@
 │       ├── opencode.nix         # OpenCode config symlinks (~/.config/opencode, ~/.agents → ../apps)
 │       ├── niri.nix             # niri compositor + Noctalia shell + Monique (settings + extraConfig)
 │       ├── dev-tools/           # CLI and language development tools
-│       │   ├── default.nix      # Imports sub-modules + sysz package
+│       │   ├── default.nix      # Imports sub-modules + user tools
 │       │   ├── languages.nix    # ast-grep, tree-sitter, extra grammars, sgconfig.yml
 │       │   ├── mise.nix         # mise-en-place (node, pnpm, bun, npm tools)
 │       │   └── navi.nix         # navi CLI cheatsheets
@@ -79,7 +79,7 @@
 
 - **Derivations → `pkgs/`** — every custom build recipe lives under `pkgs/`. Exposed via overlay so `pkgs.<name>` works everywhere.
 - **Feature modules → `modules/home/`** — each module file owns one concern. Imported by `modules/default.nix`; never by other feature modules.
-- **Dev-tools → `modules/home/dev-tools/`** — grouped concern for CLI/language development tools (ast-grep, tree-sitter, mise, navi, sysz). Wired through `dev-tools/default.nix`.
+- **Dev-tools → `modules/home/dev-tools/`** — grouped concern for CLI/language development tools (ast-grep, tree-sitter, mise, navi, lazyjournal) plus user tools such as the Surge TUI download manager (pinned upstream flake, version-correcting wrapper in `pkgs/surge`). Wired through `dev-tools/default.nix`.
 - **Agent modules → `modules/home/agents/`** — concern-grouped under the home-manager tree, with `agents/default.nix` composing pi, hermes, docs-mcp, bifrost, and tools.
 - **Host compositions → `hosts/<hostname>/home.nix`** — the only place that sets host-specific identity (`home.username`, `home.stateVersion`) and enables programs. Imports `../../modules` to pull in all feature modules.
 - **`modules/default.nix` is the single module entry point** — imports `./home/nix.nix`, `./home/direnv.nix`, `./home/sops.nix`, `./home/zsh.nix`, `./home/zsh-abbr.nix`, `./home/opencode.nix`, `./home/tmux.nix`, `./home/niri.nix`, `./home/dev-tools`, and `./home/agents`. Host configs only need `imports = [../../modules]`.

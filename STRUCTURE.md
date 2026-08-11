@@ -93,7 +93,7 @@
 
 **`modules/home/dev-tools/`:**
 - Purpose: CLI and language development tools grouped together
-- Contains: `default.nix` composing languages, mise, navi; also installs `sysz`
+- Contains: `default.nix` composing languages, mise, navi, lazyjournal; installs user tools including `surge` (TUI download manager, pinned via upstream flake and version-corrected in `pkgs/surge`) without a service
 
 **`modules/home/agents/`:**
 - Purpose: AI agent configurations (pi, hermes, docs-mcp, Bifrost, tools, litellm)
@@ -124,7 +124,7 @@
 
 **`pkgs/`:**
 - Purpose: Custom Nix derivations not available in nixpkgs
-- Contains: One directory per package (`snip/`, `nix-search-tv-fzf/`, `litellm/`)
+- Contains: One directory per package (`snip/`, `nix-search-tv-fzf/`, `litellm/`, `surge/`)
 
 **`secrets/`:**
 - Purpose: Encrypted secrets managed by sops-nix
@@ -176,6 +176,7 @@
 **Overlay:**
 - `pkgs/snip/default.nix`: Custom snip package
 - `pkgs/nix-search-tv-fzf/default.nix`: nstv — fzf wrapper around nix-search-tv
+- `pkgs/surge/default.nix`: Surge TUI download manager — upstream flake package with corrected release metadata
 - `pkgs/litellm/oci.nix`: LiteLLM patched OCI image — pulls `litellm-database` base, applies compatibility patches via custom entrypoint
 - `pkgs/litellm/patches/`: Build-time patches for litellm (streaming empty-choices, prefix-message stripping)
 - `flake.nix` (lines 60-67): Overlay registrations for all custom packages
@@ -202,7 +203,7 @@ Each module group directory follows:
 <group>/<module>.nix    # single-concern module with options + config
 ```
 
-No module group is deeper than two levels. Every `default.nix` is purely an `imports` list — no options or config live there (except `dev-tools/default.nix` which also installs `sysz`).
+No module group is deeper than two levels. Every `default.nix` is purely an `imports` list — no options or config live there (except `dev-tools/default.nix`, which also installs user tools).
 
 ## Where to Add New Code
 

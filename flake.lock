@@ -1064,6 +1064,7 @@
         "noctalia-greeter": "noctalia-greeter",
         "nvfetcher": "nvfetcher",
         "sops-nix": "sops-nix",
+        "surge": "surge",
         "system-manager": "system-manager"
       }
     },
@@ -1101,6 +1102,27 @@
       "original": {
         "owner": "Mic92",
         "repo": "sops-nix",
+        "type": "github"
+      }
+    },
+    "surge": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1785721886,
+        "narHash": "sha256-N25JU3uuXr8SGNeoo0JSL0+8rGaYeQ3lWZxn+aXkJIg=",
+        "owner": "SurgeDM",
+        "repo": "Surge",
+        "rev": "11c4fcbf798962f0564bedd395096c2b1efe1524",
+        "type": "github"
+      },
+      "original": {
+        "owner": "SurgeDM",
+        "ref": "v0.11.2",
+        "repo": "Surge",
         "type": "github"
       }
     },

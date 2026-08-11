@@ -17,6 +17,7 @@ in
     crun
     jjui
     skopeo
+    surge
     inputs.fsel.packages.${system}.default
   ];
 }

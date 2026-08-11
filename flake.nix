@@ -80,6 +80,10 @@
       url = "github:srwi/keypeek";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    surge = {
+      url = "github:SurgeDM/Surge/v0.11.2";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -148,6 +152,7 @@
               codexbar = final.callPackage ./pkgs/codexbar { };
               nirius = final.callPackage ./pkgs/nirius { };
               litellm-oci = final.callPackage ./pkgs/litellm/oci.nix { };
+              surge = final.callPackage ./pkgs/surge { inherit inputs; };
               niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
               keypeek = inputs.keypeek.packages.${system}.default.overrideAttrs (old: {
                 patches = (old.patches or [ ]) ++ [ ./pkgs/keypeek/zmk-default-vid-pid.patch ];
