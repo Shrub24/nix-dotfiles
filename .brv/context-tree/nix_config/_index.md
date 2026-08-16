@@ -441,7 +441,7 @@ type: summary
 ## nvfetcher_package_sources.md
 ---
 title: Nvfetcher Package Sources
-summary: 'Nvfetcher package sources: committed metadata for snip, kreuzberg-cli, headroom-ai; derivations consume generated metadata; excluded workflows (agentmemory, iii-engine, hermes-agent-src) unchanged; headroom-ai stays wheel-based'
+summary: 'Nvfetcher package sources: committed metadata for snip, xberg-cli, headroom-ai; derivations consume generated metadata; excluded workflows (agentmemory, iii-engine, hermes-agent-src) unchanged; headroom-ai stays wheel-based'
 tags: []
 related: []
 keywords: []
@@ -456,13 +456,13 @@ Document nvfetcher package sources spec
 Manage selected package sources through nvfetcher metadata instead of hardcoded fetch info
 
 **Changes:**
-- Added nvfetcher source metadata for snip, kreuzberg-cli, headroom-ai
+- Added nvfetcher source metadata for snip, xberg-cli, headroom-ai
 - Derivations now consume generated metadata
 - Preserved wheel-based headroom-ai build
 
 **Files:**
 - pkgs/snip/
-- pkgs/kreuzberg-cli/
+- pkgs/xberg-cli/
 - pkgs/headroom-ai/
 
 **Flow:**
@@ -477,14 +477,14 @@ nvfetcher generates metadata -> derivations read upstream version/source -> excl
 Four requirements: (1) Selected package sources managed through nvfetcher metadata, (2) Target derivations consume generated metadata (snip/kreuzberg full metadata, headroom-ai version-only), (3) Excluded workflows unchanged, (4) Headroom AI remains wheel-based.
 
 ### Dependencies
-nvfetcher tooling for source updates. Selected package set: snip, kreuzberg-cli, headroom-ai. Excluded: agentmemory, iii-engine, fish plugins, hermes-agent-src.
+nvfetcher tooling for source updates. Selected package set: snip, xberg-cli, headroom-ai. Excluded: agentmemory, iii-engine, fish plugins, hermes-agent-src.
 
 ### Highlights
-Headroom-ai preserves wheel-based build while adopting nvfetcher-managed version metadata. snip and kreuzberg-cli consume full upstream version and source metadata. Purpose is TBD (created by archiving).
+Headroom-ai preserves wheel-based build while adopting nvfetcher-managed version metadata. snip and xberg-cli consume full upstream version and source metadata. Purpose is TBD (created by archiving).
 
 ### Rules
-Rule 1: The repository SHALL define committed nvfetcher source metadata for snip, kreuzberg-cli, and headroom-ai
-Rule 2: The snip and kreuzberg-cli derivations SHALL consume externally generated source metadata for upstream version and source fetch information
+Rule 1: The repository SHALL define committed nvfetcher source metadata for snip, xberg-cli, and headroom-ai
+Rule 2: The snip and xberg-cli derivations SHALL consume externally generated source metadata for upstream version and source fetch information
 Rule 3: The headroom-ai derivation SHALL consume externally generated version metadata while preserving its wheel-specific fetch construction
 Rule 4: Existing excluded source workflows
 [summary compaction; truncated from 554 tokens]
@@ -850,7 +850,7 @@ type: summary
 ## codebase_structure.md
 ---
 title: Codebase Structure
-summary: 'Complete directory reference: hosts/, modules/, pkgs/, secrets/, openspec/, raw/ with naming conventions (kebab-case, default.nix pattern) and extension points'
+summary: 'Complete directory reference: hosts/, modules/, pkgs/, secrets/, openspec/ with naming conventions (kebab-case, default.nix pattern) and extension points'
 tags: []
 related: [nix_config/overview.md, nix_config/architecture.md]
 keywords: []
@@ -888,7 +888,7 @@ hosts/ (per-machine) → modules/ (reusable) → modules/home/ (features) → mo
 
 ## Narrative
 ### Structure
-12 top-level directories. hosts/arch/home.nix: per-machine composition, sets identity and enables programs. modules/default.nix: single import point. modules/home/: flat .nix for single-concern modules + two subdirs (dev-tools/, agents/). modules/home/dev-tools/: languages (ast-grep, tree-sitter), mise (runtimes + npm tools), navi (cheatsheets). modules/home/agents/: pi, hermes, docs-mcp, bifrost (with config.json template), tools, agentmemory. pkgs/: snip, nix-search-tv-fzf, iii-engine, agentmemory (npm-based), kreuzberg-cli, byterover-cli. secrets/: agents.yaml (central), pi-secrets.yaml, zsh-secrets.env (legacy), bifrost/. raw/: live symlink targets for opencode.nix.
+12 top-level directories. hosts/arch/home.nix: per-machine composition, sets identity and enables programs. modules/default.nix: single import point. modules/home/: flat .nix for single-concern modules + two subdirs (dev-tools/, agents/). modules/home/dev-tools/: languages (ast-grep, tree-sitter), mise (runtimes + npm tools), navi (cheatsheets). modules/home/agents/: pi, hermes, docs-mcp, bifrost (with config.json template), tools, agentmemory. pkgs/: snip, nix-search-tv-fzf, iii-engine, agentmemory (npm-based), xberg-cli, byterover-cli. secrets/: agents.yaml (central), pi-secrets.yaml, zsh-secrets.env (legacy), bifrost/.
 
 ### Dependencies
 Entry points: flake.nix (flake-parts, 19 inputs, overlay, dev shell, homeConfigurations.saurabhj), hosts/arch/home.nix (imports ../../modules, enables pi/bifrost/docsMcp/agentTools/agentmemory/hermes-agent/devTools/miseTools), modules/default.nix (imports all home feature modules). Each module group follows: <group>/default.nix importing sub-modules with <group>/<module>.nix for single-concern modules.

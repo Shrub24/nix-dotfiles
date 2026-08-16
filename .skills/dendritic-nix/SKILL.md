@@ -1,6 +1,6 @@
 ---
 name: dendritic-nix
-description: "Applies the Dendritic Pattern for structuring Nix flake configurations with flake-parts. Every file is a flake-parts module organized by feature (aspect), not by configuration class. Use when structuring Nix flakes, creating flake-parts modules, composing multi-host configs, organizing NixOS/home-manager/nix-darwin configuration, or sharing values across configuration classes. Triggers: nix flake structure, flake-parts modules, multi-host configs, aspect modules. Do NOT use for general Nix language questions, nixpkgs packaging, or NixOS module authoring unrelated to flake structure."
+description: 'Applies the Dendritic Pattern for structuring Nix flake configurations with flake-parts. Every file is a flake-parts module organized by feature (aspect), not by configuration class. Use when structuring Nix flakes, creating flake-parts modules, composing multi-host configs, organizing NixOS/home-manager/nix-darwin configuration, or sharing values across configuration classes. Triggers: nix flake structure, flake-parts modules, multi-host configs, aspect modules. Do NOT use for general Nix language questions, nixpkgs packaging, or NixOS module authoring unrelated to flake structure.'
 ---
 
 # Dendritic Pattern for Nix Flakes
@@ -320,20 +320,22 @@ while `nixosArgs.config` is the NixOS evaluation config.
 
 Input: "Add tmux configuration to the flake."
 Actions:
+
 1. Create `modules/tmux.nix` with `flake.modules.homeManager.tmux`
-2. Add `homeManager.tmux` to host composition imports
-Result: Tmux config available to hosts that import it.
+1. Add `homeManager.tmux` to host composition imports
+   Result: Tmux config available to hosts that import it.
 
 ### Example: Splitting a growing feature
 
 Input: "The neovim module is too large."
 Actions:
+
 1. Create `modules/neovim/default.nix` for core config
-2. Create `modules/neovim/_lang/go.nix` for language-specific config
+1. Create `modules/neovim/_lang/go.nix` for language-specific config
    (prefixed with `_` so import-tree skips it;
    `default.nix` imports it explicitly or the `_` prefix
    allows toggling by renaming)
-Result: Feature split into sub-files without changing the aspect interface.
+   Result: Feature split into sub-files without changing the aspect interface.
 
 ## Further Reading
 

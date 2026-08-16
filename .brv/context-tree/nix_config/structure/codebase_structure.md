@@ -1,6 +1,6 @@
 ---
 title: Codebase Structure
-summary: 'Complete directory reference: hosts/, modules/, pkgs/, secrets/, openspec/, raw/ with naming conventions (kebab-case, default.nix pattern) and extension points'
+summary: 'Complete directory reference: hosts/, modules/, pkgs/, secrets/, openspec/ with naming conventions (kebab-case, default.nix pattern) and extension points'
 tags: []
 related: [nix_config/overview.md, nix_config/architecture.md]
 keywords: []
@@ -38,7 +38,7 @@ hosts/ (per-machine) → modules/ (reusable) → modules/home/ (features) → mo
 
 ## Narrative
 ### Structure
-12 top-level directories. hosts/arch/home.nix: per-machine composition, sets identity and enables programs. modules/default.nix: single import point. modules/home/: flat .nix for single-concern modules + two subdirs (dev-tools/, agents/). modules/home/dev-tools/: languages (ast-grep, tree-sitter), mise (runtimes + npm tools), navi (cheatsheets). modules/home/agents/: pi, hermes, docs-mcp, bifrost (with config.json template), tools, agentmemory. pkgs/: snip, nix-search-tv-fzf, iii-engine, agentmemory (npm-based), kreuzberg-cli, byterover-cli. secrets/: agents.yaml (central), pi-secrets.yaml, zsh-secrets.env (legacy), bifrost/. raw/: live symlink targets for opencode.nix.
+12 top-level directories. hosts/arch/home.nix: per-machine composition, sets identity and enables programs. modules/default.nix: single import point. modules/home/: flat .nix for single-concern modules + two subdirs (dev-tools/, agents/). modules/home/dev-tools/: languages (ast-grep, tree-sitter), mise (runtimes + npm tools), navi (cheatsheets). modules/home/agents/: pi, hermes, docs-mcp, bifrost (with config.json template), tools, agentmemory. pkgs/: snip, nix-search-tv-fzf, iii-engine, agentmemory (npm-based), xberg-cli, byterover-cli. secrets/: agents.yaml (central), pi-secrets.yaml, zsh-secrets.env (legacy), bifrost/.
 
 ### Dependencies
 Entry points: flake.nix (flake-parts, 19 inputs, overlay, dev shell, homeConfigurations.saurabhj), hosts/arch/home.nix (imports ../../modules, enables pi/bifrost/docsMcp/agentTools/agentmemory/hermes-agent/devTools/miseTools), modules/default.nix (imports all home feature modules). Each module group follows: <group>/default.nix importing sub-modules with <group>/<module>.nix for single-concern modules.
@@ -59,4 +59,4 @@ Extension points:
 - Pinned flake input: add to inputs in flake.nix, pass via extraSpecialArgs
 
 ### Examples
-Shell config: zsh via antidote (powerlevel10k, fzf-tab, zsh-vi-mode, eza, pay-respects), zsh-abbr for git/nix/file/systemd shortcuts. OpenCode: symlinks ~/.config/opencode → raw/opencode and ~/.agents → raw/agents via opencode.nix. Agentmemory: npm package with iii-engine in PATH, Hermes plugin deploys memory provider to ~/.hermes/plugins/agentmemory.
+Shell config: zsh via antidote (powerlevel10k, fzf-tab, zsh-vi-mode, eza, pay-respects), zsh-abbr for git/nix/file/systemd shortcuts. OpenCode: symlinks ~/.config/opencode → ${appsDir}/opencode and ~/.agents → ${appsDir}/agents via opencode.nix. Agentmemory: npm package with iii-engine in PATH, Hermes plugin deploys memory provider to ~/.hermes/plugins/agentmemory.

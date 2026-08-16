@@ -160,6 +160,7 @@ enabling reuse of generic, host-independent configurations.
 Name files around usability concerns, not technical layers:
 
 Prefer:
+
 - `macos-like-bindings.nix`
 - `scrolling-desktop.nix`
 - `tui.nix`
@@ -167,6 +168,7 @@ Prefer:
 - `ai.nix`
 
 Avoid:
+
 - `keybindings.nix` (too generic)
 - `desktop.nix` (too broad)
 - `packages.nix` (organized by type, not feature)

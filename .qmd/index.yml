@@ -1,14 +1,14 @@
 collections:
   opencode:
-    path: /home/saurabhj/.config/home-manager/raw/opencode
+    path: /home/saurabhj/.dotfiles/apps/opencode
     pattern: "**/*.md"
     context:
       "": opencode configuration, agent definitions, commands and plugins etc.
   skills:
-    path: /home/saurabhj/.config/home-manager/raw/agents/skills
+    path: /home/saurabhj/.dotfiles/apps/agents/skills
     pattern: "**/*.md"
   project-root:
-    path: /home/saurabhj/.config/home-manager
+    path: /home/saurabhj/.dotfiles/nix
     pattern: "**/*.md"
 models:
   embed: hf://Qwen/Qwen3-Embedding-0.6B-GGUF/Qwen3-Embedding-0.6B-f16.gguf

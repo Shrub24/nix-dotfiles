@@ -1,5 +1,5 @@
-- Committed nvfetcher source metadata added for three packages: snip, kreuzberg-cli, and headroom-ai.
-- snip and kreuzberg-cli derivations consume full upstream version and source fetch information from generated metadata.
+- Committed nvfetcher source metadata added for three packages: snip, xberg-cli, and headroom-ai.
+- snip and xberg-cli derivations consume full upstream version and source fetch information from generated metadata.
 - headroom-ai derivation consumes version metadata only, preserving its wheel‑based build and fetch construction.
 - Excluded workflows (agentmemory, iii-engine, fish plugins, hermes-agent-src) remain unchanged.
 - Document structure: Reason, Raw Concept (task, changes, files, flow, timestamp, author), Narrative (Structure, Dependencies, Highlights, Rules).
