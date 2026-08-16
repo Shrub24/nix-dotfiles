@@ -1,6 +1,8 @@
 keys:
   - &owner_age age1w5asfm5rfncy4yvslj3az78kvn7hkrzq4vy0mzexf36w64a7e3nqamw3fp
+  - &root_sops_age age1mg2tr39el4caywzrd45ajwtxrcps3dksz4d49ttww9hgywfhh4nqycmk03
 creation_rules:
   - key_groups:
       - age:
           - *owner_age
+          - *root_sops_age

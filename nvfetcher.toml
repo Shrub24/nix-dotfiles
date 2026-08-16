@@ -10,16 +10,6 @@
 #   hermes-agent-src   — separate flake input (flake = false)
 #   fish plugin inputs — separate flake inputs (flake = false)
 
-[snip]
-src.github = "edouard-claude/snip"
-fetch.github = "edouard-claude/snip"
-
 [xberg-cli]
 src.github = "xberg-io/xberg"
 fetch.url = "https://github.com/xberg-io/xberg/releases/download/$ver/xberg-cli-x86_64-unknown-linux-gnu.tar.gz"
-
-[litellm]
-src.pypi = "litellm"
-fetch.pypi = "litellm"
-
-

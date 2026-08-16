@@ -8,29 +8,10 @@
 {
   xberg-cli = {
     pname = "xberg-cli";
-    version = "v1.0.12";
+    version = "v1.0.14";
     src = fetchurl {
-      url = "https://github.com/xberg-io/xberg/releases/download/v1.0.12/xberg-cli-x86_64-unknown-linux-gnu.tar.gz";
-      sha256 = "sha256-NoEf6MaTwAwKsGiPSRgOAZG7tqtn7J7+yNwGP7AUolc=";
-    };
-  };
-  snip = {
-    pname = "snip";
-    version = "v0.18.0";
-    src = fetchFromGitHub {
-      owner = "edouard-claude";
-      repo = "snip";
-      rev = "v0.18.0";
-      fetchSubmodules = false;
-      sha256 = "sha256-JwsfqL3NTxNTPRUlHGG9Hk6zjYERZTkgX21S6Ramm+8=";
-    };
-  };
-  litellm = {
-    pname = "litellm";
-    version = "1.92.0";
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/source/l/litellm/litellm-1.92.0.tar.gz";
-      sha256 = "sha256-dzrfVQPuF5MolonImTlKg9+BIpk3YNms14LjKqeY250=";
+      url = "https://github.com/xberg-io/xberg/releases/download/v1.0.14/xberg-cli-x86_64-unknown-linux-gnu.tar.gz";
+      sha256 = "sha256-yh9h7cjvJ0YZxna9lrBYAIcsiKv6rOPQZ0lveEGnNkw=";
     };
   };
 }

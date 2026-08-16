@@ -1,16 +1,28 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "labels": ["dependencies"],
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies"
+  ],
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
   "automerge": false,
-  "schedule": ["before 6am on monday"],
+  "schedule": [
+    "before 6am on monday"
+  ],
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 6am on monday"]
+    "schedule": [
+      "before 6am on monday"
+    ]
   },
-  "enabledManagers": ["nix", "github-actions", "custom.regex"],
+  "enabledManagers": [
+    "nix",
+    "github-actions",
+    "custom.regex"
+  ],
   "nix": {
     "enabled": true
   },
@@ -18,7 +30,9 @@
     {
       "customType": "regex",
       "description": "Update OCI image refs (tag + digest) in policy/oci-images.nix",
-      "managerFilePatterns": ["/policy/oci-images\\.nix$/"],
+      "managerFilePatterns": [
+        "/policy/oci-images\\.nix$/"
+      ],
       "matchStrings": [
         "\"(?<depName>[^\"]+):(?<currentValue>[^\"]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
       ],
@@ -28,11 +42,15 @@
   ],
   "packageRules": [
     {
-      "matchManagers": ["nix"],
+      "matchManagers": [
+        "nix"
+      ],
       "groupName": "nix flake inputs"
     },
     {
-      "matchManagers": ["custom.regex"],
+      "matchManagers": [
+        "custom.regex"
+      ],
       "groupName": "OCI image refs",
       "commitMessageTopic": "OCI image refs"
     }

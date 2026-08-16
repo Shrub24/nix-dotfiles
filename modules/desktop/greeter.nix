@@ -1,0 +1,107 @@
+_: {
+  flake.modules.systemManager.greeter =
+    {
+      pkgs,
+      hostFacts,
+      ...
+    }:
+    let
+      noctaliaGreeterPackage = pkgs.noctalia-greeter;
+
+      noctaliaGreeterSync = pkgs.noctalia-greeter-sync;
+
+      # Grant pkexec of the fixed-path helper via the generic exec action + program
+      # lookup (polkit(8)); no .policy file, so auth is switch-atomic, not tmpfiles-managed.
+      polkitSyncRule = pkgs.writeText "50-noctalia-greeter-sync.rules" ''
+        polkit.addRule(function (action, subject) {
+          if (
+            action.id == "org.freedesktop.policykit.exec" &&
+            action.lookup("program") == "/usr/local/libexec/noctalia-greeter-sync" &&
+            subject.user == "${hostFacts.username}" &&
+            subject.local &&
+            subject.active
+          ) {
+            return polkit.Result.YES;
+          }
+        });
+      '';
+
+      dbusRunSession = pkgs.writeShellApplication {
+        name = "dbus-run-session";
+        text = ''
+          exec ${pkgs.dbus}/bin/dbus-run-session \
+            --config-file=${pkgs.dbus}/share/dbus-1/session.conf "$@"
+        '';
+      };
+
+      noctaliaGreeterSession = pkgs.writeShellApplication {
+        name = "greetd-noctalia-session";
+        runtimeInputs = [
+          pkgs.cage
+          dbusRunSession
+          pkgs.wlr-randr
+        ];
+        text = ''exec ${noctaliaGreeterPackage}/bin/noctalia-greeter-session "$@"'';
+      };
+
+      niriSession = pkgs.writeText "niri.desktop" ''
+        [Desktop Entry]
+        Name=Niri
+        Comment=A scrollable-tiling Wayland compositor
+        Exec=${pkgs.niri}/bin/niri-session
+        Type=Application
+        DesktopNames=niri
+      '';
+
+      niriUwsmLauncher = pkgs.writeShellApplication {
+        name = "niri-uwsm-session";
+        text = ''
+          UWSM_SILENT_START=2 exec ${pkgs.systemd}/bin/systemd-cat --identifier=niri-uwsm \
+            ${pkgs.uwsm}/bin/uwsm start -N "Niri (UWSM)" -D niri -e -- ${pkgs.niri}/bin/niri
+        '';
+      };
+
+      niriUwsmSession = pkgs.writeText "niri-uwsm.desktop" ''
+        [Desktop Entry]
+        Name=Niri (UWSM)
+        Comment=A scrollable-tiling Wayland compositor
+        Exec=${niriUwsmLauncher}/bin/niri-uwsm-session
+        Type=Application
+        DesktopNames=niri;
+        TryExec=${pkgs.uwsm}/bin/uwsm
+      '';
+
+      greeterToml = pkgs.writeText "greeter.toml" ''
+        [user]
+        default = "${hostFacts.username}"
+      '';
+    in
+    {
+      systemd.tmpfiles.rules = [
+        "d /usr/share/wayland-sessions 0755 root root -"
+        "C+ /usr/share/wayland-sessions/niri.desktop 0644 root root - ${niriSession}"
+        "C+ /usr/share/wayland-sessions/niri-uwsm.desktop 0644 root root - ${niriUwsmSession}"
+        "d /var/lib/noctalia-greeter 0755 greeter greeter -"
+        "f /var/lib/noctalia-greeter/greeter.log 0664 greeter greeter -"
+        "C+ /var/lib/noctalia-greeter/greeter.toml 0644 root root - ${greeterToml}"
+        "C+ /usr/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy 0644 root root - ${noctaliaGreeterPackage}/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy"
+        "d /usr/local/libexec 0755 root root -"
+        # ponytail: C+ only creates if absent, never replaces; validator changes need `sudo rm` here + `systemd-tmpfiles --create`.
+        "C+ /usr/local/libexec/noctalia-greeter-sync 0755 root root - ${noctaliaGreeterSync}/bin/noctalia-greeter-sync"
+      ];
+
+      environment.etc."polkit-1/rules.d/50-noctalia-greeter-sync.rules".source = polkitSyncRule;
+
+      environment.etc."greetd/config.toml".text = ''
+        [terminal]
+        vt = "next"
+
+        [default_session]
+        command = "${noctaliaGreeterSession}/bin/greetd-noctalia-session -- --user saurabhj"
+        user = "greeter"
+      '';
+
+    }
+
+  ;
+}

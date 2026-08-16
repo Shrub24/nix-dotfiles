@@ -17,12 +17,10 @@
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    import-tree.url = "github:denful/import-tree";
+    treefmt-nix.url = "github:numtide/treefmt-nix";
     noctalia = {
       url = "github:noctalia-dev/noctalia";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    noctalia-greeter = {
-      url = "github:noctalia-dev/noctalia-greeter/v1.2.1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     monique = {
@@ -58,10 +56,6 @@
       url = "github:franciscolourenco/done";
       flake = false;
     };
-    fish-fifc = {
-      url = "github:gazorby/fifc";
-      flake = false;
-    };
     fish-replay = {
       url = "github:jorgebucaran/replay.fish";
       flake = false;
@@ -69,9 +63,6 @@
     fish-sponge = {
       url = "github:meaningful-ooo/sponge";
       flake = false;
-    };
-    nvfetcher = {
-      url = "github:berberman/nvfetcher";
     };
     fsel = {
       url = "github:Mjoyufull/fsel";
@@ -89,118 +80,8 @@
   outputs =
     inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ (inputs.import-tree ./modules) ];
+
       systems = [ "x86_64-linux" ];
-
-      perSystem =
-        { pkgs, ... }:
-        {
-          formatter = pkgs.nixfmt;
-
-          devShells.default = pkgs.mkShell {
-            packages = with pkgs; [
-              nixd
-              nil
-              statix
-              deadnix
-              nixfmt
-              nix-output-monitor
-              nvfetcher
-            ];
-            NIX_CONFIG = "experimental-features = nix-command flakes";
-          };
-
-          apps.nvfetcher-update = {
-            type = "app";
-            program =
-              let
-                nvfu = pkgs.writeShellScriptBin "nvfetcher-update" ''
-                  exec ${pkgs.nvfetcher}/bin/nvfetcher \
-                    -c nvfetcher.toml \
-                    -o pkgs/_sources \
-                    "$@"
-                '';
-              in
-              "${nvfu}/bin/nvfetcher-update";
-            meta.description = "Run nvfetcher to update pkgs/_sources/generated.nix and generated.json";
-          };
-        };
-
-      flake =
-        let
-          system = "x86_64-linux";
-          overlay =
-            final: prev:
-            let
-              generatedSources = import ./pkgs/_sources/generated.nix {
-                inherit (final)
-                  fetchgit
-                  fetchurl
-                  fetchFromGitHub
-                  dockerTools
-                  ;
-              };
-            in
-            {
-              snip = final.callPackage ./pkgs/snip {
-                inherit (generatedSources.snip) version src;
-              };
-              nix-search-tv-fzf = final.callPackage ./pkgs/nix-search-tv-fzf { };
-              xberg-cli = final.callPackage ./pkgs/xberg-cli {
-                inherit (generatedSources.xberg-cli) version src;
-              };
-              byterover-cli = final.callPackage ./pkgs/byterover { };
-              codexbar = final.callPackage ./pkgs/codexbar { };
-              nirius = final.callPackage ./pkgs/nirius { };
-              litellm-oci = final.callPackage ./pkgs/litellm/oci.nix { };
-              surge = final.callPackage ./pkgs/surge { inherit inputs; };
-              niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
-              keypeek = inputs.keypeek.packages.${system}.default.overrideAttrs (old: {
-                patches = (old.patches or [ ]) ++ [ ./pkgs/keypeek/zmk-default-vid-pid.patch ];
-                postInstall = (old.postInstall or "") + ''
-                  install -Dm644 ${inputs.keypeek}/cargo-appimage.desktop \
-                    "$out/share/applications/keypeek.desktop"
-                  install -Dm644 resources/icon.svg \
-                    "$out/share/icons/hicolor/scalable/apps/keypeek.svg"
-                '';
-              });
-            };
-          pkgs = import inputs.nixpkgs {
-            inherit system;
-            overlays = [ overlay ];
-          };
-          homepage = import ./lib/web-services.nix {
-            inherit pkgs;
-            lib = pkgs.lib;
-          };
-          commonSpecialArgs = {
-            inherit inputs;
-            repoRoot = "/home/saurabhj/.dotfiles/nix";
-            appsDir = "/home/saurabhj/.dotfiles/apps";
-          };
-        in
-        {
-          homeConfigurations.saurabhj = inputs.home-manager.lib.homeManagerConfiguration {
-            inherit pkgs;
-            extraSpecialArgs = commonSpecialArgs;
-            modules = [
-              ./hosts/arch/home.nix
-              {
-                programs.pi.package = inputs.llm-agents.packages.${system}.pi;
-              }
-            ];
-          };
-
-          systemConfigs.arch = inputs.system-manager.lib.makeSystemConfig {
-            modules = [ ./hosts/arch/system.nix ];
-            specialArgs = commonSpecialArgs;
-            overlays = [ overlay ];
-          };
-
-          webServices = homepage.catalog;
-          webServiceCatalog = homepage.normalize homepage.catalog;
-          webServiceCatalogJSON = pkgs.writeText "web-service-catalog.json" (
-            builtins.toJSON (homepage.toCatalogJSON homepage.catalog)
-          );
-        };
     };
 }

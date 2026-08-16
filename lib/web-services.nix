@@ -13,18 +13,14 @@
 # Homepage rule: only services with a ui.path appear in homepage output.
 {
   lib,
-  pkgs,
 }:
 
 let
   inherit (lib)
     optionalAttrs
-    mapAttrs
     mapAttrsToList
     filter
-    hasAttr
     groupBy
-    listToAttrs
     ;
 
   # ── Catalog data (SSOT) ──────────────────────────────────────────────
@@ -36,6 +32,16 @@ let
   };
 
   services = {
+    grist = {
+      name = "Grist";
+      port = 8484;
+      group = "Productivity";
+      icon = "si-grist";
+      description = "Local spreadsheet database";
+      ui.path = "/";
+      health.path = "/status";
+    };
+
     litellm = {
       name = "LiteLLM";
       port = 8765;
@@ -80,7 +86,7 @@ let
     let
       scheme = svc.scheme or defaults.scheme;
       host = svc.host or defaults.host;
-      port = svc.port;
+      inherit (svc) port;
       baseUrl = "${scheme}://${host}:${toString port}";
       uiPath = svc.ui.path or null;
       healthPath = svc.health.path or null;
@@ -88,9 +94,8 @@ let
     in
     {
       inherit id;
-      name = svc.name;
+      inherit (svc) name port;
       group = svc.group or defaults.group;
-      port = svc.port;
       inherit scheme host baseUrl;
       uiUrl = if uiPath != null then "${baseUrl}${uiPath}" else null;
       healthUrl = if healthPath != null then "${baseUrl}${healthPath}" else null;
@@ -115,14 +120,11 @@ let
     in
     mapAttrsToList (group: svcs: {
       ${group} = map (s: {
-        ${s.name} = (
-          {
-            href = s.uiUrl;
-            icon = s.icon;
-            description = s.description;
-          }
-          // optionalAttrs (s.healthUrl != null) { siteMonitor = s.healthUrl; }
-        );
+        ${s.name} = {
+          href = s.uiUrl;
+          inherit (s) icon description;
+        }
+        // optionalAttrs (s.healthUrl != null) { siteMonitor = s.healthUrl; };
       }) svcs;
     }) grouped;
 
@@ -151,6 +153,5 @@ in
     toHomepage
     toCatalogJSON
     ;
-  services = catalog.services;
-  defaults = catalog.defaults;
+  inherit (catalog) services defaults;
 }

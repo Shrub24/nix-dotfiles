@@ -1,0 +1,72 @@
+_: {
+  flake.modules.homeManager.qmd =
+    {
+      config,
+      inputs,
+      lib,
+      pkgs,
+      ...
+    }:
+
+    let
+      cfg = config.programs.qmd;
+      webServices = (import ../../lib/web-services.nix { inherit lib; }).services;
+    in
+    {
+      options.programs.qmd = {
+        enable = lib.mkEnableOption "qmd — local markdown search engine (MCP HTTP server)";
+
+        port = lib.mkOption {
+          type = lib.types.port;
+          default = webServices.qmd.port;
+          description = "HTTP port for the qmd MCP server.";
+        };
+
+        package = lib.mkOption {
+          type = lib.types.package;
+          default = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.qmd;
+          description = "qmd package to run.";
+        };
+
+        gpu = lib.mkOption {
+          type = lib.types.nullOr (
+            lib.types.enum [
+              "auto"
+              "metal"
+              "vulkan"
+              "cuda"
+              "false"
+            ]
+          );
+          default = null;
+          description = "llama.cpp GPU backend override. null = default (auto).";
+        };
+      };
+
+      config = lib.mkIf cfg.enable {
+        systemd.user.services.qmd = {
+          Unit = {
+            Description = "QMD — local markdown search engine (MCP HTTP server)";
+            After = [ "network-online.target" ];
+            Wants = [ "network-online.target" ];
+          };
+
+          Service = {
+            Type = "exec";
+            ExecStart = "${cfg.package}/bin/qmd mcp --http --port ${toString cfg.port}";
+            Restart = "on-failure";
+            RestartSec = "10s";
+            Environment = lib.optional (cfg.gpu != null) "QMD_LLAMA_GPU=${cfg.gpu}";
+            StandardOutput = "journal";
+            StandardError = "journal";
+          };
+
+          Install = {
+            WantedBy = [ "default.target" ];
+          };
+        };
+      };
+    }
+
+  ;
+}
