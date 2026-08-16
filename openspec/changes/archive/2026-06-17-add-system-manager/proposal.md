@@ -13,10 +13,12 @@ This repository currently manages only user-scoped configuration through Home Ma
 ## Capabilities
 
 ### New Capabilities
+
 - `system-manager-foundation`: Add a system-manager flake output and module structure for declarative system-scoped configuration on the Arch host.
 - `daemon-nix-config`: Manage daemon-visible Nix settings and nixbuild.net access configuration at system scope instead of user scope.
 
 ### Modified Capabilities
+
 - None.
 
 ## Impact

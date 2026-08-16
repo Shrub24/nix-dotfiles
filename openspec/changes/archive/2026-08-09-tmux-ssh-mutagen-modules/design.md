@@ -5,12 +5,14 @@ The user's SSH client config, tmux config, and mutagen tooling are not yet manag
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Declarative tmux config via native `programs.tmux.*`.
 - Declarative SSH client config via native `programs.ssh.*`.
 - Install `pkgs.mutagen` via a thin module that can grow later.
 - Follow the repo's existing module patterns (one-file modules for single concerns, subdirectory groups for related concerns).
 
 **Non-Goals:**
+
 - Managing `known_hosts`, `authorized_keys`, or private key material.
 - Managing SSH host-specific blocks in the shared module (those go in the host config).
 - Any custom Nix derivations (mutagen is already in nixpkgs).

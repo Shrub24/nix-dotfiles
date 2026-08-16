@@ -8,31 +8,24 @@ source-spec: openspec/changes/archive/2026-06-19-add-nvfetcher-for-packages/spec
 ## Purpose
 
 Defines the canonical requirements for nvfetcher-managed package sources.
+
 ## Requirements
+
 ### Requirement: Selected package sources are managed through nvfetcher metadata
-The repository SHALL define committed nvfetcher source metadata for the selected package set consisting of `snip`, `kreuzberg-cli`, and `headroom-ai`.
+
+The repository SHALL define committed nvfetcher source metadata only for the active custom package set that consumes it.
 
 #### Scenario: Maintainer inspects nvfetcher configuration
+
 - **WHEN** a maintainer reviews the repository source-update configuration
-- **THEN** the selected package set is declared in nvfetcher configuration and backed by committed generated source metadata
+- **THEN** every declared nvfetcher source SHALL be consumed by an active custom package
+- **AND** inactive Snip and LiteLLM source records SHALL be absent
 
 ### Requirement: Target derivations consume generated nvfetcher metadata
-The `snip` and `kreuzberg-cli` derivations SHALL consume externally generated source metadata for upstream version and source fetch information rather than hardcoding those fields inline in each derivation. The `headroom-ai` derivation SHALL consume externally generated version metadata while preserving its wheel-specific fetch construction.
+
+Each package selected for nvfetcher management SHALL consume its generated upstream version and source fetch metadata rather than duplicating those fields in its derivation.
 
 #### Scenario: Maintainer updates a target package source
-- **WHEN** nvfetcher-generated metadata changes for one of the selected packages
-- **THEN** the corresponding derivation reads the required upstream metadata from that generated metadata path while preserving any package-specific wheel fetch mechanics
 
-### Requirement: Existing excluded source workflows remain unchanged
-The repository SHALL leave the existing source-management workflows for `agentmemory`, `iii-engine`, fish plugin non-flake inputs, and `hermes-agent-src` unchanged in this change.
-
-#### Scenario: Maintainer reviews excluded dependencies
-- **WHEN** a maintainer inspects dependencies explicitly excluded from this change
-- **THEN** their current flake-input or custom source-update wiring remains intact
-
-### Requirement: Headroom AI remains wheel-based in this migration
-The `headroom-ai` package SHALL preserve its wheel-based build model while adopting nvfetcher-managed version metadata.
-
-#### Scenario: Maintainer builds headroom-ai after migration
-- **WHEN** the `headroom-ai` derivation is evaluated after nvfetcher integration
-- **THEN** it still uses the wheel-based packaging path while sourcing its nvfetcher-managed version metadata from the generated metadata path
+- **WHEN** nvfetcher-generated metadata changes for an active selected package
+- **THEN** the corresponding derivation SHALL consume the updated generated fields

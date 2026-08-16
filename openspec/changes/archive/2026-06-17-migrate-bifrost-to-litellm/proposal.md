@@ -14,11 +14,13 @@ The current local LLM gateway is built on Bifrost, which is sufficient for stati
 ## Capabilities
 
 ### New Capabilities
+
 - `litellm-gateway`: Provide a declarative LiteLLM Home Manager gateway service with generated config, sops-managed runtime secrets, stable localhost access, and optional global Headroom ASGI middleware support
 - `litellm-model-routing`: Generate LiteLLM model-group and fallback configuration from a LiteLLM-native alias/deployment schema while preserving the current logical model behavior at parity
 - `litellm-client-integration`: Expose LiteLLM to OpenCode and local AI clients through generated provider/client config while preserving existing logical model names and converging downstream naming on `litellm`
 
 ### Modified Capabilities
+
 - *(none — no existing spec capabilities are being modified)*
 
 ## Impact

@@ -7,6 +7,7 @@ The immediate driver is nixbuild.net access for `ssh-ng://eu.nixbuild.net`: user
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Add a declarative system-scoped configuration layer to this flake for the Arch host.
 - Keep the repository structure understandable by mirroring the existing host/module layout where practical.
 - Move daemon-facing Nix configuration to system scope so root/daemon execution sees the intended settings.
@@ -14,6 +15,7 @@ The immediate driver is nixbuild.net access for `ssh-ng://eu.nixbuild.net`: user
 - Minimize disruption to existing Home Manager modules and user services.
 
 **Non-Goals:**
+
 - Converting the machine to NixOS.
 - Migrating every user service or user secret into system scope.
 - Reworking unrelated Home Manager modules, shell configuration, or developer tooling.
@@ -22,6 +24,7 @@ The immediate driver is nixbuild.net access for `ssh-ng://eu.nixbuild.net`: user
 ## Decisions
 
 ### Use system-manager as the system-scoped configuration layer
+
 - **Decision:** Introduce `system-manager` as a new flake input and expose a system-level configuration output for the Arch host.
 - **Rationale:** The repo already uses the Nix module model effectively through Home Manager. `system-manager` extends that same declarative model to non-NixOS system configuration, which is a better fit than ad hoc root scripts or manual `/etc` edits.
 - **Alternatives considered:**
@@ -30,6 +33,7 @@ The immediate driver is nixbuild.net access for `ssh-ng://eu.nixbuild.net`: user
   - Keeping everything in Home Manager: rejected because daemon/root execution does not reliably see user-scoped configuration.
 
 ### Create a parallel `modules/system/` and `hosts/arch/system.nix` structure
+
 - **Decision:** Model system-manager configuration with a host entrypoint and a `modules/system/` tree parallel to the existing Home Manager structure.
 - **Rationale:** The repo already communicates ownership through `hosts/<host>/home.nix` and `modules/home/**`. A parallel system tree preserves discoverability and reduces ambiguity about what runs as the user versus what runs at system scope.
 - **Alternatives considered:**
@@ -37,6 +41,7 @@ The immediate driver is nixbuild.net access for `ssh-ng://eu.nixbuild.net`: user
   - Mixing system modules into `modules/home/`: rejected because it blurs privilege boundaries.
 
 ### Move daemon-relevant Nix settings to system scope, keep user tooling in Home Manager
+
 - **Decision:** System-level Nix daemon settings such as substituters, trusted public keys, and daemon-facing nixbuild.net access move under system-manager. User-scoped Nix packages, CLI tools, and user timers remain in Home Manager.
 - **Rationale:** This aligns configuration with the process that consumes it and avoids duplicating daemon policy across user and system layers.
 - **Alternatives considered:**
@@ -44,6 +49,7 @@ The immediate driver is nixbuild.net access for `ssh-ng://eu.nixbuild.net`: user
   - Moving all Nix-related config to system scope: rejected because user tooling belongs with Home Manager.
 
 ### Use system-scoped secret or environment wiring for nixbuild.net access
+
 - **Decision:** The implementation should provide nixbuild.net credentials in a daemon-visible way at system scope, rather than relying on user shell inheritance.
 - **Rationale:** The daemon or root-owned processes may initiate the effective SSH connection, so credential delivery must not depend on an interactive user session.
 - **Alternatives considered:**
@@ -60,11 +66,11 @@ The immediate driver is nixbuild.net access for `ssh-ng://eu.nixbuild.net`: user
 ## Migration Plan
 
 1. Add `system-manager` to the flake inputs and expose a system configuration output for the Arch host.
-2. Create `modules/system/` and `hosts/arch/system.nix` as the new system-scoped entrypoints.
-3. Implement system-scoped Nix configuration in a dedicated module.
-4. Move daemon-facing Nix settings out of `modules/home/nix.nix`, leaving only user-scoped Nix tools and timers.
-5. Add system-scoped nixbuild.net credential/config plumbing.
-6. Validate that the Home Manager and system-manager layers each own the intended responsibilities.
+1. Create `modules/system/` and `hosts/arch/system.nix` as the new system-scoped entrypoints.
+1. Implement system-scoped Nix configuration in a dedicated module.
+1. Move daemon-facing Nix settings out of `modules/home/nix.nix`, leaving only user-scoped Nix tools and timers.
+1. Add system-scoped nixbuild.net credential/config plumbing.
+1. Validate that the Home Manager and system-manager layers each own the intended responsibilities.
 
 ## Open Questions
 

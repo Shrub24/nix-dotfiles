@@ -15,9 +15,11 @@ WezTerm is already in use on the Arch host, but its configuration lives as a han
 ## Capabilities
 
 ### New Capabilities
+
 - `wezterm-config`: The repository manages WezTerm terminal configuration declaratively through Home Manager, including settings, Lua extra config, dynamic theme references, and key bindings.
 
 ### Modified Capabilities
+
 - None.
 
 ## Impact

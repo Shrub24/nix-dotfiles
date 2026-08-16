@@ -16,9 +16,11 @@ Service ports, endpoint paths, and display metadata are currently duplicated acr
 ## Capabilities
 
 ### New Capabilities
+
 - `web-service-catalog`: A localhost-scoped service catalog that authoritatively defines web service ports, endpoint paths, and display metadata, with derived outputs for homepage consumption, JSON catalogs, and module port references.
 
 ### Modified Capabilities
+
 <!-- No existing spec-level requirement changes. -->
 
 ## Impact

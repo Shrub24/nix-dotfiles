@@ -21,7 +21,7 @@
 
 - [x] 4.1 Build the activation package (`nix build .#homeConfigurations.saurabhj.activationPackage`) — `checkConfig` runs `niri validate` on the generated KDL
 - [x] 4.2 `nh home switch`, confirm niri reloads with the store-linked config and Noctalia spawns at startup; exercise lock, volume, brightness, control-center binds — switch done; login/bind test is a user acceptance step
-- [ ] 4.3 Disable DMS autostart/greeter while retaining its package and config temporarily; remove Arch niri, manage greetd/session entries through system-manager, and verify a clean `Niri (UWSM)` login
+- [x] 4.3 Disable DMS autostart/greeter while retaining its package and config temporarily; remove Arch niri, manage greetd/session entries through system-manager, and verify a clean `Niri (UWSM)` login
 
 ## 5. Docs
 
@@ -45,5 +45,5 @@
 
 - [x] 8.1 Pin upstream `noctalia-greeter` 1.2.1 as a flake input and use the same package for system-manager and Home Manager
 - [ ] 8.2 Route UWSM startup output to the journal and verify a clean greeter-to-session transition
-- [ ] 8.3 Enable Noctalia appearance sync, restart the shell, and confirm greeter theme/output state is written
-- [ ] 8.4 Diagnose and fix Noctalia lock-screen PAM authentication without weakening the system PAM policy
+- [x] 8.3 Add a fixed-path no-follow staging wrapper and dedicated polkit action; route Noctalia through it with `pkexec`, keep `systemd1.manage-units` ungranted, and confirm silent appearance sync
+- [ ] 8.4 Patch Noctalia's lock screen to a dedicated `noctalia-lock` PAM service with a minimal `pam_unix` policy; verify unlock works without touching `/etc/pam.d/login`

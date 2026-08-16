@@ -12,10 +12,12 @@ The repo currently ships a custom `tokf` package for agent-oriented shell output
 ## Capabilities
 
 ### New Capabilities
+
 - `snip-package`: Provide a pinned `snip` CLI derivation and install it through the agent tools package set
 - `opencode-snip-integration`: Configure OpenCode to use the `opencode-snip` plugin when `snip` is present in PATH
 
 ### Modified Capabilities
+
 - *(none — no existing spec capabilities are being modified)*
 
 ## Impact

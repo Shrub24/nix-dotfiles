@@ -17,9 +17,11 @@ Introducing `nvfetcher` for this narrow package set creates a repeatable source-
 ## Capabilities
 
 ### New Capabilities
+
 - `nvfetcher-package-sources`: The repository manages selected package source metadata through nvfetcher-generated, committed source definitions.
 
 ### Modified Capabilities
+
 - None.
 
 ## Impact

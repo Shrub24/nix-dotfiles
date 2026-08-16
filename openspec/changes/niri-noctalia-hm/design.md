@@ -10,11 +10,13 @@ See proposal.md — Why. Current state that shapes the design:
 ## Goals / Non-Goals
 
 **Goals:**
+
 - niri config fully rendered from the flake; identical observable behavior after switch (binds, window rules, layout).
 - Noctalia v5 replaces DMS with zero shell-provider overlap; DMS fully removable.
 - Prebuilt binaries only: no local compilation of noctalia.
 
 **Non-Goals:**
+
 - Porting every KDL line into `settings` attrsets — binds and window rules stay verbatim in `extraConfig`.
 - Managing system login files from home-manager; greetd and session entries belong to system-manager.
 - Full Noctalia theming work — only minimal shell config to start; iterate via hot reload.
@@ -55,14 +57,18 @@ Home Manager installs Monique from its upstream flake and starts `moniqued`, but
 *Rationale*: nixpkgs currently provides 0.8.0 and upstream has no flake. A small project-local derivation is less machinery than another source-management workflow and can be deleted once nixpkgs catches up.
 
 **D10 — Noctalia Greeter follows its upstream flake and keeps mutable sync state.**
-The greeter package is pinned independently at 1.2.1 and shared by system-manager and Home Manager. System-manager owns the greetd session, declarative `greeter.toml`, and a polkit rule allowing only the active local user to apply appearance state without prompting; Noctalia owns mutable `sync.toml` and synchronized appearance/output assets. UWSM output is sent to the journal rather than the greeter VT.
-*Rationale*: the pinned nixpkgs greeter predates output-layout sync and clean VT logging; one upstream package avoids helper/protocol drift without updating all of nixpkgs.
+The greeter package is pinned independently at 1.2.1 and shared by system-manager and Home Manager. System-manager owns the greetd session, declarative `greeter.toml`, and a local root wrapper. The wrapper accepts no arguments, opens only the fixed user-owned staging directory with no-follow descriptors, copies whitelisted regular files into a root-owned temporary directory, then invokes the upstream helper. Noctalia calls it through Arch's setuid `/usr/bin/pkexec`; a Nix-store binary cannot carry that privilege. The wrapper is installed by tmpfiles at a fixed root-owned path (`/usr/local/libexec/noctalia-greeter-sync`), and the user-side launcher references that stable path — never a store path, which would drift between the separately-switched Home Manager and system-manager generations. Authorization is a polkit rule (installed via `environment.etc`, so switch-atomic) that grants `YES` on the generic `org.freedesktop.policykit.exec` action when `action.lookup("program")` equals the fixed helper path, for the active local host user — the pattern documented in polkit(8). No custom `.policy` action is used: a tmpfiles-managed action file's `exec.path` annotation could not be refreshed reliably (`C+` only creates, never replaces an existing file), so authorization depends solely on the switch-atomic rule. UWSM output is sent to the journal rather than the greeter VT.
+*Rationale*: the pinned nixpkgs greeter predates output-layout sync and clean VT logging; one upstream package avoids helper/protocol drift without updating all of nixpkgs. `run0` authorizes arbitrary transient root units through `systemd1.manage-units`. The upstream helper accepts arbitrary staging paths and follows source symlinks, so it must receive a root-owned, copied staging directory rather than user-controlled paths.
+
+**D11 — Lock screen authenticates through a dedicated patched PAM service.**
+The overlay shadows `pkgs.noctalia` with a one-string patch redirecting the lock screen's hardcoded `pam_service = "login"` to `noctalia-lock`, and system-manager installs a minimal `/etc/pam.d/noctalia-lock` (`pam_unix` auth and account only).
+*Rationale*: Arch's `login` stack includes `pam_faillock`, whose root-owned state an unprivileged locker cannot reach (`pam_authenticate` rc=9); upstream hardcodes the service with no config key (issue #3277). `pam_unix` verifies the caller's own password unprivileged via Arch's setuid `unix_chkpwd`, so the system `login` policy stays untouched. `--replace-fail` turns upstream drift into a build error.
 
 ## Risks / Trade-offs
 
 - [niri option/KDL drift] → `checkConfig` validates against the same nixpkgs niri binary used by the session entries.
 - [Noctalia beta config churn between versions] → minimal `settings` initially; hot reload makes iteration cheap; `niri validate`+`noctalia` runtime errors surface immediately on next login.
-- [GUI overrides in `~/.local/state/noctalia/settings.toml` silently override declarative config] → documented precedence boundary (see specs — noctalia-shell); clear the state file during early iteration.
+- \[GUI overrides in `~/.local/state/noctalia/settings.toml` silently override declarative config\] → documented precedence boundary (see specs — noctalia-shell); clear the state file during early iteration.
 - [First switch replaces the imperative config.kdl] → D6 backup; home-manager activation is the atomic point.
 - [Early login environment lacks Home Manager profile paths] → greetd, niri, and UWSM session commands use absolute store paths.
 - [Monique runtime state is outside Git] → keep `~/.config/monique` and `~/.config/niri/monitors.kdl` in normal user backups; do not store-link files Monique must write.
