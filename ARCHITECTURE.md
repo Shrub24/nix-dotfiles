@@ -1,161 +1,159 @@
 # Architecture
 
-## Directory Layout
+This repository is a single-user Nix configuration for one Arch desktop host.
+It composes two privilege-scoped layers — a user-scoped Home Manager
+configuration and a root-scoped system-manager configuration — from feature
+modules that are discovered by directory scan but activated only by explicit
+host selection.
+
+`README.md` covers setup and operator commands. This document records the
+durable boundaries, the composition model, and the design rationale.
+Behavioral contracts live in the canonical specs under `openspec/specs/` and
+are referenced here rather than restated.
+
+## Overview / Boundaries
+
+The split is along a privilege boundary, not a feature boundary:
+
+- **User scope** — Home Manager (`homeConfigurations.saurabhj`) owns
+  user-level programs, services, and secrets. Canonical contract:
+  [system-manager-foundation](openspec/specs/system-manager-foundation/spec.md).
+- **System scope** — system-manager (`systemConfigs.arch`) owns daemons,
+  root-owned state, and machine-wide configuration on the non-NixOS host.
+  Same canonical contract, mirrored: daemon and root-owned concerns never
+  live in Home Manager modules.
+
+Feature modules live in a single `modules/` tree — the only discovery
+root. `import-tree` scans it; every unmarked `.nix` there is a flake-parts
+module that publishes named aspects under `flake.modules.homeManager.<name>`
+or `flake.modules.systemManager.<name>`. Raw class-specific modules are
+never scanned: they live only under `_`-named segments (`/_` in a path is
+ignored). A feature spanning both classes holds both values in one file —
+`nix.nix`, `ssh.nix`, and `tailscale.nix` each publish a homeManager and a
+systemManager aspect. Registration is filesystem-driven; activation is
+host-driven.
+
+## Composition
+
+The flake is a minimal manifest: inputs, discovery, and host composition.
+`flake.nix` declares the inputs, calls `flake-parts.lib.mkFlake`, imports
+`(inputs.import-tree ./modules)`, and sets `systems` — no module logic lives
+there. import-tree scans the single `modules/` root: every unmarked `.nix`
+is a flake-parts module publishing named aspects; paths containing `/_` are
+ignored.
 
 ```
-.
-├── flake.nix                      # Flake entry point — inputs, overlay, per-host configs
-├── flake.lock                   # Pinned flake inputs
-├── ARCHITECTURE.md              # This file
-├── STRUCTURE.md                 # Codebase structure reference
-├── README.md
-├── .envrc                       # direnv: `use flake . --impure`
-├── .sops.yaml                   # sops-nix encryption rules
-├── .gitignore
-├── niri.config.kdl.imperative-backup  # Pre-migration niri config backup (imperative → store-linked)
-├── hosts/                       # Per-machine / per-user compositions
-│   └── arch/
-│       └── home.nix             # Host entrypoint: identity, imports all modules
-│
-├── modules/                     # Home Manager modules
-│   ├── default.nix              # Single entry point — imports all home sub-modules
-│   └── home/                    # Home Manager feature modules
-│       ├── nix.nix              # Nix CLI, settings, GC, nix-index, unfree policy
-│       ├── direnv.nix           # direnv + direnv-instant
-│       ├── sops.nix             # sops-nix secrets decryption (YAML-backed placeholders)
-│       ├── zsh.nix              # Zsh config, antidote plugins, aliases, fzf, zoxide, eza
-│       ├── zsh-abbr.nix         # zsh-abbr (user & global abbreviations)
-│       ├── tmux.nix             # tmux session configuration
-│       ├── opencode.nix         # OpenCode config symlinks (~/.config/opencode, ~/.agents → ../apps)
-│       ├── niri.nix             # niri compositor + Noctalia shell + Monique (settings + extraConfig)
-│       ├── dev-tools/           # CLI and language development tools
-│       │   ├── default.nix      # Imports sub-modules + user tools
-│       │   ├── languages.nix    # ast-grep, tree-sitter, extra grammars, sgconfig.yml
-│       │   ├── mise.nix         # mise-en-place (node, pnpm, bun, npm tools)
-│       │   └── navi.nix         # navi CLI cheatsheets
-│       │
-│       └── agents/              # AI agent modules
-│           ├── default.nix      # Composes pi, hermes, docs-mcp, bifrost, tools
-│           ├── pi.nix           # pi (llm-agents) — settings, MCP, search, permissions
-│           ├── hermes.nix        # hermes-agent — config, from flake input
-│           ├── docs-mcp.nix     # Grounded Docs MCP Server — systemd service
-│           ├── bifrost/        # Bifrost MCP gateway
-│           │   ├── default.nix  # Systemd service (bunx) + config rendering
-│           │   └── config.json  # Config template with envsubst vars
-│           └── tools.nix         # Agent CLI tools (snip, codebase-memory-mcp)
-│
-├── pkgs/                        # Custom derivations (not in nixpkgs)
-│   ├── snip/
-│   │   └── default.nix
-│   └── nix-search-tv-fzf/
-│       └── default.nix
-│
-├── secrets/                     # Encrypted secrets (sops-nix)
-│   ├── agents.yaml              # Central YAML secrets store (API keys, tokens)
-│   ├── pi-secrets.yaml          # Pi telegram secret (YAML format)
-│   ├── zsh-secrets.env          # Legacy shell secrets (dotenv, superseded by sops template)
-│   └── bifrost/                 # Bifrost gateway secrets
-│
-├── openspec/                    # OpenSpec change proposals
-│   ├── config.yaml              # OpenSpec project configuration
-│   ├── specs/                   # Reusable spec definitions
-│   └── changes/
-│       ├── hermes-agent/        # Hermes agent proposal + specs
-│       ├── agentmemory/         # Agent memory system proposal + specs
-│       └── archive/            # Archived proposals
-│
-├── .skills/                     # Dendritic skills cache
-│   └── dendritic-nix/
-│       └── references/
-│
-└── .opencode/                   # OpenCode plugin/skill artifacts
-    ├── commands/
-    ├── magic-context/
-    ├── plugins/
-    └── skills/
+modules/                 ← import-tree scan (the only discovery root)
+  ├─ flake/*.nix         declares the flake.modules option; perSystem tooling
+  ├─ agents/<feature>.nix  one file per feature → homeManager aspect
+  ├─ agents/litellm/     default.nix publishes the aspect; _*.nix raw modules
+  ├─ desktop/*.nix       niri, noctalia, monique; greeter → systemManager
+  ├─ foundation/*.nix    network, boot → systemManager aspects
+  ├─ shell/*.nix         per-shell homeManager aspects
+  ├─ *.nix               nixbuild, secrets, niks3, mosh, mutagen — single-aspect
+  ├─ nix.nix ssh.nix tailscale.nix   both homeManager AND systemManager
+  ├─ hosts/arch.nix      selects explicit aspect lists → host outputs
+  └─ hosts/arch/_*.nix   raw host files (facts, home, system) — ignored
+
+Host composition lives in modules/hosts/arch.nix, not flake.nix:
+  ├─ 30 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
+  └─ 7 systemManager aspects + _system.nix → systemConfigs.arch
 ```
 
-## Principles
+Host identity lives once in `modules/hosts/arch/_facts.nix`: username,
+hostname, architecture, `appsDir`, and remote-machine data. It is passed to
+both outputs as `hostFacts` specialArgs, so reusable feature modules never
+duplicate these literals. Package recipes and the local overlay are owned by
+`pkgs/default.nix`; feature modules reference published packages rather than
+defining derivations inline.
 
-- **Derivations → `pkgs/`** — every custom build recipe lives under `pkgs/`. Exposed via overlay so `pkgs.<name>` works everywhere.
-- **Feature modules → `modules/home/`** — each module file owns one concern. Imported by `modules/default.nix`; never by other feature modules.
-- **Dev-tools → `modules/home/dev-tools/`** — grouped concern for CLI/language development tools (ast-grep, tree-sitter, mise, navi, lazyjournal) plus user tools such as the Surge TUI download manager (pinned upstream flake, version-correcting wrapper in `pkgs/surge`). Wired through `dev-tools/default.nix`.
-- **Agent modules → `modules/home/agents/`** — concern-grouped under the home-manager tree, with `agents/default.nix` composing pi, hermes, docs-mcp, bifrost, and tools.
-- **Host compositions → `hosts/<hostname>/home.nix`** — the only place that sets host-specific identity (`home.username`, `home.stateVersion`) and enables programs. Imports `../../modules` to pull in all feature modules.
-- **`modules/default.nix` is the single module entry point** — imports `./home/nix.nix`, `./home/direnv.nix`, `./home/sops.nix`, `./home/zsh.nix`, `./home/zsh-abbr.nix`, `./home/opencode.nix`, `./home/tmux.nix`, `./home/niri.nix`, `./home/dev-tools`, and `./home/agents`. Host configs only need `imports = [../../modules]`.
-- **`flake.nix` is pure wiring** — inputs, the local overlay (snip, nix-search-tv-fzf), the dev shell, and the per-host `homeConfigurations` block. No module logic lives here.
-- **`pkgs/` flake overlay** — all custom packages are registered via `perSystem` overlay in `flake.nix` so they're available as `pkgs.<name>` everywhere.
+## Secrets & Privilege
 
-## Data Flow
+Secrets follow the same split as the configuration layers: each secret is
+decrypted and rendered by whichever layer owns its consumer.
 
+**System scope (root).** The Nixbuild credential is the one system secret.
+`modules/nixbuild.nix` imports the sops-nix NixOS module, reads
+`secrets/nixbuild.yaml`, and renders the token to
+`/run/secrets/rendered/nixbuild.net.env` as root-owned `0400`. Decryption uses
+a pre-generated root-owned age key at `/var/lib/sops-nix/key.txt`
+(`generateKey = false`; automatic generation is unsupported in
+system-manager). `nix-daemon` orders after and wants
+`sops-install-secrets.service`, and rotation restarts it declaratively via
+`restartUnits`. Canonical contract:
+[daemon-nix-config](openspec/specs/daemon-nix-config/spec.md).
+
+**User scope.** All other secrets are user-scoped sops via
+`modules/secrets.nix` and the encrypted stores under `secrets/`; templates
+render per-service env files (`docs-mcp.env`, `litellm.env`, `aichat.env`,
+`grist.env`) into the Home Manager generation. No user secret is exposed to the root
+daemon, and no system secret is rendered into user state.
+
+## Service Lifecycle
+
+User services follow systemd's own lifecycle model instead of activation
+orchestration. Docs MCP, LiteLLM, and Grist declare `X-Restart-Triggers`
+on their generated config and decrypted secret paths, so a config or
+secret change restarts the service declaratively. Activation hooks remain only where the
+service manager cannot model the work.
+
+The one retained Home Manager activation is the LiteLLM OCI image load
+(`home.activation.litellmImageLoad`): the patched image is loaded into podman
+once at activation rather than in `ExecStartPre`, avoiding the repeated
+unpack/restart loop that exhausted disk. LiteLLM runs from an OCI image
+because its Prisma client and migrations are impractical to package in Nix —
+see Durable Decisions.
+
+Active user services: docs-mcp, grist, litellm (with optional headroom
+sidecar), qmd, web-catalog, moniqued, niks3-auto-upload (a socket-activated
+cache upload queue), and the weekly nh-clean timer.
+Service ports and display metadata are owned by `lib/web-services.nix`
+(grist 8484, litellm 8765, docs-mcp 6280, qmd 8181, web-catalog 8123);
+canonical contract: [web-service-catalog](openspec/specs/web-service-catalog/spec.md).
+Grist binds loopback only (`127.0.0.1:8484`) and is not reverse-proxied;
+its bundled SQLite state persists at `~/.local/share/grist`.
+The LiteLLM gateway behavior is contracted by
+[litellm-gateway](openspec/specs/litellm-gateway/spec.md).
+
+## Durable Decisions
+
+- **LiteLLM runs from a patched OCI image** — its Prisma client requires
+  schema-specific pre-generation across npm, prisma-engines, and a Python
+  build environment that breaks across versions; the upstream OCI image ships
+  a working Prisma runtime.
+- **Monique is the sole monitor authority** — niri's store-linked config
+  includes Monique-owned runtime state and HM defines no inline output
+  blocks, so hotplug handling is never split between config layers.
+- **Niri config is store-linked** — the compositor boots from a read-only
+  store path, making the desktop session fully declarative.
+- **Noctalia GUI state is runtime state** — the shell owns its mutable
+  settings outside the store; treat them as machine-local, not declarative
+  configuration.
+- **Discovery is scoped to the single `modules/` tree** — `import-tree` scans
+  only `modules/`; raw class modules live at `_`-prefixed paths, which
+  `import-tree` ignores, so dormant files cannot alter a host accidentally.
+- **Hosts own facts** — identity and machine data live in
+  `modules/hosts/arch/_facts.nix`, never hardcoded in feature modules.
+- **System secrets are owned end to end by system-manager** — a root daemon
+  credential is not rendered through user-scoped Home Manager state.
+- **One durable document** — `ARCHITECTURE.md` records boundaries and
+  rationale; the filesystem inventory duplicate was deleted because it
+  diverged from implementation.
+
+## Verification
+
+One canonical validation command runs locally, pre-push, and in CI:
+
+```sh
+nix flake check --no-build --no-write-lock-file
 ```
-flake.nix
-  └─┬─ hosts/arch/home.nix          (sets identity, enables programs)
-    └─ modules/default.nix        (single import point)
-       ├─ modules/home/nix.nix     (Nix CLI + settings, unfree whitelist)
-       ├─ modules/home/direnv.nix  (direnv + direnv-instant)
-       ├─ modules/home/sops.nix    (sops-nix secrets via agents.yaml placeholders)
-       ├─ modules/home/zsh.nix     (Zsh via antidote, fzf, zoxide, eza, pay-respects)
-       ├─ modules/home/zsh-abbr.nix (zsh-abbr abbreviations)
-       ├─ modules/home/opencode.nix (OpenCode/agents symlinks)
-       ├─ modules/home/tmux.nix    (tmux session configuration)
-       ├─ modules/home/niri.nix    (niri compositor + Noctalia shell + Monique)
-       ├─ modules/home/dev-tools/  (languages, mise, navi)
-       └─ modules/home/agents/     (pi, hermes, docs-mcp, bifrost, tools)
-```
 
-The host config (`hosts/arch/home.nix`) is the sole wiring point for enabling `programs.pi`, `programs.bifrost`, `programs.docsMcp`, `programs.agentTools`, `programs.devTools`, `programs.hermes-agent`, `programs.miseTools`, and `programs.tmux`. Modules expose options; the host config sets their values.
-
-## Key Abstractions
-
-### Module Options Pattern
-
-Modules in `modules/home/` define NixOS/home-manager options with `lib.mkOption`, then wire them in `config` blocks. The host config sets option values, keeping module logic reusable and host-specific values isolated.
-
-Example flow — pi agent:
-1. `modules/home/agents/pi.nix` defines `programs.pi.*` options (settings, mcp, search, permissions, subagents)
-2. `hosts/arch/home.nix` sets `programs.pi = { ... }` with provider, models, MCP servers, permission rules
-3. `modules/home/agents/pi.nix` renders config files from these options into `~/.pi/agent/`
-
-### Secret Management
-
-Secrets follow sops-nix with a centralized YAML-backed placeholder approach:
-
-- `secrets/agents.yaml` — single YAML file holding all API keys and tokens (github, google, openrouter, jina, tavily, brave, firecrawl, context7, openai, minimax, crofai, opencode)
-- `secrets/pi-secrets.yaml` — `telegram_bot_token` for pi-telegram bootstrap
-- `modules/home/sops.nix` declares sops placeholders per key, renders template files:
-  - `zsh-secrets.env` — shell environment variables sourced by zsh `envExtra`
-  - `docs-mcp.env` — `OPENAI_API_KEY` for the docs-mcp service
-  - `bifrost-config.json` — decrypted into `~/.config/bifrost/config.json`
-
-The `secrets/zsh-secrets.env` dotenv file is legacy; all new secrets go into `secrets/agents.yaml` and reference via sops placeholders.
-
-### Systemd User Services
-
-Five systemd user services managed here:
-- **Bifrost** (`modules/home/agents/bifrost/default.nix`) — MCP gateway server on port 8765, runs via bunx
-- **Docs MCP** (`modules/home/agents/docs-mcp.nix`) — Grounded Docs MCP Server on port 6280, runs via bunx with OpenAI-compatible embedding model
-- **Hermes agent** (`modules/home/agents/hermes.nix`) — gateway daemon, runs `hermes gateway`
-- **LiteLLM** (`modules/home/agents/litellm/default.nix`) — LLM gateway on port 4000, runs from a patched OCI image via podman; Headroom sidecar (context compression) on port 8787
-- **Headroom** (`modules/home/agents/litellm/default.nix`) — context compression guardrail sidecar on port 8787, runs from official `ghcr.io/headroomlabs-ai/headroom:0.33.0-code` OCI image via podman; native LiteLLM pre-call guardrail (`default_on = true`) compresses requests before they reach the LLM; stdio MCP bridge (`headroom mcp serve --proxy-url`) exposes `headroom_retrieve` to OpenCode for recovering compressed originals
-
-## Noteworthy Config Details
-
-- **Zsh** uses antidote for plugin management, powerlevel10k theme, fzf-tab completion, zsh-vi-mode, eza for `ls`, pay-respects for command correction
-- **Zsh abbreviations** provide git/Nix/file-system/systemd/journalctl shorthand through `zsh-abbr`
-- **Mise** manages node, pnpm, bun runtime versions plus npm-global tools (ocx, codeburn, neovim, matlab-language-server, openspec, happier-dev)
-- **Pi permissions** follow a layered approach: defaults in `pi.nix`, host overrides via `lib.recursiveUpdate`
-- **Unfree packages** whitelist uses `nixpkgs.config.allowUnfreePredicate` — currently `zsh-abbr` and `byterover-cli`
-- **direnv-instant** enables instant shell entry via cached evaluation — `direnv-instant` hook added in zsh `initContent` at priority 2000
-- **ast-grep** is configured with a MATLAB custom language parser via `modules/home/dev-tools/languages.nix` (writes `~/.config/ast-grep/sgconfig.yml`)
-- **sops templates** render service configs at activation time: `zsh-secrets.env` from agents.yaml placeholders, `bifrost-config.json` from config.json template, and `docs-mcp.env` for the docs-mcp service
-- **OpenCode symlinks** (`modules/home/opencode.nix`) link `~/.config/opencode` → `${appsDir}/opencode` and `~/.agents` → `${appsDir}/agents` as out-of-store symlinks (`config.lib.file.mkOutOfStoreSymlink`); `appsDir = /home/saurabhj/.dotfiles/apps` (sibling dir, passed via `extraSpecialArgs`)
-- **Flake-parts** provides the Nix flake structure (`flake-parts.lib.mkFlake`), with `perSystem` for formatter and dev shell, and a top-level `flake` block for `homeConfigurations`
-- **Pi telegram bootstrap** — `hosts/arch/home.nix` includes a `piTelegramBootstrap` activation hook that initializes `~/.pi/agent/telegram.json` from the sops-decrypted `telegram_bot_token` secret (one-shot, preserves runtime state)
-- **tmux** — `modules/home/tmux.nix` provides sensible base settings for persistent remote sessions via `programs.tmux`
-- **niri + Noctalia desktop session** (`modules/home/niri.nix`) — always-on module (no host enable toggle): `wayland.windowManager.niri` (native HM module) renders structured `settings` (workspaces, input, layout, blur, animations, cursor) plus verbatim KDL `extraConfig` (binds, regex window-rules); imports `inputs.noctalia.homeModules.default` from the `noctalia` flake input (`github:noctalia-dev/noctalia`, nixpkgs follows) and enables `programs.noctalia` with `package = pkgs.noctalia` (nixpkgs prebuilt); `spawn-at-startup "noctalia"` autostarts the shell. `xdg.configFile."niri/config.kdl".force = true` replaces the imperative config — pre-migration backup at `niri.config.kdl.imperative-backup` (repo root)
-- **Monique monitor ownership** (`modules/home/niri.nix`) — Monique is installed from its upstream flake input (`github:ToRvaLDz/monique`, nixpkgs follows; `inputs.monique.packages.<system>.default`) and started as the `moniqued` user service (`graphical-session.target` lifecycle, absolute store-path `ExecStart`). Niri's store-linked config includes Monique's mutable runtime state via a bare `include optional=true "monitors.kdl"`; HM defines no inline `output` blocks and masks the legacy Shikane XDG autostart (`~/.config/autostart/shikane.desktop` → `Hidden=true`), so Monique is the sole hotplug authority. `~/.config/niri/monitors.kdl` and `~/.config/monique/` are Monique-owned runtime state, outside Git
-- **LiteLLM OCI runtime** — LiteLLM runs from a patched OCI image (`pkgs/litellm/oci.nix`) rather than the nixpkgs Python package. LiteLLM's Prisma client and database migrations are impractical to package reliably in Nix: the Prisma client requires pre-generation against a specific schema with prisma-engines, npm deps, and a Python build environment that breaks across versions. The OCI image (`ghcr.io/berriai/litellm-database`) ships a working Prisma runtime. Two compatibility patches (streaming empty-choices, prefix-message stripping) are applied at container startup via a custom entrypoint. The image is loaded once at activation (`home.activation.litellmImageLoad`), not on every service start — this prevents the infinite restart loop that occurs when `podman load` runs in `ExecStartPre` and fails repeatedly, unpacking the tarball each time and exhausting disk space. Both LiteLLM and Headroom services have `StartLimitBurst = 3` and `StartLimitIntervalSec = 120` to prevent runaway restart loops. Headroom uses `podman pull` (not `load`) in `ExecStartPre` since it pulls from a remote registry, not a local tarball.
-- **Headroom guardrail + MCP** — Headroom 0.33.0 runs from the official upstream `ghcr.io/headroomlabs-ai/headroom:0.33.0-code` image (no self-publish workflow needed). The native LiteLLM pre-call guardrail is active (`default_on = true` in `generated.nix`), compressing requests before they reach the LLM with full lifecycle, audit, spend-log, and virtual-key semantics. A stdio MCP bridge (`headroom mcp serve --proxy-url`) exposes `headroom_retrieve` to OpenCode, sharing the same CompressionStore as the guardrail so agents can recover compressed originals. The `headroom` CLI wrapper delegates operational commands (including `learn`) to the persistent container.
-
-(End of file - total 147 lines)
+`nix fmt` (treefmt-nix) is both formatter and formatting check — nixfmt for
+Nix, mdformat for Markdown. Flake checks cover Statix and Deadnix over all
+maintained Nix source (nvfetcher's `pkgs/_sources` is excluded at the
+source-set level, not via suppressions), the treefmt check, and full
+evaluation of the Home Manager activation package and the system-manager
+configuration — a change that breaks either host output fails CI without
+switching anything. Lefthook runs fast formatting and lint checks at
+pre-commit and the canonical no-build check at pre-push; GitHub Actions runs
+the same check on pull requests with pinned action revisions.

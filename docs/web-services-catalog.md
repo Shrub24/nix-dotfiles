@@ -49,21 +49,21 @@ The catalog is a pure Nix data file. It returns an attrset with two keys:
 
 ### Service entry shape
 
-Each service entry is an attrset. Required fields: `name`, `port`. Optional
-fields inherit from `defaults` or are omitted entirely.
+Each service entry is an attrset. Required fields: `name`, `port`,
+`description`. Optional fields inherit from `defaults` or are omitted entirely.
 
-| Field           | Type     | Required | Description                                      |
+| Field | Type | Required | Description |
 | --------------- | -------- | -------- | ------------------------------------------------ |
-| `name`          | string   | yes      | Display name                                     |
-| `port`          | int      | yes      | Listen port                                      |
-| `description`   | string   | no       | Short description                                |
-| `icon`          | string   | no       | Homepage icon id (see gethomepage.dev icon set) |
-| `scheme`        | string   | no       | URL scheme (default: `"http"`)                   |
-| `host`          | string   | no       | Hostname (default: `"localhost"`)                |
-| `group`         | string   | no       | Homepage group label (default: `"AI Services"`) |
-| `ui.path`       | string   | no       | Browser UI path (e.g., `"/"`)                    |
-| `health.path`   | string   | no       | Health endpoint path (e.g., `"/health"`)         |
-| `openapi.path`  | string   | no       | OpenAPI spec path (e.g., `"/openapi.json"`)      |
+| `name` | string | yes | Display name |
+| `port` | int | yes | Listen port |
+| `description` | string | yes | Short description |
+| `icon` | string | no | Homepage icon id (see gethomepage.dev icon set) |
+| `scheme` | string | no | URL scheme (default: `"http"`) |
+| `host` | string | no | Hostname (default: `"localhost"`) |
+| `group` | string | no | Homepage group label (default: `"AI Services"`) |
+| `ui.path` | string | no | Browser UI path (e.g., `"/"`) |
+| `health.path` | string | no | Health endpoint path (e.g., `"/health"`) |
+| `openapi.path` | string | no | OpenAPI spec path (e.g., `"/openapi.json"`) |
 
 **Endpoint presence encodes capability.** A service with `ui.path` has a
 browser UI; a service without it doesn't. Consumers use `uiUrl != null` to
@@ -71,12 +71,13 @@ filter for homepage inclusion.
 
 ### Current services
 
-| Service       | Port | UI | Health   | OpenAPI       |
+| Service | Port | UI | Health | OpenAPI |
 | ------------- | ---- | -- | -------- | ------------- |
-| `litellm`     | 8765 | `/` | `/health` | `/openapi.json` |
-| `docs-mcp`    | 6280 | `/` | —        | —             |
-| `qmd`         | 8181 | `/` | —        | —             |
-| `web-catalog` | 8123 | `/` | `/`      | —             |
+| `grist` | 8484 | `/` | `/status` | — |
+| `litellm` | 8765 | `/` | `/health` | `/openapi.json` |
+| `docs-mcp` | 6280 | `/` | — | — |
+| `qmd` | 8181 | `/` | — | — |
+| `web-catalog` | 8123 | `/` | `/` | — |
 
 ## URL derivation
 
@@ -96,11 +97,11 @@ If `scheme`, `host`, or `group` changes, only one field updates.
 Three outputs are exposed. **Homepage rendering is NOT exposed** — this repo is
 a catalog only. Consumers filter and render their own format.
 
-| Output                  | Type          | Description                                              |
+| Output | Type | Description |
 | ----------------------- | ------------- | -------------------------------------------------------- |
-| `.#webServices`         | attrset       | Raw SSOT catalog: `{ defaults, services }`               |
-| `.#webServiceCatalog`   | list          | Normalized entries with derived URLs (`baseUrl`, `uiUrl`, `healthUrl`, `openapiUrl`) |
-| `.#webServiceCatalogJSON` | store path  | JSON file containing `{ version, services }`             |
+| `.#webServices` | attrset | Raw SSOT catalog: `{ defaults, services }` |
+| `.#webServiceCatalog` | list | Normalized entries with derived URLs (`baseUrl`, `uiUrl`, `healthUrl`, `openapiUrl`) |
+| `.#webServiceCatalogJSON` | store path | JSON file containing `{ version, services }` |
 
 ### Normalized entry shape
 
@@ -129,7 +130,7 @@ for docs-mcp).
 ## HTTP serving (primary consumption path)
 
 The catalog JSON is served over HTTP by a systemd user service
-(`modules/home/agents/web-catalog.nix`). The server binds `0.0.0.0:8123`,
+(`modules/agents/web-catalog.nix`). The server binds `0.0.0.0:8123`,
 making it automatically reachable on tailnet without extra configuration.
 
 **Endpoint:** `http://<tailnet-ip>:8123/homelab-services.json`
@@ -178,11 +179,11 @@ inputs.dotfiles-nix.url = "github:Shrub24/nix-dotfiles";
 
 ## Module port wiring
 
-Service modules under `modules/home/agents/` reference catalog ports instead of
+Service modules under `modules/agents/` reference catalog ports instead of
 hardcoding them. This keeps module defaults in sync with the catalog:
 
 ```nix
-# modules/home/agents/litellm/default.nix
+# modules/agents/litellm/_hm.nix  (default.nix publishes the aspect)
 let
   webServices = (import ../../../lib/web-services.nix { inherit lib pkgs; }).services;
 in
@@ -194,7 +195,7 @@ in
 }
 ```
 
-Wired modules: `litellm`, `docs-mcp`, `qmd`, `web-catalog`.
+Wired modules: `grist`, `litellm`, `docs-mcp`, `qmd`, `web-catalog`.
 
 ## Adding a new service
 
@@ -215,10 +216,10 @@ Wired modules: `litellm`, `docs-mcp`, `qmd`, `web-catalog`.
    };
    ```
 
-2. If the service has a Home Manager module, wire its port default to the
+1. If the service has a Home Manager module, wire its port default to the
    catalog (see "Module port wiring" above).
 
-3. Validate:
+1. Validate:
 
    ```sh
    nix eval .#webServices --json | jq '.services."my-service"'
@@ -232,31 +233,31 @@ Wired modules: `litellm`, `docs-mcp`, `qmd`, `web-catalog`.
    `mkEnableOption` or `config` blocks. Importable by both flake outputs and
    service modules without module system overhead.
 
-2. **`ui.path` presence drives `uiUrl`** — no separate `includeInHomepage`
+1. **`ui.path` presence drives `uiUrl`** — no separate `includeInHomepage`
    boolean. Services without a browser UI stay in the catalog for port/config
    reuse but have `uiUrl = null`.
 
-3. **URLs are derived, not stored** — avoids duplicating full URLs. One field
+1. **URLs are derived, not stored** — avoids duplicating full URLs. One field
    change propagates correctly.
 
-4. **Defaults with per-service overrides** — all services share
+1. **Defaults with per-service overrides** — all services share
    `scheme = "http"` and `host = "localhost"`. Defaults avoid repetition while
    allowing future per-service overrides.
 
-5. **Catalog-only flake outputs** — no rendered homepage output. Homepage
+1. **Catalog-only flake outputs** — no rendered homepage output. Homepage
    rendering is a consumer concern. This keeps the repo format-agnostic and
    avoids coupling to gethomepage.dev's schema.
 
-6. **JSON is valid YAML** — `webServiceCatalogJSON` uses `builtins.toJSON`.
+1. **JSON is valid YAML** — `webServiceCatalogJSON` uses `builtins.toJSON`.
    Consumers that need YAML can convert (JSON is a YAML subset).
 
-7. **Serve over HTTP on 0.0.0.0** — the catalog JSON is served by a
+1. **Serve over HTTP on 0.0.0.0** — the catalog JSON is served by a
    `python3 -m http.server` systemd user service on `0.0.0.0:8123`. Binding
    0.0.0.0 makes it reachable on tailnet automatically. This avoids forcing
    consumers to import the dotfiles flake (with 10+ inputs) just to read port
    numbers.
 
-8. **Catalog server is self-referential** — the `web-catalog` service is itself
+1. **Catalog server is self-referential** — the `web-catalog` service is itself
    a catalog entry. A consumer that knows the catalog URL can discover the
    server's own metadata from the catalog itself. No runtime dependency loop —
    the port is statically defined in the data file.
@@ -264,6 +265,6 @@ Wired modules: `litellm`, `docs-mcp`, `qmd`, `web-catalog`.
 ## Reference
 
 - Catalog source: [`lib/web-services.nix`](../lib/web-services.nix)
-- HTTP server module: [`modules/home/agents/web-catalog.nix`](../modules/home/agents/web-catalog.nix)
-- OpenSpec change: [`openspec/changes/web-services-ssot/`](../openspec/changes/web-services-ssot/)
-- Spec: [`openspec/changes/web-services-ssot/specs/web-service-catalog/spec.md`](../openspec/changes/web-services-ssot/specs/web-service-catalog/spec.md)
+- HTTP server module: [`modules/agents/web-catalog.nix`](../modules/agents/web-catalog.nix)
+- OpenSpec change: [`openspec/changes/archive/2026-08-09-web-services-ssot/`](../openspec/changes/archive/2026-08-09-web-services-ssot/)
+- Spec: [`openspec/specs/web-service-catalog/spec.md`](../openspec/specs/web-service-catalog/spec.md)
