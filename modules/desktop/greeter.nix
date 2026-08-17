@@ -79,15 +79,15 @@ _: {
     {
       systemd.tmpfiles.rules = [
         "d /usr/share/wayland-sessions 0755 root root -"
-        "C+ /usr/share/wayland-sessions/niri.desktop 0644 root root - ${niriSession}"
-        "C+ /usr/share/wayland-sessions/niri-uwsm.desktop 0644 root root - ${niriUwsmSession}"
+        "L+ /usr/share/wayland-sessions/niri.desktop 0644 root root - ${niriSession}"
+        "L+ /usr/share/wayland-sessions/niri-uwsm.desktop 0644 root root - ${niriUwsmSession}"
         "d /var/lib/noctalia-greeter 0755 greeter greeter -"
         "f /var/lib/noctalia-greeter/greeter.log 0664 greeter greeter -"
-        "C+ /var/lib/noctalia-greeter/greeter.toml 0644 root root - ${greeterToml}"
-        "C+ /usr/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy 0644 root root - ${noctaliaGreeterPackage}/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy"
+        "L+ /var/lib/noctalia-greeter/greeter.toml 0644 root root - ${greeterToml}"
+        "L+ /usr/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy 0644 root root - ${noctaliaGreeterPackage}/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy"
         "d /usr/local/libexec 0755 root root -"
-        # ponytail: C+ only creates if absent, never replaces; validator changes need `sudo rm` here + `systemd-tmpfiles --create`.
-        "C+ /usr/local/libexec/noctalia-greeter-sync 0755 root root - ${noctaliaGreeterSync}/bin/noctalia-greeter-sync"
+        # ponytail: L+ re-points the symlink at current gen on every tmpfiles run (C+ never replaced — stale forever).
+        "L+ /usr/local/libexec/noctalia-greeter-sync 0755 root root - ${noctaliaGreeterSync}/bin/noctalia-greeter-sync"
       ];
 
       environment.etc."polkit-1/rules.d/50-noctalia-greeter-sync.rules".source = polkitSyncRule;

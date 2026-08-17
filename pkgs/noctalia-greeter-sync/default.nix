@@ -23,7 +23,6 @@ writeTextFile {
     APPLY_HELPER = "${noctalia-greeter}/bin/noctalia-greeter-apply-appearance"
 
     REQUIRED_ENTRY = "sync.toml"
-    OPTIONAL_ENTRIES = ("output_layout", "output_transforms")
     MAX_ENTRIES = 32
     MAX_FILE_SIZE = 100 * 1024 * 1024
     MAX_TOTAL_SIZE = 256 * 1024 * 1024
@@ -41,6 +40,13 @@ writeTextFile {
             return False
         inner = name[len("wallpaper-") : -len(".jpg")]
         return bool(inner) and all(c.isalnum() or c in "-_." for c in inner)
+
+
+    def is_safe_data_entry(name):
+        # Accept any single-component filename of safe characters; the fd-based
+        # ownership/O_NOFOLLOW checks below are the actual security boundary, so
+        # the name only needs to rule out path traversal and dotfiles.
+        return bool(name) and all(c.isalnum() or c in "-_." for c in name) and not name.startswith(".")
 
 
     def main():
@@ -73,7 +79,7 @@ writeTextFile {
                 for name in names:
                     if (
                         name != REQUIRED_ENTRY
-                        and name not in OPTIONAL_ENTRIES
+                        and not is_safe_data_entry(name)
                         and not is_wallpaper_entry(name)
                     ):
                         die(f"rejecting unexpected staging entry: {name!r}")

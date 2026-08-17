@@ -3,6 +3,7 @@ _: {
     {
       lib,
       pkgs,
+      config,
       ...
     }:
     {
@@ -53,6 +54,10 @@ _: {
 
       nix.package = pkgs.nix;
 
+      nix.extraOptions = ''
+        !include ${config.sops.templates."nix-access-tokens".path}
+      '';
+
       systemd.user.services.nh-clean = {
         Unit = {
           Description = "nh clean all — periodic Nix store cleanup";
@@ -87,7 +92,17 @@ _: {
   ;
 
   flake.modules.systemManager.nix =
-    { hostFacts, ... }:
+    {
+      pkgs,
+      lib,
+      hostFacts,
+      ...
+    }:
+    let
+      niks3UploadHook = pkgs.writeShellScriptBin "niks3-upload-hook" ''
+        exec ${lib.getExe' pkgs.niks3-hook "niks3-hook"} send --socket /run/user/${toString hostFacts.uid}/niks3-upload-to-cache.sock
+      '';
+    in
     {
       nix.enable = true;
 
@@ -125,6 +140,7 @@ _: {
         "download-buffer-size" = 268435456;
         "http-connections" = 64;
         "max-substitution-jobs" = 16;
+        "post-build-hook" = lib.getExe niks3UploadHook;
       };
 
       environment.etc."profile.d/nix-path.sh".text = ''

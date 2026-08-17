@@ -78,6 +78,11 @@ _: {
             path = "${homeDir}/.config/niks3/auth-token";
             content = config.sops.placeholder.NIKS3_AUTH_TOKEN;
           };
+
+          "nix-access-tokens" = {
+            path = "${homeDir}/.config/nix/access-tokens.conf";
+            content = "access-tokens = github.com=${config.sops.placeholder.GITHUB_PAT}\n";
+          };
         };
 
         secrets = {
@@ -201,7 +206,10 @@ _: {
         };
       };
 
-      home.packages = [ pkgs.sops ];
+      home.packages = [
+        pkgs.age
+        pkgs.sops
+      ];
     }
 
   ;
