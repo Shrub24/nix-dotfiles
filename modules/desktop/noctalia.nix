@@ -13,7 +13,7 @@ _: {
       noctaliaGreeterSyncPkexec = pkgs.writeShellApplication {
         name = "noctalia-greeter-sync-pkexec";
         text = ''
-          exec /usr/bin/pkexec /usr/local/libexec/noctalia-greeter-sync
+          exec /usr/bin/pkexec ${pkgs.noctalia-greeter-sync}/bin/noctalia-greeter-sync
         '';
       };
     in

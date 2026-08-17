@@ -30,6 +30,10 @@ _: {
         };
       };
 
+      # Arch has no `keys` group (NixOS default for sops secret ownership);
+      # sops-install-secrets exits 1 without it.
+      users.groups.keys = { };
+
       environment.etc."ssh/ssh_config.d/20-nixbuild.net.conf" = {
         text = ''
           Host eu.nixbuild.net

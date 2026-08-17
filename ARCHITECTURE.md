@@ -47,16 +47,18 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ flake/*.nix         declares the flake.modules option; perSystem tooling
   ├─ agents/<feature>.nix  one file per feature → homeManager aspect
   ├─ agents/litellm/     default.nix publishes the aspect; _*.nix raw modules
-  ├─ desktop/*.nix       niri, noctalia, monique; greeter → systemManager
+  ├─ apps/*.nix           end-user GUI apps (media, zathura, pavucontrol)
+  ├─ apps/browser/*.nix   firefox, chromium, thunderbird, brave — lazy HM enable
+  ├─ desktop/*.nix        compositor + shell env (niri, noctalia, monique, vicinae, portals, greeter)
   ├─ foundation/*.nix    network, boot → systemManager aspects
-  ├─ shell/*.nix         per-shell homeManager aspects
-  ├─ *.nix               nixbuild, secrets, niks3, mosh, mutagen — single-aspect
+  ├─ shell/*.nix         per-shell homeManager aspects + terminals (wezterm, ghostty, tmux)
+  ├─ *.nix               nixbuild, secrets, niks3, mosh, mutagen, syncthing — single-aspect
   ├─ nix.nix ssh.nix tailscale.nix   both homeManager AND systemManager
   ├─ hosts/arch.nix      selects explicit aspect lists → host outputs
   └─ hosts/arch/_*.nix   raw host files (facts, home, system) — ignored
 
 Host composition lives in modules/hosts/arch.nix, not flake.nix:
-  ├─ 30 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
+  ├─ ~40 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
   └─ 7 systemManager aspects + _system.nix → systemConfigs.arch
 ```
 

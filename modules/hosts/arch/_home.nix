@@ -10,7 +10,7 @@
   home = {
     inherit (hostFacts) username;
     homeDirectory = "/home/${hostFacts.username}";
-    stateVersion = "25.11";
+    stateVersion = "26.11";
     enableNixpkgsReleaseCheck = false;
 
     sessionVariables.AICHAT_ENV_FILE = config.sops.templates."aichat.env".path;

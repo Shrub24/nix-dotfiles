@@ -10,13 +10,11 @@ _: {
 
       noctaliaGreeterSync = pkgs.noctalia-greeter-sync;
 
-      # Grant pkexec of the fixed-path helper via the generic exec action + program
-      # lookup (polkit(8)); no .policy file, so auth is switch-atomic, not tmpfiles-managed.
       polkitSyncRule = pkgs.writeText "50-noctalia-greeter-sync.rules" ''
         polkit.addRule(function (action, subject) {
           if (
             action.id == "org.freedesktop.policykit.exec" &&
-            action.lookup("program") == "/usr/local/libexec/noctalia-greeter-sync" &&
+            action.lookup("program") == "${noctaliaGreeterSync}/bin/noctalia-greeter-sync" &&
             subject.user == "${hostFacts.username}" &&
             subject.local &&
             subject.active
@@ -55,9 +53,13 @@ _: {
 
       niriUwsmLauncher = pkgs.writeShellApplication {
         name = "niri-uwsm-session";
+        # ponytail: uwsm stays on pacman until NixOS day — NixOS creates
+        # /etc/profiles/per-user/<user>/bin/ with uwsm on the systemd service
+        # PATH; on Arch that path doesn't exist so niri's bare-name
+        # `uwsm finalize` spawn fails -> WAYLAND_DISPLAY never exported.
         text = ''
           UWSM_SILENT_START=2 exec ${pkgs.systemd}/bin/systemd-cat --identifier=niri-uwsm \
-            ${pkgs.uwsm}/bin/uwsm start -N "Niri (UWSM)" -D niri -e -- ${pkgs.niri}/bin/niri
+            /usr/bin/uwsm start -N "Niri (UWSM)" -D niri -e -- ${pkgs.niri}/bin/niri
         '';
       };
 
@@ -68,7 +70,7 @@ _: {
         Exec=${niriUwsmLauncher}/bin/niri-uwsm-session
         Type=Application
         DesktopNames=niri;
-        TryExec=${pkgs.uwsm}/bin/uwsm
+        TryExec=/usr/bin/uwsm
       '';
 
       greeterToml = pkgs.writeText "greeter.toml" ''
@@ -85,9 +87,6 @@ _: {
         "f /var/lib/noctalia-greeter/greeter.log 0664 greeter greeter -"
         "L+ /var/lib/noctalia-greeter/greeter.toml 0644 root root - ${greeterToml}"
         "L+ /usr/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy 0644 root root - ${noctaliaGreeterPackage}/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy"
-        "d /usr/local/libexec 0755 root root -"
-        # ponytail: L+ re-points the symlink at current gen on every tmpfiles run (C+ never replaced — stale forever).
-        "L+ /usr/local/libexec/noctalia-greeter-sync 0755 root root - ${noctaliaGreeterSync}/bin/noctalia-greeter-sync"
       ];
 
       environment.etc."polkit-1/rules.d/50-noctalia-greeter-sync.rules".source = polkitSyncRule;

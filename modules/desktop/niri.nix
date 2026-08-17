@@ -5,6 +5,10 @@ _: {
       ...
     }:
     {
+      # ponytail: uwsm stays on pacman until NixOS day — NixOS creates
+      # /etc/profiles/per-user/<user>/bin/ on the systemd service PATH so
+      # niri's bare-name `uwsm finalize` spawn resolves; on Arch that path
+      # doesn't exist so WAYLAND_DISPLAY never gets exported.
       wayland.windowManager.niri = {
         enable = true;
 

@@ -86,6 +86,10 @@ _: {
         builtins.elem (lib.getName pkg) [
           "zsh-abbr"
           "byterover-cli"
+          "vscode"
+          "code"
+          "unrar"
+          "cuda_nvml_dev"
         ];
     }
 

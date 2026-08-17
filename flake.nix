@@ -2,9 +2,17 @@
   description = "saurabhj's Nix configuration — dendritic home-manager";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-parts.url = "github:hercules-ci/flake-parts";
-    direnv-instant.url = "github:Mic92/direnv-instant";
+    nixpkgs = {
+      url = "github:NixOS/nixpkgs/nixos-unstable";
+    };
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+    direnv-instant = {
+      url = "github:Mic92/direnv-instant";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     system-manager = {
       url = "github:numtide/system-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -17,8 +25,13 @@
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    import-tree.url = "github:denful/import-tree";
-    treefmt-nix.url = "github:numtide/treefmt-nix";
+    import-tree = {
+      url = "github:denful/import-tree";
+    };
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     noctalia = {
       url = "github:noctalia-dev/noctalia";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -29,6 +42,7 @@
     };
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     hermes-agent = {
       url = "github:NousResearch/hermes-agent";
@@ -39,9 +53,11 @@
     };
     codebase-memory-mcp = {
       url = "github:DeusData/codebase-memory-mcp";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     niks3 = {
       url = "github:Mic92/niks3";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     fish-abbreviation-tips = {
@@ -66,6 +82,11 @@
     };
     fsel = {
       url = "github:Mjoyufull/fsel";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    vicinae = {
+      url = "github:vicinaehq/vicinae/v0.26.2";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     keypeek = {
       url = "github:srwi/keypeek";
