@@ -19,7 +19,6 @@ _: {
         git-filter-repo
         github-cli
         curlie
-        eza
         lazygit
         lazydocker
         lazyjj

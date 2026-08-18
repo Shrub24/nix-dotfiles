@@ -1,7 +1,6 @@
 {
   inputs,
   system,
-  hostFacts,
 }:
 final: prev:
 let
@@ -26,7 +25,4 @@ in
   surge = final.callPackage ./surge { inherit inputs; };
   niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
   keypeek = final.callPackage ./keypeek { inherit inputs system; };
-  noctalia-greeter-sync = final.callPackage ./noctalia-greeter-sync {
-    inherit (hostFacts) uid;
-  };
 }

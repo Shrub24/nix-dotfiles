@@ -4,9 +4,11 @@
   ...
 }:
 let
-  hostFacts = import ./arch/_facts.nix;
-  system = hostFacts.architecture;
-  overlay = import ../../pkgs { inherit inputs system hostFacts; };
+  # Host-local literals for the Arch desktop host (B11: former facts folded out
+  # into topology + these literals; _facts.nix removed).
+  primaryUser = "saurabhj";
+  system = "x86_64-linux";
+  overlay = import ../../pkgs { inherit inputs system; };
   pkgs = import inputs.nixpkgs {
     inherit system;
     overlays = [ overlay ];
@@ -23,9 +25,9 @@ let
     "dev-tools"
     "cli"
     "languages"
+    "intelli-shell"
     "lazyjournal"
     "mise"
-    "navi"
     "direnv"
     "monique"
     "niks3"
@@ -52,10 +54,11 @@ let
     "audio"
     "brave"
     "chromium"
+    "credentials"
     "firefox"
     "thunderbird"
     "vscode"
-    "secrets"
+    "sops-foundation"
     "grist"
     "litellm"
     "docs-mcp"
@@ -76,34 +79,45 @@ let
     "nix"
     "nixbuild"
   ];
-  specialArgs = {
-    inherit inputs hostFacts;
-  };
   homeConfiguration = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
-    extraSpecialArgs = specialArgs;
     modules = [ ./arch/_home.nix ] ++ map hmAspect hmAspects;
   };
   systemConfiguration = inputs.system-manager.lib.makeSystemConfig {
     modules = [ ./arch/_system.nix ] ++ map systemAspect systemAspects;
-    inherit specialArgs;
     overlays = [ overlay ];
   };
 in
 {
-  flake.homeConfigurations.${hostFacts.username} = homeConfiguration;
+  config = {
+    # Typed topology (B2/B11): host + service facts now live here, read via
+    # `config.topology` by feature modules — not through an argument-passing bus.
+    topology.hosts.arch = {
+      inherit system;
+      primaryUser = primaryUser;
+      remoteHosts = [
+        "oci-melb-1"
+        "do-admin-1"
+        "la-admin-1"
+      ];
+    };
+    topology.services.database.host = "oci-melb-1";
+    topology.services.niks3.host = "http://oci-melb-1:5751";
 
-  flake.systemConfigs.${hostFacts.hostname} = systemConfiguration;
+    flake.homeConfigurations.${primaryUser} = homeConfiguration;
 
-  # Forces full eval of both configurations under nix flake check without switching.
-  flake.checks.${system} = {
-    home-manager-activation = homeConfiguration.activationPackage;
-    system-manager-config = systemConfiguration;
+    flake.systemConfigs.arch = systemConfiguration;
+
+    # Forces full eval of both configurations under nix flake check without switching.
+    flake.checks.${system} = {
+      home-manager-activation = homeConfiguration.activationPackage;
+      system-manager-config = systemConfiguration;
+    };
+
+    flake.webServices = homepage.catalog;
+    flake.webServiceCatalog = homepage.normalize homepage.catalog;
+    flake.webServiceCatalogJSON = pkgs.writeText "web-service-catalog.json" (
+      builtins.toJSON (homepage.toCatalogJSON homepage.catalog)
+    );
   };
-
-  flake.webServices = homepage.catalog;
-  flake.webServiceCatalog = homepage.normalize homepage.catalog;
-  flake.webServiceCatalogJSON = pkgs.writeText "web-service-catalog.json" (
-    builtins.toJSON (homepage.toCatalogJSON homepage.catalog)
-  );
 }

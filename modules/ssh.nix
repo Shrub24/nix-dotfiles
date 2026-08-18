@@ -1,8 +1,16 @@
-_: {
+{
+  config,
+  ...
+}:
+let
+  # Typed remote-host topology read at the flake-parts level (B5); closed over
+  # by the lower-level HM/System Manager modules.
+  remoteHosts = config.topology.hosts.arch.remoteHosts;
+in
+{
   flake.modules.homeManager.ssh =
     {
       lib,
-      hostFacts,
       ...
     }:
     {
@@ -36,7 +44,7 @@ _: {
             StrictHostKeyChecking = "accept-new";
           };
 
-          "Host ${lib.concatStringsSep " " hostFacts.remoteHosts}" = {
+          "Host ${lib.concatStringsSep " " remoteHosts}" = {
             User = "dev";
             ControlMaster = "auto";
           };
@@ -56,14 +64,13 @@ _: {
   flake.modules.systemManager.ssh =
     {
       lib,
-      hostFacts,
       ...
     }:
     {
       environment.etc."ssh/ssh_config.d/30-remote-hosts.conf" = {
         text = ''
           # Remote build/managed hosts — ControlMaster enabled for multiplexing
-          Host ${lib.concatStringsSep " " hostFacts.remoteHosts}
+          Host ${lib.concatStringsSep " " remoteHosts}
             ControlMaster auto
             ControlPersist 600
             ControlPath /run/ssh-%r@%h:%p

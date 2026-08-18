@@ -15,3 +15,4 @@
 | `litellm-model-routing` | active | `archive/2026-06-17-migrate-bifrost-to-litellm` | `openspec/changes/archive/2026-06-17-migrate-bifrost-to-litellm/specs/litellm-model-routing/spec.md` |
 | `web-service-catalog` | active | `archive/2026-08-09-web-services-ssot` | `openspec/changes/archive/2026-08-09-web-services-ssot/specs/web-service-catalog/spec.md` |
 | `wezterm-config` | active | `archive/2026-08-09-migrate-to-wezterm` | `openspec/changes/archive/2026-08-09-migrate-to-wezterm/specs/wezterm-config/spec.md` |
+| `secrets-ownership-model` | active | `dendritic-cleanup-pre-nixos` | `openspec/changes/dendritic-cleanup-pre-nixos/design.md` |

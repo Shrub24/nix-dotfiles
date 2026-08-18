@@ -34,12 +34,13 @@ Automatic module discovery SHALL be limited to files that conform to the reposit
 - **THEN** every discovered file SHALL be valid in that tree's module context
 - **AND** raw Home Manager modules, raw system-manager modules, package functions, generated files, and disabled support files SHALL remain outside the scan scope
 
-### Requirement: Host facts remain host-owned
+### Requirement: Shared host and service data is typed and host-owned
 
-Machine identity, architecture, home paths, and remote-machine data SHALL be declared by host composition and passed to selected aspects rather than hardcoded in reusable feature modules.
+Machine identity, architecture, home paths, and service topology SHALL be modeled as typed top-level options (`topology.hosts`, `topology.services`) or native Home Manager options (`home.username`, `home.homeDirectory`, `pkgs.stdenv.hostPlatform.system`), declared once at the host composition layer and read by consumers via the normal module system — never passed through `specialArgs` or duplicated in reusable feature modules.
 
 #### Scenario: Reusable aspect needs a host path or identity
 
 - **WHEN** a feature aspect requires a host-specific fact
-- **THEN** the host composition SHALL provide that fact from one canonical definition
+- **THEN** the host composition SHALL declare that fact once in the typed topology option or as a native option value
+- **AND** the aspect SHALL read it via the module system rather than an argument-passing bus
 - **AND** the aspect SHALL NOT duplicate the literal across feature modules

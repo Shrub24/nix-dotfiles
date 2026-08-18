@@ -1,10 +1,9 @@
-_: {
+{ inputs, ... }: {
   flake.modules.homeManager.hermes =
     {
       config,
       lib,
       pkgs,
-      inputs,
       ...
     }:
 
@@ -17,6 +16,11 @@ _: {
     in
     {
       imports = [ upstreamModule ];
+
+      # Hermes owns its env template (cross-module placeholders from credentials).
+      sops.templates."hermes.env".content = ''
+        OPENAI_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
+      '';
 
       programs.hermes-agent = {
         enable = lib.mkDefault false;
@@ -39,7 +43,7 @@ _: {
         settings = lib.mkDefault {
           model = {
             provider = "custom";
-            base_url = "http://localhost:8765/v1";
+            base_url = "http://localhost:${toString config.programs.litellm.port}/v1";
             default = "main";
           };
           platform_toolsets.cli = [

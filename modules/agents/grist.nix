@@ -56,6 +56,22 @@ _: {
       };
 
       config = lib.mkIf cfg.enable {
+        # Grist owns its session secret + env template (cross-module placeholder from credentials).
+        sops = {
+          secrets."GRIST_SESSION_SECRET" = {
+            sopsFile = ../../secrets/agents.yaml;
+            format = "yaml";
+            key = "grist_session_secret";
+          };
+
+          templates."grist.env" = {
+            path = "${config.home.homeDirectory}/.config/grist/.env";
+            content = ''
+              GRIST_SESSION_SECRET=${config.sops.placeholder.GRIST_SESSION_SECRET}
+            '';
+          };
+        };
+
         assertions = [
           {
             assertion = cfg.administratorEmail != "" && cfg.organizationSlug != "";

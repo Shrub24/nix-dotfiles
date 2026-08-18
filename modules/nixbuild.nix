@@ -1,8 +1,7 @@
-_: {
+{ inputs, ... }: {
   flake.modules.systemManager.nixbuild =
     {
       config,
-      inputs,
       pkgs,
       ...
     }:

@@ -22,7 +22,6 @@ _: {
           chafa
           mediainfo
           poppler-utils
-          pistol
         ];
 
         shellAliases = {

@@ -7,6 +7,12 @@ _: {
       ...
     }:
     {
+      # Nix owns its access-tokens template (cross-module placeholder from credentials).
+      sops.templates."nix-access-tokens" = {
+        path = "${config.home.homeDirectory}/.config/nix/access-tokens.conf";
+        content = "access-tokens = github.com=${config.sops.placeholder.GITHUB_PAT}\n";
+      };
+
       home.packages = with pkgs; [
         nh
         nixd
@@ -99,12 +105,15 @@ _: {
     {
       pkgs,
       lib,
-      hostFacts,
       ...
     }:
     let
+      # Host-local literals at the system-manager composition scope (B4/B8).
+      primaryUser = "saurabhj";
+      uid = 1000;
+
       niks3UploadHook = pkgs.writeShellScriptBin "niks3-upload-hook" ''
-        exec ${lib.getExe' pkgs.niks3-hook "niks3-hook"} send --socket /run/user/${toString hostFacts.uid}/niks3-upload-to-cache.sock
+        exec ${lib.getExe' pkgs.niks3-hook "niks3-hook"} send --socket /run/user/${toString uid}/niks3-upload-to-cache.sock
       '';
     in
     {
@@ -113,7 +122,7 @@ _: {
       nix.settings = {
         "trusted-users" = [
           "root"
-          hostFacts.username
+          primaryUser
         ];
         "extra-substituters" = [
           "https://nix-community.cachix.org"

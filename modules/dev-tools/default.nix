@@ -1,6 +1,6 @@
-_: {
+{ inputs, ... }: {
   flake.modules.homeManager.dev-tools =
-    { pkgs, inputs, ... }:
+    { pkgs, ... }:
     let
       system = pkgs.stdenv.hostPlatform.system;
     in

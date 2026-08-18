@@ -1,8 +1,7 @@
-_: {
+{ inputs, ... }: {
   flake.modules.homeManager.qmd =
     {
       config,
-      inputs,
       lib,
       pkgs,
       ...

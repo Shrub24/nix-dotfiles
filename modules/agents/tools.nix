@@ -1,10 +1,9 @@
-_: {
+{ inputs, ... }: {
   flake.modules.homeManager.tools =
     {
       config,
       lib,
       pkgs,
-      inputs,
       ...
     }:
 

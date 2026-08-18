@@ -1,8 +1,7 @@
-_: {
+{ inputs, ... }: {
   flake.modules.homeManager.mise =
     {
       config,
-      inputs,
       lib,
       pkgs,
       ...

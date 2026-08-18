@@ -1,8 +1,16 @@
-_: {
+{
+  config,
+  ...
+}:
+let
+  # Typed remote-host topology read at the flake-parts level (B5); closed over
+  # by the lower-level HM module.
+  remoteHosts = config.topology.hosts.arch.remoteHosts;
+in
+{
   flake.modules.homeManager.wezterm =
     {
       lib,
-      hostFacts,
       ...
     }:
 
@@ -33,7 +41,7 @@ _: {
           ssh_domains = map (name: {
             inherit name;
             remote_address = name;
-          }) hostFacts.remoteHosts;
+          }) remoteHosts;
         };
 
         extraConfig = ''

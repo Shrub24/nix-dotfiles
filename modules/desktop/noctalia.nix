@@ -1,19 +1,24 @@
-_: {
+{ inputs, ... }: {
   flake.modules.homeManager.noctalia =
     {
       config,
       lib,
-      inputs,
       pkgs,
       ...
     }:
     let
       noctaliaGreeterPackage = pkgs.noctalia-greeter;
 
+      # Specialized at the feature use site (B9): no longer parameterized by
+      # host instance data in the global overlay. uid is the Arch host user's uid.
+      noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
+        uid = 1000;
+      };
+
       noctaliaGreeterSyncPkexec = pkgs.writeShellApplication {
         name = "noctalia-greeter-sync-pkexec";
         text = ''
-          exec /usr/bin/pkexec ${pkgs.noctalia-greeter-sync}/bin/noctalia-greeter-sync
+          exec /usr/bin/pkexec ${noctaliaGreeterSync}/bin/noctalia-greeter-sync
         '';
       };
     in

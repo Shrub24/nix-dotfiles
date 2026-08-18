@@ -20,8 +20,8 @@ _: {
         ffmpegthumbs
         ffmpegthumbnailer
         kdegraphics-thumbnailers
-        # Qt platform theme: qt6ct hosts the kvantum style plugin
-        # (QT_QPA_PLATFORMTHEME=qt6ct in portals.nix; select kvantum style in qt6ct)
+        # Qt platform theme: gtk3 (QT_QPA_PLATFORMTHEME=gtk3 in portals.nix)
+        # kvantum remains for qt6ct-style theming
         qt6ct
         qtstyleplugin-kvantum
       ];

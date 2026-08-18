@@ -2,20 +2,27 @@ _: {
   flake.modules.systemManager.greeter =
     {
       pkgs,
-      hostFacts,
       ...
     }:
     let
       noctaliaGreeterPackage = pkgs.noctalia-greeter;
 
-      noctaliaGreeterSync = pkgs.noctalia-greeter-sync;
+      # Specialized at the feature use site (B9): no longer parameterized by
+      # host instance data in the global overlay. uid is the Arch host user's uid.
+      noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
+        uid = 1000;
+      };
+
+      # System-manager/transitional scope: primary user is a literal (B8). NixOS
+      # day `config.users.users.saurabhj` will own this.
+      primaryUser = "saurabhj";
 
       polkitSyncRule = pkgs.writeText "50-noctalia-greeter-sync.rules" ''
         polkit.addRule(function (action, subject) {
           if (
             action.id == "org.freedesktop.policykit.exec" &&
             action.lookup("program") == "${noctaliaGreeterSync}/bin/noctalia-greeter-sync" &&
-            subject.user == "${hostFacts.username}" &&
+            subject.user == "${primaryUser}" &&
             subject.local &&
             subject.active
           ) {
@@ -75,7 +82,7 @@ _: {
 
       greeterToml = pkgs.writeText "greeter.toml" ''
         [user]
-        default = "${hostFacts.username}"
+        default = "${primaryUser}"
       '';
     in
     {
@@ -96,7 +103,7 @@ _: {
         vt = "next"
 
         [default_session]
-        command = "${noctaliaGreeterSession}/bin/greetd-noctalia-session -- --user saurabhj"
+        command = "${noctaliaGreeterSession}/bin/greetd-noctalia-session -- --user ${primaryUser}"
         user = "greeter"
       '';
 

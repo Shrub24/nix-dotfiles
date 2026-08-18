@@ -1,7 +1,6 @@
-_: {
+{ inputs, ... }: {
   flake.modules.homeManager.direnv =
     {
-      inputs,
       ...
     }:
     {

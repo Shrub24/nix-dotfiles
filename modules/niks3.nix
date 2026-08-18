@@ -1,10 +1,18 @@
-_: {
+{
+  config,
+  ...
+}:
+let
+  # Service topology read at the flake-parts level (B6); closed over by the HM
+  # module. niks3's serverUrl is a URL.
+  niks3ServerUrl = config.topology.services.niks3.host;
+in
+{
   flake.modules.homeManager.niks3 =
     {
       config,
       lib,
       pkgs,
-      hostFacts,
       ...
     }:
 
@@ -17,7 +25,7 @@ _: {
 
         serverUrl = lib.mkOption {
           type = lib.types.str;
-          default = hostFacts.niks3ServerUrl;
+          default = niks3ServerUrl;
           description = "niks3 cache server URL to upload to.";
         };
 
@@ -41,6 +49,20 @@ _: {
       };
 
       config = lib.mkIf cfg.enableAutoUploadService {
+        # Niks3 owns its auth token secret (own ciphertext file) + template.
+        sops = {
+          secrets."NIKS3_AUTH_TOKEN" = {
+            sopsFile = ../secrets/niks3-secrets.yaml;
+            format = "yaml";
+            key = "niks3_auth_token";
+          };
+
+          templates."niks3-auth-token" = {
+            path = "${config.home.homeDirectory}/.config/niks3/auth-token";
+            content = config.sops.placeholder.NIKS3_AUTH_TOKEN;
+          };
+        };
+
         home.packages = [ pkgs.niks3-hook ];
 
         systemd.user.sockets.niks3-auto-upload = {

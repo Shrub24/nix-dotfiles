@@ -1,4 +1,7 @@
 {
+  dbHost,
+}:
+{
   config,
   lib,
   pkgs,
@@ -11,6 +14,7 @@ let
     inherit lib;
     headroomEnable = cfg.headroom.enable;
     inherit (cfg) headroomPort;
+    inherit (cfg) port;
   };
   headroomModelAliasMap = builtins.toJSON litellmGenerated.headroomModelAliasMap;
   yamlFormat = pkgs.formats.yaml { };
@@ -42,7 +46,25 @@ in
     };
   };
 
+  # LiteLLM owns its env template; DB host comes from typed topology (closed over).
+  # Declared under cfg.enable since the service + template are only used when enabled.
+
   config = lib.mkIf cfg.enable {
+    sops.templates."litellm.env" = {
+      path = "${config.home.homeDirectory}/.config/litellm/.env";
+      content = ''
+        LITELLM_MASTER_KEY=${config.sops.placeholder.LITELLM_MASTER_KEY}
+        ${lib.optionalString cfg.database.enable "DATABASE_URL=postgresql://litellm:${config.sops.placeholder.LITELLM_DATABASE_PASSWORD}@${dbHost}:5432/litellm?sslmode=disable"}
+        ${lib.optionalString cfg.headroom.enable "HEADROOM_API_BASE=http://127.0.0.1:${toString cfg.headroomPort}"}
+        GEMINI_API_KEY=${config.sops.placeholder.GEMINI_API_KEY}
+        DEEPSEEK_API_KEY=${config.sops.placeholder.DEEPSEEK_API_KEY}
+        NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
+        VOLCENGINE_API_KEY=${config.sops.placeholder.VOLCENGINE_API_KEY}
+        OPENROUTER_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
+        OPENCODE_API_KEY=${config.sops.placeholder.OPENCODE_API_KEY}
+      '';
+    };
+
     xdg.configFile."litellm/config.yaml".source = litellmConfigFile;
 
     systemd.user = {

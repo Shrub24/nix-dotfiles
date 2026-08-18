@@ -52,7 +52,8 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ desktop/*.nix        compositor + shell env (niri, noctalia, monique, vicinae, portals, greeter)
   ├─ foundation/*.nix    network, boot → systemManager aspects
   ├─ shell/*.nix         per-shell homeManager aspects + terminals (wezterm, ghostty, tmux)
-  ├─ *.nix               nixbuild, secrets, niks3, mosh, mutagen, syncthing — single-aspect
+  ├─ security/*.nix     sops-foundation + shared credentials aspects
+  ├─ *.nix               nixbuild, niks3, mosh, mutagen, syncthing — single-aspect
   ├─ nix.nix ssh.nix tailscale.nix   both homeManager AND systemManager
   ├─ hosts/arch.nix      selects explicit aspect lists → host outputs
   └─ hosts/arch/_*.nix   raw host files (facts, home, system) — ignored
@@ -62,12 +63,15 @@ Host composition lives in modules/hosts/arch.nix, not flake.nix:
   └─ 7 systemManager aspects + _system.nix → systemConfigs.arch
 ```
 
-Host identity lives once in `modules/hosts/arch/_facts.nix`: username,
-hostname, architecture, `appsDir`, and remote-machine data. It is passed to
-both outputs as `hostFacts` specialArgs, so reusable feature modules never
-duplicate these literals. Package recipes and the local overlay are owned by
-`pkgs/default.nix`; feature modules reference published packages rather than
-defining derivations inline.
+Service and host topology and machine identity live once in the typed
+`topology` option (`topology.hosts.<name>`, `topology.services.<name>.host`)
+declared at the host composition layer in `modules/hosts/arch.nix`, plus
+native Home Manager options (`home.username`, `home.homeDirectory`,
+`pkgs.stdenv.hostPlatform.system`) for host identity. Feature modules read
+these via the normal module system — there is no `specialArgs`/`extraSpecialArgs`
+argument bus and no ambient facts record. Package recipes and the local
+overlay are owned by `pkgs/default.nix`; feature modules reference published
+packages rather than defining derivations inline.
 
 ## Secrets & Privilege
 
@@ -85,11 +89,19 @@ system-manager). `nix-daemon` orders after and wants
 `restartUnits`. Canonical contract:
 [daemon-nix-config](openspec/specs/daemon-nix-config/spec.md).
 
-**User scope.** All other secrets are user-scoped sops via
-`modules/secrets.nix` and the encrypted stores under `secrets/`; templates
-render per-service env files (`docs-mcp.env`, `litellm.env`, `aichat.env`,
-`grist.env`) into the Home Manager generation. No user secret is exposed to the root
-daemon, and no system secret is rendered into user state.
+**User scope.** All other secrets are user-scoped sops, owned in three
+places: a SOPS foundation aspect (`modules/security/sops.nix`, module import +
+age key + tooling), a shared credentials aspect
+(`modules/security/credentials/agents.nix`, the ~20 cross-feature LLM/provider
+API keys from `secrets/agents.yaml` plus the shell-wide `zsh-secrets.env`),
+and each service's own feature module (its service-specific secrets and
+rendered env templates — `litellm.env`, `aichat.env`, `grist.env`,
+`docs-mcp.env`, `hermes.env`, `niks3-auth-token`, `nix-access-tokens`).
+Secrets decrypt once by the merged sops config and templates render into the
+Home Manager generation, so ownership is relocated without changing the
+rendered outputs. No user secret is exposed to the root daemon, and no system
+secret is rendered into user state. Canonical contract:
+[secrets-ownership-model](openspec/specs/secrets-ownership-model/spec.md).
 
 ## Service Lifecycle
 
@@ -134,8 +146,10 @@ The LiteLLM gateway behavior is contracted by
 - **Discovery is scoped to the single `modules/` tree** — `import-tree` scans
   only `modules/`; raw class modules live at `_`-prefixed paths, which
   `import-tree` ignores, so dormant files cannot alter a host accidentally.
-- **Hosts own facts** — identity and machine data live in
-  `modules/hosts/arch/_facts.nix`, never hardcoded in feature modules.
+- **Hosts and services own their topology** — identity and service data live
+  once in the typed `topology` option and native Home Manager options, declared
+  at the host composition layer and read via the module system, never hardcoded
+  in feature modules or passed through an argument bus.
 - **System secrets are owned end to end by system-manager** — a root daemon
   credential is not rendered through user-scoped Home Manager state.
 - **One durable document** — `ARCHITECTURE.md` records boundaries and

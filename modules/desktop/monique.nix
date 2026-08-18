@@ -1,9 +1,8 @@
-_: {
+{ inputs, ... }: {
   flake.modules.homeManager.monique =
     {
       config,
       lib,
-      inputs,
       pkgs,
       ...
     }:

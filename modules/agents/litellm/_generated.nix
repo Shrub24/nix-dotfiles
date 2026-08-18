@@ -1,5 +1,6 @@
 {
   lib,
+  port,
   headroomEnable ? false,
   headroomPort ? 8787,
 }:
@@ -244,7 +245,7 @@ in
         npm = "@ai-sdk/openai-compatible";
         name = "LiteLLM";
         options = {
-          baseURL = "http://localhost:8765/v1";
+          baseURL = "http://localhost:${toString port}/v1";
           apiKey = "{env:OPENCODE_LITELLM_API_KEY}";
         };
         models = opencodeModels;

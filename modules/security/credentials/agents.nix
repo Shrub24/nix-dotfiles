@@ -1,25 +1,21 @@
-_: {
-  flake.modules.homeManager.secrets =
+_:
+{
+  flake.modules.homeManager.credentials =
     {
       config,
       lib,
       pkgs,
-      inputs,
-      hostFacts,
       ...
     }:
 
     let
-      homeDir = config.home.homeDirectory;
-      yamlSecrets = ../secrets/agents.yaml;
+      yamlSecrets = ../../../secrets/agents.yaml;
     in
 
     {
-      imports = [ inputs.sops-nix.homeManagerModules.sops ];
-
+      # Shared, genuinely cross-feature LLM/provider credentials from
+      # secrets/agents.yaml, plus the shell-wide agent/dev env template.
       sops = {
-        age.keyFile = "${homeDir}/.config/sops/age/keys.txt";
-
         templates = {
           "zsh-secrets.env".content = ''
             GITHUB_PAT=${config.sops.placeholder.GITHUB_PAT}
@@ -39,50 +35,6 @@ _: {
             OPENAI_COMPATIBLE_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
             VOLCENGINE_API_KEY=${config.sops.placeholder.VOLCENGINE_API_KEY}
           '';
-
-          "docs-mcp.env".content = ''
-            OPENAI_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
-          '';
-
-          "hermes.env".content = ''
-            OPENAI_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
-          '';
-
-          "aichat.env".content = ''
-            LITELLM_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
-          '';
-
-          "litellm.env" = {
-            path = "${homeDir}/.config/litellm/.env";
-            content = ''
-              LITELLM_MASTER_KEY=${config.sops.placeholder.LITELLM_MASTER_KEY}
-              ${lib.optionalString config.programs.litellm.database.enable "DATABASE_URL=postgresql://litellm:${config.sops.placeholder.LITELLM_DATABASE_PASSWORD}@${hostFacts.databaseHost}:5432/litellm?sslmode=disable"}
-              ${lib.optionalString config.programs.litellm.headroom.enable "HEADROOM_API_BASE=http://127.0.0.1:${toString config.programs.litellm.headroomPort}"}
-              GEMINI_API_KEY=${config.sops.placeholder.GEMINI_API_KEY}
-              DEEPSEEK_API_KEY=${config.sops.placeholder.DEEPSEEK_API_KEY}
-              NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
-              VOLCENGINE_API_KEY=${config.sops.placeholder.VOLCENGINE_API_KEY}
-              OPENROUTER_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
-              OPENCODE_API_KEY=${config.sops.placeholder.OPENCODE_API_KEY}
-            '';
-          };
-
-          "grist.env" = {
-            path = "${homeDir}/.config/grist/.env";
-            content = ''
-              GRIST_SESSION_SECRET=${config.sops.placeholder.GRIST_SESSION_SECRET}
-            '';
-          };
-
-          "niks3-auth-token" = {
-            path = "${homeDir}/.config/niks3/auth-token";
-            content = config.sops.placeholder.NIKS3_AUTH_TOKEN;
-          };
-
-          "nix-access-tokens" = {
-            path = "${homeDir}/.config/nix/access-tokens.conf";
-            content = "access-tokens = github.com=${config.sops.placeholder.GITHUB_PAT}\n";
-          };
         };
 
         secrets = {
@@ -151,7 +103,6 @@ _: {
             format = "yaml";
             key = "gemini_api_key";
           };
-
           DEEPSEEK_API_KEY = {
             sopsFile = yamlSecrets;
             format = "yaml";
@@ -167,50 +118,28 @@ _: {
             format = "yaml";
             key = "cursor_api_key";
           };
-
           LITELLM_MASTER_KEY = {
             sopsFile = yamlSecrets;
             format = "yaml";
             key = "litellm_master_key";
           };
-
           LITELLM_API_KEY = {
             sopsFile = yamlSecrets;
             format = "yaml";
             key = "litellm_api_key";
           };
-
           LITELLM_DATABASE_PASSWORD = {
             sopsFile = yamlSecrets;
             format = "yaml";
             key = "litellm_database_password";
           };
-
           OPENCODE_LITELLM_API_KEY = {
             sopsFile = yamlSecrets;
             format = "yaml";
             key = "opencode_litellm_api_key";
           };
-
-          NIKS3_AUTH_TOKEN = {
-            sopsFile = ../secrets/niks3-secrets.yaml;
-            format = "yaml";
-            key = "niks3_auth_token";
-          };
-
-          GRIST_SESSION_SECRET = {
-            sopsFile = yamlSecrets;
-            format = "yaml";
-            key = "grist_session_secret";
-          };
         };
       };
-
-      home.packages = [
-        pkgs.age
-        pkgs.sops
-      ];
     }
-
   ;
 }

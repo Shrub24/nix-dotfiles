@@ -2,14 +2,27 @@
   config,
   lib,
   pkgs,
-  hostFacts,
   ...
 }:
 
+let
+  # Host-local remote hosts list (B11), matching arch.nix topology.
+  sshHosts = [
+    "oci-melb-1"
+    "do-admin-1"
+    "la-admin-1"
+  ];
+in
 {
+  # aichat owns its env template (cross-module placeholder from credentials).
+  sops.templates."aichat.env".content = ''
+    LITELLM_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
+  '';
+
   home = {
-    inherit (hostFacts) username;
-    homeDirectory = "/home/${hostFacts.username}";
+    # Host-local literals at the host composition layer (B4/B11).
+    username = "saurabhj";
+    homeDirectory = "/home/saurabhj";
     stateVersion = "26.11";
     enableNixpkgsReleaseCheck = false;
 
@@ -49,7 +62,7 @@
           {
             type = "openai-compatible";
             name = "litellm";
-            api_base = "http://localhost:8765/v1";
+            api_base = "http://localhost:${toString config.programs.litellm.port}/v1";
             models = [
               {
                 name = "coder";
@@ -62,7 +75,7 @@
     };
     lazyjournal = {
       enable = true;
-      sshHosts = hostFacts.remoteHosts;
+      sshHosts = sshHosts;
     };
     docsMcp.enable = true;
     qmd.enable = true;

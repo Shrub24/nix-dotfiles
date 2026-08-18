@@ -1,10 +1,9 @@
-_: {
+{ inputs, ... }: {
   flake.modules.homeManager.pi =
     {
       config,
       lib,
       pkgs,
-      inputs,
       ...
     }:
 

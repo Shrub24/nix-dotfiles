@@ -272,7 +272,7 @@ For each lower-level module currently destructuring `inputs` from specialArgs, u
 ### D2. Noctalia → own `.kdl` file
 
 - [x] In `modules/desktop/noctalia.nix`, replace the `extraConfig` contribution (lines 26-45) with `xdg.configFile."niri/noctalia.kdl"` writing `~/.config/niri/noctalia.kdl` containing the spawn-at-startup + layer-rule + window-rule + `include optional=true "noctalia-binds.kdl"` block (mkIf-gated as before).
-- [ ] `noctalia-binds.kdl` itself stays as-is (`noctalia.nix:47-94` — already a separate file).
+- [x] `noctalia-binds.kdl` itself stays as-is (`noctalia.nix:47-94` — already a separate file).
 
 `refs:` `modules/desktop/noctalia.nix:26-45`; `:47-94` (noctalia-binds).
 `criteria:` No `extraConfig` contribution from noctalia.
@@ -294,7 +294,7 @@ For each lower-level module currently destructuring `inputs` from specialArgs, u
 ### D5. Verify rendered output equivalence
 
 - [x] Byte-compare rendered `config.kdl` against `/tmp/opencode/niri-config-pre.kdl` if it still exists, ELSE build + `niri validate` and visually compare.
-- [ ] CI `niri validate` (part of `checkConfig`) is the correctness gate.
+- [x] CI `niri validate` (part of `checkConfig`) is the correctness gate.
 
 `refs:` `design.md` §4.
 `verify:` rendered config byte-equivalence OR `niri validate` passing + manual diff; `nix flake check --no-build --no-write-lock-file`.
@@ -303,6 +303,6 @@ For each lower-level module currently destructuring `inputs` from specialArgs, u
 
 ## Final Validation
 
-- [ ] `nix flake check --no-build --no-write-lock-file` passes (Groups A-D complete).
-- [ ] `openspec validate --strict` passes.
+- [x] `nix flake check --no-build --no-write-lock-file` passes (Groups A-D complete).
+- [x] `openspec validate --strict` passes.
 - [ ] User confirms acceptance (mechanical cleanup + topology + secrets split + niri equivalence).

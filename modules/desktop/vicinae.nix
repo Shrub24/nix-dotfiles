@@ -1,6 +1,6 @@
-_: {
+{ inputs, ... }: {
   flake.modules.homeManager.vicinae =
-    { inputs, ... }:
+    { ... }:
     {
       imports = [ inputs.vicinae.homeManagerModules.default ];
 
