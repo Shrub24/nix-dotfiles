@@ -489,6 +489,9 @@ _: {
             Mod+Shift+P { power-off-monitors; }
             Ctrl+Alt+Space { switch-layout "next"; }
           }
+
+          include optional=true "monique.kdl"
+          include optional=true "noctalia.kdl"
         '';
       };
 

@@ -16,9 +16,6 @@ let
   };
   hmAspect = name: config.flake.modules.homeManager.${name};
   systemAspect = name: config.flake.modules.systemManager.${name};
-  # niri must stay selected AFTER monique and BEFORE noctalia: home-manager
-  # types.lines merge in reverse module order, so the relative order below
-  # reproduces the pre-migration rendered niri config.kdl exactly.
   hmAspects = [
     "pi"
     "hermes"

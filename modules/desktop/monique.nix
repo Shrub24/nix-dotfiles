@@ -41,11 +41,13 @@ _: {
 
       # Monique's mutable monitors.kdl is the single runtime monitor authority; the
       # include applies only when the niri aspect is selected and enabled.
-      wayland.windowManager.niri.extraConfig =
+      xdg.configFile."niri/monique.kdl" =
         lib.mkIf (config ? wayland.windowManager.niri && config.wayland.windowManager.niri.enable)
-          ''
-            include optional=true "monitors.kdl"
-          '';
+          {
+            text = ''
+              include optional=true "monitors.kdl"
+            '';
+          };
 
       home.packages = [
         moniquePackage

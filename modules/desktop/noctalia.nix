@@ -23,26 +23,28 @@ _: {
       ];
 
       # ponytail: niri's KDL parser rejects a second binds node in one file, so shell binds render into noctalia-binds.kdl included below.
-      wayland.windowManager.niri.extraConfig =
+      xdg.configFile."niri/noctalia.kdl" =
         lib.mkIf (config ? wayland.windowManager.niri && config.wayland.windowManager.niri.enable)
-          ''
-            spawn-at-startup "noctalia"
-            spawn-at-startup "noctalia-hide-action-bar"
+          {
+            text = ''
+              spawn-at-startup "noctalia"
+              spawn-at-startup "noctalia-hide-action-bar"
 
-            layer-rule {
-              match namespace="^noctalia-backdrop"
-              place-within-backdrop true
-            }
+              layer-rule {
+                match namespace="^noctalia-backdrop"
+                place-within-backdrop true
+              }
 
-            window-rule {
-              match app-id="dev.noctalia.Noctalia"
-              open-floating true
-              default-column-width { fixed 1080; }
-              default-window-height { fixed 920; }
-            }
+              window-rule {
+                match app-id="dev.noctalia.Noctalia"
+                open-floating true
+                default-column-width { fixed 1080; }
+                default-window-height { fixed 920; }
+              }
 
-            include optional=true "noctalia-binds.kdl"
-          '';
+              include optional=true "noctalia-binds.kdl"
+            '';
+          };
 
       xdg.configFile."niri/noctalia-binds.kdl" =
         lib.mkIf (config ? wayland.windowManager.niri && config.wayland.windowManager.niri.enable)
