@@ -305,4 +305,4 @@ For each lower-level module currently destructuring `inputs` from specialArgs, u
 
 - [x] `nix flake check --no-build --no-write-lock-file` passes (Groups A-D complete).
 - [x] `openspec validate --strict` passes.
-- [ ] User confirms acceptance (mechanical cleanup + topology + secrets split + niri equivalence).
+- [x] User confirms acceptance (mechanical cleanup + topology + secrets split + niri equivalence).
