@@ -28,21 +28,21 @@
 
 ## 4. Phase 3 — KDE keepers (next revision, not in this revision)
 
-- [ ] 4.1 Audit KDE stack: which plasma apps are actually used (dolphin, okular, ark, gwenview) vs unused (haruna, kid3, krokiet, systemsettings)
-- [ ] 4.2 Drop unused plasma apps via `pacman -Rns` (no Nix replacement needed for unused)
-- [ ] 4.3 Drop `polkit-kde-agent` (noctalia's `shell.polkit_agent` is enabled)
-- [ ] 4.4 Migrate `dolphin`, `okular`, `ark`, `gwenview` via `home.packages = [ pkgs.kdePackages.dolphin ... ]` — no dedicated HM modules exist
-- [ ] 4.5 Resolve Qt platform-theme integration: ensure `QT_QPA_PLATFORMTHEME=qt6ct` (or similar) points at Nix store Qt; verify dolphin runs stylishly
-- [ ] 4.6 `pacman -Rns plasma-workspace` (the last anchor on `xdg-desktop-portal-kde`)
-- [ ] 4.7 Optionally drop `xdg-desktop-portal-kde` from pacman if portal stack no longer anchors it
+- [x] 4.1 Audit KDE stack: which plasma apps are actually used (dolphin, okular, ark, gwenview) vs unused (haruna, kid3, krokiet, systemsettings) - done in Phase 3a; haruna/kid3/krokiet migrated to Nix instead of dropped
+- [x] 4.2 Drop unused plasma apps via `pacman -Rns` (no Nix replacement needed for unused) - seahorse + keepassxc dropped (unused); haruna/kid3/krokiet migrated to Nix
+- [x] 4.3 Drop `polkit-kde-agent` (noctalia's `shell.polkit_agent` is enabled) - dropped from pacman
+- [x] 4.4 Migrate `dolphin`, `okular`, `ark`, `gwenview` via `home.packages = [ pkgs.kdePackages.dolphin ... ]` - done in Phase 3a (modules/apps/kde.nix); also migrated kdialog, haruna, kdeconnect
+- [x] 4.5 Resolve Qt platform-theme integration: ensure `QT_QPA_PLATFORMTHEME=qt6ct` (or similar) points at Nix store Qt; verify dolphin runs stylishly - done: QT_QPA_PLATFORMTHEME=qt6ct, pkgs.qt6ct + kdePackages.qtstyleplugin-kvantum in kde.nix
+- [x] 4.6 `pacman -Rns plasma-workspace` (the last anchor on `xdg-desktop-portal-kde`) - dropped; plasma-workspace + its dep block removed from pacman
+- [x] 4.7 Optionally drop `xdg-desktop-portal-kde` from pacman if portal stack no longer anchors it - dropped; xdg-desktop-portal stack now fully Nix-side (modules/desktop/portals.nix)
 
 ## 5. Phase 4 — Decision items (deferred, separate changes)
 
-- [ ] 5.1 Flatpak as long-term GUI layer (decide: keep `firefox`/`chromium` HM or move to flatpak; flatpak profile state at `~/.var/app/` carries over to NixOS unchanged)
-- [ ] 5.2 System daemons (bluez, NetworkManager, dracut, snapper, nvidia) — NixOS-native, defer
-- [ ] 5.3 Office apps (onlyoffice-bin, libreoffice, inkscape deep deps) — flatpak vs HM vs pacman-keep
-- [ ] 5.4 Neovim config migration (extensive, not currently in Nix)
-- [ ] 5.5 `accountsservice` + AUR keyrings (Arch-specific)
+- [x] 5.1 Flatpak as long-term GUI layer (decide: keep `firefox`/`chromium` HM or move to flatpak; flatpak profile state at `~/.var/app/` carries over to NixOS unchanged) - **dropped**: user removed flatpak entirely; browsers stay on HM
+- [~] 5.2 System daemons (bluez, NetworkManager, dracut, snapper, nvidia) - NixOS-native, defer - **deferred to NixOS day**: these are kernel/daemon-level, migrate via system-manager modules
+- [x] 5.3 Office apps (onlyoffice-bin, libreoffice, inkscape deep deps) - flatpak vs HM vs pacman-keep - **done**: libreoffice migrated to HM (modules/apps/libreoffice.nix); onlyoffice-bin dropped; inkscape migrated to HM (modules/apps/media.nix)
+- [~] 5.4 Neovim config migration (extensive, not currently in Nix) - **deferred per user**: "neovim leave for now as my config is extensive and not in nix"
+- [~] 5.5 `accountsservice` + AUR keyrings (Arch-specific) - **deferred**: accountsservice anchored by libmalcontent; AUR keyrings (archlinuxcn-keyring, endeavouros-keyring) are Arch-specific, drop at NixOS day
 
 ## 6. Validation
 
