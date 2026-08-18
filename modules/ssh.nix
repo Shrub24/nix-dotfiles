@@ -87,4 +87,34 @@ in
     }
 
   ;
+
+  flake.modules.nixos.ssh =
+    {
+      lib,
+      ...
+    }:
+    {
+      # Client-side SSH config volume. Same `remoteHosts` topology closure as the
+      # systemManager aspect. NO services.openssh - we host no SSH server here;
+      # this is purely a client config drop-in (user-side lives in homeManager.ssh).
+      environment.etc."ssh/ssh_config.d/30-remote-hosts.conf" = {
+        text = ''
+          # Remote build/managed hosts — ControlMaster enabled for multiplexing
+          Host ${lib.concatStringsSep " " remoteHosts}
+            ControlMaster auto
+            ControlPersist 600
+            ControlPath /run/ssh-%r@%h:%p
+            ServerAliveInterval 60
+            ServerAliveCountMax 3
+            StrictHostKeyChecking accept-new
+            TCPKeepAlive no
+            Compression no
+            IPQoS throughput
+            
+        '';
+        mode = "0644";
+      };
+    }
+
+  ;
 }

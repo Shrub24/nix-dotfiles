@@ -28,20 +28,21 @@
 
 Each item is a tracking checkbox for a follow-up change.
 
-- [ ] `C1.` Side-port `network` aspect -> `networking.*`/NetworkManager
-- [ ] `C2.` Side-port `boot` aspect -> `boot.loader.systemd-boot`
-- [ ] `C3.` Side-port `ssh` aspect (systemManager side) -> `services.openssh`
-- [ ] `C4.` Side-port `tailscale` aspect (systemManager side) -> `services.tailscale`
-- [ ] `C5.` Side-port `greeter` aspect (systemManager side) -> `services.greetd` + noctalia
-- [ ] `C6.` Side-port `nixbuild` -> native NixOS remote-build; drop transitional
-- [ ] `C7.` Populate `_hardware.nix` via `nixos-generate-config` on install day
+- [x] `C1.` Side-port `network` aspect -> `networking.*`/NetworkManager
+- [x] `C2.` Side-port `boot` aspect -> `boot.loader.systemd-boot`
+- [x] `C3.` Side-port `ssh` aspect (systemManager side) -> `services.openssh`
+- [x] `C4.` Side-port `tailscale` aspect (systemManager side) -> `services.tailscale`
+- [x] `C5.` Side-port `greeter` aspect (systemManager side) -> `services.greetd` + noctalia
+- [x] `C6.` Side-port `nixbuild` -> native NixOS remote-build; drop transitional
+- [x] `C7.` Populate `_hardware.nix` via `nixos-generate-config` on install day
+      (done: real btrfs/nvme/nvidia hardware hand-rolled 2026-08-18 in parent)
 - [ ] `C8.` Wire `checks-build` CI job to run `nix flake check` (without `--no-build`)
   so the VM test boots on PRs; today the workflow uses `--no-build`.
 - [ ] `C9.` Bare-metal install
 
 ## Final Validation
 
-- [ ] `nix flake check --no-build --no-write-lock-file` passes.
-- [ ] `nix build .#checks.x86_64-linux.vm-skeleton-boot` passes (QEMU boots,
+- [x] `nix flake check --no-build --no-write-lock-file` passes.
+- [x] `nix build .#checks.x86_64-linux.vm-skeleton-boot` passes (QEMU boots,
   nix-daemon starts, assertions succeed).
-- [ ] `openspec validate --strict` passes.
+- [x] `openspec validate --strict` passes.

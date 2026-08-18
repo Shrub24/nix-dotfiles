@@ -82,7 +82,13 @@ let
   ];
   nixosAspects = [
     "foundation"
+    "network"
+    "boot"
+    "ssh"
+    "tailscale"
+    "greeter"
     "nix"
+    "nixbuild"
   ];
   homeConfiguration = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
@@ -166,6 +172,20 @@ in
           # via the daemon store, which triggers socket-activation and starts nix-daemon.service.
           arch.succeed("nix --store daemon store ping")
           arch.wait_for_unit("nix-daemon.service")
+
+          # tailscale side-port: native services.tailscale runs tailscaled.service.
+          arch.wait_for_unit("tailscaled.service")
+
+          # network side-port: services.resolved enable -> systemd-resolved.service.
+          arch.wait_for_unit("systemd-resolved.service")
+
+          # Skipped assertions (documented):
+          #  - ssh aspect is client-only (no server) -> nothing to assert.
+          #  - boot aspect is a no-op; systemd-boot is a bootloader, not a runtime service.
+          #  - greeter side-port: polkit.service is socket/DBus-activated and sits idle in a
+          #    headless VM with no polkit client, so it never reaches active -> not asserted here
+          #    (likewise greetd.service needs graphics/DRI to run; sops-install-secrets.service
+          #    needs the sops key path + secrets that don't exist in CI/VM).
         '';
       };
     };
