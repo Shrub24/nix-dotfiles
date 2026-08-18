@@ -58,8 +58,8 @@ Bundles 13 leaves + drops 2 unused (seahorse, keepassxc) + drops onlyoffice-bin 
 
 - [x] 7.1.1 `modules/apps/libreoffice.nix` — aspect `libreoffice`; `home.packages = [ pkgs.libreoffice-fresh ]`; user config at `~/.config/libreoffice/4/` left untouched
 - [x] 7.1.2 `modules/apps/vscode.nix` — aspect `vscode`; `programs.vscode.{enable=true, package=pkgs.vscode-fhs}` (FHS variant for extension compat); existing `~/.config/Code/` untouched (lazy HM); `"vscode"` + `"code"` added to `allowUnfreePredicate` in `modules/nix.nix`
-- [ ] 7.1.3 Drop `onlyoffice-bin` from pacman (sole anchor on `ttf-dejavu` + `ttf-liberation`)
-- [ ] 7.1.4 Drop `seahorse` + `keepassxc` from pacman (unused per user)
+- [x] 7.1.3 Drop `onlyoffice-bin` from pacman (sole anchor on `ttf-dejavu` + `ttf-liberation`) — dropped in 7.3.5
+- [x] 7.1.4 Drop `seahorse` + `keepassxc` from pacman (unused per user) — dropped in 7.3.5
 
 ### 7.2 — Bundled aspects (single `home.packages` list per aspect)
 
@@ -102,6 +102,6 @@ Dropping the two Qt anchors unchains the entire Qt5 + Qt6 stacks. Plus 22 orphan
 
 ### 9.3 — Post-cascade cleanup
 
-- [ ] 9.3.1 `pacman -Qdtq | sudo pacman -Rns -` — catch any orphans the cascade missed
-- [ ] 9.3.2 Final pacman explicit count audit
-- [ ] 9.3.3 Verify Nix completeness: all shells + GUI apps resolve from `~/.nix-profile/bin/`
+- [x] 9.3.1 `pacman -Qdtq | sudo pacman -Rns -` — **skipped**: 263 orphan packages found; user decided to keep orphans (many are useful optional deps, runtime libs, build tools — costs more to investigate than to keep; NixOS install wipes everything anyway)
+- [x] 9.3.2 Final pacman explicit count audit — **143 explicit packages** (322 → 143, -179, 55.6% reduction)
+- [x] 9.3.3 Verify Nix completeness: all shells + GUI apps resolve from `~/.nix-profile/bin/` — 60/60 verified (5 initial "NOT FOUND" were binary name mismatches: `kid3-qt`, `krokiet`, `jj`, `code`; `bash` stays `/usr/bin/bash` as system shell by design)

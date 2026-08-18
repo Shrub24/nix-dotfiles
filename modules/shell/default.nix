@@ -71,7 +71,8 @@ _: {
           defaultOptions = [
             "--layout=reverse"
             "--height=~75%"
-            "--style=full"
+            "--min-height=10+"
+            "--style=default"
             "--tiebreak=index"
             "--ansi"
             "--border=rounded"

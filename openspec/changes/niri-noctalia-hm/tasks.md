@@ -44,6 +44,6 @@
 ## 8. Greeter Integration
 
 - [x] 8.1 Pin upstream `noctalia-greeter` 1.2.1 as a flake input and use the same package for system-manager and Home Manager
-- [ ] 8.2 Route UWSM startup output to the journal and verify a clean greeter-to-session transition
-- [x] 8.3 Add a fixed-path no-follow staging wrapper and dedicated polkit action; route Noctalia through it with `pkexec`, keep `systemd1.manage-units` ungranted, and confirm silent appearance sync
-- [ ] 8.4 Patch Noctalia's lock screen to a dedicated `noctalia-lock` PAM service with a minimal `pam_unix` policy; verify unlock works without touching `/etc/pam.d/login`
+- [x] 8.2 Route UWSM startup output to the journal and verify a clean greeter-to-session transition — `UWSM_SILENT_START=2` in niri-uwsm launcher; user confirmed login works after pacman uwsm restored
+- [x] 8.3 Add a fixed-path no-follow staging wrapper and dedicated polkit action; route Noctalia through it with `pkexec`, keep `systemd1.manage-units` ungranted, and confirm silent appearance sync — greeter-sync now uses store path directly (no symlink); polkit rule matches `action.lookup("program")` against the Nix store path
+- [ ] 8.4 Patch Noctalia's lock screen to a dedicated `noctalia-lock` PAM service with a minimal `pam_unix` policy; verify unlock works without touching `/etc/pam.d/login` — **explicitly deferred**: user rarely locks screen (usually logs out); PAM patch busts Hydra cache (~9 min local compile); revisit if upstream issue #3277 lands a config key
