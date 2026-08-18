@@ -80,7 +80,10 @@ let
     "nix"
     "nixbuild"
   ];
-  nixosAspects = [ "foundation" ];
+  nixosAspects = [
+    "foundation"
+    "nix"
+  ];
   homeConfiguration = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
     modules = [ ./arch/_home.nix ] ++ map hmAspect hmAspects;
@@ -90,7 +93,12 @@ let
     overlays = [ overlay ];
   };
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
-    modules = [ ./arch/_nixos.nix ] ++ map nixosAspect nixosAspects;
+    modules =
+      [
+        ./arch/_nixos.nix
+        { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration; aspects see pkgs.niks3-hook
+      ]
+      ++ map nixosAspect nixosAspects;
     specialArgs = { }; # empty — NO inputs/hostFacts bus; maintain cleanup invariant
   };
 in
@@ -120,6 +128,46 @@ in
       home-manager-activation = homeConfiguration.activationPackage;
       system-manager-config = systemConfiguration;
       nixos-system = nixosConfiguration.config.system.build.toplevel;
+
+      # VM boot gate: imports the SAME aspects as nixosConfigurations.arch so this
+      # catches NixOS module-system conflicts (a unit wanting a path that doesn't
+      # exist, a mkIf turning false, a circular systemd dep) that eval-only misses.
+      vm-skeleton-boot = pkgs.testers.runNixOSTest {
+        name = "vm-skeleton-boot";
+        nodes.arch = {
+          imports = map nixosAspect nixosAspects;
+          # Host-local literals (mirror _nixos.nix):
+          system.stateVersion = "26.11";
+          networking.hostName = "arch";
+          # nixpkgs.hostPlatform NOT set here: runNixOSTest pins node.pkgs (= pkgsLinux, the overlayed
+          # pkgs incl. pkgs.niks3-hook) as read-only, which already fixes platform + overlay.
+          users.users.${primaryUser} = {
+            isNormalUser = true;
+            extraGroups = [ "wheel" ];
+          };
+          # VM hardware (replaces _hardware.nix; QEMU disk + grub, headless):
+          fileSystems."/" = {
+            device = "/dev/vda";
+            fsType = "ext4";
+            autoFormat = true;
+          };
+          boot.loader.grub.device = "/dev/vda";
+          boot.initrd.availableKernelModules = [ "virtio_blk" ];
+          boot.initrd.kernelModules = [ "virtio_blk" ];
+          virtualisation.graphics = false;
+        };
+        testScript = ''
+          arch.start()
+          arch.wait_for_unit("multi-user.target")
+          arch.succeed("nix-store --version")
+          # nix-daemon.service is SOCKET-ACTIVATED on NixOS (wanted by sockets.target) and sits idle
+          # until a client connects. Also, nix run as root talks to the LOCAL store (root can write
+          # /nix/store directly), which never touches the daemon. So force a real daemon round-trip
+          # via the daemon store, which triggers socket-activation and starts nix-daemon.service.
+          arch.succeed("nix --store daemon store ping")
+          arch.wait_for_unit("nix-daemon.service")
+        '';
+      };
     };
 
     flake.webServices = homepage.catalog;
