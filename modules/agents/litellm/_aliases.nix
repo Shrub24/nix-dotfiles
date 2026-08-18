@@ -50,8 +50,8 @@
       mode = "chat";
       registryModel = "zhipuai/glm-5.2";
       chain = [
-        "neuralwatt"
         "volcengine"
+        "neuralwatt"
         "opencode-go"
       ];
     };
@@ -67,9 +67,9 @@
       mode = "chat";
       registryModel = "deepseek/deepseek-v4-pro";
       chain = [
-        "opencode-go"
         "volcengine"
         "deepseek"
+        "opencode-go"
       ];
     };
 
@@ -107,10 +107,10 @@
       mode = "chat";
       registryModel = "deepseek/deepseek-v4-flash";
       chain = [
-        "opencode-go"
-        "volcengine"
         "neuralwatt"
+        "volcengine"
         "deepseek"
+        "opencode-go"
       ];
     };
   };
