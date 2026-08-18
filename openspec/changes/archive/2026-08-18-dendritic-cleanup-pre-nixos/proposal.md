@@ -21,6 +21,7 @@ feature tree without inheriting the anti-patterns.
 Four task groups remove the anti-patterns and establish the canonical shape:
 
 ### Group A — Mechanical SSOT cleanup
+
 - Remove duplicated package ownership: `eza` (`modules/dev-tools/cli.nix:22` —
   duplicate of `programs.eza.enable`) and `pistol` (`modules/shell/default.nix:25` —
   duplicate of `programs.pistol.enable`).
@@ -36,6 +37,7 @@ Four task groups remove the anti-patterns and establish the canonical shape:
   Arch-specific hacks.
 
 ### Group B — Eliminate `inputs`/`hostFacts` anti-pattern + typed topology
+
 - Define a typed top-level `topology` option (flake-parts), populated once from
   the Arch host composition layer, replacing the `hostFacts` ambient record.
 - Remove `inputs` argument injection from lower-level modules via lexical
@@ -45,6 +47,7 @@ Four task groups remove the anti-patterns and establish the canonical shape:
   `pkgs.stdenv.hostPlatform.system` (tenet 7).
 
 ### Group C — Secrets hybrid aspect-owned design
+
 - Split the `modules/secrets.nix` monolith (tenet 10): a SOPS foundation
   module + a shared-credentials aspect, with service-specific templates owned
   by their consumer feature modules. sops-nix's `sops.placeholder.X` mechanism
@@ -53,6 +56,7 @@ Four task groups remove the anti-patterns and establish the canonical shape:
 - Delete the monolith; register the two new aspects.
 
 ### Group D — Niri KDL file-include refactor (DMS-style)
+
 - Move monique/noctalia contributions out of niri's `extraConfig` (a
   `types.lines` merge, order-coupled to host import list — tenet 12) into
   separate `.kdl` files written via `xdg.configFile`, then include them from

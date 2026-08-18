@@ -1,6 +1,7 @@
 # dendritic-module-composition Specification
 
 ## Purpose
+
 Defines how feature-owned Nix aspects are discovered, published, and explicitly composed into host outputs without crossing Home Manager and system privilege boundaries.
 
 ## Requirements

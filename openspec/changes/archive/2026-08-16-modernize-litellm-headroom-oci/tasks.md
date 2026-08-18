@@ -96,5 +96,4 @@
 - [x] 4.3 Reconcile the implementation with proposal, design, and specs; run strict OpenSpec validation.
   - verify: `openspec validate --strict`
 
-
 > Archived 2026-08-16: superseded — Headroom is disabled and slated for removal; remaining tasks abandoned without canonical spec changes (headroom context-management, OCI image-management, and the litellm-client/gateway Headroom bridge deltas are not synced).

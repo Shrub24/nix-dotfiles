@@ -1,6 +1,7 @@
 # surge-download-manager Specification
 
 ## Purpose
+
 Provide the Surge download-manager TUI and CLI as a reproducible user tool without implicitly exposing its network server.
 
 ## Requirements

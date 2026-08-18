@@ -1,6 +1,7 @@
 # niri-home-manager Specification
 
 ## Purpose
+
 Declaratively manages the niri Wayland compositor configuration from the home-manager flake using the native `wayland.windowManager.niri` module, replacing the imperative `~/.config/niri/config.kdl` on the Arch host.
 
 ## Requirements

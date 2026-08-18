@@ -1,6 +1,7 @@
 # spec-lifecycle-convention Specification
 
 ## Purpose
+
 TBD - created by archiving change bootstrap-main-openspec-specs. Update Purpose after archive.
 
 ## Requirements

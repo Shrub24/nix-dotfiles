@@ -1,11 +1,12 @@
 # Tasks — Dendritic Cleanup Before NixOS
 
 > **Verify (canonical, run at each stage):**
+>
 > - `nix flake check --no-build --no-write-lock-file` (fast eval gate; MUST stay green)
 > - `openspec validate --strict` (MUST pass at the end)
 > - Group D adds a byte-comparison check against the pre-change rendered config.
 
----
+______________________________________________________________________
 
 ## Group A — Mechanical SSOT Cleanup
 
@@ -80,7 +81,7 @@ User decision: leave the debt. All listed sites are system-manager-scoped / tran
 
 - [ ] **No work in this change.** See `design.md` §5 (non-goals).
 
----
+______________________________________________________________________
 
 ## Group B — Eliminate `inputs`/`hostFacts` anti-pattern + typed topology
 
@@ -184,7 +185,7 @@ For each lower-level module currently destructuring `inputs` from specialArgs, u
 `refs:` `_facts.nix` (17 lines).
 `criteria:` `_facts.nix` either removed or reduced to literals only used at `arch.nix` composition.
 
----
+______________________________________________________________________
 
 ## Group C — Secrets Hybrid Aspect-Owned Design
 
@@ -256,7 +257,7 @@ For each lower-level module currently destructuring `inputs` from specialArgs, u
 `refs:` `openspec/specs/dendritic-module-composition/spec.md:37-45`; `ARCHITECTURE.md` ("Hosts own facts"); `design.md` §6.
 `criteria:` No canonical spec documents the removed `hostFacts`/secrets-monolith patterns.
 
----
+______________________________________________________________________
 
 ## Group D — Niri KDL File-Include Refactor (DMS-style)
 
@@ -299,7 +300,7 @@ For each lower-level module currently destructuring `inputs` from specialArgs, u
 `refs:` `design.md` §4.
 `verify:` rendered config byte-equivalence OR `niri validate` passing + manual diff; `nix flake check --no-build --no-write-lock-file`.
 
----
+______________________________________________________________________
 
 ## Final Validation
 

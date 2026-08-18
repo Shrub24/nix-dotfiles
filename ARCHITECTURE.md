@@ -1,10 +1,12 @@
 # Architecture
 
 This repository is a single-user Nix configuration for one Arch desktop host.
-It composes two privilege-scoped layers — a user-scoped Home Manager
-configuration and a root-scoped system-manager configuration — from feature
-modules that are discovered by directory scan but activated only by explicit
-host selection.
+It composes three privilege-scoped layers from feature modules that are
+discovered by directory scan but activated only by explicit host selection:
+a user-scoped Home Manager configuration, a root-scoped system-manager
+configuration (transitional, for the non-NixOS host), and an evaluable
+NixOS configuration (skeleton; aspect side-port and bare-metal install are
+tracked as follow-up work).
 
 `README.md` covers setup and operator commands. This document records the
 durable boundaries, the composition model, and the design rationale.
@@ -18,20 +20,28 @@ The split is along a privilege boundary, not a feature boundary:
 - **User scope** — Home Manager (`homeConfigurations.saurabhj`) owns
   user-level programs, services, and secrets. Canonical contract:
   [system-manager-foundation](openspec/specs/system-manager-foundation/spec.md).
-- **System scope** — system-manager (`systemConfigs.arch`) owns daemons,
-  root-owned state, and machine-wide configuration on the non-NixOS host.
-  Same canonical contract, mirrored: daemon and root-owned concerns never
-  live in Home Manager modules.
+- **System scope (transitional)** — system-manager (`systemConfigs.arch`)
+  owns daemons, root-owned state, and machine-wide configuration on the
+  non-NixOS host. Same canonical contract, mirrored: daemon and root-owned
+  concerns never live in Home Manager modules. Each system-manager aspect
+  is tracked for side-port to a native NixOS module (see
+  `openspec/changes/nixos-boilerplate/tasks.md` Group C).
+- **NixOS target** — `nixosConfigurations.arch` evaluates under
+  `nix flake check` as a third host output (skeleton today; aspect
+  side-port is tracked in `openspec/changes/nixos-boilerplate/`).
+  Hardware configuration follows the `nixos-generate-config` convention
+  at `modules/hosts/arch/_hardware.nix`.
 
 Feature modules live in a single `modules/` tree — the only discovery
 root. `import-tree` scans it; every unmarked `.nix` there is a flake-parts
-module that publishes named aspects under `flake.modules.homeManager.<name>`
-or `flake.modules.systemManager.<name>`. Raw class-specific modules are
-never scanned: they live only under `_`-named segments (`/_` in a path is
-ignored). A feature spanning both classes holds both values in one file —
-`nix.nix`, `ssh.nix`, and `tailscale.nix` each publish a homeManager and a
-systemManager aspect. Registration is filesystem-driven; activation is
-host-driven.
+module that publishes named aspects under `flake.modules.homeManager.<name>`,
+`flake.modules.systemManager.<name>`, or `flake.modules.nixos.<name>`. Raw
+class-specific modules are never scanned: they live only under `_`-named
+segments (`/_` in a path is ignored). A feature spanning classes holds
+multiple values in one file — `nix.nix`, `ssh.nix`, and `tailscale.nix`
+each publish a homeManager and a systemManager aspect; a future feature
+crossing all three would publish a nixos aspect next to them. Registration
+is filesystem-driven; activation is host-driven.
 
 ## Composition
 
@@ -50,17 +60,18 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ apps/*.nix           end-user GUI apps (media, zathura, pavucontrol)
   ├─ apps/browser/*.nix   firefox, chromium, thunderbird, brave — lazy HM enable
   ├─ desktop/*.nix        compositor + shell env (niri, noctalia, monique, vicinae, portals, greeter)
-  ├─ foundation/*.nix    network, boot → systemManager aspects
+  ├─ foundation/*.nix    network, boot → systemManager aspects; nixos.nix (smoke-test aspect)
   ├─ shell/*.nix         per-shell homeManager aspects + terminals (wezterm, ghostty, tmux)
-  ├─ security/*.nix     sops-foundation + shared credentials aspects
+  ├─ security/*.nix      sops-foundation + shared credentials aspects
   ├─ *.nix               nixbuild, niks3, mosh, mutagen, syncthing — single-aspect
   ├─ nix.nix ssh.nix tailscale.nix   both homeManager AND systemManager
-  ├─ hosts/arch.nix      selects explicit aspect lists → host outputs
-  └─ hosts/arch/_*.nix   raw host files (facts, home, system) — ignored
+  ├─ hosts/arch.nix      selects explicit aspect lists → host outputs (HM, system, NixOS)
+  └─ hosts/arch/_*.nix   raw host files (_home, _system, _nixos, _hardware) — ignored
 
 Host composition lives in modules/hosts/arch.nix, not flake.nix:
   ├─ ~40 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
-  └─ 7 systemManager aspects + _system.nix → systemConfigs.arch
+  ├─ 7 systemManager aspects + _system.nix → systemConfigs.arch
+  └─ 1 nixos aspect + _nixos.nix           → nixosConfigurations.arch (skeleton; side-port tracked)
 ```
 
 Service and host topology and machine identity live once in the typed

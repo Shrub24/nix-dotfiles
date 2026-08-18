@@ -1,6 +1,7 @@
 # pi-agent-skeleton Specification
 
 ## Purpose
+
 Preserves a small, stable Pi package and settings integration that can be re-enabled later without retaining obsolete extension-era configuration.
 
 ## Requirements

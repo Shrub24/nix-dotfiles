@@ -1,6 +1,7 @@
 # noctalia-shell Specification
 
 ## Purpose
+
 Declaratively manages the Noctalia v5 desktop shell (bar, launcher, control center, notifications, lock screen) via the upstream `programs.noctalia` home-manager module, integrated with niri as the replacement for the DMS shell layer.
 
 ## Requirements

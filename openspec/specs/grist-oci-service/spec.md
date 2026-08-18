@@ -1,6 +1,7 @@
 # grist-oci-service Specification
 
 ## Purpose
+
 Provide a durable, private Grist workspace on the configured host without
 requiring a separately managed database or exposing the service to the LAN.
 

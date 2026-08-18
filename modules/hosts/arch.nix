@@ -18,6 +18,7 @@ let
   };
   hmAspect = name: config.flake.modules.homeManager.${name};
   systemAspect = name: config.flake.modules.systemManager.${name};
+  nixosAspect = name: config.flake.modules.nixos.${name};
   hmAspects = [
     "pi"
     "hermes"
@@ -79,6 +80,7 @@ let
     "nix"
     "nixbuild"
   ];
+  nixosAspects = [ "foundation" ];
   homeConfiguration = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
     modules = [ ./arch/_home.nix ] ++ map hmAspect hmAspects;
@@ -86,6 +88,10 @@ let
   systemConfiguration = inputs.system-manager.lib.makeSystemConfig {
     modules = [ ./arch/_system.nix ] ++ map systemAspect systemAspects;
     overlays = [ overlay ];
+  };
+  nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
+    modules = [ ./arch/_nixos.nix ] ++ map nixosAspect nixosAspects;
+    specialArgs = { }; # empty — NO inputs/hostFacts bus; maintain cleanup invariant
   };
 in
 {
@@ -107,11 +113,13 @@ in
     flake.homeConfigurations.${primaryUser} = homeConfiguration;
 
     flake.systemConfigs.arch = systemConfiguration;
+    flake.nixosConfigurations.arch = nixosConfiguration;
 
-    # Forces full eval of both configurations under nix flake check without switching.
+    # Forces full eval of all configurations under nix flake check without switching.
     flake.checks.${system} = {
       home-manager-activation = homeConfiguration.activationPackage;
       system-manager-config = systemConfiguration;
+      nixos-system = nixosConfiguration.config.system.build.toplevel;
     };
 
     flake.webServices = homepage.catalog;

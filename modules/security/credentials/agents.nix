@@ -1,5 +1,4 @@
-_:
-{
+_: {
   flake.modules.homeManager.credentials =
     {
       config,
@@ -140,6 +139,5 @@ _:
           };
         };
       };
-    }
-  ;
+    };
 }

@@ -17,9 +17,11 @@ _: {
     {
       home = {
         file = {
-          ".config/opencode".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.dotfiles/apps/opencode";
+          ".config/opencode".source =
+            config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.dotfiles/apps/opencode";
           ".config/opencode-litellm.json".text = builtins.toJSON litellmGenerated.opencodeExtraConfig;
-          ".agents".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.dotfiles/apps/agents";
+          ".agents".source =
+            config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.dotfiles/apps/agents";
         };
 
         sessionVariables.OPENCODE_CONFIG = "${config.home.homeDirectory}/.config/opencode-litellm.json";

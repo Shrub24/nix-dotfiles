@@ -42,7 +42,7 @@ anti-patterns.
 
 1. **Service topology** that several features consume: `databaseHost`,
    `niks3ServerUrl`, `remoteHosts` (for ssh/wezterm), `appsDir`.
-2. **Host identity** that mostly has native equivalents already:
+1. **Host identity** that mostly has native equivalents already:
    `username`/`homeDirectory` (`config.home.*`), `architecture`
    (`pkgs.stdenv.hostPlatform.system`), `uid`, `hostname`.
 

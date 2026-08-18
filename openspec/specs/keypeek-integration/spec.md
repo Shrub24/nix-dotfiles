@@ -1,6 +1,7 @@
 # keypeek-integration Specification
 
 ## Purpose
+
 Provides a usable Keypeek launcher and correctly selects the ZMK transport for keyboards using the standard ZMK USB identity.
 
 ## Requirements

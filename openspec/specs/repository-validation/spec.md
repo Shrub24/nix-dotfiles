@@ -1,6 +1,7 @@
 # repository-validation Specification
 
 ## Purpose
+
 Defines one reproducible validation contract shared by developer commands, Git hooks, and continuous integration for Nix formatting, linting, and evaluation.
 
 ## Requirements
