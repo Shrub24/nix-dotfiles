@@ -18,8 +18,7 @@
   `modules/hosts/arch.nix` using `pkgs.testers.runNixOSTest`. The node
   config imports `map nixosAspect nixosAspects` (foundation + nix) plus
   minimal VM hardware (QEMU disk + grub, virtio_blk, headless). Asserts
-  `multi-user.target` reached, `nix-daemon.service` active, `nix-store
-  --version` succeeds.
+  `multi-user.target` reached, `nix-daemon.service` active, `nix-store --version` succeeds.
 - [x] `B2.` Run `nix build .#checks.x86_64-linux.vm-skeleton-boot`
   locally - the test must build and run end-to-end (QEMU boots, nix-daemon
   starts, assertions pass). Fix any test failures before committing.
@@ -35,7 +34,7 @@ Each item is a tracking checkbox for a follow-up change.
 - [x] `C5.` Side-port `greeter` aspect (systemManager side) -> `services.greetd` + noctalia
 - [x] `C6.` Side-port `nixbuild` -> native NixOS remote-build; drop transitional
 - [x] `C7.` Populate `_hardware.nix` via `nixos-generate-config` on install day
-      (done: real btrfs/nvme/nvidia hardware hand-rolled 2026-08-18 in parent)
+  (done: real btrfs/nvme/nvidia hardware hand-rolled 2026-08-18 in parent)
 - [ ] `C8.` Wire `checks-build` CI job to run `nix flake check` (without `--no-build`)
   so the VM test boots on PRs; today the workflow uses `--no-build`.
 - [ ] `C9.` Bare-metal install

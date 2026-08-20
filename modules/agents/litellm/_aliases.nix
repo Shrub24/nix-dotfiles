@@ -29,6 +29,14 @@
       apiKeyEnv = "OPENCODE_API_KEY";
     };
 
+    # ponytail: US egress relay (la-admin-1, tailnet-only) for Aus-geo-blocked models;
+    # maps /opencode-go/* → opencode.ai/zen/go/v1/*, preserves Authorization.
+    opencode-go-relay = {
+      providerFamily = "openai";
+      apiBase = "http://la-admin-1.tail0fe19b.ts.net:8787/opencode-go";
+      apiKeyEnv = "OPENCODE_API_KEY";
+    };
+
     neuralwatt = {
       providerFamily = "openai";
       apiBase = "https://api.neuralwatt.com/v1";
@@ -60,6 +68,17 @@
       registryModel = "xiaomi/mimo-v2.5-pro";
       chain = [
         "opencode-go"
+      ];
+    };
+
+    "muse-spark-1.2" = {
+      mode = "chat";
+      registryModel = "meta/muse-spark-1.2";
+      chain = [
+        {
+          model = "muse-spark-1.2-contributor";
+          upstream = "opencode-go-relay";
+        }
       ];
     };
 
@@ -116,15 +135,16 @@
   };
 
   aliases = {
-    coder = "deepseek-v4-flash";
-    main = "deepseek-v4-flash";
-    summariser = "deepseek-v4-pro";
+    coder = "muse-spark-1.2";
+    main = "muse-spark-1.2";
+    summariser = "muse-spark-1.2";
     image = "multimodal-default";
     embedding = "qwen3-embedding-8b";
-    budget = "deepseek-v4-flash";
+    budget = "muse-spark-1.2";
     explorer = "deepseek-v4-flash";
     "glm-5.2" = "glm-5.2";
     "glm-5.3" = "glm-5.3";
+    "muse-spark-1.2" = "muse-spark-1.2";
   };
 
   clientModels = {
@@ -159,6 +179,10 @@
     };
     "glm-5.3" = {
       name = "GLM 5.3";
+      autogenerateVariants = true;
+    };
+    "muse-spark-1.2" = {
+      name = "Muse Spark 1.2";
       autogenerateVariants = true;
     };
   };

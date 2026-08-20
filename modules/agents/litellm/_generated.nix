@@ -21,7 +21,7 @@ let
     builtins.readFile (
       builtins.fetchurl {
         url = "https://models.dev/models.json";
-        sha256 = "sha256-mQYWWrL0zSQw1EDFhMBzfUKwBIRvP64e7BOTFYZ3vXo=";
+        sha256 = "sha256-scyvmgqGcmayl6icIFT+3bGVkSZIeMC1OPk0apy9zMk=";
       }
     )
   );

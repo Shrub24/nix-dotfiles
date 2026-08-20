@@ -94,9 +94,15 @@ in
       ...
     }:
     {
+      services.openssh = {
+        enable = true;
+        openFirewall = true;
+        settings.PasswordAuthentication = false;
+      };
+
       # Client-side SSH config volume. Same `remoteHosts` topology closure as the
-      # systemManager aspect. NO services.openssh - we host no SSH server here;
-      # this is purely a client config drop-in (user-side lives in homeManager.ssh).
+      # systemManager aspect. The server is services.openssh above; user-side
+      # client config lives in homeManager.ssh.
       environment.etc."ssh/ssh_config.d/30-remote-hosts.conf" = {
         text = ''
           # Remote build/managed hosts — ControlMaster enabled for multiplexing
@@ -114,6 +120,7 @@ in
         '';
         mode = "0644";
       };
+
     }
 
   ;

@@ -104,10 +104,11 @@ node keeps it self-contained.
 `nix flake check` (without `--no-build`) builds and runs every
 `flake.checks.*` entry, including the new `vm-skeleton-boot` derivation.
 `runNixOSTest` produces a script that:
+
 1. Builds a QEMU VM image from the node config.
-2. Boots it.
-3. Runs the `testScript`.
-4. Exits 0 on success, non-zero on failure.
+1. Boots it.
+1. Runs the `testScript`.
+1. Exits 0 on success, non-zero on failure.
 
 This adds ~30-60 seconds to a full `nix flake check` run. Locally,
 operators can skip with `--no-build` for fast eval-only checks. CI runs

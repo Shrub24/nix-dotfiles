@@ -43,8 +43,10 @@ _: {
   # to NixOS (NixOS uses its own initrd builder, not dracut; systemd-boot is the
   # loader, not Limine).
   #
-  # ponytail: intentionally empty no-op. This aspect exists so the nixosAspects
-  # registration stays parallel to systemAspects and future boot work has a home;
-  # host-specific boot config lives in _hardware.nix, not here.
-  flake.modules.nixos.boot = { ... }: { };
+  flake.modules.nixos.boot = { ... }: {
+    boot.plymouth.enable = true;
+    services.btrfs.autoScrub.enable = true;
+    # ponytail: snapper configs deferred — needs .snapshots btrfs subvolume
+    # setup that's an install-day concern. autoScrub covers data integrity.
+  };
 }

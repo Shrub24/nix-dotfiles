@@ -89,6 +89,12 @@ let
     "greeter"
     "nix"
     "nixbuild"
+    "audio"
+    "bluetooth"
+    "power"
+    "containers"
+    "desktop-services"
+    "syncthing"
   ];
   homeConfiguration = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
@@ -99,12 +105,11 @@ let
     overlays = [ overlay ];
   };
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
-    modules =
-      [
-        ./arch/_nixos.nix
-        { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration; aspects see pkgs.niks3-hook
-      ]
-      ++ map nixosAspect nixosAspects;
+    modules = [
+      ./arch/_nixos.nix
+      { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration; aspects see pkgs.niks3-hook
+    ]
+    ++ map nixosAspect nixosAspects;
     specialArgs = { }; # empty — NO inputs/hostFacts bus; maintain cleanup invariant
   };
 in
@@ -161,6 +166,7 @@ in
           boot.initrd.availableKernelModules = [ "virtio_blk" ];
           boot.initrd.kernelModules = [ "virtio_blk" ];
           virtualisation.graphics = false;
+          services.btrfs.autoScrub.enable = pkgs.lib.mkForce false; # VM uses ext4, not btrfs — no scrub target
         };
         testScript = ''
           arch.start()
@@ -178,6 +184,31 @@ in
 
           # network side-port: services.resolved enable -> systemd-resolved.service.
           arch.wait_for_unit("systemd-resolved.service")
+
+          # NetworkManager (network aspect)
+          arch.wait_for_unit("NetworkManager.service")
+
+          # Avahi mDNS (network aspect)
+          arch.wait_for_unit("avahi-daemon.service")
+
+          # SSH server (ssh aspect)
+          arch.wait_for_unit("sshd.service")
+
+          # ACPI event daemon (power aspect)
+          arch.wait_for_unit("acpid.service")
+          # udisks2 is DBus-activated, not auto-started in headless VM with no disks — verify unit exists but don't wait for active
+          arch.succeed("systemctl cat udisks2.service")
+
+          # Skipped (documented):
+          #  - bluetooth: no bluetooth controller in QEMU
+          #  - pipewire: user-scoped on NixOS (no user session in headless VM)
+          #  - podman: socket-activated, heavy; eval-tested, not runtime-tested here
+          #  - plymouth: graphics
+          #  - upower/power-profiles-daemon: no battery/power hardware in QEMU
+          #  - gnome-keyring: user session
+          #  - openrazer: no Razer hardware
+          #  - snapper: VM uses ext4, not btrfs
+          #  - printing/cups: socket-activated, needs print spooler interaction
 
           # Skipped assertions (documented):
           #  - ssh aspect is client-only (no server) -> nothing to assert.

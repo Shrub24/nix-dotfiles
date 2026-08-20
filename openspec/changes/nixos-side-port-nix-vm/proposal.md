@@ -22,8 +22,7 @@ Two concrete next steps unlock real migration work:
    ambiguity, no behavior drift - just a third aspect value next to the
    existing `homeManager.nix` / `systemManager.nix` pair.
 
-2. **Add a CI gate that boots the system in a VM.** `nix flake check
-   --no-build` evaluates the config tree but does not boot it. A
+1. **Add a CI gate that boots the system in a VM.** `nix flake check --no-build` evaluates the config tree but does not boot it. A
    `runNixOSTest`-based harness runs QEMU, reaches `multi-user.target`, and
    asserts the side-ported `nix-daemon` starts - catching module-system
    conflicts that eval-only misses (e.g. a unit wanting a path that doesn't

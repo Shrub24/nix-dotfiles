@@ -36,9 +36,25 @@ _: {
   # config-level enableResolvedMdns option is dropped - just enable resolved with
   # mDNS off (matches current `/etc` behavior). Re-add the option if a caller
   # ever needs mDNS on; avahi is the separate native knob for that.
-  flake.modules.nixos.network = { ... }: {
-    services.resolved.enable = true;
-    # NixOS settings attribute shape (extraConfig was removed upstream).
-    services.resolved.settings.Resolve.MulticastDNS = "no";
-  };
+  flake.modules.nixos.network =
+    { pkgs, ... }:
+    {
+      services.resolved.enable = true;
+      # NixOS settings attribute shape (extraConfig was removed upstream).
+      services.resolved.settings.Resolve.MulticastDNS = "no";
+
+      networking.networkmanager = {
+        enable = true;
+        plugins = [
+          pkgs.networkmanager-openconnect
+          pkgs.networkmanager-openvpn
+        ];
+      };
+      networking.firewall.enable = true;
+      services.avahi = {
+        enable = true;
+        nssmdns4 = true;
+        openFirewall = true;
+      };
+    };
 }
