@@ -13,6 +13,11 @@ let
     inherit system;
     overlays = [ overlay ];
   };
+  pkgsUnfree = import inputs.nixpkgs {
+    inherit system;
+    overlays = [ overlay ];
+    config.allowUnfree = true;
+  };
   homepage = import ../../lib/web-services.nix {
     inherit (pkgs) lib;
   };
@@ -143,6 +148,81 @@ in
       # VM boot gate: imports the SAME aspects as nixosConfigurations.arch so this
       # catches NixOS module-system conflicts (a unit wanting a path that doesn't
       # exist, a mkIf turning false, a circular systemd dep) that eval-only misses.
+      vm-desktop = pkgsUnfree.testers.runNixOSTest {
+        name = "vm-desktop";
+        nodes.arch = { ... }: {
+          imports = map nixosAspect nixosAspects ++ [ inputs.home-manager.nixosModules.home-manager ];
+          fileSystems."/" = {
+            device = "/dev/vda";
+            fsType = "ext4";
+            autoFormat = true;
+          };
+          boot.loader.grub.device = "/dev/vda";
+          boot.initrd.availableKernelModules = [ "virtio_blk" ];
+          boot.initrd.kernelModules = [ "virtio_blk" ];
+          virtualisation.graphics = true;
+          virtualisation.memorySize = 4096;
+          virtualisation.cores = 2;
+          hardware.graphics.enable = true;
+          services.btrfs.autoScrub.enable = pkgs.lib.mkForce false;
+          system.stateVersion = "26.11";
+          networking.hostName = "arch";
+          # Host pkgs for this test is pkgsUnfree (allowUnfree), so nixpkgs.config inside the VM is consistent.
+          users.users.saurabhj = {
+            isNormalUser = true;
+            extraGroups = [ "wheel" ];
+            initialPassword = "nixos";
+          };
+          environment.pathsToLink = [
+            "/share/applications"
+            "/share/xdg-desktop-portal"
+          ];
+          home-manager = {
+            useGlobalPkgs = true;
+            useUserPackages = true;
+            users.saurabhj = {
+              imports = map hmAspect [
+                "niri"
+                "noctalia"
+                "vicinae"
+                "portals"
+                "fonts"
+                "monique"
+                "shell"
+                "fish"
+                "zsh"
+                "tmux"
+                "wezterm"
+                "ghostty"
+                "cli"
+                "ssh"
+                "kde-apps"
+                "pavucontrol"
+                "audio"
+                "libinput"
+                "zathura"
+                "firefox"
+                "brave"
+                "vscode"
+              ];
+              home.username = "saurabhj";
+              home.homeDirectory = "/home/saurabhj";
+              home.stateVersion = "26.11";
+            };
+          };
+        };
+        testScript = ''
+          arch.start()
+          arch.wait_for_unit("multi-user.target")
+          arch.wait_for_unit("greetd.service")
+          arch.sleep(5)
+          arch.screenshot("greeter")
+          # Manual UX testing: the QEMU window stays open. For interactive use,
+          # build .#checks.x86_64-linux.vm-desktop.driverInteractive and run
+          # ./result/bin/nixos-test-driver (then start_all() etc).
+        '';
+      };
+
       vm-skeleton-boot = pkgs.testers.runNixOSTest {
         name = "vm-skeleton-boot";
         nodes.arch = {

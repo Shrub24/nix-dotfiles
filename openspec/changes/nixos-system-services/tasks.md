@@ -74,6 +74,7 @@
   add `"audio"`, `"bluetooth"`, `"power"`, `"containers"`,
   `"desktop-services"`, `"syncthing"`. (ssh, network, boot already in list.)
   Final: `[ "foundation" "network" "boot" "ssh" "tailscale" "greeter" "nix" "nixbuild" "audio" "bluetooth" "power" "containers" "desktop-services" "syncthing" ]`
+
 - [x] `C2.` Expand VM test assertions in `modules/hosts/arch.nix`:
   add `arch.wait_for_unit("NetworkManager.service")`,
   `arch.wait_for_unit("avahi-daemon.service")`,
@@ -84,10 +85,13 @@
   podman (socket-activated, heavy), plymouth (graphics), upower/ppd
   (no battery in QEMU), gnome-keyring (user session), openrazer (no hardware).
   Add comment documenting what's skipped and why.
+
 - [x] `C3.` Run all gates: `nix flake check --no-build --no-write-lock-file`,
   `nix eval .#nixosConfigurations.arch.config.system.build.toplevel.drvPath`,
   `nix build .#checks.x86_64-linux.vm-skeleton-boot`,
   `openspec validate --strict`.
+
+- [x] `C4.` Add `vm-desktop` check (graphics + HM-in-VM desktop subset + greeter login) for manual UX testing before bare-metal transition.
 
 ## Deferred (explicit non-goals)
 
