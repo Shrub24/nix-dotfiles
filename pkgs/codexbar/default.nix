@@ -1,19 +1,15 @@
 {
   lib,
   stdenvNoCC,
-  fetchurl,
+  version,
+  src,
 }:
 
-stdenvNoCC.mkDerivation (finalAttrs: {
+stdenvNoCC.mkDerivation {
   pname = "codexbar";
-  version = "0.48.0";
+  inherit version src;
 
   # nixpkgs' codexbar is macOS-only; the project ships a Linux CLI tarball per release.
-  src = fetchurl {
-    url = "https://github.com/steipete/CodeXBar/releases/download/v${finalAttrs.version}/CodexBarCLI-v${finalAttrs.version}-linux-x86_64.tar.gz";
-    hash = "sha256:0wqsqhpkfa2fyp8lynlrbmrvaxksgz13np77s83fxkkk4xc58w6c";
-  };
-
   sourceRoot = ".";
 
   installPhase = ''
@@ -29,4 +25,4 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     mainProgram = "codexbar";
     platforms = lib.platforms.linux;
   };
-})
+}

@@ -6,6 +6,30 @@
   dockerTools,
 }:
 {
+  byterover-cli = {
+    pname = "byterover-cli";
+    version = "3.16.1";
+    src = fetchurl {
+      url = "https://storage.googleapis.com/brv-releases/channels/stable/brv-linux-x64.tar.gz";
+      sha256 = "sha256-V3EVPa6XGqFFJ5FtI486lwtbAKULVHwZw1Tz+oRbRu4=";
+    };
+  };
+  codexbar = {
+    pname = "codexbar";
+    version = "v0.55.1";
+    src = fetchurl {
+      url = "https://github.com/steipete/CodeXBar/releases/download/v0.55.1/CodexBarCLI-v0.55.1-linux-x86_64.tar.gz";
+      sha256 = "sha256-RvY7ogMhHYiydZclHWZWYBdo+XTvyD+iAJcOe016ayk=";
+    };
+  };
+  nirius = {
+    pname = "nirius";
+    version = "0.9.0";
+    src = fetchurl {
+      url = "https://git.sr.ht/~tsdh/nirius/archive/nirius-0.9.0.tar.gz";
+      sha256 = "sha256-D9AdM7BMzzti4GnxhyQaPdfolFz50BUuAhTOnZ1093o=";
+    };
+  };
   xberg-cli = {
     pname = "xberg-cli";
     version = "v1.0.14";

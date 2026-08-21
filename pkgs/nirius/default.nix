@@ -1,20 +1,15 @@
 {
   lib,
   rustPlatform,
-  fetchFromSourcehut,
+  version,
+  src,
 }:
 
-rustPlatform.buildRustPackage (finalAttrs: {
+rustPlatform.buildRustPackage {
   pname = "nirius";
-  version = "0.9.0";
+  inherit version src;
 
-  src = fetchFromSourcehut {
-    owner = "~tsdh";
-    repo = "nirius";
-    rev = "nirius-${finalAttrs.version}";
-    hash = "sha256-GWbmX+x4X0VXb9kgpu1rS30hWK5MAuvGBp48MQfnS8w=";
-  };
-
+  # Build metadata, not source metadata — stays inline by design.
   cargoHash = "sha256-RDDbx/JiyWwPOBEJDl7uJ1rGvGK1IYnjv0UTNjg+Yhc=";
 
   meta = {
@@ -24,4 +19,4 @@ rustPlatform.buildRustPackage (finalAttrs: {
     platforms = lib.platforms.linux;
     mainProgram = "nirius";
   };
-})
+}

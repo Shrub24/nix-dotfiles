@@ -18,9 +18,15 @@ in
   xberg-cli = final.callPackage ./xberg-cli {
     inherit (generatedSources.xberg-cli) version src;
   };
-  byterover-cli = final.callPackage ./byterover { };
-  codexbar = final.callPackage ./codexbar { };
-  nirius = final.callPackage ./nirius { };
+  byterover-cli = final.callPackage ./byterover {
+    inherit (generatedSources.byterover-cli) version src;
+  };
+  codexbar = final.callPackage ./codexbar {
+    inherit (generatedSources.codexbar) version src;
+  };
+  nirius = final.callPackage ./nirius {
+    inherit (generatedSources.nirius) version src;
+  };
   litellm-oci = final.callPackage ./litellm/oci.nix { };
   surge = final.callPackage ./surge { inherit inputs; };
   niks3-hook = inputs.niks3.packages.${system}.niks3-hook;

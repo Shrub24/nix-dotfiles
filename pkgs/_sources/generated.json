@@ -1,4 +1,49 @@
 {
+    "byterover-cli": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "byterover-cli",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-V3EVPa6XGqFFJ5FtI486lwtbAKULVHwZw1Tz+oRbRu4=",
+            "type": "url",
+            "url": "https://storage.googleapis.com/brv-releases/channels/stable/brv-linux-x64.tar.gz"
+        },
+        "version": "3.16.1"
+    },
+    "codexbar": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "codexbar",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-RvY7ogMhHYiydZclHWZWYBdo+XTvyD+iAJcOe016ayk=",
+            "type": "url",
+            "url": "https://github.com/steipete/CodeXBar/releases/download/v0.55.1/CodexBarCLI-v0.55.1-linux-x86_64.tar.gz"
+        },
+        "version": "v0.55.1"
+    },
+    "nirius": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "nirius",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-D9AdM7BMzzti4GnxhyQaPdfolFz50BUuAhTOnZ1093o=",
+            "type": "url",
+            "url": "https://git.sr.ht/~tsdh/nirius/archive/nirius-0.9.0.tar.gz"
+        },
+        "version": "0.9.0"
+    },
     "xberg-cli": {
         "cargoLock": null,
         "date": null,

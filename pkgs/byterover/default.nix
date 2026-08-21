@@ -1,21 +1,16 @@
 {
   lib,
   stdenv,
-  fetchurl,
   autoPatchelfHook,
   makeWrapper,
   glibc,
-  nix-update-script,
+  version,
+  src,
 }:
 
-stdenv.mkDerivation (finalAttrs: {
+stdenv.mkDerivation {
   pname = "byterover-cli";
-  version = "3.16.1";
-
-  src = fetchurl {
-    url = "https://storage.googleapis.com/brv-releases/channels/stable/brv-linux-x64.tar.gz";
-    hash = "sha256-V3EVPa6XGqFFJ5FtI486lwtbAKULVHwZw1Tz+oRbRu4=";
-  };
+  inherit version src;
 
   nativeBuildInputs = [
     autoPatchelfHook
@@ -41,15 +36,13 @@ stdenv.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
-  passthru.updateScript = nix-update-script { };
-
   meta = {
     description = "ByteRover CLI (brv) - The portable memory layer for autonomous coding agents";
     homepage = "https://github.com/campfirein/byterover-cli";
-    changelog = "https://github.com/campfirein/byterover-cli/releases/tag/v${finalAttrs.version}";
+    changelog = "https://github.com/campfirein/byterover-cli/releases/tag/v${version}";
     license = lib.licenses.elastic20;
     maintainers = with lib.maintainers; [ ];
     mainProgram = "brv";
     platforms = [ "x86_64-linux" ];
   };
-})
+}
