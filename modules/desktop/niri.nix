@@ -13,6 +13,9 @@ _: {
         enable = true;
 
         settings = {
+          # debug = {
+          #   render-drm-device = "/dev/dri/by-path/pci-0000:01:00.0-render";
+          # };
           config-notification = {
             disable-failed = { };
           };
@@ -202,6 +205,18 @@ _: {
         # Generic window rules and binds stay verbatim KDL. The Noctalia shell
         # integration and Monique's monitors.kdl include live in their own aspects.
         extraConfig = ''
+
+          output "PNP(AOC) CU34G4 2SES4HA001302" {
+            mode "3440x1440@60.001"
+            scale 1
+            position x=1707 y=-160
+
+            layout { 
+              struts {
+                right 450
+              }
+            }
+          }
           window-rule {
             background-effect {
               blur true
@@ -490,19 +505,13 @@ _: {
             Ctrl+Alt+Space { switch-layout "next"; }
           }
 
-          include optional=true "monique.kdl"
+          include optional=true "monitors.kdl"
           include optional=true "noctalia.kdl"
         '';
       };
 
       # force: pre-existing imperative file, backed up at niri.config.kdl.imperative-backup
       xdg.configFile."niri/config.kdl".force = true;
-
-      # force: unmanaged regular file; legacy DMS shell desktop mask.
-      xdg.configFile."autostart/DankMaterialShell.desktop".text = ''
-        [Desktop Entry]
-        Hidden=true
-      '';
 
       home.packages = [
         pkgs.nirius

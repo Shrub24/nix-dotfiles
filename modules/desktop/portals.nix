@@ -43,7 +43,6 @@ _: {
       # sources them (hm-session-vars.sh isn't read by Arch's UWSM).
       home.sessionVariables = {
         QT_QPA_PLATFORM = "wayland";
-        QT_QPA_PLATFORMTHEME = "gtk3";
         ELECTRON_OZONE_PLATFORM_HINT = "auto";
         GTK_USE_PORTAL = "1";
         TERMINAL = "wezterm";

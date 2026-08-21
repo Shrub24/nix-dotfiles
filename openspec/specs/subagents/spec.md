@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change hermes-agent. Update Purpose after archive.
+Define how Hermes Agent is extended with packages, plugins, and dependency groups and run securely in native or optional container mode.
 
 ## Requirements
 

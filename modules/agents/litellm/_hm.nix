@@ -68,7 +68,10 @@ in
     xdg.configFile."litellm/config.yaml".source = litellmConfigFile;
 
     systemd.user = {
-      tmpfiles.rules = lib.mkIf cfg.headroom.enable [
+      tmpfiles.rules = [
+        "d %h/.local/share/posting 0700 - - -"
+      ]
+      ++ lib.optionals cfg.headroom.enable [
         "d %h/.local/share/headroom 0755 - - -"
       ];
 

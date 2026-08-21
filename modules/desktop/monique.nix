@@ -1,4 +1,14 @@
-{ inputs, ... }: {
+{ inputs, ... }:
+{
+  flake.modules.nixos.monique =
+    { ... }:
+    {
+      # Upstream nixosModules.default pins programs.monique.package to the flake
+      # package via mkDefault; just import + enable.
+      imports = [ inputs.monique.nixosModules.default ];
+      programs.monique.enable = true;
+    };
+
   flake.modules.homeManager.monique =
     {
       config,
@@ -10,14 +20,6 @@
       moniquePackage = inputs.monique.packages.${pkgs.stdenv.hostPlatform.system}.default;
     in
     {
-      # force: unmanaged regular file; Monique replaces Shikane as the hotplug daemon.
-      xdg.configFile."autostart/shikane.desktop" = {
-        force = true;
-        text = ''
-          [Desktop Entry]
-          Hidden=true
-        '';
-      };
 
       systemd.user.services.moniqued = {
         Unit = {
@@ -37,16 +39,6 @@
           WantedBy = [ "graphical-session.target" ];
         };
       };
-
-      # Monique's mutable monitors.kdl is the single runtime monitor authority; the
-      # include applies only when the niri aspect is selected and enabled.
-      xdg.configFile."niri/monique.kdl" =
-        lib.mkIf (config ? wayland.windowManager.niri && config.wayland.windowManager.niri.enable)
-          {
-            text = ''
-              include optional=true "monitors.kdl"
-            '';
-          };
 
       home.packages = [
         moniquePackage

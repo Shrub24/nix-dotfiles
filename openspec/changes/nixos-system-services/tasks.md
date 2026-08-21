@@ -93,6 +93,12 @@
 
 - [x] `C4.` Add `vm-desktop` check (graphics + HM-in-VM desktop subset + greeter login) for manual UX testing before bare-metal transition.
 
+- [x] `C5.` Expose the UWSM user units from the NixOS greeter aspect and verify
+  that the VM can authenticate through PAM and start the Niri session.
+
+- [x] `C6.` Add a root `justfile` Fish recipe that builds and launches the GUI
+  VM through native Wayland SDL and starts the test machine.
+
 ## Deferred (explicit non-goals)
 
 - [ ] `D1.` Ollama adoption (`services.ollama` with CUDA) — user deferred

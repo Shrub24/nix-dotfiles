@@ -1,52 +1,78 @@
 _: {
-  flake.modules.homeManager.ghostty =
-    { pkgs, ... }:
-    {
-      home.packages = [ pkgs.ghostty ];
+  flake.modules.homeManager.ghostty = _: {
+    programs.ghostty = {
+      enable = true;
+      systemd.enable = false;
 
-      # ponytail: config-file=./config-dankcolors still loads the
-      # DMS/matugen-generated file at runtime — left mutable (unmanaged) for now;
-      # likely owned by Noctalia or replaced in a later round.
-      xdg.configFile."ghostty/config".text = ''
-        font-size = 14
-        font-family = MapleMono
-        font-feature = +calt
+      themes.dankcolors = {
+        background = "#1e0f13";
+        foreground = "#f8dbe1";
+        cursor-color = "#ffb1c6";
+        selection-background = "#ce066a";
+        selection-foreground = "#f8dbe1";
+        palette = [
+          "0=#1e0f13"
+          "1=#d15f37"
+          "2=#6ed687"
+          "3=#ccdb7b"
+          "4=#cf5c79"
+          "5=#bf909d"
+          "6=#ffb1c6"
+          "7=#abb2bf"
+          "8=#5c6370"
+          "9=#e0805f"
+          "10=#86e09b"
+          "11=#dbe897"
+          "12=#ffbdd4"
+          "13=#b95a82"
+          "14=#ae646e"
+          "15=#ffffff"
+        ];
+      };
 
-        window-decoration = false
-        window-padding-x = 12
-        window-padding-y = 12
-        background-opacity = 0.85
-        background-blur-radius = 64
+      settings = {
+        theme = "dankcolors";
+        font-size = 14;
+        font-family = "MapleMono";
+        font-feature = "+calt";
 
-        cursor-style = block
-        cursor-style-blink = true
+        window-decoration = false;
+        window-padding-x = 12;
+        window-padding-y = 12;
+        background-opacity = 0.85;
+        background-blur-radius = 64;
 
-        scrollback-limit = 3023
+        cursor-style = "block";
+        cursor-style-blink = true;
 
-        mouse-hide-while-typing = true
-        copy-on-select = false
-        confirm-close-surface = false
+        scrollback-limit = 3023;
 
-        app-notifications = no-clipboard-copy,no-config-reload
+        mouse-hide-while-typing = true;
+        copy-on-select = false;
+        confirm-close-surface = false;
 
-        keybind = ctrl+shift+n=new_window
-        keybind = ctrl+t=new_tab
-        keybind = ctrl+plus=increase_font_size:1
-        keybind = ctrl+minus=decrease_font_size:1
-        keybind = ctrl+zero=reset_font_size
+        app-notifications = "no-clipboard-copy,no-config-reload";
 
-        unfocused-split-opacity = 0.7
-        unfocused-split-fill = #44464f
+        keybind = [
+          "ctrl+shift+n=new_window"
+          "ctrl+t=new_tab"
+          "ctrl+plus=increase_font_size:1"
+          "ctrl+minus=decrease_font_size:1"
+          "ctrl+zero=reset_font_size"
+          "shift+enter=text:\\n"
+        ];
 
-        gtk-titlebar = false
+        unfocused-split-opacity = 0.7;
+        unfocused-split-fill = "#44464f";
 
-        shell-integration = detect
-        shell-integration-features = cursor,sudo,title,no-cursor
-        keybind = shift+enter=text:\n
+        gtk-titlebar = false;
 
-        gtk-single-instance = true
+        shell-integration = "detect";
+        shell-integration-features = "cursor,sudo,title,no-cursor";
 
-        config-file = ./config-dankcolors
-      '';
+        gtk-single-instance = true;
+
+      };
     };
+  };
 }

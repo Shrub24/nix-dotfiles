@@ -1,4 +1,14 @@
-_: {
+{
+  config,
+  ...
+}:
+let
+  # Typed primary-user topology read at the flake-parts level (B11); the
+  # systemManager/NixOS nix aspects close it over for niks3's user runtime socket
+  # and `trusted-users`. Deferred Niks3 socket semantics are untouched.
+  primaryUser = config.topology.hosts.arch.primaryUser;
+in
+{
   flake.modules.homeManager.nix =
     {
       lib,
@@ -58,7 +68,7 @@ _: {
         };
       };
 
-      nix.package = pkgs.nix;
+      nix.package = lib.mkDefault pkgs.nix;
 
       nix.extraOptions = ''
         !include ${config.sops.templates."nix-access-tokens".path}
@@ -86,17 +96,6 @@ _: {
           WantedBy = [ "timers.target" ];
         };
       };
-
-      nixpkgs.config.allowUnfreePredicate =
-        pkg:
-        builtins.elem (lib.getName pkg) [
-          "zsh-abbr"
-          "byterover-cli"
-          "vscode"
-          "code"
-          "unrar"
-          "cuda_nvml_dev"
-        ];
     }
 
   ;
@@ -108,9 +107,8 @@ _: {
       ...
     }:
     let
-      # Host-local literals at the system-manager composition scope (B4/B8).
-      primaryUser = "saurabhj";
-      uid = 1000;
+      # niks3's user runtime socket path uses the topology UID (B11).
+      inherit (primaryUser) uid;
 
       niks3UploadHook = pkgs.writeShellScriptBin "niks3-upload-hook" ''
         exec ${lib.getExe' pkgs.niks3-hook "niks3-hook"} send --socket /run/user/${toString uid}/niks3-upload-to-cache.sock
@@ -122,12 +120,13 @@ _: {
       nix.settings = {
         "trusted-users" = [
           "root"
-          primaryUser
+          primaryUser.name
         ];
         "extra-substituters" = [
           "https://nix-community.cachix.org"
           "https://cache.numtide.com"
           "https://cache.shrublab.xyz"
+          # "https://vicinae.cachix.org"
         ];
         "trusted-substituters" = [
           "ssh-ng://eu.nixbuild.net"
@@ -137,6 +136,7 @@ _: {
           "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
           "nix-cache-1:FW0bJll9BP5ch0mHI+bXOImcD0RKLrH117WfQC+CU4A="
           "nixbuild.net/HWWKWC-1:dnSfpPDHQN/U9wexkK6r3GTaYrwqNwKS70SNGXistKg="
+          # "vicinae.cachix.org-1:b3Yh2rF+1wO+4A8M3eY/f5U6v4e0wOq2M3E="
         ];
         "experimental-features" = [
           "nix-command"
@@ -164,26 +164,13 @@ _: {
   ;
 
   flake.modules.nixos.nix =
-    {
-      pkgs,
-      lib,
-      ...
-    }:
-    let
-      # Host-local literals at the nixos composition scope (mirrors systemManager.nix).
-      primaryUser = "saurabhj";
-      uid = 1000;
-
-      niks3UploadHook = pkgs.writeShellScriptBin "niks3-upload-hook" ''
-        exec ${lib.getExe' pkgs.niks3-hook "niks3-hook"} send --socket /run/user/${toString uid}/niks3-upload-to-cache.sock
-      '';
-    in
+    { ... }:
     {
       # nix.enable is dropped - NixOS enables nix by default.
       nix.settings = {
         "trusted-users" = [
           "root"
-          primaryUser
+          primaryUser.name
         ];
         "extra-substituters" = [
           "https://nix-community.cachix.org"
@@ -219,7 +206,6 @@ _: {
         "download-buffer-size" = 268435456;
         "http-connections" = 64;
         "max-substitution-jobs" = 16;
-        "post-build-hook" = lib.getExe niks3UploadHook;
       };
       # NixOS-native NIX_PATH; replaces systemManager's environment.etc."profile.d/nix-path.sh" shim
       # (NixOS owns NIX_PATH via nix.nixPath; the etc shim is a system-manager workaround).

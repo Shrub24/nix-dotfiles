@@ -1,4 +1,5 @@
-{ inputs, ... }: {
+{ inputs, ... }:
+{
   flake.modules.systemManager.nixbuild =
     {
       config,
@@ -44,7 +45,6 @@
             StrictHostKeyChecking accept-new
             SendEnv NIXBUILDNET_ACCESS_TOKENS
             Compression no
-            IPQoS throughput
             TCPKeepAlive no
         '';
         mode = "0644";

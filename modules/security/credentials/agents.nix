@@ -25,6 +25,7 @@ _: {
             SOURCEGRAPH_TOKEN=${config.sops.placeholder.SOURCEGRAPH_TOKEN}
             TAVILY_API_KEY=${config.sops.placeholder.TAVILY_API_KEY}
             BRAVE_API_KEY=${config.sops.placeholder.BRAVE_API_KEY}
+            BRAVE_SEARCH_API_KEY=${config.sops.placeholder.BRAVE_API_KEY}
             FIRECRAWL_API_KEY=${config.sops.placeholder.FIRECRAWL_API_KEY}
             NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
             CURSOR_API_KEY=${config.sops.placeholder.CURSOR_API_KEY}

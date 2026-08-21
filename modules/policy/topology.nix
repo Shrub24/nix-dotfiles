@@ -14,8 +14,25 @@
             description = "Nix system double for the host (e.g. x86_64-linux).";
           };
           primaryUser = lib.mkOption {
-            type = lib.types.str;
-            description = "Primary user account name on the host.";
+            type =
+              with lib.types;
+              submodule {
+                options = {
+                  name = lib.mkOption {
+                    type = str;
+                    description = "Primary user account name on the host.";
+                  };
+                  uid = lib.mkOption {
+                    type = int;
+                    description = "Primary user account numeric UID on the host.";
+                  };
+                  gid = lib.mkOption {
+                    type = int;
+                    description = "Primary user account numeric GID on the host.";
+                  };
+                };
+              };
+            description = "Primary user account (name and UID) on the host.";
           };
           remoteHosts = lib.mkOption {
             type = lib.types.listOf lib.types.str;

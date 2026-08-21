@@ -1,13 +1,40 @@
 {
   config,
+  inputs,
   ...
 }:
 let
   # Service topology read at the flake-parts level (B6); closed over by the HM
-  # module. niks3's serverUrl is a URL.
+  # and NixOS modules. niks3's serverUrl is a URL.
   niks3ServerUrl = config.topology.services.niks3.host;
 in
 {
+  flake.modules.nixos.niks3 =
+    { config, ... }:
+    {
+      # CLIENT-side auto-upload (post-build-hook) module: this host uploads to a
+      # remote niks3 server; the server module (services.niks3) is not used here.
+      imports = [
+        inputs.niks3.nixosModules.niks3-auto-upload
+        inputs.sops-nix.nixosModules.sops
+      ];
+
+      # Root-owned service secret (D5): consumed directly as the rendered path.
+      sops.secrets.NIKS3_AUTH_TOKEN = {
+        sopsFile = ../secrets/niks3-secrets.yaml;
+        format = "yaml";
+        key = "niks3_auth_token";
+        mode = "0400";
+        restartUnits = [ "niks3-auto-upload.service" ];
+      };
+
+      services.niks3-auto-upload = {
+        enable = true;
+        serverUrl = niks3ServerUrl;
+        authTokenFile = config.sops.secrets.NIKS3_AUTH_TOKEN.path;
+      };
+    };
+
   flake.modules.homeManager.niks3 =
     {
       config,

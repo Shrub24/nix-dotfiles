@@ -21,7 +21,7 @@ let
     builtins.readFile (
       builtins.fetchurl {
         url = "https://models.dev/models.json";
-        sha256 = "sha256-scyvmgqGcmayl6icIFT+3bGVkSZIeMC1OPk0apy9zMk=";
+        sha256 = "0rrdsz06y1nxvdgxkxhdgkqv0ivyq3hsxjqjx9fxc5zbf5pv9ni1";
       }
     )
   );
@@ -214,6 +214,7 @@ in
     litellm_settings = {
       callbacks = [ "arize_phoenix" ];
       drop_params = true;
+      request_correlation_in_logs = true;
     };
     environment_variables = {
       PHOENIX_COLLECTOR_ENDPOINT = "http://oci-melb-1:4317";

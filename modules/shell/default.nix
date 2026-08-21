@@ -57,7 +57,6 @@ _: {
           EDITOR = "nvim";
           LESS = "-R --use-color";
           BAT_THEME = "matugen-bat-colors";
-          DOTNET_ROOT = "/usr/bin";
           OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS = true;
         };
       };

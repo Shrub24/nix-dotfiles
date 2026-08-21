@@ -2,6 +2,13 @@ _: {
   flake.modules.homeManager.kde-apps =
     { pkgs, ... }:
     {
+      services.kdeconnect.enable = true;
+
+      qt = {
+        enable = true;
+        platformTheme.name = "gtk3";
+      };
+
       home.packages =
         with pkgs;
         with pkgs.kdePackages;
@@ -14,7 +21,6 @@ _: {
           gwenview
           kdialog
           haruna
-          kdeconnect-kde
           systemsettings
           # dolphin I/O slaves (network protocols, recent files)
           kio-extras
@@ -23,14 +29,19 @@ _: {
           ffmpegthumbs
           ffmpegthumbnailer
           kdegraphics-thumbnailers
-          # Qt platform theme: gtk3 (QT_QPA_PLATFORMTHEME=gtk3 in portals.nix)
-          # kvantum remains for qt6ct-style theming
-          qt6ct
-          qtstyleplugin-kvantum
         ];
 
       # ponytail: breeze-icons intentionally omitted — user runs Sweet-Rainbow
       # icon pack (in ~/.local/share/icons/ via matugen). If KDE-specific icons
       # break in dolphin/kdeconnect, add kdePackages.breeze-icons here.
+    };
+
+  flake.modules.nixos.kde-apps =
+    { ... }:
+    {
+      programs.kdeconnect = {
+        enable = true;
+        package = null;
+      };
     };
 }

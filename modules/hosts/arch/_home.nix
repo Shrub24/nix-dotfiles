@@ -1,3 +1,4 @@
+{ primaryUser }:
 {
   config,
   lib,
@@ -20,9 +21,9 @@ in
   '';
 
   home = {
-    # Host-local literals at the host composition layer (B4/B11).
-    username = "saurabhj";
-    homeDirectory = "/home/saurabhj";
+    # Derived from the typed topology primaryUser closed over by arch.nix (B11).
+    username = primaryUser.name;
+    homeDirectory = "/home/${primaryUser.name}";
     stateVersion = "26.11";
     enableNixpkgsReleaseCheck = false;
 
@@ -30,17 +31,13 @@ in
 
     packages = with pkgs; [
       marp-cli
-      system-manager
+      (lib.mkIf config.targets.genericLinux.enable system-manager)
       byterover-cli
     ];
   };
 
   programs = {
     home-manager.enable = true;
-
-    niks3 = {
-      enableAutoUploadService = true;
-    };
 
     pi.enable = false;
 
@@ -98,11 +95,6 @@ in
       pnpm = "latest";
       bun = "latest";
     };
-  };
-
-  targets.genericLinux = {
-    enable = true;
-    gpu.enable = true;
   };
 
   services.hermes-agent = {

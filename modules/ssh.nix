@@ -33,7 +33,6 @@ in
             TCPKeepAlive = "no";
             StrictHostKeyChecking = "accept-new";
             VisualHostKey = "yes";
-            IPQoS = "lowdelay";
 
             ControlPath = "~/.ssh/ctl/%r@%h:%p";
             ControlPersist = "600";
@@ -53,7 +52,6 @@ in
             User = "git";
             IdentityFile = "~/.ssh/id_ed25519";
             ControlMaster = "auto";
-            IPQoS = "throughput";
           };
         };
       };
@@ -79,7 +77,6 @@ in
             StrictHostKeyChecking accept-new
             TCPKeepAlive no
             Compression no
-            IPQoS throughput
             
         '';
         mode = "0644";
@@ -115,7 +112,6 @@ in
             StrictHostKeyChecking accept-new
             TCPKeepAlive no
             Compression no
-            IPQoS throughput
             
         '';
         mode = "0644";

@@ -1,4 +1,13 @@
-_: {
+{
+  config,
+  ...
+}:
+let
+  # Typed primary-user topology read at the flake-parts level (B11); the greeter
+  # and polkit sync derive their user/UID from it.
+  primaryUser = config.topology.hosts.arch.primaryUser;
+in
+{
   flake.modules.systemManager.greeter =
     {
       pkgs,
@@ -7,22 +16,17 @@ _: {
     let
       noctaliaGreeterPackage = pkgs.noctalia-greeter;
 
-      # Specialized at the feature use site (B9): no longer parameterized by
-      # host instance data in the global overlay. uid is the Arch host user's uid.
+      # Specialized at the feature use site (B9): uid from typed topology (B11).
       noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
-        uid = 1000;
+        inherit (primaryUser) uid;
       };
-
-      # System-manager/transitional scope: primary user is a literal (B8). NixOS
-      # day `config.users.users.saurabhj` will own this.
-      primaryUser = "saurabhj";
 
       polkitSyncRule = pkgs.writeText "50-noctalia-greeter-sync.rules" ''
         polkit.addRule(function (action, subject) {
           if (
             action.id == "org.freedesktop.policykit.exec" &&
             action.lookup("program") == "${noctaliaGreeterSync}/bin/noctalia-greeter-sync" &&
-            subject.user == "${primaryUser}" &&
+            subject.user == "${primaryUser.name}" &&
             subject.local &&
             subject.active
           ) {
@@ -82,7 +86,7 @@ _: {
 
       greeterToml = pkgs.writeText "greeter.toml" ''
         [user]
-        default = "${primaryUser}"
+        default = "${primaryUser.name}"
       '';
     in
     {
@@ -103,7 +107,7 @@ _: {
         vt = "next"
 
         [default_session]
-        command = "${noctaliaGreeterSession}/bin/greetd-noctalia-session -- --user ${primaryUser}"
+        command = "${noctaliaGreeterSession}/bin/greetd-noctalia-session -- --user ${primaryUser.name}"
         user = "greeter"
       '';
 
@@ -112,34 +116,32 @@ _: {
   ;
 
   # NixOS translation of the systemManager greeter aspect.
-  # Research: upstream inputs.noctalia.nixosModules.default only wires the
-  # noctalia SHELL (wayland bar) as a systemd user service — it does NOT cover
-  # the greetd/noctalia-greeter integration. So this is a direct port of the
-  # systemManager wiring, not a thin wrapper around an upstream module.
+  # The nixpkgs-native services.displayManager.noctalia-greeter module now owns
+  # the greeter.toml render (/var/lib/noctalia-greeter/greeter.toml, via tmpfiles
+  # L+) and the greetd session wiring (enable + default_session.command via
+  # mkDefault). The polkit sync rule, greeter.log, and wayland session desktop
+  # entries stay hand-rolled here.
+  # Known upstream limitation: greeter.toml is clobbered on every boot (same
+  # semantics as the previous store-symlink approach — no regression).
   flake.modules.nixos.greeter =
     {
       pkgs,
       ...
     }:
     let
-      # (Mirrors the systemManager aspect's let-block, identical definitions.)
       noctaliaGreeterPackage = pkgs.noctalia-greeter;
 
-      # Specialized at the feature use site (B9): uids at the nixos composition scope.
+      # Specialized at the feature use site (B9): uid from typed topology (B11).
       noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
-        uid = 1000;
+        inherit (primaryUser) uid;
       };
-
-      # NixOS day: config.users.users.saurabhj owns this. Literal here at the
-      # nixos composition scope (mirror of the systemManager aspect).
-      primaryUser = "saurabhj";
 
       polkitSyncRule = pkgs.writeText "50-noctalia-greeter-sync.rules" ''
         polkit.addRule(function (action, subject) {
           if (
             action.id == "org.freedesktop.policykit.exec" &&
             action.lookup("program") == "${noctaliaGreeterSync}/bin/noctalia-greeter-sync" &&
-            subject.user == "${primaryUser}" &&
+            subject.user == "${primaryUser.name}" &&
             subject.local &&
             subject.active
           ) {
@@ -147,24 +149,6 @@ _: {
           }
         });
       '';
-
-      dbusRunSession = pkgs.writeShellApplication {
-        name = "dbus-run-session";
-        text = ''
-          exec ${pkgs.dbus}/bin/dbus-run-session \
-            --config-file=${pkgs.dbus}/share/dbus-1/session.conf "$@"
-        '';
-      };
-
-      noctaliaGreeterSession = pkgs.writeShellApplication {
-        name = "greetd-noctalia-session";
-        runtimeInputs = [
-          pkgs.cage
-          dbusRunSession
-          pkgs.wlr-randr
-        ];
-        text = ''exec ${noctaliaGreeterPackage}/bin/noctalia-greeter-session "$@"'';
-      };
 
       niriSession = pkgs.writeText "niri.desktop" ''
         [Desktop Entry]
@@ -174,51 +158,39 @@ _: {
         Type=Application
         DesktopNames=niri
       '';
-
-      niriUwsmLauncher = pkgs.writeShellApplication {
-        name = "niri-uwsm-session";
-        # ponytail: on NixOS uwsm is at a fixed store path, so use ${pkgs.uwsm}/bin/uwsm
-        # directly — no /usr/bin/uwsm pacman workaround needed (that was Arch-only,
-        # where UWSM's env preloader isn't on the systemd service PATH).
-        text = ''
-          UWSM_SILENT_START=2 exec ${pkgs.systemd}/bin/systemd-cat --identifier=niri-uwsm \
-            ${pkgs.uwsm}/bin/uwsm start -N "Niri (UWSM)" -D niri -e -- ${pkgs.niri}/bin/niri
-        '';
-      };
-
-      niriUwsmSession = pkgs.writeText "niri-uwsm.desktop" ''
-        [Desktop Entry]
-        Name=Niri (UWSM)
-        Comment=A scrollable-tiling Wayland compositor
-        Exec=${niriUwsmLauncher}/bin/niri-uwsm-session
-        Type=Application
-        DesktopNames=niri;
-        TryExec=${pkgs.uwsm}/bin/uwsm
-      '';
-
-      greeterToml = pkgs.writeText "greeter.toml" ''
-        [user]
-        default = "${primaryUser}"
-      '';
     in
     {
-      # services.greetd is the idiomatic NixOS home for the greetd daemon; replaces
-      # the systemManager environment.etc."greetd/config.toml" file-write. The module
-      # sets default_session.user = "greeter" + creates the greeter user/group.
-      services.greetd = {
+      # Native nixpkgs module: own greeter.toml render + greetd session wiring.
+      # extraArgs preserves the "--user" session arg; settings.user.default pins
+      # the [user] default in greeter.toml. Both mechanisms mirror the old hand-
+      # rolled wiring.
+      services.displayManager.noctalia-greeter = {
         enable = true;
-        settings = {
-          default_session.command = "${noctaliaGreeterSession}/bin/greetd-noctalia-session -- --user ${primaryUser}";
-        };
+        extraArgs = [
+          "--user"
+          primaryUser.name
+        ];
+        settings.user.default = primaryUser.name;
       };
+
+      programs.uwsm.enable = true;
+      # Native UWSM compositor registration (D10): generates the
+      # "Niri (UWSM)" wayland-session desktop entry, replacing the custom
+      # launcher/desktop-file tmpfiles the NixOS branch used before.
+      programs.uwsm.waylandCompositors.niri = {
+        prettyName = "Niri";
+        comment = "A scrollable-tiling Wayland compositor";
+        binPath = "${pkgs.niri}/bin/niri";
+      };
+
+      # Noctalia's greeter-sync pkexec wrapper lives at /run/wrappers/bin/pkexec
+      # on NixOS (D6); the polkit rule authorizing it is environment.etc below.
+      security.polkit.enablePkexecWrapper = true;
 
       systemd.tmpfiles.rules = [
         "d /usr/share/wayland-sessions 0755 root root -"
         "L+ /usr/share/wayland-sessions/niri.desktop 0644 root root - ${niriSession}"
-        "L+ /usr/share/wayland-sessions/niri-uwsm.desktop 0644 root root - ${niriUwsmSession}"
-        "d /var/lib/noctalia-greeter 0755 greeter greeter -"
         "f /var/lib/noctalia-greeter/greeter.log 0664 greeter greeter -"
-        "L+ /var/lib/noctalia-greeter/greeter.toml 0644 root root - ${greeterToml}"
         "L+ /usr/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy 0644 root root - ${noctaliaGreeterPackage}/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy"
       ];
 

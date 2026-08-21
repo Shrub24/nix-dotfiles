@@ -4,9 +4,9 @@ This repository is a single-user Nix configuration for one Arch desktop host.
 It composes three privilege-scoped layers from feature modules that are
 discovered by directory scan but activated only by explicit host selection:
 a user-scoped Home Manager configuration, a root-scoped system-manager
-configuration (transitional, for the non-NixOS host), and an evaluable
-NixOS configuration (skeleton; aspect side-port and bare-metal install are
-tracked as follow-up work).
+configuration (transitional, for the non-NixOS host), and a NixOS
+configuration for the bare-metal host (`nixosConfigurations.shrub`; the
+aspect side-port has landed, bare-metal install remains follow-up work).
 
 `README.md` covers setup and operator commands. This document records the
 durable boundaries, the composition model, and the design rationale.
@@ -24,13 +24,21 @@ The split is along a privilege boundary, not a feature boundary:
   owns daemons, root-owned state, and machine-wide configuration on the
   non-NixOS host. Same canonical contract, mirrored: daemon and root-owned
   concerns never live in Home Manager modules. Each system-manager aspect
-  is tracked for side-port to a native NixOS module (see
-  `openspec/changes/nixos-boilerplate/tasks.md` Group C).
-- **NixOS target** — `nixosConfigurations.arch` evaluates under
-  `nix flake check` as a third host output (skeleton today; aspect
-  side-port is tracked in `openspec/changes/nixos-boilerplate/`).
-  Hardware configuration follows the `nixos-generate-config` convention
-  at `modules/hosts/arch/_hardware.nix`.
+  has a native NixOS counterpart activated on the NixOS target (side-port
+  landed via `openspec/changes/nixos-boilerplate/`).
+- **NixOS target** — `nixosConfigurations.shrub` evaluates under
+  `nix flake check` as a third host output, composing native NixOS aspects
+  plus the full Home Manager composition embedded via
+  `home-manager.nixosModules.home-manager` (`useGlobalPkgs`/`useUserPackages`
+  over `embeddedHmAspects` — the HM aspect set minus the system-owned
+  tailscale/syncthing/mosh/surge/niks3 aspects, plus the NixOS-only
+  cuda/libcamera aspects; `specialArgs` stays empty).
+  Hardware configuration follows the `nixos-generate-config` convention at
+  `modules/hosts/arch/_hardware.nix`: redistributable firmware, i2c,
+  fwupd (desktop-services aspect), stable + open NVIDIA with Prime offload,
+  `nvme_core.default_ps_max_latency_us=0`, the `en_AU.UTF-8` locale, snapper
+  configs over the btrfs volumes, and the Windows-shared NTFS volume
+  mounted `nofail` at `/mnt/Shared`.
 
 Feature modules live in a single `modules/` tree — the only discovery
 root. `import-tree` scans it; every unmarked `.nix` there is a flake-parts
@@ -39,8 +47,7 @@ module that publishes named aspects under `flake.modules.homeManager.<name>`,
 class-specific modules are never scanned: they live only under `_`-named
 segments (`/_` in a path is ignored). A feature spanning classes holds
 multiple values in one file — `nix.nix`, `ssh.nix`, and `tailscale.nix`
-each publish a homeManager and a systemManager aspect; a future feature
-crossing all three would publish a nixos aspect next to them. Registration
+each publish a homeManager, systemManager, and nixos aspect. Registration
 is filesystem-driven; activation is host-driven.
 
 ## Composition
@@ -60,18 +67,19 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ apps/*.nix           end-user GUI apps (media, zathura, pavucontrol)
   ├─ apps/browser/*.nix   firefox, chromium, thunderbird, brave — lazy HM enable
   ├─ desktop/*.nix        compositor + shell env (niri, noctalia, monique, vicinae, portals, greeter)
-  ├─ foundation/*.nix    network, boot → systemManager aspects; nixos.nix (smoke-test aspect)
+  ├─ foundation/*.nix    network, boot → systemManager aspects; nixos.nix (base-OS aspect)
   ├─ shell/*.nix         per-shell homeManager aspects + terminals (wezterm, ghostty, tmux)
   ├─ security/*.nix      sops-foundation + shared credentials aspects
-  ├─ *.nix               nixbuild, niks3, mosh, mutagen, syncthing — single-aspect
-  ├─ nix.nix ssh.nix tailscale.nix   both homeManager AND systemManager
+  ├─ *.nix               nixbuild (systemManager), niks3/mosh/mutagen/syncthing
+  │                      (homeManager); all but mutagen also publish a nixos aspect
+  ├─ nix.nix ssh.nix tailscale.nix   homeManager AND systemManager AND nixos
   ├─ hosts/arch.nix      selects explicit aspect lists → host outputs (HM, system, NixOS)
   └─ hosts/arch/_*.nix   raw host files (_home, _system, _nixos, _hardware) — ignored
 
 Host composition lives in modules/hosts/arch.nix, not flake.nix:
   ├─ ~40 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
   ├─ 7 systemManager aspects + _system.nix → systemConfigs.arch
-  └─ 1 nixos aspect + _nixos.nix           → nixosConfigurations.arch (skeleton; side-port tracked)
+  └─ 17 nixos aspects + _nixos.nix + embedded HM → nixosConfigurations.shrub
 ```
 
 Service and host topology and machine identity live once in the typed
@@ -98,7 +106,12 @@ a pre-generated root-owned age key at `/var/lib/sops-nix/key.txt`
 system-manager). `nix-daemon` orders after and wants
 `sops-install-secrets.service`, and rotation restarts it declaratively via
 `restartUnits`. Canonical contract:
-[daemon-nix-config](openspec/specs/daemon-nix-config/spec.md).
+[daemon-nix-config](openspec/specs/daemon-nix-config/spec.md). The NixOS
+target adds one more root secret: the `niks3` NixOS aspect decrypts
+`NIKS3_AUTH_TOKEN` as a root-owned sops secret and feeds the rendered path
+straight to the root-scoped `services.niks3-auto-upload` — no
+user-runtime-socket hook on NixOS, and the embedded Home Manager drops the
+niks3 uploader aspect (`embeddedHmAspects`).
 
 **User scope.** All other secrets are user-scoped sops, owned in three
 places: a SOPS foundation aspect (`modules/security/sops.nix`, module import +
@@ -137,6 +150,10 @@ Service ports and display metadata are owned by `lib/web-services.nix`
 canonical contract: [web-service-catalog](openspec/specs/web-service-catalog/spec.md).
 Grist binds loopback only (`127.0.0.1:8484`) and is not reverse-proxied;
 its bundled SQLite state persists at `~/.local/share/grist`.
+On NixOS, exposure is tailnet-scoped: the global firewall stays closed, and
+Mosh (UDP 60000–61000), LiteLLM 8765, web-catalog 8123, and Syncthing's
+relay/discovery ports are allowed on `tailscale0` only — Syncthing sets
+`openDefaultPorts = false` so its ports follow the same rules.
 The LiteLLM gateway behavior is contracted by
 [litellm-gateway](openspec/specs/litellm-gateway/spec.md).
 
@@ -161,8 +178,9 @@ The LiteLLM gateway behavior is contracted by
   once in the typed `topology` option and native Home Manager options, declared
   at the host composition layer and read via the module system, never hardcoded
   in feature modules or passed through an argument bus.
-- **System secrets are owned end to end by system-manager** — a root daemon
-  credential is not rendered through user-scoped Home Manager state.
+- **System secrets stay out of user scope** — owned end to end by
+  system-manager on Arch and by the sops-nix OS module on NixOS; a root
+  credential is never rendered through user-scoped Home Manager state.
 - **One durable document** — `ARCHITECTURE.md` records boundaries and
   rationale; the filesystem inventory duplicate was deleted because it
   diverged from implementation.
@@ -179,8 +197,9 @@ nix flake check --no-build --no-write-lock-file
 Nix, mdformat for Markdown. Flake checks cover Statix and Deadnix over all
 maintained Nix source (nvfetcher's `pkgs/_sources` is excluded at the
 source-set level, not via suppressions), the treefmt check, and full
-evaluation of the Home Manager activation package and the system-manager
-configuration — a change that breaks either host output fails CI without
-switching anything. Lefthook runs fast formatting and lint checks at
-pre-commit and the canonical no-build check at pre-push; GitHub Actions runs
-the same check on pull requests with pinned action revisions.
+evaluation of the Home Manager activation package, the system-manager
+configuration, the NixOS toplevel, and the NixOS VM test derivations — a
+change that breaks any host output fails CI without switching anything.
+Lefthook runs fast formatting and lint checks at pre-commit and the canonical
+no-build check at pre-push; GitHub Actions runs the same check on pull
+requests with pinned action revisions.

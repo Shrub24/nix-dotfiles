@@ -1,8 +1,15 @@
-_: {
+{ config, ... }:
+let
+  primaryUser = config.topology.hosts.arch.primaryUser;
+in
+{
   flake.modules.systemManager.boot = {
     environment.etc."dracut.conf.d/10-optimise.conf".text = ''
-      reproducible=yes
-      compression=zstd
+      reproducible="yes"
+      hostonly="yes"
+      hostonly_mode="strict"
+      compress="zstd"
+      omit_drivers+=" nouveau "
     '';
 
     # Matches the pre-existing live file (DRACUT_FALLBACK deliberately absent);
@@ -10,7 +17,7 @@ _: {
     environment.etc."default/limine" = {
       replaceExisting = true;
       text = ''
-          TARGET_OS_NAME="Endeavour OS"
+        TARGET_OS_NAME="Endeavour OS"
 
         MAX_SNAPSHOT_ENTRIES="auto"
 
@@ -43,10 +50,15 @@ _: {
   # to NixOS (NixOS uses its own initrd builder, not dracut; systemd-boot is the
   # loader, not Limine).
   #
-  flake.modules.nixos.boot = { ... }: {
-    boot.plymouth.enable = true;
-    services.btrfs.autoScrub.enable = true;
-    # ponytail: snapper configs deferred — needs .snapshots btrfs subvolume
-    # setup that's an install-day concern. autoScrub covers data integrity.
-  };
+  flake.modules.nixos.boot =
+    { ... }:
+    {
+      boot.plymouth.enable = true;
+      services.btrfs.autoScrub.enable = true;
+      services.snapper.configs = {
+        root.SUBVOLUME = "/";
+        home.SUBVOLUME = "/home/${primaryUser.name}";
+        data.SUBVOLUME = "/mnt/LinuxData";
+      };
+    };
 }

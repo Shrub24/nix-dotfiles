@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change bootstrap-main-openspec-specs. Update Purpose after archive.
+Define lifecycle and modification rules that keep canonical capability specs as the repository's single source of truth over time.
 
 ## Requirements
 

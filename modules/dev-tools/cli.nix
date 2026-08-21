@@ -47,6 +47,7 @@ _: {
         prettier
         nano
         micro
+        lsof
 
         # Calendar / sync / DB
         khal

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change hermes-agent. Update Purpose after archive.
+Define how Hermes Agent receives secrets, non-secret environment values, and initial OAuth credentials without exposing secrets in the Nix store.
 
 ## Requirements
 

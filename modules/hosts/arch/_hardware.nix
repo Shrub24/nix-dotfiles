@@ -3,6 +3,7 @@
 # On NixOS install day, can be regenerated via `nixos-generate-config --root /mnt`
 # then hand-edited down to this minimal form. by-uuid is preferred over
 # by-partlabel because partlabels contain spaces ("EFI system partition").
+{ primaryUser }:
 { config, ... }:
 {
   # UEFI + systemd-boot (existing 2G vfat /boot partition on nvme1n1p6).
@@ -21,7 +22,6 @@
     "uas"
     "sd_mod"
     "btrfs"
-    "intel_agc"
     "i915"
     "iwlwifi"
   ];
@@ -32,6 +32,10 @@
     "iwlwifi"
   ];
   boot.extraModulePackages = [ ];
+  boot.kernelParams = [ "nvme_core.default_ps_max_latency_us=0" ];
+
+  hardware.enableRedistributableFirmware = true;
+  hardware.i2c.enable = true;
 
   # File systems (from /proc/mounts on Arch).
   # / and /nix are the same btrfs partition with different subvolumes.
@@ -76,8 +80,9 @@
     fsType = "ntfs3";
     options = [
       "rw"
-      "uid=1000"
-      "gid=100"
+      "nofail"
+      "uid=${toString primaryUser.uid}"
+      "gid=${toString primaryUser.gid}"
       "dmask=022"
       "fmask=022"
     ];
@@ -105,17 +110,17 @@
   hardware.cpu.intel.updateMicrocode = true;
 
   # Hybrid graphics: Intel Iris Xe (iGPU) + NVIDIA RTX 4060 Max-Q (dGPU).
-  # Use proprietary nvidia driver (RTX 4060 is Ada Lovelace; the open module
-  # needs Turing+, works on Ada but missing reclocking for full perf).
   # Prime offload mode: iGPU renders by default; dGPU on demand via
   # `nvidia-offload <cmd>`.
   services.xserver.videoDrivers = [ "nvidia" ];
 
+  # D7: open kernel module + stable package — the live host already runs open
+  # 610.57; reclocking concerns that kept this on proprietary are obsolete on Ada.
   hardware.nvidia = {
     modesetting.enable = true;
     powerManagement.enable = true; # important for laptop power states
     powerManagement.finegrained = true; # RTX 4060 supports fine-grained
-    open = false; # proprietary; open module lacks reclocking for full perf
+    open = true;
     package = config.boot.kernelPackages.nvidiaPackages.stable;
     prime = {
       intelBusId = "PCI:0:2:0";

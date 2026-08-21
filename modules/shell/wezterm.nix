@@ -6,6 +6,11 @@ let
   # Typed remote-host topology read at the flake-parts level (B5); closed over
   # by the lower-level HM module.
   remoteHosts = config.topology.hosts.arch.remoteHosts;
+
+  # Tracked seed for the mutable theme. Copied into the user home only when the
+  # destination is absent (tmpfiles `C`, not `C+`), so runtime theme edits
+  # survive subsequent switches. Read as a repo path literal → store path.
+  dankThemeSeed = ./wezterm-dank-theme.toml;
 in
 {
   flake.modules.homeManager.wezterm =
@@ -13,8 +18,17 @@ in
       lib,
       ...
     }:
-
     {
+      # Seed the mutable theme on first launch without store-linking it:
+      # home.file/xdg.configFile would make the destination immutable (store
+      # symlink) and break runtime theme edits. `C` copies the tracked seed only
+      # when the destination is absent; a pre-existing runtime-edited file is
+      # left untouched.
+      systemd.user.tmpfiles.rules = [
+        "d %h/.config/wezterm/colors 0755 - - -"
+        "C %h/.config/wezterm/colors/dank-theme.toml 0644 - - - ${dankThemeSeed}"
+      ];
+
       programs.wezterm = {
         enable = true;
 

@@ -45,12 +45,27 @@
   };
 
   routes = {
+    "qwen3.8-flash" = {
+      mode = "chat";
+      registryModel = "alibaba/qwem3.8-flash";
+      chain = [
+        "volcengine"
+        "opencode-go"
+      ];
+    };
+    "glm-5.3-flash" = {
+      mode = "chat";
+      registryModel = "zhipuai/glm-5.3-flash";
+      chain = [
+        "volcengine"
+        "opencode-go"
+      ];
+    };
     "glm-5.3" = {
       mode = "chat";
       registryModel = "zhipuai/glm-5.3";
       chain = [
         "volcengine"
-        "neuralwatt"
         "opencode-go"
       ];
     };
@@ -59,8 +74,8 @@
       registryModel = "zhipuai/glm-5.2";
       chain = [
         "volcengine"
-        "neuralwatt"
         "opencode-go"
+        "neuralwatt"
       ];
     };
     "mimo-v2.5-pro" = {
@@ -77,7 +92,7 @@
       chain = [
         {
           model = "muse-spark-1.2-contributor";
-          upstream = "opencode-go-relay";
+          upstream = "opencode-go";
         }
       ];
     };
@@ -87,6 +102,7 @@
       registryModel = "deepseek/deepseek-v4-pro";
       chain = [
         "volcengine"
+        "neuralwatt"
         "opencode-go"
         "deepseek"
       ];
@@ -126,24 +142,26 @@
       mode = "chat";
       registryModel = "deepseek/deepseek-v4-flash";
       chain = [
-        "neuralwatt"
-        "opencode-go"
         "volcengine"
+        "opencode-go"
+        "neuralwatt"
         "deepseek"
       ];
     };
   };
 
   aliases = {
-    coder = "muse-spark-1.2";
-    main = "muse-spark-1.2";
-    summariser = "muse-spark-1.2";
+    coder = "qwen3.8-flash";
+    main = "glm-5.3-flash";
+    summariser = "qwen3.8-flash";
     image = "multimodal-default";
     embedding = "qwen3-embedding-8b";
-    budget = "muse-spark-1.2";
+    budget = "qwen3.8-flash";
     explorer = "deepseek-v4-flash";
     "glm-5.2" = "glm-5.2";
     "glm-5.3" = "glm-5.3";
+    "glm-5.3-flash" = "glm-5.3-flash";
+    "qwen3.8-flash" = "qwen3.8-flash";
     "muse-spark-1.2" = "muse-spark-1.2";
   };
 

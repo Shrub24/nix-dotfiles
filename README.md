@@ -1,7 +1,8 @@
 # saurabhj's Nix Configuration
 
-Dendritic, dual-layer flake: home-manager for the user environment, system-manager
-for daemon/root concerns on non-NixOS.
+Dendritic flake: home-manager for the user environment, system-manager for
+daemon/root concerns on the non-NixOS host, and a native NixOS configuration
+for the bare-metal target (`nixosConfigurations.shrub`).
 
 ## Requirements
 
@@ -22,10 +23,13 @@ nix develop          # or: direnv allow (uses .envrc — `use flake . --impure`)
 # Switch the user environment (home-manager)
 nh home switch .#saurabhj
 
-# Switch system configuration (system-manager)
+# Switch system configuration (system-manager, non-NixOS host)
 system-manager switch --flake .#arch
 
-# Validate: format, lint, and evaluate both configurations (same as CI)
+# Switch the NixOS configuration (bare-metal host)
+nh os switch .#shrub
+
+# Validate: format, lint, and evaluate all host configurations (same as CI)
 nix flake check --no-build --no-write-lock-file
 
 # Format all maintained files (Nix, Markdown, TOML, YAML, JSON)

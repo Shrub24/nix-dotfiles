@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change hermes-agent. Update Purpose after archive.
+Define Hermes Agent's declarative MCP server transports, authentication, environment, tool filtering, sampling, and default server set.
 
 ## Requirements
 

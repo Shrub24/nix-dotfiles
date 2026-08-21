@@ -1,4 +1,14 @@
-{ inputs, ... }: {
+{
+  inputs,
+  config,
+  ...
+}:
+let
+  # Typed primary-user topology read at the flake-parts level (B11); the
+  # greeter-sync privilege helper derives its UID from it.
+  primaryUser = config.topology.hosts.arch.primaryUser;
+in
+{
   flake.modules.homeManager.noctalia =
     {
       config,
@@ -9,22 +19,42 @@
     let
       noctaliaGreeterPackage = pkgs.noctalia-greeter;
 
-      # Specialized at the feature use site (B9): no longer parameterized by
-      # host instance data in the global overlay. uid is the Arch host user's uid.
+      # Specialized at the feature use site (B9): uid from typed topology (B11).
       noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
-        uid = 1000;
+        inherit (primaryUser) uid;
       };
+
+      # Packaged seed for the mutable wallpaper. Copied into the user home only
+      # when the destination is absent (tmpfiles `C`, not `C+`), so an existing
+      # runtime-edited wallpaper survives subsequent switches. The packaged
+      # source is PNG while the historical destination ends in `.jpg`; Qt image
+      # readers inspect content, so no conversion dependency is added.
+      wallpaperSeed = pkgs.nixos-artwork.wallpapers.nineish-dark-gray.gnomeFilePath;
 
       noctaliaGreeterSyncPkexec = pkgs.writeShellApplication {
         name = "noctalia-greeter-sync-pkexec";
+        # NixOS resolves the security.wrappers pkexec; generic-Linux hosts use
+        # the distro pkexec (D6).
         text = ''
-          exec /usr/bin/pkexec ${noctaliaGreeterSync}/bin/noctalia-greeter-sync
+          exec ${
+            if config.targets.genericLinux.enable then "/usr/bin/pkexec" else "/run/wrappers/bin/pkexec"
+          } ${noctaliaGreeterSync}/bin/noctalia-greeter-sync
         '';
       };
     in
     {
       imports = [
         inputs.noctalia.homeModules.default
+      ];
+
+      # Bootstrap the mutable wallpaper directory + seed on first activation.
+      # home.file / xdg.dataFile would make the destination a store symlink and
+      # break runtime changes; `d`+`C` create mutable paths under user
+      # ownership and copy the packaged seed only when absent. `C` (not `C+`)
+      # preserves a pre-existing wallpaper at the historical destination.
+      systemd.user.tmpfiles.rules = [
+        "d %h/.local/share/wallpapers 0755 - - -"
+        "C %h/.local/share/wallpapers/wallpapersden.com_colorful-textured-abstract_3840x2160.jpg 0644 - - - ${wallpaperSeed}"
       ];
 
       # ponytail: niri's KDL parser rejects a second binds node in one file, so shell binds render into noctalia-binds.kdl included below.
