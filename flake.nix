@@ -76,12 +76,17 @@
       url = "github:meaningful-ooo/sponge";
       flake = false;
     };
+    naersk = {
+      url = "github:nix-community/naersk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     fsel = {
       url = "github:Mjoyufull/fsel";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.naersk.follows = "naersk";
     };
     vicinae = {
-      url = "github:vicinaehq/vicinae/v0.26.2";
+      url = "github:vicinaehq/vicinae";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     keypeek = {
@@ -89,7 +94,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     surge = {
-      url = "github:SurgeDM/Surge/v0.11.2";
+      url = "github:SurgeDM/Surge";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
