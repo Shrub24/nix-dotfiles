@@ -104,4 +104,9 @@ in
     enable = true;
     gpu.enable = true;
   };
+
+  services.hermes-agent = {
+    enable = true;
+    gateway.enable = true;
+  };
 }

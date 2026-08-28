@@ -1,4 +1,8 @@
-{ inputs, ... }: {
+{
+  inputs,
+  ...
+}:
+{
   flake.modules.homeManager.hermes =
     {
       config,
@@ -8,11 +12,9 @@
     }:
 
     let
-      # Import from non-flake source to avoid checks.nix syntax error
-      upstreamModule =
-        (import "${inputs.hermes-agent-src}/nix/homeManagerModules.nix" {
-          inherit inputs;
-        }).flake.homeManagerModules.default;
+      # The upstream Home Manager module owns the Hermes service, and
+      # `programs.hermes-agent` owns CLI installation.
+      upstreamModule = inputs.hermes-agent.homeManagerModules.default;
     in
     {
       imports = [ upstreamModule ];
@@ -22,12 +24,15 @@
         OPENAI_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
       '';
 
-      programs.hermes-agent = {
+      services.hermes-agent = {
         enable = lib.mkDefault false;
+
         package = lib.mkDefault inputs.hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.default;
+
         environmentFiles = [
           config.sops.templates."hermes.env".path
         ];
+
         mcpServers = lib.mkMerge [
           (lib.mkIf (config.programs.docsMcp.enable or false) {
             docs = {
@@ -40,6 +45,7 @@
             };
           })
         ];
+
         settings = lib.mkDefault {
           model = {
             provider = "custom";

@@ -47,10 +47,6 @@
     hermes-agent = {
       url = "github:NousResearch/hermes-agent";
     };
-    hermes-agent-src = {
-      url = "github:yzx9/hermes-agent/feat/home-manager";
-      flake = false;
-    };
     codebase-memory-mcp = {
       url = "github:DeusData/codebase-memory-mcp";
       inputs.nixpkgs.follows = "nixpkgs";

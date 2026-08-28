@@ -492,6 +492,7 @@
     "hermes-agent": {
       "inputs": {
         "flake-parts": "flake-parts_3",
+        "home-manager": "home-manager",
         "nixpkgs": "nixpkgs_2",
         "npm-lockfile-fix": "npm-lockfile-fix",
         "pyproject-build-systems": "pyproject-build-systems",
@@ -499,37 +500,41 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1786970746,
-        "narHash": "sha256-Fybf9DgkHaFlcsRdjx+cSJEb/KQ1Pgn/q7MiVE+qFOw=",
+        "lastModified": 1787914865,
+        "narHash": "sha256-LkLlN27RkO/G92RHoJSRYCUpgdGecEgZTZVGEQr0QiI=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "cf64ca20c5ab99ebf7e8ca272c69edc7ea0636ed",
+        "rev": "c30ac90a92097058ddd6f9db3fa2e3182a7bfdcc",
         "type": "github"
       },
       "original": {
         "owner": "NousResearch",
-        "repo": "hermes-agent",
-        "type": "github"
-      }
-    },
-    "hermes-agent-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1786917499,
-        "narHash": "sha256-sz/UjOfPlv+FopiQqNxGV1t2SPhrkOfKa+pTDDkV5tU=",
-        "owner": "yzx9",
-        "repo": "hermes-agent",
-        "rev": "622a28cc4a874ed1e312739cda0e8209d0f00581",
-        "type": "github"
-      },
-      "original": {
-        "owner": "yzx9",
-        "ref": "feat/home-manager",
         "repo": "hermes-agent",
         "type": "github"
       }
     },
     "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "hermes-agent",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786487128,
+        "narHash": "sha256-ad60hrRVhH/bo3Jl1YLzO+QcS3mUNZr9LNJdzhMO2P4=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "f404edbfa4117810c96b97048299242fc50e5362",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "home-manager_2": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
@@ -909,8 +914,7 @@
         "flake-parts": "flake-parts_2",
         "fsel": "fsel",
         "hermes-agent": "hermes-agent",
-        "hermes-agent-src": "hermes-agent-src",
-        "home-manager": "home-manager",
+        "home-manager": "home-manager_2",
         "import-tree": "import-tree",
         "keypeek": "keypeek",
         "llm-agents": "llm-agents",

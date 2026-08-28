@@ -1,10 +1,4 @@
-# agent-core Specification
-
-## Purpose
-
-Define declarative Home Manager integration for the Hermes Agent CLI and gateway.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Flake input addition
 
@@ -37,38 +31,6 @@ The Hermes Agent service SHALL be disabled by default and enabled via `services.
 
 - **WHEN** `services.hermes-agent.enable = true`
 - **THEN** a user-scoped `hermes-agent` systemd service SHALL be created
-
-### Requirement: Package selection
-
-The module SHALL allow specifying a custom hermes package.
-
-#### Scenario: Default package
-
-- **WHEN** no custom package is specified
-- **THEN** the module SHALL use the package from the hermes-agent flake
-
-#### Scenario: Custom package override
-
-- **WHEN** `services.hermes-agent.package` is set to an overridden derivation
-- **THEN** the module SHALL use that derivation with any extra Python packages or dependency groups
-
-### Requirement: Model configuration
-
-The service SHALL support declarative model configuration via `settings`.
-
-#### Scenario: Set default model
-
-- **WHEN** `services.hermes-agent.settings.model = "anthropic/claude-sonnet-4"`
-- **THEN** the generated `config.yaml` SHALL include `model: anthropic/claude-sonnet-4`
-
-### Requirement: Settings deep merge
-
-The `settings` option SHALL support deep merging across multiple module definitions.
-
-#### Scenario: Multiple settings contributions
-
-- **WHEN** one module sets `services.hermes-agent.settings.model = "x"` and another sets `services.hermes-agent.settings.compression.enabled = true`
-- **THEN** the generated `config.yaml` SHALL include both settings
 
 ### Requirement: Host CLI access
 
