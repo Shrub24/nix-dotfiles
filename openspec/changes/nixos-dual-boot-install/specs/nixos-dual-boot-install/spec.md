@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Performs the install-day work deferred by `nixos-bare-metal-readiness`: installs NixOS as a third, independently bootable OS on the 2 TB SK hynix disk alongside Windows and Arch. Every disk is referenced by stable serial/WWN and every partition by PARTUUID or filesystem UUID, never `/dev/nvmeX`; every destructive step is backed up, verified, and rollback-checkpointed. Windows and Arch stay bootable and their partitions untouched; Arch retirement is future scope.
+Performs the install-day work deferred by `nixos-bare-metal-readiness`: permanently installs NixOS as a third, independently bootable OS on the 2 TB SK hynix disk alongside Windows and Arch — only the dual-boot coexistence with Arch is a temporary soak. Every disk is referenced by stable serial/WWN and every partition by PARTUUID or filesystem UUID, never `/dev/nvmeX`; every destructive step is backed up, verified, and rollback-checkpointed. Windows and Arch stay bootable and their partitions untouched; Arch retirement is future scope.
 
 ## ADDED Requirements
 
@@ -38,13 +38,13 @@ The 512 GB Samsung disk SHALL keep Windows boot, the NTFS data partition, the Ar
 
 ### Requirement: Stale Arch UKI cleanup is backed up and verified
 
-The install SHALL re-inventory and back up every Arch UKI before cleanup, SHALL move only UKIs that do not match the then-current kernel, SHALL keep the matching UKI as an independent Arch rescue, SHALL keep the deduplicated Limine snapshot history, and SHALL re-check `limine.conf` and the current kernel immediately before cleanup.
+The install SHALL re-inventory and back up every Arch UKI before cleanup, SHALL move only UKIs that do not match the then-current kernel, SHALL keep the matching UKI as an independent Arch rescue, SHALL keep the deduplicated Limine snapshot history, and SHALL re-assert the Samsung disk serial/WWN and the baseline-recorded Arch ESP PARTUUID and re-check `limine.conf` and the current kernel immediately before cleanup.
 
 #### Scenario: UKIs leave the ESP only after backup
 
 - **WHEN** the Arch ESP cleanup runs
 - **THEN** every UKI is backed up before any non-current UKI is moved off the ESP
-- **AND** the UKI matching the then-current kernel and the Limine history remain, and `limine.conf` and the current kernel were re-checked first
+- **AND** the UKI matching the then-current kernel and the Limine history remain, and the Samsung/Arch-ESP identity, `limine.conf`, and the current kernel were re-checked first
 
 ### Requirement: Retired Fedora partitions are removed with backup and verification
 
@@ -58,23 +58,31 @@ On the 2 TB SK hynix disk the install SHALL remove the retired Fedora 600 MiB ES
 
 ### Requirement: New NixOS ESP and LUKS volume are provisioned in the freed extent
 
-The install SHALL create a 2 GiB NixOS ESP and a ~533.7 GiB LUKS2-encrypted Btrfs volume in the exact freed extent, SHALL record the new filesystem UUIDs in the curated `_hardware.nix`, and SHALL NOT encode `/dev/nvmeX`. LUKS2 SHALL be passphrase-protected with no TPM enrollment; Btrfs SHALL use `zstd:3` and `noatime`.
+The install SHALL create a 2 GiB FAT32 NixOS ESP with the EFI System Partition type GUID (`C12A7328-F81F-11D2-BA4B-00A0C93EC93B`, EF00) and a ~533.7 GiB LUKS2-encrypted Btrfs volume in the exact freed extent, SHALL format the ESP FAT32, SHALL format the LUKS2 container (passphrase only), record its LUKS-header UUID via `cryptsetup luksUUID`, open it as `cryptroot`, and format Btrfs on `/dev/mapper/cryptroot`, SHALL capture the actual filesystem UUIDs from format output, SHALL replace the existing Arch root and ESP declarations in the curated `_hardware.nix` with the actual generated metadata — the new ESP UUID mounted at `/boot`, the actual LUKS-header UUID as `boot.initrd.luks.devices.cryptroot.device = "/dev/disk/by-uuid/<actual-LUKS-UUID>"`, and the Btrfs UUID with all seven subvolume mounts — while preserving the Shared and LinuxData declarations, and SHALL NOT encode `/dev/nvmeX` or invent UUIDs. LUKS2 SHALL be passphrase-protected with no TPM enrollment; Btrfs SHALL use `zstd:3` and `noatime`.
 
 #### Scenario: New volumes are created from the freed extent
 
 - **WHEN** provisioning runs
 - **THEN** a 2 GiB NixOS ESP and a ~533.7 GiB LUKS2 Btrfs volume exist in the exact freed extent
+- **AND** the ESP is FAT32 with the EF00 type GUID, mounted at `/mnt/boot` during install, with its actual UUID captured
+- **AND** the LUKS container is opened as `cryptroot` with Btrfs on `/dev/mapper/cryptroot`
 - **AND** the Windows, Shared, and LinuxData partition sizes are unchanged
+
+#### Scenario: Generated metadata replaces the old Arch declarations
+
+- **WHEN** the curated `_hardware.nix` is updated
+- **THEN** it declares the new ESP UUID at `/boot`, the actual LUKS-header UUID (from `cryptsetup luksUUID`) under `boot.initrd.luks.devices.cryptroot`, and the Btrfs UUID with all seven mounts
+- **AND** the Shared and LinuxData declarations are preserved and no `/dev/nvmeX` or invented UUID appears
 
 ### Requirement: Subvolume and mount layout is fixed and user-derived
 
-The install SHALL create `@root`→`/`, `@home`→`/home`, `@nix`→`/nix`, `@log`→`/var/log`, `@snapshots`→`/.snapshots`, `@home-cache`→the primary user's native home cache, and `@containers`→the primary user's rootless container store. User-dependent paths SHALL be derived from topology and native user options, not hardcoded usernames.
+The install SHALL create `@root`→`/`, `@home`→`/home`, `@nix`→`/nix`, `@log`→`/var/log`, `@snapshots`→`/.snapshots`, `@home-cache`→`/home/${primaryUser.name}/.cache`, and `@containers`→`/home/${primaryUser.name}/.local/share/containers`. User-dependent paths SHALL be topology-derived, not hardcoded usernames. `topology.hosts.arch` SHALL remain unchanged during dual boot — Arch stays an active host — with its rename deferred to the Arch-retirement scope, while `nixosConfigurations.shrub` and `networking.hostName = "shrub"` are unchanged.
 
 #### Scenario: Subvolumes mount at their declared paths
 
 - **WHEN** the NixOS host mounts the new root
 - **THEN** each listed subvolume is mounted at its declared path
-- **AND** the home cache and container store paths resolve from the primary user's native options
+- **AND** the home cache and container store paths resolve to the topology-derived `/home/${primaryUser.name}/.cache` and `/home/${primaryUser.name}/.local/share/containers`
 
 ### Requirement: NixOS uses its own ESP and preserves firmware boot entries
 
@@ -88,7 +96,7 @@ The install SHALL use a new NixOS-owned ESP and SHALL NOT share the Arch ESP. Wi
 
 ### Requirement: Install-day state is provisioned before first boot
 
-Before activation the install SHALL provision the root and primary-user sops age keys and NetworkManager profiles, and SHALL copy Tailscale state, Bluetooth pairing, SSH host keys, and selected durable user state — browser profile, SSH, Syncthing, Grist, QMD/docs/projects — preserving ACLs, xattrs, and numeric IDs. The install SHALL exclude `~/.cache`, legacy standalone Home Manager/Nix profiles, and rootless container images, and SHALL set the login password after installation and before first boot.
+Before activation the install SHALL provision the root and primary-user sops age keys and NetworkManager profiles, and SHALL copy Tailscale state, Bluetooth pairing, SSH host keys, and selected durable user state — browser profile, SSH, Syncthing, Grist, QMD/docs/projects — preserving ACLs, xattrs, and numeric IDs. The install SHALL exclude `~/.cache`, legacy standalone Home Manager/Nix profiles, and rootless container images, and SHALL set the login password after installation and before first boot via `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'` without recording it.
 
 #### Scenario: Durable state survives activation
 
@@ -113,12 +121,13 @@ Each destructive task SHALL have a precondition check, a backup, a verification 
 
 ### Requirement: Install, boot, and rollback verification
 
-The install SHALL run from NixOS media against the new ESP and LUKS root, SHALL merge the generated UUID and filesystem declarations into the curated `_hardware.nix`, SHALL build and install the flake, and SHALL set the login password. The install SHALL verify firmware boot, decryption, mounts, network, the NixOS and Home Manager generation, the desktop, secrets, and core services, and SHALL verify rollback to Arch.
+The install SHALL run from NixOS media against the new ESP and LUKS root. Before the media pass, the generated metadata SHALL be committed and pushed, then validated with strict checks and a full toplevel build from the Arch checkout. The media pass SHALL clone and check out the recorded pushed SHA at `/mnt/etc/nixos` in detached state, verifying `git rev-parse HEAD` equals it and `git status --porcelain` is empty before install — never running `nixos-generate-config` over the curated repo — and SHALL install with `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub`, building into the target store. The install SHALL verify firmware boot, decryption, mounts, network, the NixOS and Home Manager generation, the desktop, secrets, and core services, and SHALL verify rollback to Arch.
 
 #### Scenario: Verified boot through the new firmware entry
 
 - **WHEN** the install completes
 - **THEN** NixOS boots through the new firmware entry with working decryption, mounts, network, generation, desktop, secrets, and core services
+- **AND** the booted system was built from the exact validated commit checked out clean at `/mnt/etc/nixos`
 - **AND** rollback to Arch is verified
 
 #### Scenario: Arch remains the rollback path

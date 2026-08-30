@@ -4,8 +4,10 @@
 switchable, hardware-enabled NixOS host. This change then performs the
 install-day work it defers: partition editing on the 2 TB disk, new ESP/LUKS/Btrfs
 provisioning, install-day state migration, `nixos-install`, boot verification,
-and rollback. It does **not** retire Arch — Windows and Arch stay bootable, and
-Arch's 310 GiB partition is deliberately left untouched for a future change.
+and rollback. The NixOS install is permanent — only the dual-boot coexistence
+with Arch is a temporary soak period. This change does **not** retire Arch —
+Windows and Arch stay bootable, and Arch's 310 GiB partition is deliberately
+left untouched for a future change.
 
 ## What Changes
 
@@ -39,9 +41,11 @@ Arch's 310 GiB partition is deliberately left untouched for a future change.
   `9aae0356-4274-46c0-8593-bbcd9769b22f`) and the retired Fedora 1 GiB ext4
   (PARTUUID `16921d6b-a8b7-4f04-8fdf-44ebc6d36acc`). Together with existing
   gaps these form ~535.7 GiB contiguous free space.
-- Provision in that gap: a 2 GiB NixOS ESP plus ~533.7 GiB LUKS2
-  passphrase-encrypted Btrfs. No TPM unlock initially; zram only, no disk swap
-  or hibernation.
+- Provision in that gap: a 2 GiB FAT32 NixOS ESP (type EF00, mounted at
+  `/boot`) plus ~533.7 GiB LUKS2 passphrase-encrypted Btrfs (LUKS-header UUID
+  via `cryptsetup luksUUID`, opened as `cryptroot`, Btrfs on
+  `/dev/mapper/cryptroot`). No TPM unlock initially; zram only, no disk swap or
+  hibernation.
 - LinuxData keeps its current native-data mount. Growing it into the trailing
   ~27.3 GiB is optional and not part of this install.
 - NixOS has its own ESP on the 2 TB disk — the Arch ESP is not shared. NixOS,
@@ -51,18 +55,21 @@ Arch's 310 GiB partition is deliberately left untouched for a future change.
 ### Subvolumes and mount options
 
 - `@root` → `/`, `@home` → `/home`, `@nix` → `/nix`, `@log` → `/var/log`,
-  `@snapshots` → `/.snapshots`, `@home-cache` → the primary user's cache,
-  `@containers` → the primary user's rootless container storage.
+  `@snapshots` → `/.snapshots`, `@home-cache` → `/home/${primaryUser.name}/.cache`,
+  `@containers` → `/home/${primaryUser.name}/.local/share/containers`.
 - Compression `zstd:3`, `noatime`. Periodic fstrim is already config-owned.
 - The final configuration uses topology identity for the user — no hardcoded
-  username literals.
+  username literals. `topology.hosts.arch` stays during dual boot because Arch
+  remains active; renaming it is deferred to the Arch-retirement scope, while
+  `nixosConfigurations.shrub` and `networking.hostName = "shrub"` are unchanged.
 
 ### Install-day state provisioning
 
 - Before activation, provision the root and user sops age keys and
   NetworkManager profiles, and preserve Tailscale state, Bluetooth pairing,
-  and SSH host keys. Set the login password after installation and before the
-  first boot.
+  and SSH host keys. Set the login password after installation with
+  `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'` and before the
+  first boot; the password is never recorded.
 - Migrate selected user state/data, preserving service data such as Grist, the
   browser profile, SSH, Syncthing, and QMD/docs/project data.
 - Exclude `~/.cache`, legacy standalone Home Manager/Nix profiles, and rootless
@@ -71,8 +78,11 @@ Arch's 310 GiB partition is deliberately left untouched for a future change.
 
 ### Install, boot verification, rollback
 
-- Run `nixos-install` against the new ESP and LUKS root, then verify boot
-  through the new firmware entry while Windows and Arch remain selectable.
+- The validated, pushed flake commit is checked out clean at `/mnt/etc/nixos`
+  and installed with the pinned `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub`,
+  which builds into the target store; `nixos-generate-config` never runs over
+  the curated repo. Then verify boot through the new firmware entry while
+  Windows and Arch remain selectable.
 - Every destructive step is backed up and verifiable; rollback returns to the
   last checkpoint. Arch retirement — and converting its 310 GiB partition to an
   encrypted Btrfs backup receiver — is a future change, explicitly out of
@@ -103,8 +113,9 @@ Arch's 310 GiB partition is deliberately left untouched for a future change.
   check leave the Arch ESP; all Windows, Arch, and Limine content otherwise
   remains unchanged.
 - No flake or module behavior changes in this change — the switchable host must
-  already exist via `nixos-bare-metal-readiness`. `_hardware.nix` receives the
-  generated install-time UUIDs and mount declarations.
+  already exist via `nixos-bare-metal-readiness`. `_hardware.nix` has its old
+  Arch root/ESP declarations replaced by the generated install-time UUIDs and
+  mount declarations (Shared/LinuxData preserved).
 - Boot: a new NixOS firmware entry on the 2 TB disk; Windows and Arch remain
   independently bootable. Post-soak Arch retirement is a separate future
   change.

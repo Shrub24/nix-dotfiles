@@ -59,17 +59,20 @@
   matching checksums in the LinuxData cross-disk backup directory.
 
   - verify: every UKI present in backup; sha256 verified
-  - depends: 2.1
+  - depends: 1.5, 2.1
 
-- [ ] 2.3 Move only the UKIs that do not match the then-current kernel from the Arch ESP
-  into the LinuxData cross-disk backup directory; keep the matching UKI as the independent
-  Arch rescue and keep the deduplicated Limine snapshot history; re-check `limine.conf` and
-  the current kernel immediately before the move.
+- [ ] 2.3 Re-assert the Samsung disk serial/WWN (`S6Z5NE0W500203`) and the baseline-recorded
+  Arch ESP PARTUUID immediately before the move, then move only the UKIs that do not match
+  the then-current kernel from the Arch ESP into the LinuxData cross-disk backup directory;
+  keep the matching UKI as the independent Arch rescue and keep the deduplicated Limine
+  snapshot history; re-check `limine.conf` and the current kernel immediately before the
+  move.
 
-  - criteria: only non-current UKIs moved; current kernel, `limine.conf`, and Limine history
-    untouched
-  - verify: ESP listing shows retained files; moved files present in backup
-  - depends: 2.2
+  - criteria: fresh identity assertion passes immediately before the move; only non-current
+    UKIs moved; current kernel, `limine.conf`, and Limine history untouched
+  - verify: `readlink`/`lsblk` assertions pass; ESP listing shows retained files; moved
+    files present in backup
+  - depends: 1.2, 2.2
   - delegate: OpenDevopsSpecialist
   - notes: explicit user approval required immediately before execution
 
@@ -87,22 +90,28 @@
 
   - criteria: identifiers match the assert-else-abort pattern
   - verify: `readlink`/`lsblk` assertions pass against the baseline in the Execution Record
-  - depends: 1.5
+  - depends: 1.2, 1.5
 
-- [ ] 3.2 Remove the retired Fedora 600 MiB ESP (PARTUUID `9aae0356-4274-46c0-8593-bbcd9769b22f`)
-  only after backup and re-verification.
+- [ ] 3.2 Re-assert the 2 TB disk serial/WWN and the Fedora ESP PARTUUID
+  (`9aae0356-4274-46c0-8593-bbcd9769b22f`) immediately before the command, then remove the
+  retired Fedora 600 MiB ESP only after backup.
 
-  - criteria: only that partition is deleted; GPT backup is current
-  - verify: `lsblk`/`sgdisk` no longer list it; neighbors unchanged
+  - criteria: fresh identity assertion passes immediately before deletion; only that
+    partition is deleted; GPT backup is current
+  - verify: `readlink`/`lsblk` assertions pass; `lsblk`/`sgdisk` no longer list it;
+    neighbors unchanged
   - depends: 3.1
   - delegate: OpenDevopsSpecialist
   - notes: explicit user approval required immediately before execution
 
-- [ ] 3.3 Remove the retired Fedora 1 GiB ext4 (PARTUUID `16921d6b-a8b7-4f04-8fdf-44ebc6d36acc`)
-  only after backup and re-verification.
+- [ ] 3.3 Re-assert the 2 TB disk serial/WWN and the Fedora ext4 PARTUUID
+  (`16921d6b-a8b7-4f04-8fdf-44ebc6d36acc`) immediately before the command, then remove the
+  retired Fedora 1 GiB ext4 only after backup.
 
-  - criteria: only that partition is deleted
-  - verify: partition gone; Windows/Shared/LinuxData PARTUUIDs and start/end sectors unchanged
+  - criteria: fresh identity assertion passes immediately before deletion; only that
+    partition is deleted
+  - verify: `readlink`/`lsblk` assertions pass; partition gone; Windows/Shared/LinuxData
+    PARTUUIDs and start/end sectors unchanged
   - depends: 3.2
   - delegate: OpenDevopsSpecialist
   - notes: explicit user approval required immediately before execution
@@ -119,58 +128,85 @@
 
 ## Group 4 — Permanent storage provisioning (5)
 
-- [ ] 4.1 Create exactly two partitions inside the verified extent: a 2 GiB NixOS ESP and a
-  ~533.7 GiB Linux LUKS partition, aligned to extent boundaries; no `/dev/nvmeX` reference.
+- [ ] 4.1 Re-assert the 2 TB disk serial/WWN and the recorded extent bounds immediately
+  before creating partitions, then create exactly two partitions inside the verified
+  extent: a 2 GiB NixOS ESP with the GPT EFI System Partition type GUID (EF00 /
+  `C12A7328-F81F-11D2-BA4B-00A0C93EC93B`) and a ~533.7 GiB Linux LUKS partition, aligned
+  to extent boundaries; no `/dev/nvmeX` reference.
 
-  - criteria: new partitions lie only within the recorded extent sectors; neighbors untouched
-  - verify: partition table shows the two new partitions inside extent bounds
+  - criteria: fresh identity assertion passes immediately before creation; the ESP carries
+    the EF00 type GUID; new partitions lie only within the recorded extent sectors;
+    neighbors untouched
+  - verify: `readlink`/`lsblk` assertions pass; partition table shows the two new
+    partitions inside extent bounds with the ESP type GUID set
   - depends: 3.4
   - delegate: OpenDevopsSpecialist
   - notes: explicit user approval required immediately before execution
 
-- [ ] 4.2 Verify the new partitions sit inside the recorded extent and Windows/Shared/LinuxData
-  bounds are unchanged.
+- [ ] 4.2 Verify the new partitions sit inside the recorded extent, the ESP carries the EF00
+  type GUID (`C12A7328-F81F-11D2-BA4B-00A0C93EC93B`), and Windows/Shared/LinuxData bounds
+  are unchanged.
 
-  - verify: `lsblk`/`sgdisk` bounds match the recorded extent sectors
+  - verify: `lsblk`/`sgdisk` bounds match the recorded extent sectors and the ESP type GUID
+    is EF00
   - depends: 4.1
 
-- [ ] 4.3 Format the LUKS partition: LUKS2 with a passphrase only (no TPM enrollment), then
-  Btrfs; capture the actual new filesystem UUIDs from the format output (never invented).
+- [ ] 4.3 Re-assert both new partitions' PARTUUIDs immediately before formatting; format
+  the NixOS ESP as FAT32; format the verified target as LUKS2 with a passphrase only (no
+  TPM enrollment); record the LUKS-header UUID via `cryptsetup luksUUID`; open it as
+  `cryptroot`; format Btrfs on `/dev/mapper/cryptroot`; capture the actual new filesystem
+  UUIDs from the format output (never invented) and mount the ESP at `/mnt/boot`. Later
+  mount and config steps use the `cryptroot` mapping and the recorded LUKS-header UUID.
 
-  - criteria: LUKS2 passphrase only; no TPM; UUIDs recorded from actual format output
-  - verify: `cryptsetup luksDump` shows LUKS2; `btrfs filesystem show` UUID captured
+  - criteria: fresh identity assertion passes immediately before formatting; LUKS2
+    passphrase only; no TPM; LUKS-header UUID recorded via `cryptsetup luksUUID`; Btrfs on
+    `/dev/mapper/cryptroot`; ESP FAT32 mounted at `/mnt/boot`; UUIDs recorded from actual
+    format output
+  - verify: `cryptsetup luksUUID` output recorded; `/dev/mapper/cryptroot` present;
+    `cryptsetup luksDump` shows LUKS2; ESP and Btrfs UUIDs captured via `blkid`;
+    `findmnt /mnt/boot` shows the new ESP
   - depends: 4.2
   - delegate: OpenDevopsSpecialist
   - notes: explicit user approval required immediately before execution
 
-- [ ] 4.4 Create the subvolume layout on the Btrfs: `@root`, `@home`, `@nix`, `@log`,
-  `@snapshots`, `@home-cache`, `@containers`; user-dependent targets derived from topology,
-  no hardcoded usernames.
+- [ ] 4.4 Create the subvolume layout on the Btrfs at `/dev/mapper/cryptroot`: `@root`,
+  `@home`, `@nix`, `@log`, `@snapshots`, `@home-cache`, `@containers`; user-dependent
+  targets derived from topology, no hardcoded usernames.
 
   - criteria: all seven subvolumes exist
   - verify: `btrfs subvolume list` shows the full layout
   - depends: 4.3
 
-- [ ] 4.5 Mount the layout with `zstd:3`/`noatime`; record actual UUIDs and mount options
-  in the Execution Record; never hardcode `/dev/nvmeX`.
+- [ ] 4.5 Mount the `/dev/mapper/cryptroot` layout with `zstd:3`/`noatime`; record actual
+  UUIDs and mount options in the Execution Record; never hardcode `/dev/nvmeX`.
 
   - verify: `findmnt` shows each subvolume with `zstd:3,noatime`
   - depends: 4.4
 
-## Group 5 — Configuration and state staging (6)
+## Group 5 — Configuration and state staging (7)
 
-- [ ] 5.1 Update the curated `_hardware.nix` from the actual captured UUIDs and
-  topology-derived user paths (no `/dev/nvmeX`, no username literals).
+- [ ] 5.1 Replace the old Arch root and ESP declarations in the curated `_hardware.nix`
+  with the actual generated metadata: the new NixOS ESP UUID mounted at `/boot`, the
+  actual LUKS-header UUID (from `cryptsetup luksUUID`, not PARTUUID/Btrfs UUID) in
+  `boot.initrd.luks.devices.cryptroot.device = "/dev/disk/by-uuid/<actual-LUKS-UUID>"`,
+  the Btrfs UUID, and all seven mounts — `@root`, `@home`, `@nix`, `@log`, `@snapshots`,
+  `@home-cache` → `/home/${primaryUser.name}/.cache`,
+  `@containers` → `/home/${primaryUser.name}/.local/share/containers`; preserve the
+  Shared/LinuxData declarations. No `/dev/nvmeX`, no invented UUIDs, no username literals.
 
-  - criteria: file references only real UUIDs/by-id identities and topology values
-  - verify: exhaustive search for `/dev/nvmeX` and username literals returns nothing
+  - criteria: file references only real UUIDs/by-id identities and topology values; LUKS
+    initrd mapping present; Shared/LinuxData untouched
+  - verify: exhaustive search for `/dev/nvmeX`, invented UUIDs, and username literals
+    returns nothing
   - depends: 4.5
   - delegate: CoderAgent
 
-- [ ] 5.2 Re-run the readiness gates after the metadata edit: strict validation and a full
-  toplevel eval/build still pass.
+- [ ] 5.2 Commit and push the metadata change, then re-run the readiness gates from the
+  Arch checkout: strict validation and a full toplevel eval/build still pass. The full
+  build runs here — after the generated metadata is committed/pushed, before the final
+  ISO install pass — so the 34 GiB standalone build never lands in installer tmpfs.
 
-  - verify: `nix build .#nixosConfigurations.shrub.config.system.build.toplevel`,
+  - verify: commit pushed; `nix build .#nixosConfigurations.shrub.config.system.build.toplevel`,
     `nix flake check --no-build --no-write-lock-file`, and
     `openspec validate --all --strict` all green
   - depends: 5.1
@@ -181,7 +217,7 @@
 
   - criteria: keys/profiles present at declared paths; no secret value in any artifact
   - verify: paths resolve; log/diff scan shows no secret material
-  - depends: 4.5
+  - depends: 4.5, 5.2
 
 - [ ] 5.4 Copy Tailscale state, Bluetooth pairing, and SSH host keys into the staged target
   preserving ownership.
@@ -205,20 +241,34 @@
   - depends: 5.3, 5.4, 5.5
   - delegate: CodeReviewer
 
+- [ ] 5.7 Clone the pushed repo and check out the recorded 5.2 SHA in detached state at
+  `/mnt/etc/nixos` on the mounted target so the flake persists there for the install;
+  never run `nixos-generate-config` over the curated repo.
+
+  - criteria: `/mnt/etc/nixos` is an exact clean checkout of the recorded 5.2 SHA; the
+    curated repo is untouched by generation tools
+  - verify: `git rev-parse HEAD` at `/mnt/etc/nixos` equals the recorded 5.2 SHA and
+    `git status --porcelain` is empty before install
+  - depends: 4.5, 5.2
+
 ## Group 6 — Install and acceptance (6)
 
-- [ ] 6.1 Install from NixOS media into the mounted target: build and run `nixos-install`
-  against the new ESP and LUKS root with the merged `_hardware.nix`.
+- [ ] 6.1 Install from NixOS media into the mounted target with the pinned command:
+  `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub` — the toplevel builds into the
+  target store from the clean checkout at `/mnt/etc/nixos` in 5.7.
 
   - criteria: install completes; bootloader registered on the NixOS-owned ESP
-  - verify: `nixos-install` exit 0; ESP populated; new firmware entry present
-  - depends: 5.1, 5.3, 5.4, 5.5
+  - verify: `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub` exit 0; ESP
+    populated; new firmware entry present
+  - depends: 5.3, 5.4, 5.5, 5.7
   - delegate: OpenDevopsSpecialist
   - notes: explicit user approval required immediately before execution
 
-- [ ] 6.2 Set the user login password after installation and before first reboot.
+- [ ] 6.2 Set the primary-user login password after installation and before first reboot:
+  `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'`; the password is never
+  recorded in any artifact.
 
-  - verify: password set on the installed target
+  - verify: password set on the installed target; no password material in artifacts
   - depends: 6.1
 
 - [ ] 6.3 Boot through the new NixOS firmware entry and verify: LUKS decryption, all

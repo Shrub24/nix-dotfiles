@@ -10,11 +10,11 @@ Two constraints shape everything below. First, **stable identity only**: disks a
 
 **Goals:**
 
-- Install NixOS as a third, independently bootable OS: own 2 GiB ESP plus ~533.7 GiB LUKS2-encrypted Btrfs in the exact freed extent, with the agreed subvolume layout.
+- Install NixOS permanently as a third, independently bootable OS: own 2 GiB ESP plus ~533.7 GiB LUKS2-encrypted Btrfs in the exact freed extent, with the agreed subvolume layout; only the dual-boot coexistence with Arch is a temporary soak.
 - Keep Windows, Shared, LinuxData, and the Samsung disk's partition identities and bounds unchanged. Existing filesystem contents change only in dedicated cross-disk backup directories and through the reversible stale-UKI cleanup.
 - Execute every destructive step with a precondition, backup, verification, and rollback checkpoint, re-checking serial/WWN/PARTUUID immediately before each command; back up both GPTs and every existing ESP first.
 - Migrate durable state before activation: sops age keys, NetworkManager profiles, Tailscale/Bluetooth/SSH host key state, and the inventoried user data — with secrets never exposed. Set the login password after installation and before first boot.
-- Verify boot through the new firmware entry, decryption, mounts, network, generation, desktop, secrets, and core services, and verify rollback to Arch.
+- Verify boot through the new firmware entry, decryption, mounts, network, generation, desktop, secrets, and core services, and verify rollback to Arch as the escape hatch during the temporary soak.
 
 **Non-Goals:**
 
@@ -46,7 +46,7 @@ The pattern — assert the expected serial/WWN/PARTUUID, abort otherwise — is 
 
 ### D3. Samsung disk: cleanup only
 
-The 512 GB Samsung (MZVL2512HDJD-00BL2, serial `S6Z5NE0W500203`, WWN `eui.002538b531027bf1`) is read-only this change except one reversible cleanup. Arch Limine uses a separate current kernel/initramfs, so the 7.1.3 and 7.1.5 UKIs found by this audit are stale and unowned. At execution time every UKI is backed up, and only UKIs that do not match the then-current kernel are moved off the ESP. The matching UKI stays as an independent Arch rescue and the deduplicated Limine snapshot history is kept until Arch retirement. `limine.conf` and the current kernel are re-checked immediately before cleanup.
+The 512 GB Samsung (MZVL2512HDJD-00BL2, serial `S6Z5NE0W500203`, WWN `eui.002538b531027bf1`) is read-only this change except one reversible cleanup. Arch Limine uses a separate current kernel/initramfs, so the 7.1.3 and 7.1.5 UKIs found by this audit are stale and unowned. At execution time the Samsung serial/WWN and the baseline-recorded Arch ESP PARTUUID are re-asserted, every UKI is backed up, and only UKIs that do not match the then-current kernel are moved off the ESP; `limine.conf` and the current kernel are re-checked immediately before cleanup. The matching UKI stays as an independent Arch rescue and the deduplicated Limine snapshot history is kept until Arch retirement.
 
 ### D4. Retired Fedora partition removal
 
@@ -54,15 +54,15 @@ On the 2 TB disk the retired Fedora 600 MiB ESP (PARTUUID `9aae0356-4274-46c0-85
 
 ### D5. Provisioning the freed extent
 
-The freed extent receives exactly two partitions: a 2 GiB NixOS ESP and a ~533.7 GiB LUKS2 volume, aligned to the extent boundaries so no adjacent partition shifts. Formatting happens only with **new** filesystem UUIDs — none are invented in advance; the generated UUIDs and filesystem declarations are merged into the curated `_hardware.nix` from the actual format output. The ESP is NixOS-owned; the Arch ESP is never shared.
+The freed extent receives exactly two partitions: a 2 GiB FAT32 NixOS ESP (GPT type EF00, `C12A7328-F81F-11D2-BA4B-00A0C93EC93B`) and a ~533.7 GiB Linux LUKS volume, aligned to the extent boundaries so no adjacent partition shifts. Formatting happens only with **new** filesystem UUIDs — none are invented in advance; the generated UUIDs and filesystem declarations are written into the curated `_hardware.nix` from the actual format output, replacing its existing Arch root/ESP declarations (which carry no LUKS initrd mapping). The ESP is formatted FAT32, mounted at `/mnt/boot` during the install, and is NixOS-owned; the Arch ESP is never shared.
 
 ### D6. Encryption, filesystem, and memory
 
-LUKS2 with a passphrase only — no TPM enrollment in this install, so boot prompts for the passphrase and nothing depends on firmware attestation. Inside LUKS, Btrfs with `zstd:3` and `noatime`. Swap is zram only; no swap partition/file and no hibernation, matching the identity the readiness change already established.
+LUKS2 with a passphrase only — no TPM enrollment in this install, so boot prompts for the passphrase and nothing depends on firmware attestation. The LUKS-header UUID is recorded via `cryptsetup luksUUID`, the container is opened as `cryptroot`, and Btrfs is formatted on `/dev/mapper/cryptroot`; later mount and configuration steps use that mapping, and `boot.initrd.luks.devices.cryptroot.device` gets the LUKS-header UUID — never the PARTUUID or Btrfs UUID. Inside LUKS, Btrfs with `zstd:3` and `noatime`. Swap is zram only; no swap partition/file and no hibernation, matching the identity the readiness change already established.
 
 ### D7. Subvolume and mount layout
 
-One Btrfs with the standard layout: `@root`→`/`, `@home`→`/home`, `@nix`→`/nix`, `@log`→`/var/log`, `@snapshots`→`/.snapshots`, plus `@home-cache`→the primary user's native home cache and `@containers`→the primary user's rootless container store. The two user-dependent targets are derived from topology and the native user options (home path, state paths) — no hardcoded username literals, consistent with the composition invariants the readiness change inherits.
+One Btrfs with the standard layout: `@root`→`/`, `@home`→`/home`, `@nix`→`/nix`, `@log`→`/var/log`, `@snapshots`→`/.snapshots`, plus `@home-cache`→`/home/${primaryUser.name}/.cache` and `@containers`→`/home/${primaryUser.name}/.local/share/containers`. The two user-dependent targets are topology-derived — no hardcoded username literals, consistent with the composition invariants the readiness change inherits. `topology.hosts.arch` stays during dual boot — Arch remains an active host — and its rename is deferred to the Arch-retirement scope; `nixosConfigurations.shrub` and `networking.hostName = "shrub"` are unchanged.
 
 ### D8. Snapshot and data mounts
 
@@ -74,7 +74,7 @@ The install registers a new NixOS firmware entry on the 2 TB disk; Windows and A
 
 ### D10. Install-day state migration
 
-Before activation, the install provisions the root and primary-user sops age keys and NetworkManager profiles, and copies Tailscale state, Bluetooth pairing, and SSH host keys. Selected durable user state — browser profile, SSH, Syncthing, Grist, QMD/docs/projects, and anything else in the explicit inventory — is copied preserving ACLs, xattrs, and numeric IDs so ownership survives. Excluded: `~/.cache`, legacy standalone Home Manager/Nix profiles, and rootless container images (image activation reloads those after install). Secrets are copied in place and referenced by path; they never appear in any artifact. The login password is set after installation and before first boot.
+Before activation, the install provisions the root and primary-user sops age keys and NetworkManager profiles, and copies Tailscale state, Bluetooth pairing, and SSH host keys. Selected durable user state — browser profile, SSH, Syncthing, Grist, QMD/docs/projects, and anything else in the explicit inventory — is copied preserving ACLs, xattrs, and numeric IDs so ownership survives. Excluded: `~/.cache`, legacy standalone Home Manager/Nix profiles, and rootless container images (image activation reloads those after install). Secrets are copied in place and referenced by path; they never appear in any artifact. The login password is set after installation and before first boot via `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'`, and never recorded.
 
 ### D11. Checkpoint discipline
 
@@ -82,11 +82,11 @@ Every destructive task carries the same four gates: precondition (identity + sta
 
 ### D12. Install, verification, rollback
 
-Installation runs from NixOS media: mount the new layout, merge the generated UUID/filesystem declarations into the curated `_hardware.nix`, build and install the flake, set the login password. Verification is sequential and explicit: firmware boot through the new entry, LUKS decryption, all mounts, network, NixOS and Home Manager generation, the desktop, secrets, and core services — then rollback to Arch is itself verified as the escape hatch.
+The full toplevel build never runs in installer tmpfs: after the generated metadata replaces the old Arch declarations in `_hardware.nix`, the change is committed and pushed, and strict validation plus a full `nixosConfigurations.shrub` build run from the Arch checkout. The NixOS media pass then mounts the new layout, clones and checks out the recorded pushed SHA at `/mnt/etc/nixos` in detached state — verifying `git rev-parse HEAD` equals it and `git status --porcelain` is empty before install; `nixos-generate-config` never runs over the curated repo — and installs with the pinned `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub`, building into the target store. The login password is set via `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'` and never recorded. Verification is sequential and explicit: firmware boot through the new entry, LUKS decryption, all mounts, network, NixOS and Home Manager generation, the desktop, secrets, and core services — then rollback to Arch is itself verified as the escape hatch during the temporary soak.
 
 ### D13. Future scope: Arch retirement
 
-Arch retirement — converting its 310 GiB root into an encrypted Btrfs backup receiver — is a deliberate future change. This install leaves the Arch root byte-for-byte untouched so Arch remains a working rollback path throughout.
+Arch retirement — converting its 310 GiB root into an encrypted Btrfs backup receiver — is a deliberate future change. The NixOS install itself is permanent; only the dual-boot coexistence is a temporary soak. This change leaves the Arch root byte-for-byte untouched so Arch remains a working rollback path throughout the soak, and `topology.hosts.arch` is renamed only in that retirement scope.
 
 ## Risks / Trade-offs
 
@@ -95,7 +95,9 @@ Arch retirement — converting its 310 GiB root into an encrypted Btrfs backup r
 - [State migration gaps leave the new host half-configured] → the durable-state inventory is explicit, migration preserves ACLs/xattrs/numeric IDs, and each class is verified before activation; excluded classes are named so nothing is silently dropped.
 - [Secret exposure in artifacts] → keys are copied in place and referenced by path; no secret value is ever written to an artifact.
 - [Boot failure strands the machine without a fallback] → the new NixOS entry is verified first, then rollback to Arch is verified as the escape hatch; the Fedora NVRAM entry is removed only after both.
-- \[Generated UUIDs diverge from what `_hardware.nix` declares\] → UUIDs are merged from actual format output into the curated file, never invented before formatting and never hand-edited to match an assumption.
+- \[Generated UUIDs diverge from what `_hardware.nix` declares\] → UUIDs come from actual format output and replace the old Arch root/ESP declarations, never invented before formatting and never hand-edited to match an assumption.
+- [A 34 GiB standalone toplevel build exhausts installer tmpfs] → the full build runs from the Arch checkout after the metadata commit is pushed; the media pass only runs `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub`, building into the target store.
+- [The installed system drifts from the validated configuration] → the exact validated/pushed SHA is checked out detached and verified clean at `/mnt/etc/nixos` and installed by the pinned command; `nixos-generate-config` never runs over the curated repo.
 - [UKI cleanup removes a path Arch still needs] → every UKI is backed up, the UKI matching the then-current kernel and Limine history are kept, and `limine.conf`/current kernel are re-checked immediately before cleanup.
 - [TPM-less passphrase is less convenient at every boot] → accepted trade for a simpler, firmware-independent trust model in this install; TPM enrollment can be added later without re-provisioning.
 
@@ -105,8 +107,9 @@ Arch retirement — converting its 310 GiB root into an encrypted Btrfs backup r
 1. **Baseline:** record serial/WWN/PARTUUID for both disks; back up both GPTs and all three existing ESPs (Windows, Arch, and Fedora).
 1. **Samsung cleanup:** re-inventory and back up every UKI, then move only UKIs that do not match the then-current kernel off the Arch ESP; keep the matching rescue UKI and Limine history.
 1. **Fedora removal:** back up the GPT and Fedora ESP, re-verify identities, remove the two retired partitions, confirm the ~535.7 GiB contiguous extent and untouched neighbors.
-1. **Provision:** create the 2 GiB NixOS ESP and ~533.7 GiB LUKS2 in the extent; format LUKS2 (passphrase) and Btrfs, create the full subvolume layout, mount it with `zstd:3`/`noatime`, and capture the new filesystem UUIDs.
-1. **Merge:** fold the generated UUID and filesystem declarations into the curated `_hardware.nix` — no `/dev/nvmeX`.
-1. **Stage:** boot NixOS media, mount the new layout, provision root/user age keys and NetworkManager profiles, and copy Tailscale/Bluetooth/SSH host keys plus selected user state with ACLs/xattrs/numeric IDs (excluding `~/.cache`, standalone profiles, and rootless container images).
-1. **Install:** run `nixos-install` against the new ESP and LUKS root, set the login password before reboot, and verify firmware boot, decryption, mounts, network, NixOS and Home Manager generation, desktop, secrets, and core services; verify rollback to Arch; remove the Fedora NVRAM entry only after verification.
+1. **Provision:** create the 2 GiB NixOS ESP (type EF00) and ~533.7 GiB LUKS2 in the extent; format the ESP FAT32 and LUKS2 (passphrase), record the LUKS-header UUID via `cryptsetup luksUUID`, open it as `cryptroot`, format Btrfs on `/dev/mapper/cryptroot`; create the full subvolume layout, mount it with `zstd:3`/`noatime` and the ESP at `/mnt/boot`, and capture the new filesystem UUIDs.
+1. **Merge:** replace the old Arch root/ESP declarations in the curated `_hardware.nix` with the generated UUID and filesystem declarations — new ESP UUID at `/boot`, actual LUKS-header UUID in `boot.initrd.luks.devices.cryptroot`, Btrfs UUID with all seven mounts, Shared/LinuxData preserved; no `/dev/nvmeX`.
+1. **Validate:** commit and push the metadata change, then from the Arch checkout re-run strict validation and the full toplevel build — never in installer tmpfs.
+1. **Stage:** boot NixOS media, mount the new layout, provision root/user age keys and NetworkManager profiles, and copy Tailscale/Bluetooth/SSH host keys plus selected user state with ACLs/xattrs/numeric IDs (excluding `~/.cache`, standalone profiles, and rootless container images); clone and check out the recorded pushed SHA detached at `/mnt/etc/nixos`, verified clean.
+1. **Install:** run `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub` (builds into the target store), set the login password via `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'` before reboot, and verify firmware boot, decryption, mounts, network, NixOS and Home Manager generation, desktop, secrets, and core services; verify rollback to Arch; remove the Fedora NVRAM entry only after verification.
 1. **Defer:** leave Arch retirement and its 310 GiB root conversion to a future change.
