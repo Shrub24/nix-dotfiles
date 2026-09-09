@@ -14,3 +14,7 @@ result-*
 .ocx/
 .firecrawl/
 .qmd/
+
+# Pix Agent
+.pi/
+.pi-lens/
