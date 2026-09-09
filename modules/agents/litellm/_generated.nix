@@ -1,6 +1,7 @@
 {
   lib,
   port,
+  modelRegistryFile,
   headroomEnable ? false,
   headroomPort ? 8787,
 }:
@@ -17,14 +18,7 @@ let
 
   # ── Model metadata from models.dev ──────────────────────────────────
 
-  modelRegistry = builtins.fromJSON (
-    builtins.readFile (
-      builtins.fetchurl {
-        url = "https://models.dev/models.json";
-        sha256 = "0rrdsz06y1nxvdgxkxhdgkqv0ivyq3hsxjqjx9fxc5zbf5pv9ni1";
-      }
-    )
-  );
+  modelRegistry = builtins.fromJSON (builtins.readFile modelRegistryFile);
 
   defaultContext = 128000;
   defaultOutput = 16384;
@@ -33,8 +27,11 @@ let
     output = [ "text" ];
   };
 
-  # ponytail: accept one registry id string; caller already validates type
-  resolveRegistryMeta = id: modelRegistry.${id} or { };
+  # An id that does not resolve is an authoring error in _aliases.nix and fails on
+  # the missing attribute. A route whose model models.dev does not track says so
+  # with `registryUntracked`, so the typo stays loud and the gap stays explicit.
+  resolveRegistryMeta =
+    route: if route.registryUntracked or false then { } else modelRegistry.${route.registryModel};
 
   # ── LiteLLM config generation ──────────────────────────────────────
 
@@ -147,16 +144,9 @@ let
     aliasName:
     let
       routeName = aliases.${aliasName} or aliasName;
-      route =
-        routes.${routeName} or (throw "clientModel '${aliasName}': route '${routeName}' does not exist");
-      registryModel =
-        route.registryModel
-          or (throw "clientModel '${aliasName}': route '${routeName}' lacks registryModel");
-      meta =
-        if builtins.isString registryModel then
-          resolveRegistryMeta registryModel
-        else
-          throw "clientModel '${aliasName}': registryModel is ${builtins.typeOf registryModel}, expected string";
+      route = routes.${routeName};
+      inherit (route) registryModel;
+      meta = resolveRegistryMeta route;
       limit_ = meta.limit or { };
       modalities_ = meta.modalities or { };
     in
@@ -219,7 +209,6 @@ in
     environment_variables = {
       PHOENIX_COLLECTOR_ENDPOINT = "http://oci-melb-1:4317";
     };
-    # guardrails injected below via optionalAttrs
     router_settings = {
       routing_strategy = "simple-shuffle";
       fallbacks = builtins.filter (mapping: mapping != { }) fallbackMappings;

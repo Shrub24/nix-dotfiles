@@ -15,6 +15,7 @@ let
     headroomEnable = cfg.headroom.enable;
     inherit (cfg) headroomPort;
     inherit (cfg) port;
+    modelRegistryFile = pkgs.models-dev;
   };
   headroomModelAliasMap = builtins.toJSON litellmGenerated.headroomModelAliasMap;
   yamlFormat = pkgs.formats.yaml { };
@@ -45,9 +46,6 @@ in
       description = "HTTP port for the Headroom sidecar.";
     };
   };
-
-  # LiteLLM owns its env template; DB host comes from typed topology (closed over).
-  # Declared under cfg.enable since the service + template are only used when enabled.
 
   config = lib.mkIf cfg.enable {
     sops.templates."litellm.env" = {
@@ -164,10 +162,11 @@ in
     };
 
     home = {
-      # One-time image load at activation — avoids unpacking tarball on every restart
+      # Loaded once at activation, not in ExecStartPre: unpacking the tarball on
+      # every restart exhausted disk.
       activation.litellmImageLoad = lib.hm.dag.entryAfter [ "sops-nix" ] ''
         if ! ${pkgs.podman}/bin/podman image inspect localhost/litellm-patched:latest >/dev/null 2>&1; then
-          ${pkgs.podman}/bin/podman load -i ${ociImage} >/dev/null 2>&1 || true
+          ${pkgs.podman}/bin/podman load -i ${ociImage} >/dev/null 2>&1
         fi
       '';
 

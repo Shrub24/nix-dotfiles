@@ -3,6 +3,7 @@ _: {
     {
       config,
       lib,
+      pkgs,
       ...
     }:
 
@@ -12,6 +13,7 @@ _: {
         headroomEnable = config.programs.litellm.headroom.enable;
         headroomPort = config.programs.litellm.headroomPort;
         port = config.programs.litellm.port;
+        modelRegistryFile = pkgs.models-dev;
       };
     in
     {

@@ -19,7 +19,6 @@
     {
       imports = [ upstreamModule ];
 
-      # Hermes owns its env template (cross-module placeholders from credentials).
       sops.templates."hermes.env".content = ''
         OPENAI_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
       '';

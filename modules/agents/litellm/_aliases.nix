@@ -41,7 +41,7 @@
   routes = {
     "qwen3.8-flash" = {
       mode = "chat";
-      registryModel = "alibaba/qwem3.8-flash";
+      registryModel = "alibaba/qwen3.8-flash";
       chain = [
         "opencode-go"
       ];
@@ -119,6 +119,8 @@
     "qwen3-embedding-8b" = {
       mode = "embedding";
       registryModel = "qwen/qwen3-embedding-8b";
+      # models.dev tracks no Qwen embedding entry, so limits fall back to defaults.
+      registryUntracked = true;
       chain = [
         {
           upstream = "openrouter";

@@ -56,7 +56,13 @@ _: {
       };
 
       config = lib.mkIf cfg.enable {
-        # Grist owns its session secret + env template (cross-module placeholder from credentials).
+        assertions = [
+          {
+            assertion = cfg.administratorEmail != "" && cfg.organizationSlug != "";
+            message = "programs.grist: administratorEmail and organizationSlug must be non-empty when enable = true";
+          }
+        ];
+
         sops = {
           secrets."GRIST_SESSION_SECRET" = {
             sopsFile = ../../secrets/agents.yaml;
@@ -71,13 +77,6 @@ _: {
             '';
           };
         };
-
-        assertions = [
-          {
-            assertion = cfg.administratorEmail != "" && cfg.organizationSlug != "";
-            message = "programs.grist: administratorEmail and organizationSlug must be non-empty when enable = true";
-          }
-        ];
 
         systemd.user = {
           tmpfiles.rules = [

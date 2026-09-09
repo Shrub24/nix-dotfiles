@@ -29,7 +29,6 @@ _: {
       };
 
       config = lib.mkIf cfg.enable {
-        # Docs MCP owns its env template (cross-module placeholder from credentials).
         sops.templates."docs-mcp.env".content = ''
           OPENAI_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
         '';

@@ -2,8 +2,8 @@ _: {
   flake.modules.homeManager.modal =
     { config, ... }:
     {
-      # Modal owns its auth secret (own ciphertext file); the SDK/CLI reads
-      # token_id/token_secret from the active profile in ~/.modal.toml.
+      # The SDK/CLI reads token_id/token_secret from the active profile in
+      # ~/.modal.toml.
       sops = {
         secrets = {
           MODAL_TOKEN_ID = {
