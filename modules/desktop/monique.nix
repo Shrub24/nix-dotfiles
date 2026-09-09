@@ -1,18 +1,12 @@
 { inputs, ... }:
 {
-  flake.modules.nixos.monique =
-    { ... }:
-    {
-      # Upstream nixosModules.default pins programs.monique.package to the flake
-      # package via mkDefault; just import + enable.
-      imports = [ inputs.monique.nixosModules.default ];
-      programs.monique.enable = true;
-    };
+  flake.modules.nixos.monique = _: {
+    imports = [ inputs.monique.nixosModules.default ];
+    programs.monique.enable = true;
+  };
 
   flake.modules.homeManager.monique =
     {
-      config,
-      lib,
       pkgs,
       ...
     }:

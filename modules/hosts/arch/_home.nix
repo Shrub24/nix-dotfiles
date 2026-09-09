@@ -39,7 +39,8 @@ in
   programs = {
     home-manager.enable = true;
 
-    pi.enable = false;
+    pi-coding-agent.enable = true;
+    herdr.enable = true;
 
     litellm = {
       enable = true;
@@ -72,7 +73,7 @@ in
     };
     lazyjournal = {
       enable = true;
-      sshHosts = sshHosts;
+      inherit sshHosts;
     };
     docsMcp.enable = true;
     qmd.enable = true;

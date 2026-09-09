@@ -57,6 +57,7 @@ _: {
           EDITOR = "nvim";
           LESS = "-R --use-color";
           BAT_THEME = "matugen-bat-colors";
+          OMNIROUTE_BASE_URL = "http://home-forge:20128";
           OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS = true;
         };
       };

@@ -55,6 +55,10 @@
       systemd.services.nix-daemon = {
         after = [ "sops-install-secrets.service" ];
         wants = [ "sops-install-secrets.service" ];
+        path = [
+          pkgs.nix
+          pkgs.openssh
+        ];
         serviceConfig.EnvironmentFile = [ "-/run/secrets/rendered/nixbuild.net.env" ];
       };
 
@@ -66,11 +70,7 @@
   ;
 
   flake.modules.nixos.nixbuild =
-    {
-      config,
-      pkgs,
-      ...
-    }:
+    { config, ... }:
     {
       imports = [ inputs.sops-nix.nixosModules.sops ];
 
@@ -78,10 +78,7 @@
         defaultSopsFile = ../secrets/nixbuild.yaml;
         age = {
           keyFile = "/var/lib/sops-nix/key.txt";
-          # Keep generateKey = false for parity with the systemManager aspect;
-          # user can flip when ready to rotate / use a pre-generated key (works
-          # on NixOS too). NixOS already has a `keys` group, so the Arch-only
-          # users.groups.keys = {} workaround is dropped.
+          # Pre-generated key shared with the Arch host; do not auto-generate.
           generateKey = false;
         };
 
@@ -109,16 +106,11 @@
             StrictHostKeyChecking accept-new
             SendEnv NIXBUILDNET_ACCESS_TOKENS
             Compression no
-            IPQoS throughput
             TCPKeepAlive no
         '';
         mode = "0644";
       };
 
-      # NixOS ships nix-daemon units natively (nix.enable = true from the
-      # `nixos.nix` aspect) - no systemd.packages = [ pkgs.nix ] needed, and no
-      # systemd.sockets.nix-daemon.wantedBy (NixOS enables the socket by default
-      # when nix.daemon is on). Just wire the sops EnvironmentFile dependency.
       systemd.services.nix-daemon = {
         after = [ "sops-install-secrets.service" ];
         wants = [ "sops-install-secrets.service" ];

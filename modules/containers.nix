@@ -1,5 +1,5 @@
 _: {
-  flake.modules.nixos.containers = { ... }: {
+  flake.modules.nixos.containers = _: {
     virtualisation.podman = {
       enable = true;
       dockerCompat = true;

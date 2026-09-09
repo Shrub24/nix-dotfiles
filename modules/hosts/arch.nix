@@ -75,6 +75,7 @@ let
   nixosAspect = name: config.flake.modules.nixos.${name};
   hmAspects = [
     "pi"
+    "herdr"
     "hermes"
     "tools"
     "dev-tools"
@@ -118,6 +119,7 @@ let
     "grist"
     "litellm"
     "docs-mcp"
+    "modal"
     "qmd"
     "web-catalog"
     "shell"
@@ -234,10 +236,10 @@ in
     # `config.topology` by feature modules — not through an argument-passing bus.
     topology.hosts.arch = {
       inherit system;
-      primaryUser = primaryUser;
+      inherit primaryUser;
       remoteHosts = [
         "oci-melb-1"
-        "do-admin-1"
+        "home-forge"
         "la-admin-1"
       ];
     };

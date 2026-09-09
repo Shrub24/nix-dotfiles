@@ -3,12 +3,10 @@
   ...
 }:
 let
-  # Typed primary-user topology read at the flake-parts level; closed over into
-  # the NixOS desktop services (B11).
   primaryUser = config.topology.hosts.arch.primaryUser;
 in
 {
-  flake.modules.nixos.desktop-services = { ... }: {
+  flake.modules.nixos.desktop-services = _: {
     services.gvfs.enable = true;
     services.gnome.gnome-keyring.enable = true;
     services.accounts-daemon.enable = true;

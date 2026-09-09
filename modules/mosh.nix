@@ -8,7 +8,7 @@ _: {
 
   ;
 
-  flake.modules.nixos.mosh = { ... }: {
+  flake.modules.nixos.mosh = _: {
     programs.mosh = {
       enable = true;
       openFirewall = false; # UDP range is tailnet-scoped in the network aspect

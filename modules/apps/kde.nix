@@ -36,12 +36,10 @@ _: {
       # break in dolphin/kdeconnect, add kdePackages.breeze-icons here.
     };
 
-  flake.modules.nixos.kde-apps =
-    { ... }:
-    {
-      programs.kdeconnect = {
-        enable = true;
-        package = null;
-      };
+  flake.modules.nixos.kde-apps = _: {
+    programs.kdeconnect = {
+      enable = true;
+      package = null;
     };
+  };
 }

@@ -13,9 +13,10 @@ _: {
         enable = true;
 
         settings = {
-          # debug = {
-          #   render-drm-device = "/dev/dri/by-path/pci-0000:01:00.0-render";
-          # };
+          debug = {
+            render-drm-device = "/dev/dri/by-path/pci-0000:01:00.0-render";
+          };
+
           config-notification = {
             disable-failed = { };
           };
@@ -206,17 +207,7 @@ _: {
         # integration and Monique's monitors.kdl include live in their own aspects.
         extraConfig = ''
 
-          output "PNP(AOC) CU34G4 2SES4HA001302" {
-            mode "3440x1440@60.001"
-            scale 1
-            position x=1707 y=-160
 
-            layout { 
-              struts {
-                right 450
-              }
-            }
-          }
           window-rule {
             background-effect {
               blur true

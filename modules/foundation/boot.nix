@@ -50,15 +50,13 @@ in
   # to NixOS (NixOS uses its own initrd builder, not dracut; systemd-boot is the
   # loader, not Limine).
   #
-  flake.modules.nixos.boot =
-    { ... }:
-    {
-      boot.plymouth.enable = true;
-      services.btrfs.autoScrub.enable = true;
-      services.snapper.configs = {
-        root.SUBVOLUME = "/";
-        home.SUBVOLUME = "/home/${primaryUser.name}";
-        data.SUBVOLUME = "/mnt/LinuxData";
-      };
+  flake.modules.nixos.boot = _: {
+    boot.plymouth.enable = true;
+    services.btrfs.autoScrub.enable = true;
+    services.snapper.configs = {
+      root.SUBVOLUME = "/";
+      home.SUBVOLUME = "/home/${primaryUser.name}";
+      data.SUBVOLUME = "/mnt/LinuxData";
     };
+  };
 }

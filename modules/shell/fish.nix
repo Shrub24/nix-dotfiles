@@ -20,7 +20,7 @@
 
               if not test -e "$cand"; and not test -L "$cand"
                 # We use the clean base_buffer (e.g., "git ") + cand ("commit") + space
-                set -l comps (complete -C "$base_buffer $cand" 2>/dev/null)
+                set -l comps (complete -C "$base_buffer "(string escape -- "$cand") 2>/dev/null)
 
                 if test -n "$comps"
                   echo "$comps" | sed 's/\t/  /g' | column -t | bat -p --color=always
@@ -58,9 +58,10 @@
 
               # 3. Launch FZF
               set -l fzf_raw (complete -C "$cmd_buffer" | fzf \
-                --query="$current_token" \
+                --delimiter="\t" \
+                --query=(string unescape -- "$current_token") \
                 --expect=right \
-                --preview "_fzf_preview_router {1} \"$base_buffer\"" \
+                --preview "_fzf_preview_router '{1}' \"$base_buffer\"" \
                 --preview-window="right:55%:wrap" | string collect)
 
               if test -z "$fzf_raw"
@@ -74,7 +75,7 @@
               if test -n "$raw_selection"
                 set -l selection (string split \t -- $raw_selection)[1]
 
-                commandline -t "$selection"
+                commandline -t -- (string escape -- "$selection")
 
                 if test "$key" = "right"
                   if not string match -q "*/" "$selection"

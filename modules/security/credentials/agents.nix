@@ -1,19 +1,12 @@
 _: {
   flake.modules.homeManager.credentials =
-    {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
+    { config, ... }:
 
     let
       yamlSecrets = ../../../secrets/agents.yaml;
     in
 
     {
-      # Shared, genuinely cross-feature LLM/provider credentials from
-      # secrets/agents.yaml, plus the shell-wide agent/dev env template.
       sops = {
         templates = {
           "zsh-secrets.env".content = ''
@@ -34,10 +27,22 @@ _: {
             OPENCODE_LITELLM_API_KEY=${config.sops.placeholder.OPENCODE_LITELLM_API_KEY}
             OPENAI_COMPATIBLE_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
             VOLCENGINE_API_KEY=${config.sops.placeholder.VOLCENGINE_API_KEY}
+            TOKENROUTER_API_KEY=${config.sops.placeholder.TOKENROUTER_API_KEY}
+            OMNIROUTE_API_KEY=${config.sops.placeholder.OMNIROUTE_API_KEY}
           '';
         };
 
         secrets = {
+          OMNIROUTE_API_KEY = {
+            sopsFile = yamlSecrets;
+            format = "yaml";
+            key = "omniroute_api_key";
+          };
+          TOKENROUTER_API_KEY = {
+            sopsFile = yamlSecrets;
+            format = "yaml";
+            key = "tokenrouter_api_key";
+          };
           VOLCENGINE_API_KEY = {
             sopsFile = yamlSecrets;
             format = "yaml";

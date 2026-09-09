@@ -14,13 +14,13 @@ in
     # NixOS owns the account; Home Manager owns its home configuration.
     users.users.${primaryUser.name} = {
       isNormalUser = true;
-      uid = primaryUser.uid;
+      inherit (primaryUser) uid;
       group = primaryUser.name;
       extraGroups = [ "wheel" ];
     };
     # Private primary group (matches Arch user-private-groups, GID == UID).
     users.groups.${primaryUser.name} = {
-      gid = primaryUser.gid;
+      inherit (primaryUser) gid;
     };
   };
 }
