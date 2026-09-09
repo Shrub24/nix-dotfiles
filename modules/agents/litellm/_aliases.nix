@@ -6,12 +6,6 @@
       apiKeyEnv = "CROFAI_API_KEY";
     };
 
-    volcengine = {
-      providerFamily = "openai";
-      apiBase = "https://ark.cn-beijing.volces.com/api/coding/v3";
-      apiKeyEnv = "VOLCENGINE_API_KEY";
-    };
-
     deepseek = {
       providerFamily = "deepseek";
       apiKeyEnv = "DEEPSEEK_API_KEY";
@@ -49,7 +43,6 @@
       mode = "chat";
       registryModel = "alibaba/qwem3.8-flash";
       chain = [
-        "volcengine"
         "opencode-go"
       ];
     };
@@ -57,7 +50,6 @@
       mode = "chat";
       registryModel = "zhipuai/glm-5.3-flash";
       chain = [
-        "volcengine"
         "opencode-go"
       ];
     };
@@ -65,7 +57,6 @@
       mode = "chat";
       registryModel = "zhipuai/glm-5.3";
       chain = [
-        "volcengine"
         "opencode-go"
       ];
     };
@@ -73,7 +64,6 @@
       mode = "chat";
       registryModel = "zhipuai/glm-5.2";
       chain = [
-        "volcengine"
         "opencode-go"
         "neuralwatt"
       ];
@@ -101,7 +91,6 @@
       mode = "chat";
       registryModel = "deepseek/deepseek-v4-pro";
       chain = [
-        "volcengine"
         "neuralwatt"
         "opencode-go"
         "deepseek"
@@ -142,7 +131,6 @@
       mode = "chat";
       registryModel = "deepseek/deepseek-v4-flash";
       chain = [
-        "volcengine"
         "opencode-go"
         "neuralwatt"
         "deepseek"
@@ -152,7 +140,7 @@
 
   aliases = {
     coder = "qwen3.8-flash";
-    main = "glm-5.3-flash";
+    main = "qwen3.8-flash";
     summariser = "qwen3.8-flash";
     image = "multimodal-default";
     embedding = "qwen3-embedding-8b";
