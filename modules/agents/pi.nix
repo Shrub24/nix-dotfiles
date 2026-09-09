@@ -1,48 +1,40 @@
-{ inputs, ... }: {
+{ inputs, ... }:
+{
   flake.modules.homeManager.pi =
+    { config, pkgs, ... }:
     {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
+      programs.pi-coding-agent.package =
+        (inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi.override {
+          useBun = true;
+        }).overrideAttrs
+          (old: {
+            preInstall =
+              builtins.replaceStrings
+                [ "bun build --compile ./dist/bun/cli.js" ]
+                [
+                  "bun build --compile --no-compile-autoload-bunfig --compile-autoload-package-json ./dist/bun/cli.js"
+                ]
+                old.preInstall;
+            postInstall =
+              builtins.replaceStrings
+                [
+                  ''rm -rf "$out/lib" "$out/bin"''
+                  ''--set PI_PACKAGE_DIR "$pkgdir"''
+                ]
+                [
+                  ''rm -rf "$out/bin"''
+                  ''--set PI_PACKAGE_DIR "$pkgdir" --set PI_SUBAGENTS_PI_CODING_AGENT_PACKAGE_ROOT "$out/libexec/pi-js-package"''
+                ]
+                old.postInstall
+              + ''
+                piPackage="$out/lib/node_modules/@earendil-works/pi-coding-agent"
+                test -f "$piPackage/package.json"
+                mkdir -p "$out/libexec"
+                ln -s "$piPackage" "$out/libexec/pi-js-package"
+              '';
+          });
 
-    let
-      cfg = config.programs.pi;
-    in
-    {
-      options.programs.pi = {
-        enable = lib.mkEnableOption "pi coding agent";
-
-        package = lib.mkOption {
-          type = lib.types.package;
-          default = pkgs.pi;
-          defaultText = lib.literalExpression "pkgs.pi";
-          description = "The pi coding agent package to use.";
-        };
-
-        settings = lib.mkOption {
-          type = lib.types.attrs;
-          default = { };
-          description = "Freeform settings rendered to ~/.pi/agent/settings.json.";
-        };
-      };
-
-      config = lib.mkMerge [
-        (lib.mkIf cfg.enable {
-          home.packages = [ cfg.package ];
-
-          home.file.".pi/agent/settings.json" = lib.mkIf (cfg.settings != { }) {
-            text = builtins.toJSON cfg.settings;
-          };
-        })
-        # programs.pi.package override (moved from flake.nix host composition):
-        # unconditional, matching the pre-migration host-level override module.
-        {
-          programs.pi.package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi;
-        }
-      ];
-    }
-
-  ;
+      home.file.".pi/agent".source =
+        config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.dotfiles/apps/pi";
+    };
 }
