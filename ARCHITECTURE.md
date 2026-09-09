@@ -65,7 +65,7 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ agents/<feature>.nix  one file per feature → homeManager aspect
   ├─ agents/litellm/     default.nix publishes the aspect; _*.nix raw modules
   ├─ apps/*.nix           end-user GUI apps (media, zathura, pavucontrol)
-  ├─ apps/browser/*.nix   firefox, chromium, thunderbird, brave — lazy HM enable
+  ├─ apps/browser/*.nix   firefox, chromium, thunderbird, brave-origin — lazy HM enable
   ├─ desktop/*.nix        compositor + shell env (niri, noctalia, monique, vicinae, portals, greeter)
   ├─ foundation/*.nix    network, boot → systemManager aspects; nixos.nix (base-OS aspect)
   ├─ shell/*.nix         per-shell homeManager aspects + terminals (wezterm, ghostty, tmux)
@@ -171,6 +171,15 @@ The LiteLLM gateway behavior is contracted by
 - **Noctalia GUI state is runtime state** — the shell owns its mutable
   settings outside the store; treat them as machine-local, not declarative
   configuration.
+- **Noctalia themes through its own template entries, declared locally** —
+  `theme.templates.enable_builtin_templates` and `enable_community_templates`
+  are off, and every entry is a row in `modules/desktop/noctalia.nix`. A row
+  names a store path input (the noctalia package for builtins, the pinned
+  `community-templates` flake input for the rest), an output path, and a hook
+  only where Nix cannot point the consuming application at the rendered file.
+  The inverse — enabling upstream template ids and bending the Nix config around
+  their hooks — was rejected: hooks that rewrite store-linked configs fail, and
+  a Nix-owned file cannot be a template's output.
 - **Discovery is scoped to the single `modules/` tree** — `import-tree` scans
   only `modules/`; raw class modules live at `_`-prefixed paths, which
   `import-tree` ignores, so dormant files cannot alter a host accidentally.
@@ -184,6 +193,21 @@ The LiteLLM gateway behavior is contracted by
 - **One durable document** — `ARCHITECTURE.md` records boundaries and
   rationale; the filesystem inventory duplicate was deleted because it
   diverged from implementation.
+- **A file an application rewrites is never Nix-owned** — the Herdr and Pi
+  configuration surfaces are rendered by the `programs.herdr` and
+  `programs.pi-coding-agent` Home Manager modules, but the test is the write
+  path, not whether the file holds settings. Pi's `settings.json` is declared
+  because its failed write is a caught `EACCES` that reports loudly; the three
+  extension settings files — `pi-tool.json`, `pi-stamp.json`, and
+  `pi-herdr.json` — are not, because they save through a
+  temporary file plus `rename()`, which replaces a store symlink with a real
+  file instead of failing, and diverges silently.
+- **Pi agent definitions live under the Pi agent directory** — the seven
+  subagent definitions are repository files mounted at `~/.pi/agent/agents`.
+  `~/.agents` is the cross-tool agent directory that `opencode.nix` also
+  symlinks, so Pi-specific personas are not placed there. Extension paths in a
+  definition are written relative to the definition file, which keeps them free
+  of hardcoded home directories.
 
 ## Verification
 

@@ -1,0 +1,122 @@
+# Conventions
+
+Rules that no tool enforces. `nix fmt` owns formatting and statix/deadnix own
+mechanical lint — neither is restated here. Boundaries and rationale live in
+[ARCHITECTURE.md](ARCHITECTURE.md); the pattern rules live in the
+`dendritic-nix` agent skill. This document covers what neither does.
+
+## Comments
+
+Comment only where the code cannot say it.
+
+Delete:
+
+- restatement of the option name, value, or expression below it
+- narration of the change or of what a file used to contain
+- Nix or module-system explanation any Nix reader already has
+- planning and task identifiers (`(B5)`, `(D2)`, `task 3.1`) — they reference
+  documents that are archived or gone, and mean nothing to a later reader
+- a second statement of a decision already recorded in ARCHITECTURE.md
+
+Keep, at one or two lines:
+
+- a footgun whose failure is silent or misleading — a store symlink a program
+  rewrites, a parser that rejects a duplicate node, a pin that must match an
+  external file, an absence that is deliberate and load-bearing
+- a `ponytail:` marker naming the ceiling and the upgrade path
+- one terse divider inside a long list
+
+Rationale is stated once. Put it in the commit message or a durable decision in
+ARCHITECTURE.md; at the use site, one line that links to the rule, not a
+re-argument of it.
+
+## Validation
+
+Validate at a trust boundary. Nowhere else.
+
+Boundaries in this repository:
+
+- foreign data: registry and API responses, `builtins.fromJSON` over fetched or
+  vendored JSON, anything parsed from a file the repository does not own
+- files outside the store that an external program creates, rewrites, or owns —
+  `~/.local/state`, `/var/lib`, application config directories
+- secret material and sops-rendered paths
+- host selection: an option a host composition layer sets
+
+Everything the repository supplies itself is already checked by Nix. A missing
+attribute, a type mismatch, a failed `ln`, and a failed `install` all fail the
+build with a located error. Do not add an `assert`, `throw`, `abort`,
+`tryEval`, `or` fallback, `test -f`, or `lib.asserts` guard in front of them:
+the guard hides the original failure and leaves a second thing to maintain.
+
+An option that a host sets is a feature gate, not validation. `mkIf` on such an
+option is correct. `mkIf` on a value the aspect itself computes is not.
+
+Two checks that look like internal validation but are boundaries:
+
+- `config.programs.<other>.enable or false` probing a sibling aspect. Host
+  composition decides which aspects are present, so this is the composition
+  contract, not a redundant guard.
+- `or { }` or `or default` on a key read from an external pinned registry. A
+  model or field absent upstream is expected, not an error.
+
+## Prefer the Native Module
+
+Before writing a unit, timer, config file, activation script, shell hook, or
+environment variable, check whether Home Manager, nixpkgs, or the program's own
+module already declares it. Two lookups settle it:
+
+1. the docs MCP server (`home-manager` and `nixos` are indexed) for the option
+   path;
+1. the pinned source in `/nix/store/*-source/modules/` for the exact semantics.
+
+Hand-rolling is justified only when the native module is absent, or when it
+covers strictly less and the leftover is worth carrying. When it is chosen, say
+which native option was rejected and why.
+
+The failure mode this prevents is silent: a hand-rolled unit often keeps the
+native module's unit name while doing the wrong thing — an unprivileged user
+timer running `nh clean all` where the module runs `nh clean user`.
+
+## Dendritic Structure
+
+- Every `.nix` under `modules/` is a flake-parts module that publishes named
+  aspects under `flake.modules.homeManager`, `.systemManager`, or `.nixos`. A
+  raw class module lives only under an underscore-prefixed path segment.
+- One feature per file, spanning every class it applies to. Registration is
+  filesystem-driven; activation is host-driven.
+- An aspect is host-agnostic. Host-specific facts are selected and parameterized
+  at the host composition layer.
+- Share a value with a `let` binding inside one file, or a flake-parts option
+  across files. Never `specialArgs` or `extraSpecialArgs` — and do not set
+  `specialArgs = { }` to signal restraint.
+- Never let import-list order carry feature semantics.
+- A derivation lives in `pkgs/`, never inline in an aspect.
+
+## Module Style
+
+- `pkgs.stdenv.hostPlatform.system`, not `pkgs.system`.
+- No `with lib;`. `with pkgs;` inside a package list is fine — then drop the
+  `pkgs.` prefix from the entries in it.
+- Inline a `let` binding that is used once.
+- `lib.subtractLists`, `lib.filterAttrs`, `lib.optionals` — reach for `lib`
+  before `builtins`.
+- Custom feature options are named for their aspect. Do not reuse a name an
+  upstream module already owns.
+- An option that exists only to hold one host's value, or only to gate one
+  module, is a candidate for deletion. YAGNI applies to options.
+- A `tools` entry in an agent definition may reference only a tool the child
+  runtime provides at launch. A tool that exists solely because an extension was
+  loaded through `extensions` or `subagentOnlyExtensions` does not go in `tools`;
+  names in `tools` that the runtime does not register fail the run at start.
+  Check that the extension actually registers the name — `pi-fff`'s `multi_grep`
+  registers only when `PI_FFF_MULTIGREP=1`, so listing it killed runs.
+
+## Review Checklist
+
+1. Any comment that restates the line below it — delete.
+1. Any guard on a value the repository supplies — delete.
+1. Any value present in two files — keep one, reference it.
+1. Any option, `mkIf`, or `let` binding with a single consumer and no gate —
+   consider deleting.
+1. `nix flake check --no-build --no-write-lock-file` passes.

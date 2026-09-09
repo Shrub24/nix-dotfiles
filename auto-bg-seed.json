@@ -1,0 +1,114 @@
+[
+  {
+    "pattern": "nh home switch",
+    "n": 622,
+    "p50_s": 0.02,
+    "p90_s": 328.09,
+    "p99_s": 4021.55,
+    "total_min": 1419.0
+  },
+  {
+    "pattern": "bun test",
+    "n": 19,
+    "p50_s": 12.78,
+    "p90_s": 249.22,
+    "p99_s": 595.32,
+    "total_min": 22.8
+  },
+  {
+    "pattern": "helmfile",
+    "n": 89,
+    "p50_s": 0.95,
+    "p90_s": 154.17,
+    "p99_s": 6688.21,
+    "total_min": 245.1
+  },
+  {
+    "pattern": "yamlfmt/yamllint",
+    "n": 97,
+    "p50_s": 4.86,
+    "p90_s": 111.09,
+    "p99_s": 20745.21,
+    "total_min": 431.7
+  },
+  {
+    "pattern": "pre-commit/lefthook",
+    "n": 42,
+    "p50_s": 6.98,
+    "p90_s": 86.01,
+    "p99_s": 666.57,
+    "total_min": 26.5
+  },
+  {
+    "pattern": "docker/podman build/pull",
+    "n": 12,
+    "p50_s": 2.05,
+    "p90_s": 83.33,
+    "p99_s": 85.29,
+    "total_min": 4.3
+  },
+  {
+    "pattern": "agda",
+    "n": 88,
+    "p50_s": 0.01,
+    "p90_s": 67.02,
+    "p99_s": 2884.96,
+    "total_min": 129.7
+  },
+  {
+    "pattern": "git add -A/.",
+    "n": 299,
+    "p50_s": 0.55,
+    "p90_s": 54.9,
+    "p99_s": 583.11,
+    "total_min": 133.9
+  },
+  {
+    "pattern": "sleep",
+    "n": 185,
+    "p50_s": 0.03,
+    "p90_s": 45.02,
+    "p99_s": 120.07,
+    "total_min": 33.9
+  },
+  {
+    "pattern": "npm/pnpm/bun install",
+    "n": 23,
+    "p50_s": 0.04,
+    "p90_s": 32.75,
+    "p99_s": 726.23,
+    "total_min": 16.5
+  },
+  {
+    "pattern": "cargo build/test/check",
+    "n": 20,
+    "p50_s": 11.58,
+    "p90_s": 22.89,
+    "p99_s": 25.78,
+    "total_min": 3.0
+  },
+  {
+    "pattern": "pdflatex/latexmk",
+    "n": 128,
+    "p50_s": 0.01,
+    "p90_s": 21.31,
+    "p99_s": 499.1,
+    "total_min": 48.8
+  },
+  {
+    "pattern": "nix build/develop/shell/run",
+    "n": 3015,
+    "p50_s": 0.02,
+    "p90_s": 10.03,
+    "p99_s": 300.1,
+    "total_min": 919.0
+  },
+  {
+    "pattern": "git clone/fetch/push/pull",
+    "n": 566,
+    "p50_s": 1.52,
+    "p90_s": 9.95,
+    "p99_s": 642.88,
+    "total_min": 814.5
+  }
+]

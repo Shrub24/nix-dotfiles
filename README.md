@@ -21,7 +21,7 @@ nix develop          # or: direnv allow (uses .envrc — `use flake . --impure`)
 
 ```bash
 # Switch the user environment (home-manager)
-nh home switch .#saurabhj
+nh home switch -c saurabhj
 
 # Switch system configuration (system-manager, non-NixOS host)
 system-manager switch --flake .#arch
@@ -46,7 +46,9 @@ nh clean all --keep-since 7d
 
 Setup and operator commands live here; the durable design — directory layout,
 module composition, data flow, and ownership boundaries — is in
-[`ARCHITECTURE.md`](ARCHITECTURE.md).
+[`ARCHITECTURE.md`](ARCHITECTURE.md). The rules that no tool enforces —
+commenting, validation, module and aspect style — are in
+[`CONVENTIONS.md`](CONVENTIONS.md).
 
 Secrets are sops-nix encrypted; switching requires the corresponding age keys
 (see the secrets section of `ARCHITECTURE.md`).

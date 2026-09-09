@@ -29,3 +29,7 @@ fetch.url = "https://git.sr.ht/~tsdh/nirius/archive/nirius-$ver.tar.gz"
 src.webpage = "https://storage.googleapis.com/brv-releases/channels/stable/version"
 src.regex = "[0-9.]+"
 fetch.url = "https://storage.googleapis.com/brv-releases/channels/stable/brv-linux-x64.tar.gz"
+
+[cass]
+src.github = "Dicklesworthstone/coding_agent_session_search"
+fetch.url = "https://github.com/Dicklesworthstone/coding_agent_session_search/archive/refs/tags/$ver.tar.gz"

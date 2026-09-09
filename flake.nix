@@ -43,6 +43,14 @@
       url = "github:noctalia-dev/noctalia";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Community template inputs. Noctalia fetches these from api.noctalia.dev at
+    # runtime; pinning the source repo instead keeps the inputs declarative and
+    # lets the user-template definitions in modules/desktop/noctalia.nix point
+    # at a store path.
+    community-templates = {
+      url = "github:noctalia-dev/community-templates";
+      flake = false;
+    };
     monique = {
       url = "github:ToRvaLDz/monique";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -87,6 +95,13 @@
       url = "github:nix-community/naersk";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    crane = {
+      url = "github:ipetkov/crane";
+    };
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     fsel = {
       url = "github:Mjoyufull/fsel";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -94,7 +109,6 @@
     };
     vicinae = {
       url = "github:vicinaehq/vicinae";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     keypeek = {
       url = "github:srwi/keypeek";

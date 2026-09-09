@@ -1,16 +1,6 @@
 # Web service catalog — single source of truth for localhost web service metadata.
-#
-# This file defines service-local facts only: ports, scheme, endpoint paths,
-# and display metadata. Public routing, TLS, Cloudflare, and OIDC config belong
+# Service-local facts only. Public routing, TLS, Cloudflare, and OIDC config live
 # in the homelab repo's web-services.nix, not here.
-#
-# Derivation rules:
-#   baseUrl    = "${scheme}://${host}:${toString port}"
-#   uiUrl      = baseUrl + ui.path      (null if no ui.path)
-#   healthUrl  = baseUrl + health.path   (null if no health.path)
-#   openapiUrl = baseUrl + openapi.path  (null if no openapi.path)
-#
-# Homepage rule: only services with a ui.path appear in homepage output.
 {
   lib,
 }:
@@ -109,8 +99,7 @@ let
 
   # ── Homepage adapter ────────────────────────────────────────────────
 
-  # Render homepage-compatible grouped output.
-  # Only services with a uiUrl (i.e., ui.path exists) are included.
+  # Render homepage-compatible grouped output from services that have a ui.path.
   toHomepage =
     catalog:
     let
