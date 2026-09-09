@@ -13,6 +13,7 @@
         let
           lintSource = lib.fileset.unions [
             ../../flake.nix
+            ../../statix.toml
             ../../modules
             ../../lib
             ../../policy
@@ -27,7 +28,7 @@
           statix = pkgs.runCommandLocal "statix-check" {
             nativeBuildInputs = [ pkgs.statix ];
             src = lintFiles;
-          } "statix check $src && touch $out";
+          } "statix check -c $src/statix.toml $src && touch $out";
           deadnix = pkgs.runCommandLocal "deadnix-check" {
             nativeBuildInputs = [ pkgs.deadnix ];
             src = lintFiles;
