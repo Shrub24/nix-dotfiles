@@ -27,7 +27,13 @@ in
   nirius = final.callPackage ./nirius {
     inherit (generatedSources.nirius) version src;
   };
+  cass = final.callPackage ./cass {
+    inherit inputs system;
+    inherit (generatedSources.cass) version src;
+  };
   litellm-oci = final.callPackage ./litellm/oci.nix { };
+  models-dev = final.callPackage ./models-dev { };
+  noctalia-template-hooks = final.callPackage ./noctalia-template-hooks { };
   niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
   keypeek = final.callPackage ./keypeek { inherit inputs system; };
 }

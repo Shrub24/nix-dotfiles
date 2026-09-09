@@ -14,12 +14,20 @@
       sha256 = "sha256-V3EVPa6XGqFFJ5FtI486lwtbAKULVHwZw1Tz+oRbRu4=";
     };
   };
+  cass = {
+    pname = "cass";
+    version = "v0.7.1";
+    src = fetchurl {
+      url = "https://github.com/Dicklesworthstone/coding_agent_session_search/archive/refs/tags/v0.7.1.tar.gz";
+      sha256 = "sha256-idRfqeiM2BuSHC9T4ThD2dNjYXKCpqQ2DTacH2D7OWI=";
+    };
+  };
   codexbar = {
     pname = "codexbar";
-    version = "v0.55.1";
+    version = "v0.57.0";
     src = fetchurl {
-      url = "https://github.com/steipete/CodeXBar/releases/download/v0.55.1/CodexBarCLI-v0.55.1-linux-x86_64.tar.gz";
-      sha256 = "sha256-RvY7ogMhHYiydZclHWZWYBdo+XTvyD+iAJcOe016ayk=";
+      url = "https://github.com/steipete/CodeXBar/releases/download/v0.57.0/CodexBarCLI-v0.57.0-linux-x86_64.tar.gz";
+      sha256 = "sha256-vef2RGTWCPb/fBVE+DFx7UlCCmRlLyCiNBV21omBi1I=";
     };
   };
   nirius = {
@@ -32,10 +40,10 @@
   };
   xberg-cli = {
     pname = "xberg-cli";
-    version = "v1.0.14";
+    version = "v1.1.3";
     src = fetchurl {
-      url = "https://github.com/xberg-io/xberg/releases/download/v1.0.14/xberg-cli-x86_64-unknown-linux-gnu.tar.gz";
-      sha256 = "sha256-yh9h7cjvJ0YZxna9lrBYAIcsiKv6rOPQZ0lveEGnNkw=";
+      url = "https://github.com/xberg-io/xberg/releases/download/v1.1.3/xberg-cli-x86_64-unknown-linux-gnu.tar.gz";
+      sha256 = "sha256-SEGYPpTSBhz+4DV8ycsfEhKm3TQLr1uoVGakAJzp354=";
     };
   };
 }
