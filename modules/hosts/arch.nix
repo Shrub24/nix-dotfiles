@@ -5,10 +5,8 @@
   ...
 }:
 let
-  # Host-local literals for the Arch desktop host (B11: former facts folded out
-  # into topology + these literals; _facts.nix removed).
-  # The primary user is the single typed account declaration; every consumer
-  # (HM, NixOS, system-manager, VM, raw host modules) derives from it.
+  # The single typed account declaration; every consumer (HM, NixOS,
+  # system-manager, VM, raw host modules) derives from it.
   primaryUser = {
     name = "saurabhj";
     uid = 1000;
@@ -16,9 +14,7 @@ let
   };
   system = "x86_64-linux";
   overlay = import ../../pkgs { inherit inputs system; };
-  # Host-owned unfree policy (D4): the union of the former host-local
-  # (`_nixos.nix`) and feature-owned (HM `nix` aspect) predicates, applied to
-  # both the standalone HM pkgs and the NixOS global pkgs.
+  # Applied to both the standalone HM pkgs and the NixOS global pkgs.
   unfreePredicate =
     pkg:
     (lib.hasPrefix "nvidia" (lib.getName pkg))
@@ -109,9 +105,10 @@ let
     "tailscale"
     "vicinae"
     "audio"
-    "brave"
+    "brave-origin"
     "chromium"
     "credentials"
+    "defaults"
     "firefox"
     "thunderbird"
     "vscode"
@@ -127,21 +124,20 @@ let
     "zsh"
     "tmux"
     "wezterm"
+    "kitty"
+    "foot"
   ];
   # Full aspect set minus the system-owned duplicates the NixOS target provides
-  # itself (D3): tailscale/syncthing/mosh/surge/niks3. Plus the embedded-only
+  # itself: tailscale/syncthing/mosh/surge/niks3. Plus the embedded-only
   # hardware aspects (cuda/libcamera) the standalone Arch host never selects.
   embeddedHmAspects =
-    builtins.filter (
-      name:
-      !(builtins.elem name [
-        "tailscale"
-        "syncthing"
-        "mosh"
-        "surge"
-        "niks3"
-      ])
-    ) hmAspects
+    lib.subtractLists [
+      "tailscale"
+      "syncthing"
+      "mosh"
+      "surge"
+      "niks3"
+    ] hmAspects
     ++ [
       "cuda"
       "libcamera"
@@ -178,9 +174,7 @@ let
     inherit pkgs;
     modules = [
       (import ./arch/_home.nix { inherit primaryUser; })
-      # Standalone target selection (D2): generic Linux + the Arch-only Niks3
-      # user uploader, re-homed from _home.nix so the embedded NixOS eval
-      # never sees that unknown option.
+      # Standalone-only: the embedded NixOS eval must not see these.
       {
         targets.genericLinux.gpu.nvidia = {
           enable = true;
@@ -201,8 +195,6 @@ let
     modules = [
       (import ./arch/_nixos.nix { inherit primaryUser; })
       { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration; aspects see pkgs.niks3-hook
-      # Host-owned unfree predicate for the NixOS global pkgs (D4), so the
-      # embedded HM via useGlobalPkgs shares the identical nixpkgs.config.
       { nixpkgs.config.allowUnfreePredicate = unfreePredicate; }
       inputs.home-manager.nixosModules.home-manager
       {
@@ -227,13 +219,10 @@ let
       }
     ]
     ++ map nixosAspect nixosAspects;
-    specialArgs = { }; # empty — NO inputs/hostFacts bus; maintain cleanup invariant
   };
 in
 {
   config = {
-    # Typed topology (B2/B11): host + service facts now live here, read via
-    # `config.topology` by feature modules — not through an argument-passing bus.
     topology.hosts.arch = {
       inherit system;
       inherit primaryUser;
@@ -251,15 +240,48 @@ in
     flake.systemConfigs.arch = systemConfiguration;
     flake.nixosConfigurations.shrub = nixosConfiguration;
 
-    # Forces full eval of all configurations under nix flake check without switching.
     flake.checks.${system} = {
       home-manager-activation = homeConfiguration.activationPackage;
       system-manager-config = systemConfiguration;
       nixos-system = nixosConfiguration.config.system.build.toplevel;
 
-      # VM boot gate: imports the SAME aspects as nixosConfigurations.shrub so this
-      # catches NixOS module-system conflicts (a unit wanting a path that doesn't
-      # exist, a mkIf turning false, a circular systemd dep) that eval-only misses.
+      # Agent-definition drift guard: pi-subagents treats a missing explicit
+      # skill as an advisory warning, so a renamed or deleted skill would
+      # silently under-instruct children. Fail eval instead.
+      pi-agent-skills-referenced =
+        let
+          agentsDir = ../agents/pi/agents;
+          skillsDir = ../agents/pi/skills;
+          agentFiles = builtins.attrNames (
+            lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name) (
+              builtins.readDir agentsDir
+            )
+          );
+          referenced = lib.unique (
+            lib.flatten (
+              map (
+                agentFile:
+                let
+                  parts = lib.splitString "---" (builtins.readFile (agentsDir + "/${agentFile}"));
+                  # File starts with ---, so the frontmatter is element 1.
+                  frontmatter = lib.elemAt parts 1;
+                  lines = lib.filter (line: lib.hasPrefix "skills:" line) (lib.splitString "\n" frontmatter);
+                in
+                map lib.trim (lib.flatten (map (line: lib.splitString "," (lib.removePrefix "skills:" line)) lines))
+              ) agentFiles
+            )
+          );
+          available = builtins.attrNames (
+            lib.filterAttrs (_: type: type == "directory") (builtins.readDir skillsDir)
+          );
+          missing = lib.subtractLists available referenced;
+        in
+        if missing == [ ] then
+          pkgs.runCommand "pi-agent-skills-referenced" { } "touch $out"
+        else
+          throw "pi agent files reference missing skills: ${lib.concatStringsSep ", " missing}";
+
+      # VM boot gate: catches module-system conflicts that eval-only misses.
       vm-desktop = pkgsUnfree.testers.runNixOSTest {
         name = "vm-desktop";
         nodes.arch =
@@ -282,7 +304,6 @@ in
             services.niks3-auto-upload.enable = pkgs.lib.mkForce false;
             system.stateVersion = "26.11";
             networking.hostName = "shrub";
-            # Host pkgs for this test is pkgsUnfree (allowUnfree), so nixpkgs.config inside the VM is consistent.
             users.users.${primaryUser.name}.initialPassword = "nixos";
             environment.pathsToLink = [
               "/share/applications"
@@ -305,6 +326,8 @@ in
                   "tmux"
                   "wezterm"
                   "ghostty"
+                  "kitty"
+                  "foot"
                   "cli"
                   "ssh"
                   "kde-apps"
@@ -313,7 +336,8 @@ in
                   "libinput"
                   "zathura"
                   "firefox"
-                  "brave"
+                  "brave-origin"
+                  "defaults"
                   "vscode"
                 ];
                 home.username = primaryUser.name;
@@ -330,10 +354,8 @@ in
           arch.wait_for_unit("multi-user.target")
           arch.wait_for_unit("home-manager-${primaryUser.name}.service")
           arch.wait_for_unit("greetd.service")
-          # greetd.service active != greeter ready: cage + greeter need seconds more
-          # to present the first frame; keys sent before the surface is mapped are
-          # silently dropped (observed race: keys at 16.05s, first frame 16.12s).
-          # NB: no -u filter — the greeter logs under its logind session scope.
+          # greetd.active != greeter ready: cage + greeter need seconds more to
+          # map the first frame, and keys sent before that are dropped.
           arch.wait_until_succeeds("journalctl -b --no-pager | grep -q 'greeter initialized'", timeout=120)
           arch.sleep(2)
           arch.screenshot("greeter")
@@ -341,13 +363,6 @@ in
           arch.send_key("ret")
           arch.wait_until_succeeds("pgrep -x niri")
           arch.screenshot("desktop")
-          # Manual UX testing: the QEMU window stays open. For interactive use,
-          # build .#checks.x86_64-linux.vm-desktop.driverInteractive and run
-          # ./result/bin/nixos-test-driver (then start_all() etc).
-          # NOTE (deliberately omitted): the optional mutable-preservation check
-          # (edit the WezTerm seed in-guest, re-run user tmpfiles, assert the edit
-          # survives) was left out to keep the VM lean and non-flaky; the `C`
-          # seed semantics were independently reviewed in task 3.1.
         '';
       };
 
@@ -355,12 +370,8 @@ in
         name = "vm-skeleton-boot";
         nodes.arch = {
           imports = map nixosAspect nixosAspects;
-          # Host-local literals (mirror _nixos.nix):
           system.stateVersion = "26.11";
           networking.hostName = "shrub";
-          # nixpkgs.hostPlatform NOT set here: runNixOSTest pins node.pkgs (= pkgsLinux, the overlayed
-          # pkgs incl. pkgs.niks3-hook) as read-only, which already fixes platform + overlay.
-          # VM hardware (replaces _hardware.nix; QEMU disk + grub, headless):
           fileSystems."/" = {
             device = "/dev/vda";
             fsType = "ext4";
@@ -370,58 +381,28 @@ in
           boot.initrd.availableKernelModules = [ "virtio_blk" ];
           boot.initrd.kernelModules = [ "virtio_blk" ];
           virtualisation.graphics = false;
-          services.btrfs.autoScrub.enable = pkgs.lib.mkForce false; # VM uses ext4, not btrfs — no scrub target
-          services.niks3-auto-upload.enable = pkgs.lib.mkForce false; # VM: no provisioned NIKS3 auth token
+          services.btrfs.autoScrub.enable = pkgs.lib.mkForce false;
+          services.niks3-auto-upload.enable = pkgs.lib.mkForce false;
         };
         testScript = ''
           arch.start()
           arch.wait_for_unit("multi-user.target")
           arch.succeed("nix-store --version")
-          # nix-daemon.service is SOCKET-ACTIVATED on NixOS (wanted by sockets.target) and sits idle
-          # until a client connects. Also, nix run as root talks to the LOCAL store (root can write
-          # /nix/store directly), which never touches the daemon. So force a real daemon round-trip
-          # via the daemon store, which triggers socket-activation and starts nix-daemon.service.
+          # nix-daemon is socket-activated and idle until a client connects, and
+          # root talks to the local store without touching it — force a real
+          # daemon round-trip so the unit actually starts.
           arch.succeed("nix --store daemon store ping")
           arch.wait_for_unit("nix-daemon.service")
 
-          # tailscale side-port: native services.tailscale runs tailscaled.service.
           arch.wait_for_unit("tailscaled.service")
-
-          # network side-port: services.resolved enable -> systemd-resolved.service.
           arch.wait_for_unit("systemd-resolved.service")
-
-          # NetworkManager (network aspect)
           arch.wait_for_unit("NetworkManager.service")
-
-          # Avahi mDNS (network aspect)
           arch.wait_for_unit("avahi-daemon.service")
-
-          # SSH server (ssh aspect)
           arch.wait_for_unit("sshd.service")
-
-          # ACPI event daemon (power aspect)
           arch.wait_for_unit("acpid.service")
-          # udisks2 is DBus-activated, not auto-started in headless VM with no disks — verify unit exists but don't wait for active
+          # DBus-activated; no disks in a headless VM, so assert the unit exists
+          # rather than waiting for it to run.
           arch.succeed("systemctl cat udisks2.service")
-
-          # Skipped (documented):
-          #  - bluetooth: no bluetooth controller in QEMU
-          #  - pipewire: user-scoped on NixOS (no user session in headless VM)
-          #  - podman: socket-activated, heavy; eval-tested, not runtime-tested here
-          #  - plymouth: graphics
-          #  - upower/power-profiles-daemon: no battery/power hardware in QEMU
-          #  - gnome-keyring: user session
-          #  - openrazer: no Razer hardware
-          #  - snapper: VM uses ext4, not btrfs
-          #  - printing/cups: socket-activated, needs print spooler interaction
-
-          # Skipped assertions (documented):
-          #  - ssh aspect is client-only (no server) -> nothing to assert.
-          #  - boot aspect is a no-op; systemd-boot is a bootloader, not a runtime service.
-          #  - greeter side-port: polkit.service is socket/DBus-activated and sits idle in a
-          #    headless VM with no polkit client, so it never reaches active -> not asserted here
-          #    (likewise greetd.service needs graphics/DRI to run; sops-install-secrets.service
-          #    needs the sops key path + secrets that don't exist in CI/VM).
         '';
       };
     };
