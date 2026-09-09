@@ -2,7 +2,7 @@
   inputs,
   system,
 }:
-final: prev:
+final: _prev:
 let
   generatedSources = import ./_sources/generated.nix {
     inherit (final)
@@ -28,7 +28,6 @@ in
     inherit (generatedSources.nirius) version src;
   };
   litellm-oci = final.callPackage ./litellm/oci.nix { };
-  surge = final.callPackage ./surge { inherit inputs; };
   niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
   keypeek = final.callPackage ./keypeek { inherit inputs system; };
 }

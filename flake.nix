@@ -1,6 +1,13 @@
 {
   description = "saurabhj's Nix configuration — dendritic home-manager";
 
+  nixConfig = {
+    extra-substituters = [ "https://vicinae.cachix.org" ];
+    extra-trusted-public-keys = [
+      "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc="
+    ];
+  };
+
   inputs = {
     nixpkgs = {
       url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -91,10 +98,6 @@
     };
     keypeek = {
       url = "github:srwi/keypeek";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    surge = {
-      url = "github:SurgeDM/Surge";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
