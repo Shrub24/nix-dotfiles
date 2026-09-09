@@ -23,11 +23,9 @@ _: {
   flake.modules.nixos.tailscale =
     { pkgs, ... }:
     {
-      # Native services.tailscale replaces the manual systemd.packages + tailscaled
-      # unit wiring: it sets up the daemon, persisted state in /var/lib/tailscale,
-      # and the CLI. services.tailscale.port defaults to 41641 (matches the
-      # systemManager PORT env var). openFirewall stays false - tailscale handles
-      # NAT traversal without it in client mode (parity with the systemManager aspect).
+      # openFirewall stays false: tailscale handles NAT traversal in client mode,
+      # matching the systemManager aspect. services.tailscale.port defaults to
+      # 41641, the same value the systemManager aspect pins.
       services.tailscale = {
         enable = true;
         package = pkgs.tailscale;

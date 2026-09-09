@@ -31,11 +31,10 @@ _: {
 
   ;
 
-  # NixOS translation: the systemManager aspect's resolved.conf.d mdns-disable
-  # drop-in is owned natively by services.resolved on NixOS. ponytail: the
-  # config-level enableResolvedMdns option is dropped - just enable resolved with
-  # mDNS off (matches current `/etc` behavior). Re-add the option if a caller
-  # ever needs mDNS on; avahi is the separate native knob for that.
+  # The systemManager aspect's resolved.conf.d mdns-disable drop-in is owned
+  # natively by services.resolved on NixOS.
+  # ponytail: enableResolvedMdns is dropped — enable resolved with mDNS off.
+  # Re-add the option if a caller ever needs mDNS on; avahi is the separate knob.
   flake.modules.nixos.network =
     { pkgs, ... }:
     let
@@ -43,7 +42,6 @@ _: {
     in
     {
       services.resolved.enable = true;
-      # NixOS settings attribute shape (extraConfig was removed upstream).
       services.resolved.settings.Resolve.MulticastDNS = "no";
 
       networking.networkmanager = {
@@ -54,7 +52,7 @@ _: {
         ];
       };
       networking.firewall.enable = true;
-      # Tailnet-scoped exposure only; the global firewall stays closed (D9).
+      # Tailnet-scoped exposure only; the global firewall stays closed.
       networking.firewall.interfaces.tailscale0 = {
         allowedTCPPorts = [
           22000 # syncthing data (relay/TCP)

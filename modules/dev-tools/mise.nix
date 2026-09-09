@@ -1,4 +1,5 @@
-{ inputs, ... }: {
+{ inputs, ... }:
+{
   flake.modules.homeManager.mise =
     {
       config,
@@ -35,20 +36,12 @@
         programs.mise = {
           enable = true;
           enableFishIntegration = true;
-          package = pkgs.mise;
 
-          globalConfig.tools = lib.filterAttrs (_: v: v != null) {
+          globalConfig.tools = {
             node = config.programs.miseTools.node;
             pnpm = config.programs.miseTools.pnpm;
             bun = config.programs.miseTools.bun;
             aube = "latest";
-
-            "npm:ocx" = "latest";
-            "npm:codeburn" = "latest";
-            "npm:neovim" = "latest";
-            "npm:matlab-language-server" = "latest";
-            "npm:@getpaseo/cli" = "latest";
-            "npm:@rama_nigg/open-cursor" = "latest";
           };
         };
       };

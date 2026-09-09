@@ -3,8 +3,7 @@
   ...
 }:
 let
-  # Typed primary-user topology read at the flake-parts level (B11); the greeter
-  # and polkit sync derive their user/UID from it.
+  # Typed primary-user topology; the greeter and polkit sync derive user/UID here.
   primaryUser = config.topology.hosts.arch.primaryUser;
 in
 {
@@ -16,7 +15,6 @@ in
     let
       noctaliaGreeterPackage = pkgs.noctalia-greeter;
 
-      # Specialized at the feature use site (B9): uid from typed topology (B11).
       noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
         inherit (primaryUser) uid;
       };
@@ -115,14 +113,12 @@ in
 
   ;
 
-  # NixOS translation of the systemManager greeter aspect.
-  # The nixpkgs-native services.displayManager.noctalia-greeter module now owns
-  # the greeter.toml render (/var/lib/noctalia-greeter/greeter.toml, via tmpfiles
-  # L+) and the greetd session wiring (enable + default_session.command via
-  # mkDefault). The polkit sync rule, greeter.log, and wayland session desktop
-  # entries stay hand-rolled here.
-  # Known upstream limitation: greeter.toml is clobbered on every boot (same
-  # semantics as the previous store-symlink approach — no regression).
+  # NixOS translation of the systemManager greeter aspect. The nixpkgs-native
+  # services.displayManager.noctalia-greeter module owns the greeter.toml render
+  # and the greetd session wiring; the polkit sync rule, greeter.log, and
+  # wayland session desktop entries stay hand-rolled here.
+  # Upstream clobbers greeter.toml on every boot (no regression — the previous
+  # store-symlink approach had the same semantics).
   flake.modules.nixos.greeter =
     {
       pkgs,
@@ -131,7 +127,6 @@ in
     let
       noctaliaGreeterPackage = pkgs.noctalia-greeter;
 
-      # Specialized at the feature use site (B9): uid from typed topology (B11).
       noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
         inherit (primaryUser) uid;
       };
@@ -160,10 +155,8 @@ in
       '';
     in
     {
-      # Native nixpkgs module: own greeter.toml render + greetd session wiring.
       # extraArgs preserves the "--user" session arg; settings.user.default pins
-      # the [user] default in greeter.toml. Both mechanisms mirror the old hand-
-      # rolled wiring.
+      # the [user] default in greeter.toml.
       services.displayManager.noctalia-greeter = {
         enable = true;
         extraArgs = [
@@ -174,9 +167,6 @@ in
       };
 
       programs.uwsm.enable = true;
-      # Native UWSM compositor registration (D10): generates the
-      # "Niri (UWSM)" wayland-session desktop entry, replacing the custom
-      # launcher/desktop-file tmpfiles the NixOS branch used before.
       programs.uwsm.waylandCompositors.niri = {
         prettyName = "Niri";
         comment = "A scrollable-tiling Wayland compositor";
@@ -184,7 +174,7 @@ in
       };
 
       # Noctalia's greeter-sync pkexec wrapper lives at /run/wrappers/bin/pkexec
-      # on NixOS (D6); the polkit rule authorizing it is environment.etc below.
+      # on NixOS; the polkit rule authorizing it is environment.etc below.
       security.polkit.enablePkexecWrapper = true;
 
       systemd.tmpfiles.rules = [

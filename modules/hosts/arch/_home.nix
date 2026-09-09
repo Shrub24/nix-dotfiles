@@ -5,23 +5,12 @@
   pkgs,
   ...
 }:
-
-let
-  # Host-local remote hosts list (B11), matching arch.nix topology.
-  sshHosts = [
-    "oci-melb-1"
-    "do-admin-1"
-    "la-admin-1"
-  ];
-in
 {
-  # aichat owns its env template (cross-module placeholder from credentials).
   sops.templates."aichat.env".content = ''
     LITELLM_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
   '';
 
   home = {
-    # Derived from the typed topology primaryUser closed over by arch.nix (B11).
     username = primaryUser.name;
     homeDirectory = "/home/${primaryUser.name}";
     stateVersion = "26.11";
@@ -73,7 +62,6 @@ in
     };
     lazyjournal = {
       enable = true;
-      inherit sshHosts;
     };
     docsMcp.enable = true;
     qmd.enable = true;
@@ -84,7 +72,6 @@ in
     hermes-agent.enable = true;
 
     zsh.initContent = lib.mkAfter ''
-      # Auto-attach tmux on remote (SSH/mosh) login
       if [[ -z "$TMUX" ]] && { [[ -n "$SSH_CONNECTION" ]] || [[ -n "$MOSH_SERVER" ]]; }; then
         exec tmux new-session -A -s main
       fi

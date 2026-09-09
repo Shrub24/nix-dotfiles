@@ -77,8 +77,9 @@ _: {
 
           blur = {
             passes = 3;
-            offset = 3.0;
-            noise = 0.01;
+            offset = 4.3;
+            noise = 0.02;
+            saturation = 0.7;
           };
 
           layout = {
@@ -196,15 +197,13 @@ _: {
 
           cursor = {
             "xcursor-theme" = "Bibata-Rainbow-Modern";
-            # from dms/cursor.kdl
             "xcursor-size" = 26;
           };
 
           debug."honor-xdg-activation-with-invalid-serial" = { };
         };
 
-        # Generic window rules and binds stay verbatim KDL. The Noctalia shell
-        # integration and Monique's monitors.kdl include live in their own aspects.
+        # Noctalia shell integration and Monique's monitors include live in their own aspects.
         extraConfig = ''
 
 
@@ -229,18 +228,18 @@ _: {
 
           window-rule {
             match app-id="firefox"
-            match app-id="brave"
+            match app-id="brave-origin"
             match app-id="okular"
             match app-id="libreoffice"
-            opacity 0.90
+            opacity 0.85
           }
 
           window-rule {
             match app-id="firefox" is-active=false
-            match app-id="brave" is-active=false
+            match app-id="brave-origin" is-active=false
             match app-id="okular" is-active=false
             match app-id="libreoffice" is-active=false
-            opacity 0.85
+            opacity 0.75
           }
 
           window-rule {
@@ -278,24 +277,18 @@ _: {
           }
 
           window-rule {
+            match app-id=r#"^org\.wezfurlong\.wezterm$"# is-active=true
+            match app-id="zen"                           is-active=true
+            match app-id="com.mitchellh.ghostty"         is-active=true
+            match app-id="kitty"                         is-active=true
+            opacity 0.85
+          }
+
+          window-rule {
             match app-id=r#"$"# title="^Picture-in-Picture$"
             match app-id="zoom"
             match app-id="org.freedesktop.impl.portal"
             open-floating true
-          }
-
-          window-rule {
-            match app-id="^brave-browser$"
-            open-focused true
-            open-on-workspace "mb"
-          }
-
-          window-rule {
-            match app-id=r#"^brave-.*-Profile_1$"#
-            open-on-workspace "home"
-            default-column-width { proportion 0.33333; }
-            open-focused false
-            opacity 0.01
           }
 
           window-rule {

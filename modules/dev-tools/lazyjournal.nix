@@ -1,4 +1,11 @@
-_: {
+{
+  config,
+  ...
+}:
+let
+  remoteHosts = config.topology.hosts.arch.remoteHosts;
+in
+{
   flake.modules.homeManager.lazyjournal =
     {
       config,
@@ -20,20 +27,6 @@ _: {
           defaultText = lib.literalExpression "pkgs.lazyjournal";
           description = "The lazyjournal package to install.";
         };
-
-        sshHosts = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          default = [ ];
-          example = [
-            "do-admin-1"
-            "oci-melb-1"
-          ];
-          description = ''
-            SSH connection strings for remote log access. Each entry is passed
-            verbatim to ssh(1), so bare host aliases resolve via the user's
-            SSH config. The form `user@host -p 2222` is also accepted.
-          '';
-        };
       };
 
       config = lib.mkIf cfg.enable {
@@ -41,7 +34,7 @@ _: {
 
         xdg.configFile."lazyjournal/config.yml".text = lib.generators.toYAML { } {
           ssh = {
-            hosts = cfg.sshHosts;
+            hosts = remoteHosts;
           };
         };
       };

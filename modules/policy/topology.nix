@@ -1,7 +1,6 @@
-# Shared typed top-level data (SKILL.md "Shared typed top-level data"):
-# host/service topology owned by its domain, read via `config` by feature
-# modules — never injected through argument buses. Populated only at the host
-# composition layer (modules/hosts/arch.nix).
+# Host/service topology owned by its domain, read via `config` by feature modules
+# — never injected through argument buses. Populated only at the host layer
+# (modules/hosts/arch.nix).
 { lib, ... }:
 {
   options.topology.hosts = lib.mkOption {

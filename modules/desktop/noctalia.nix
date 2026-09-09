@@ -4,8 +4,7 @@
   ...
 }:
 let
-  # Typed primary-user topology read at the flake-parts level (B11); the
-  # greeter-sync privilege helper derives its UID from it.
+  # Typed primary-user topology; the greeter-sync helper derives its UID from it.
   primaryUser = config.topology.hosts.arch.primaryUser;
 in
 {
@@ -19,22 +18,290 @@ in
     let
       noctaliaGreeterPackage = pkgs.noctalia-greeter;
 
-      # Specialized at the feature use site (B9): uid from typed topology (B11).
+      # Template inputs: upstream's builtins ship inside the package, the
+      # community ones come from the pinned flake input, and the rest are our own
+      # templates in modules/desktop/noctalia-templates.
+      builtinTemplates = "${pkgs.noctalia}/share/noctalia/assets/templates";
+      localTemplates = ./noctalia-templates;
+      templateHooks = pkgs.noctalia-template-hooks;
+
+      # Built-in rows: [dir file] read from the noctalia package assets.
+      # `script` is the template's own apply.sh in that directory; `action` is a
+      # Noctalia-native post action. A row with neither needs no hook because
+      # Nix points the consuming app at the rendered file.
+      builtinRows = [
+        {
+          id = "btop";
+          dir = "btop";
+          file = "btop.theme";
+          out = "$XDG_CONFIG_HOME/btop/themes/noctalia.theme";
+          script = { };
+        }
+        {
+          id = "cava";
+          dir = "cava";
+          file = "cava.ini";
+          out = "$XDG_CONFIG_HOME/cava/themes/noctalia";
+          script = { };
+        }
+        {
+          id = "kcolorscheme";
+          dir = "kde";
+          file = "kcolorscheme.colors";
+          out = "$XDG_DATA_HOME/color-schemes/noctalia.colors";
+          action = "kde-color-scheme";
+        }
+        {
+          id = "starship";
+          dir = "starship";
+          file = "starship.toml";
+          out = "$XDG_CACHE_HOME/noctalia/starship-palette.toml";
+          script = { };
+        }
+        {
+          # wezterm.lua sets color_scheme = "Noctalia" and reload-watches this
+          # file, so upstream's config-editing hook is not needed.
+          id = "wezterm";
+          dir = "wezterm";
+          file = "wezterm.toml";
+          out = "$XDG_CONFIG_HOME/wezterm/colors/Noctalia.toml";
+        }
+        {
+          # ghostty.nix sets theme = "noctalia"; upstream's reload.sh (config
+          # edit stripped) only pokes the running instance to re-read the theme.
+          id = "ghostty";
+          dir = "ghostty";
+          file = "ghostty";
+          out = "$XDG_CONFIG_HOME/ghostty/themes/noctalia";
+          cmd = "bash ${builtinTemplates}/ghostty/reload.sh";
+        }
+        {
+          # kitty.nix includes themes/noctalia.conf; upstream's apply.sh is
+          # config editing, so just poke running instances (SIGUSR1 = reload).
+          id = "kitty";
+          dir = "kitty";
+          file = "kitty.conf";
+          out = "$XDG_CONFIG_HOME/kitty/themes/noctalia.conf";
+          cmd = "pkill -USR1 -x kitty || true";
+        }
+        {
+          # foot.ini declares the include; upstream's apply.sh is entirely
+          # config editing, so no hook — foot re-reads on next launch.
+          id = "foot";
+          dir = "foot";
+          file = "foot";
+          out = "$XDG_CONFIG_HOME/foot/themes/noctalia";
+        }
+      ];
+
+      # Community rows: [dir file] read from inputs.community-templates.
+      communityRows = [
+        {
+          id = "bat";
+          dir = "bat";
+          file = "bat.tmTheme";
+          out = "$XDG_CONFIG_HOME/bat/themes/noctalia.tmTheme";
+          cmd = "${templateHooks.bat}/bin/noctalia-template-bat";
+        }
+        {
+          # Upstream's hook writes the theme PNGs and syncs Brave's Preferences;
+          # it only reads the rendered manifest.
+          id = "brave-origin";
+          dir = "brave-origin";
+          file = "manifest.json";
+          out = "$XDG_CACHE_HOME/noctalia/brave-origin-theme/manifest.json";
+          script.args = "{{ mode }}";
+        }
+        {
+          id = "fzf";
+          dir = "fzf";
+          file = "fzf.sh";
+          out = "$XDG_CONFIG_HOME/fzf/themes/noctalia.sh";
+        }
+        {
+          id = "fzf-fish";
+          dir = "fzf";
+          file = "fzf.fish";
+          out = "$XDG_CONFIG_HOME/fzf/themes/noctalia.fish";
+        }
+        {
+          id = "feishin";
+          dir = "feishin";
+          file = "custom.css";
+          out = "$XDG_CONFIG_HOME/feishin/custom.css";
+        }
+        {
+          id = "glow";
+          dir = "glow";
+          file = "glow.json";
+          out = "$XDG_CONFIG_HOME/glow/noctalia.json";
+        }
+        {
+          id = "lazygit";
+          dir = "lazygit";
+          file = "lazygit.yml";
+          out = "$XDG_CONFIG_HOME/lazygit/themes/noctalia.yml";
+          script = { };
+        }
+        {
+          # Upstream builds the .oxt inside its own directory, so it runs from a
+          # staged copy via the generic `stage` helper.
+          id = "libreoffice";
+          dir = "libreoffice";
+          file = "Theme_Colors.xcu";
+          out = "$XDG_STATE_HOME/noctalia/libreoffice-theme-staging/Theme_Colors.xcu";
+          stage = true;
+        }
+        {
+          id = "micro";
+          dir = "micro";
+          file = "noctalia.micro";
+          out = "$XDG_CONFIG_HOME/micro/colorschemes/noctalia.micro";
+          script = { };
+        }
+        {
+          id = "neovim";
+          dir = "neovim";
+          file = "matugen-template.lua";
+          out = "$XDG_CONFIG_HOME/nvim/lua/matugen.lua";
+          script = { };
+        }
+        {
+          id = "obs";
+          dir = "obs";
+          file = "matugen.obt";
+          out = "$XDG_CONFIG_HOME/obs-studio/themes/matugen.obt";
+        }
+        {
+          id = "opencode";
+          dir = "opencode";
+          file = "opencode.json";
+          out = "$XDG_CONFIG_HOME/opencode/themes/matugen.json";
+        }
+        {
+          id = "pywalfox-beta4";
+          dir = "pywalfox-beta4";
+          file = "pywalfox.json";
+          out = "$XDG_CACHE_HOME/wal/colors.json";
+          action = "firefox-theme";
+        }
+        {
+          # tmux.conf sources this file from the Nix-rendered config.
+          id = "tmux";
+          dir = "tmux";
+          file = "tmux.conf";
+          out = "$XDG_CONFIG_HOME/tmux/themes/noctalia.conf";
+        }
+        {
+          # Vicinae's theme is named in modules/desktop/vicinae.nix; no hook.
+          id = "vicinae";
+          dir = "vicinae";
+          file = "vicinae.toml";
+          out = "$XDG_DATA_HOME/vicinae/themes/noctalia.toml";
+        }
+        {
+          id = "yazi";
+          dir = "yazi";
+          file = "yazi.toml";
+          out = "$XDG_CONFIG_HOME/yazi/flavors/noctalia.yazi/flavor.toml";
+          script = { };
+        }
+        {
+          id = "zathura";
+          dir = "zathura";
+          file = "zathurarc";
+          out = "$XDG_CONFIG_HOME/zathura/noctaliarc";
+          script = { };
+        }
+        {
+          # Only the Midnight flavour of upstream's Discord CSS is rendered; the
+          # theme is selected inside Vesktop.
+          id = "vesktop";
+          dir = "discord";
+          file = "discord-midnight.css";
+          out = "$XDG_CONFIG_HOME/vesktop/themes/noctalia.theme.css";
+        }
+      ];
+
+      # The pinned input is 7.7 MB of every community template; keep only the
+      # directories the rows above read from. lib.fileset rejects a flake input
+      # (a store path held as a string), so the wanted directories are copied out.
+      communityTemplates = pkgs.runCommand "noctalia-community-templates" { } ''
+        mkdir -p $out
+        ${lib.concatMapStringsSep "\n" (dir: "cp -r ${inputs.community-templates}/${dir} $out/") (
+          lib.unique (map (row: row.dir) communityRows)
+        )}
+      '';
+
+      # Rows become template entries. `root` is the input the row's paths are
+      # relative to, so the same builder serves both tables.
+      templateEntries =
+        root: rows:
+        builtins.listToAttrs (
+          map (
+            row:
+            let
+              scriptHook =
+                lib.optionalString (row ? script)
+                  "bash ${root}/${row.dir}/apply.sh${lib.optionalString (row.script ? args) " ${row.script.args}"}";
+              hook =
+                row.cmd or (
+                  if row ? stage then
+                    "${templateHooks.stage}/bin/noctalia-template-stage ${root}/${row.dir}"
+                  else if scriptHook != "" then
+                    scriptHook
+                  else
+                    null
+                );
+            in
+            {
+              name = row.id;
+              value = {
+                input_path = "${root}/${row.dir}/${row.file}";
+                output_path = row.out;
+              }
+              // lib.optionalAttrs (row ? action) { post_action = row.action; }
+              // lib.optionalAttrs (hook != null) { post_hook = hook; };
+            }
+          ) rows
+        );
+
+      user =
+        templateEntries builtinTemplates builtinRows
+        // templateEntries communityTemplates communityRows
+        // {
+          # Our own templates. fastfetch's config *is* the template: Noctalia
+          # renders the whole file, palette placeholders included, so no hook and
+          # no merge step is involved.
+          fastfetch = {
+            input_path = "${localTemplates}/fastfetch.jsonc";
+            output_path = "$XDG_CONFIG_HOME/fastfetch/config.jsonc";
+          };
+          # Upstream's mapping renders secondary text (todos, timestamps,
+          # thinking) at on_surface_variant and "very dim" text at
+          # outline_variant, which is ~2:1 on the dark background. The local copy
+          # shifts both tiers up; see the vars block in the file.
+          pi-agent = {
+            input_path = "${localTemplates}/pi-agent.json";
+            output_path = "${config.home.homeDirectory}/.pi/agent/themes/noctalia.json";
+          };
+        };
+
+      # Specialized at the feature use site: uid from typed topology.
       noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
         inherit (primaryUser) uid;
       };
 
       # Packaged seed for the mutable wallpaper. Copied into the user home only
-      # when the destination is absent (tmpfiles `C`, not `C+`), so an existing
-      # runtime-edited wallpaper survives subsequent switches. The packaged
-      # source is PNG while the historical destination ends in `.jpg`; Qt image
-      # readers inspect content, so no conversion dependency is added.
+      # when absent (tmpfiles `C`, not `C+`), so a runtime-edited wallpaper survives
+      # switches. The packaged source is PNG where the destination ends in `.jpg`;
+      # Qt inspects content, so no conversion dependency is added.
       wallpaperSeed = pkgs.nixos-artwork.wallpapers.nineish-dark-gray.gnomeFilePath;
 
       noctaliaGreeterSyncPkexec = pkgs.writeShellApplication {
         name = "noctalia-greeter-sync-pkexec";
         # NixOS resolves the security.wrappers pkexec; generic-Linux hosts use
-        # the distro pkexec (D6).
+        # the distro pkexec.
         text = ''
           exec ${
             if config.targets.genericLinux.enable then "/usr/bin/pkexec" else "/run/wrappers/bin/pkexec"
@@ -48,10 +315,9 @@ in
       ];
 
       # Bootstrap the mutable wallpaper directory + seed on first activation.
-      # home.file / xdg.dataFile would make the destination a store symlink and
-      # break runtime changes; `d`+`C` create mutable paths under user
-      # ownership and copy the packaged seed only when absent. `C` (not `C+`)
-      # preserves a pre-existing wallpaper at the historical destination.
+      # xdg.dataFile would store-link the destination and break runtime changes;
+      # `d`+`C` create mutable paths under user ownership and copy the seed only
+      # when absent. `C` (not `C+`) preserves a pre-existing wallpaper.
       systemd.user.tmpfiles.rules = [
         "d %h/.local/share/wallpapers 0755 - - -"
         "C %h/.local/share/wallpapers/wallpapersden.com_colorful-textured-abstract_3840x2160.jpg 0644 - - - ${wallpaperSeed}"
@@ -141,6 +407,25 @@ in
             wallpaper_scheme = "m3-tonal-spot";
             builtin = "Catppuccin";
             community_palette = "Oxocarbon";
+
+            # Template definitions. Upstream's builtin and community catalogues
+            # are switched off: `templates` below is the whole set, so which
+            # templates exist, where they render, and what runs afterwards is
+            # ours, and nothing is downloaded at apply time.
+            #
+            # The rows are the single source of truth — the same table drives
+            # both the entries and the input filter, so a row cannot supply one
+            # without the other. Inputs are store paths: the noctalia package for
+            # builtins, the pinned community-templates input for the rest.
+            #
+            # A row carries a hook only when the consuming app cannot be pointed
+            # at the rendered file from Nix; see the per-row comments below.
+            templates = {
+              enable_builtin_templates = false;
+              enable_community_templates = false;
+
+              inherit user;
+            };
           };
 
           wallpaper = {
@@ -290,7 +575,7 @@ in
           bar.action = {
             position = "top";
             layer = "overlay";
-            reserve_space = false;
+            reserve_space = true;
             background_opacity = 0.58;
             capsule_fill = "surface";
             capsule_foreground = "on_surface";
@@ -324,7 +609,6 @@ in
                 members = [
                   "screenshot"
                   "elijaharch/wl-screen-mirror:mirror"
-                  "noctalia/screen_recorder:recorder"
                   "alexander/screen-toolkit:widget"
                 ];
                 opacity = 0.06;
@@ -534,7 +818,7 @@ in
             };
 
             "salemsayed/codexbar-meter:bar" = {
-              enabled = false;
+              enabled = true;
               scale = 1.3;
             };
           };
@@ -551,8 +835,9 @@ in
           };
 
           plugins = {
+            # screen_recorder is deliberately absent: screen-toolkit covers the
+            # same ground and the recorder widget is not on either bar.
             enabled = [
-              "noctalia/screen_recorder"
               "salemsayed/codexbar-meter"
               "lux/ideapad-conservation-mode"
               "kenn/keybind-cheatsheet"
@@ -576,6 +861,11 @@ in
 
       home.packages = [
         pkgs.codexbar
+        # Template hook dependencies, resolved through the noctalia daemon's PATH
+        # (~/.nix-profile/bin precedes /usr/bin): `zip` for the libreoffice hook,
+        # python3 with Pillow for the brave-origin hook's PNG generation.
+        pkgs.zip
+        (pkgs.python3.withPackages (p: [ p.pillow ]))
         noctaliaGreeterPackage
         (pkgs.writeShellApplication {
           name = "noctalia-bar-swap";

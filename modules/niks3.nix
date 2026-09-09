@@ -4,8 +4,8 @@
   ...
 }:
 let
-  # Service topology read at the flake-parts level (B6); closed over by the HM
-  # and NixOS modules. niks3's serverUrl is a URL.
+  # Service topology read at the flake-parts level, closed over by the HM and
+  # NixOS modules.
   niks3ServerUrl = config.topology.services.niks3.host;
 in
 {
@@ -19,7 +19,6 @@ in
         inputs.sops-nix.nixosModules.sops
       ];
 
-      # Root-owned service secret (D5): consumed directly as the rendered path.
       sops.secrets.NIKS3_AUTH_TOKEN = {
         sopsFile = ../secrets/niks3-secrets.yaml;
         format = "yaml";
@@ -76,7 +75,6 @@ in
       };
 
       config = lib.mkIf cfg.enableAutoUploadService {
-        # Niks3 owns its auth token secret (own ciphertext file) + template.
         sops = {
           secrets."NIKS3_AUTH_TOKEN" = {
             sopsFile = ../secrets/niks3-secrets.yaml;

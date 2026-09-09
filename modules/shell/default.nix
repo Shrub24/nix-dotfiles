@@ -9,7 +9,6 @@ _: {
     {
       home = {
         packages = with pkgs; [
-          bat
           duf
           procs
           bottom
@@ -56,13 +55,15 @@ _: {
           GITHUB_USERNAME = "Shrub24";
           EDITOR = "nvim";
           LESS = "-R --use-color";
-          BAT_THEME = "matugen-bat-colors";
+          BAT_THEME = "noctalia";
           OMNIROUTE_BASE_URL = "http://home-forge:20128";
           OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS = true;
         };
       };
 
       programs = {
+        bat.enable = true;
+
         fzf = {
           enable = true;
           enableFishIntegration = false;
@@ -77,8 +78,6 @@ _: {
             "--border=rounded"
             "--highlight-line"
             "--info=inline-right"
-            "--color=bg:-1,bg+:0,fg:-1,fg+:-1,gutter:-1,border:4,scrollbar:4"
-            "--color=hl:4,hl+:4,header:3,separator:3,info:5,marker:5,pointer:5,spinner:5,prompt:4,query:7:regular"
           ];
         };
         zoxide.enable = true;

@@ -3,8 +3,8 @@
   ...
 }:
 let
-  # Typed remote-host topology read at the flake-parts level (B5); closed over
-  # by the lower-level HM/System Manager modules.
+  # Typed remote-host topology read at the flake-parts level, closed over by the
+  # lower-level HM/System Manager modules.
   remoteHosts = config.topology.hosts.arch.remoteHosts;
 in
 {
@@ -97,8 +97,7 @@ in
         settings.PasswordAuthentication = false;
       };
 
-      # Client-side SSH config volume. Same `remoteHosts` topology closure as the
-      # systemManager aspect. The server is services.openssh above; user-side
+      # Client-side host list; the server is services.openssh above, user-side
       # client config lives in homeManager.ssh.
       environment.etc."ssh/ssh_config.d/30-remote-hosts.conf" = {
         text = ''

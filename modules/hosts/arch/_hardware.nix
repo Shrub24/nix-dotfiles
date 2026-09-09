@@ -1,8 +1,6 @@
-# Hand-rolled from live system introspection on 2026-08-18.
-# Sources: lsblk, /proc/mounts, lspci, lscpu, timedatectl, /dev/disk/by-uuid.
-# On NixOS install day, can be regenerated via `nixos-generate-config --root /mnt`
-# then hand-edited down to this minimal form. by-uuid is preferred over
-# by-partlabel because partlabels contain spaces ("EFI system partition").
+# Regenerate on NixOS install day with `nixos-generate-config --root /mnt`, then
+# hand-edit down to this minimal form. by-uuid is preferred over by-partlabel
+# because partlabels contain spaces ("EFI system partition").
 { primaryUser }:
 { config, ... }:
 {
@@ -114,8 +112,7 @@
   # `nvidia-offload <cmd>`.
   services.xserver.videoDrivers = [ "nvidia" ];
 
-  # D7: open kernel module + stable package — the live host already runs open
-  # 610.57; reclocking concerns that kept this on proprietary are obsolete on Ada.
+  # Open module: reclocking concerns that kept this proprietary are obsolete on Ada.
   hardware.nvidia = {
     modesetting.enable = true;
     powerManagement.enable = true; # important for laptop power states

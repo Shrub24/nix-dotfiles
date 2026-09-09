@@ -3,13 +3,11 @@
   ...
 }:
 let
-  # Typed remote-host topology read at the flake-parts level (B5); closed over
-  # by the lower-level HM module.
+  # Typed remote-host topology read at the flake-parts level, closed over by the
+  # lower-level HM module.
   remoteHosts = config.topology.hosts.arch.remoteHosts;
 
-  # Tracked seed for the mutable theme. Copied into the user home only when the
-  # destination is absent (tmpfiles `C`, not `C+`), so runtime theme edits
-  # survive subsequent switches. Read as a repo path literal → store path.
+  # Tracked seed for the mutable theme, read as a repo path literal → store path.
   dankThemeSeed = ./wezterm-dank-theme.toml;
 in
 {
@@ -19,11 +17,8 @@ in
       ...
     }:
     {
-      # Seed the mutable theme on first launch without store-linking it:
-      # home.file/xdg.configFile would make the destination immutable (store
-      # symlink) and break runtime theme edits. `C` copies the tracked seed only
-      # when the destination is absent; a pre-existing runtime-edited file is
-      # left untouched.
+      # Seed the mutable theme on first launch. xdg.configFile would store-link it
+      # and break runtime theme edits; `C` copies the seed only when absent.
       systemd.user.tmpfiles.rules = [
         "d %h/.config/wezterm/colors 0755 - - -"
         "C %h/.config/wezterm/colors/dank-theme.toml 0644 - - - ${dankThemeSeed}"
@@ -41,8 +36,9 @@ in
             })
           '';
           font_size = 15.0;
-          color_scheme = "dank-theme";
+          color_scheme = "Noctalia";
           window_background_opacity = 0.8;
+          wayland_window_background_blur = true;
           line_height = 1.0;
           initial_cols = 120;
           use_fancy_tab_bar = false;
@@ -68,8 +64,10 @@ in
           local wezterm_replay = wezterm.plugin.require("https://github.com/btrachey/wezterm-replay")
           wezterm_replay.apply_to_config(config)
 
-          -- Dynamic color scheme: keep using the live file so external theme updates are watched/reloaded.
-          local theme_path = wezterm.config_dir .. "/colors/dank-theme.toml"
+          -- Noctalia owns colors/Noctalia.toml (regenerated on every wallpaper-driven
+          -- palette change); this config only names it, so the shell theme drives
+          -- wezterm without a hook ever writing a Nix-owned file.
+          local theme_path = wezterm.config_dir .. "/colors/Noctalia.toml"
           wezterm.add_to_config_reload_watch_list(theme_path)
           config.colors, _ = wezterm.color.load_scheme(theme_path)
 

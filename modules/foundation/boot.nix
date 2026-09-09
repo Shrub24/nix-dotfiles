@@ -43,13 +43,9 @@ in
 
   ;
 
-  # NixOS translation: NixOS OWNS the boot config natively via boot.loader.* +
-  # boot.initrd.* (see modules/hosts/arch/_hardware.nix — systemd-boot, btrfs,
-  # zram, kernel modules, etc.). The systemManager aspect's Limine `default/limine`
-  # conf and dracut.conf drop-in are Arch/transitional state that does NOT apply
-  # to NixOS (NixOS uses its own initrd builder, not dracut; systemd-boot is the
-  # loader, not Limine).
-  #
+  # NixOS owns boot natively via boot.loader.* / boot.initrd.* (see
+  # modules/hosts/arch/_hardware.nix). The systemManager aspect's Limine conf and
+  # dracut drop-in are Arch-only; NixOS uses systemd-boot and its own initrd.
   flake.modules.nixos.boot = _: {
     boot.plymouth.enable = true;
     services.btrfs.autoScrub.enable = true;

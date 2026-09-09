@@ -4,34 +4,10 @@ _: {
       enable = true;
       systemd.enable = false;
 
-      themes.dankcolors = {
-        background = "#1e0f13";
-        foreground = "#f8dbe1";
-        cursor-color = "#ffb1c6";
-        selection-background = "#ce066a";
-        selection-foreground = "#f8dbe1";
-        palette = [
-          "0=#1e0f13"
-          "1=#d15f37"
-          "2=#6ed687"
-          "3=#ccdb7b"
-          "4=#cf5c79"
-          "5=#bf909d"
-          "6=#ffb1c6"
-          "7=#abb2bf"
-          "8=#5c6370"
-          "9=#e0805f"
-          "10=#86e09b"
-          "11=#dbe897"
-          "12=#ffbdd4"
-          "13=#b95a82"
-          "14=#ae646e"
-          "15=#ffffff"
-        ];
-      };
-
+      # Palette rendered by the noctalia theme template into
+      # ~/.config/ghostty/themes/noctalia (modules/desktop/noctalia.nix).
       settings = {
-        theme = "dankcolors";
+        theme = "noctalia";
         font-size = 14;
         font-family = "MapleMono";
         font-feature = "+calt";

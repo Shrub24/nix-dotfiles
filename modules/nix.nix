@@ -44,14 +44,12 @@ in
       ...
     }:
     {
-      # Nix owns its access-tokens template (cross-module placeholder from credentials).
       sops.templates."nix-access-tokens" = {
         path = "${config.home.homeDirectory}/.config/nix/access-tokens.conf";
         content = "access-tokens = github.com=${config.sops.placeholder.GITHUB_PAT}\n";
       };
 
       home.packages = with pkgs; [
-        nh
         nixd
         nvd
         nix-init
@@ -101,26 +99,12 @@ in
         !include ${config.sops.templates."nix-access-tokens".path}
       '';
 
-      systemd.user.services.nh-clean = {
-        Unit = {
-          Description = "nh clean all — periodic Nix store cleanup";
-        };
-        Service = {
-          Type = "oneshot";
-          ExecStart = "${lib.getExe pkgs.nh} clean all --keep-since 7d";
-        };
-      };
-
-      systemd.user.timers.nh-clean = {
-        Unit = {
-          Description = "Weekly nh clean all timer";
-        };
-        Timer = {
-          OnCalendar = "weekly";
-          Persistent = true;
-        };
-        Install = {
-          WantedBy = [ "timers.target" ];
+      programs.nh = {
+        enable = true;
+        clean = {
+          enable = true;
+          dates = "weekly";
+          extraArgs = "--keep-since 7d";
         };
       };
     }
@@ -134,7 +118,6 @@ in
       ...
     }:
     let
-      # niks3's user runtime socket path uses the topology UID (B11).
       inherit (primaryUser) uid;
 
       niks3UploadHook = pkgs.writeShellScriptBin "niks3-upload-hook" ''
@@ -195,7 +178,6 @@ in
   ;
 
   flake.modules.nixos.nix = _: {
-    # nix.enable is dropped - NixOS enables nix by default.
     nix.distributedBuilds = true;
     nix.buildMachines = [ homeForgeBuilder ];
 

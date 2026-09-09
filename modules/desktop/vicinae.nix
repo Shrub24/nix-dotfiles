@@ -16,7 +16,9 @@
               size = 10.5;
             };
           };
-          theme.dark.name = "matugen";
+          # Noctalia renders the theme under this name (see the vicinae entry in
+          # modules/desktop/noctalia.nix), so selection needs no hook.
+          theme.dark.name = "noctalia";
           launcher_window.opacity = 0.85;
           providers = {
             "@knoopx/store.vicinae.niri".entrypoints = {

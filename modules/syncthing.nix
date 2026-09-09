@@ -56,7 +56,8 @@ in
       services.syncthing = {
         enable = true;
         user = primaryUser.name;
-        # Reuse the live HM-rendered state (identity key + config.xml).
+        # Reuses the live HM-rendered state (identity key + config.xml); a separate
+        # data dir would orphan the device identity and re-prompt every peer.
         dataDir = home;
         configDir = "${home}/.local/state/syncthing";
         # Ports are tailnet-scoped in the network aspect, not globally open.

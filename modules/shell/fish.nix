@@ -159,6 +159,16 @@
             set fzf_preview_file_cmd bat --color=always --style=numbers
             set fzf_diff_highlighter delta --paging=never --width=20
 
+            # Noctalia's fzf palette is rendered as a POSIX file. Read it in a
+            # subshell instead of sourcing the fish variant: that variant writes
+            # FZF_DEFAULT_OPTS through `set -Ux`, so each session would append
+            # the palette again and the variable would grow without bound.
+            if test -f "$XDG_CONFIG_HOME/fzf/themes/noctalia.sh"
+              set -gx FZF_DEFAULT_OPTS "$FZF_DEFAULT_OPTS "(
+                sh -c 'FZF_DEFAULT_OPTS=; . "$XDG_CONFIG_HOME/fzf/themes/noctalia.sh"; printf %s "$FZF_DEFAULT_OPTS"'
+              )
+            end
+
             bind -M insert \t complete-and-search
             bind -M default \t complete-and-search
 
