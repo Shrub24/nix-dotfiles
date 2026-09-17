@@ -20,6 +20,11 @@ _: {
             BRAVE_API_KEY=${config.sops.placeholder.BRAVE_API_KEY}
             BRAVE_SEARCH_API_KEY=${config.sops.placeholder.BRAVE_API_KEY}
             FIRECRAWL_API_KEY=${config.sops.placeholder.FIRECRAWL_API_KEY}
+            JINA_API_KEY=${config.sops.placeholder.JINA_TOKEN}
+            PARALLEL_API_KEY=${config.sops.placeholder.PARALLEL_API_KEY}
+            TINYFISH_API_KEY=${config.sops.placeholder.TINYFISH_API_KEY}
+            SERPDIVE_API_KEY=${config.sops.placeholder.SERPDIVE_API_KEY}
+            DATALAB_API_KEY=${config.sops.placeholder.DATALAB_API_KEY}
             NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
             CURSOR_API_KEY=${config.sops.placeholder.CURSOR_API_KEY}
             LITELLM_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
@@ -78,6 +83,26 @@ _: {
             format = "yaml";
             key = "jina_token";
           };
+          PARALLEL_API_KEY = {
+            sopsFile = yamlSecrets;
+            format = "yaml";
+            key = "parallel_api_key";
+          };
+          TINYFISH_API_KEY = {
+            sopsFile = yamlSecrets;
+            format = "yaml";
+            key = "tinyfish_api_key";
+          };
+          SERPDIVE_API_KEY = {
+            sopsFile = yamlSecrets;
+            format = "yaml";
+            key = "serpdive_api_key";
+          };
+          DATALAB_API_KEY = {
+            sopsFile = yamlSecrets;
+            format = "yaml";
+            key = "datalab_api_key";
+          };
           TAVILY_API_KEY = {
             sopsFile = yamlSecrets;
             format = "yaml";
@@ -92,16 +117,6 @@ _: {
             sopsFile = yamlSecrets;
             format = "yaml";
             key = "firecrawl_api_key";
-          };
-          CONTEXT7_API_KEY = {
-            sopsFile = yamlSecrets;
-            format = "yaml";
-            key = "context7_api_key";
-          };
-          OPENAI_API_KEY = {
-            sopsFile = yamlSecrets;
-            format = "yaml";
-            key = "openai_api_key";
           };
           GEMINI_API_KEY = {
             sopsFile = yamlSecrets;

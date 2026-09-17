@@ -34,55 +34,37 @@
         };
         # Plugin hotkeys — nvim-like movement, workspace jump, nvim sidebar.
         # Action ids are <plugin_id>.<action_id>; herdr binds none by default.
+        # Navigation goes through smart-splits.nvim's herdr plugin (the same
+        # plugin that drives the Neovim side), so ctrl+hjkl works identically
+        # inside and outside a buffer. Resize is native herdr.
+        keys.resize_pane_left = "alt+h";
+        keys.resize_pane_down = "alt+j";
+        keys.resize_pane_up = "alt+k";
+        keys.resize_pane_right = "alt+l";
         keys.command = [
-          # herdr-splits: nvim-aware pane navigation (ctrl+hjkl), resize (alt+hjkl)
           {
             key = "ctrl+h";
             type = "plugin_action";
-            command = "herdr-splits.nav-left";
+            command = "smart-splits.nvim.left";
             description = "navigate left (nvim-aware)";
           }
           {
             key = "ctrl+j";
             type = "plugin_action";
-            command = "herdr-splits.nav-down";
+            command = "smart-splits.nvim.down";
             description = "navigate down (nvim-aware)";
           }
           {
             key = "ctrl+k";
             type = "plugin_action";
-            command = "herdr-splits.nav-up";
+            command = "smart-splits.nvim.up";
             description = "navigate up (nvim-aware)";
           }
           {
             key = "ctrl+l";
             type = "plugin_action";
-            command = "herdr-splits.nav-right";
+            command = "smart-splits.nvim.right";
             description = "navigate right (nvim-aware)";
-          }
-          {
-            key = "alt+h";
-            type = "plugin_action";
-            command = "herdr-splits.resize-left";
-            description = "resize left";
-          }
-          {
-            key = "alt+j";
-            type = "plugin_action";
-            command = "herdr-splits.resize-down";
-            description = "resize down";
-          }
-          {
-            key = "alt+k";
-            type = "plugin_action";
-            command = "herdr-splits.resize-up";
-            description = "resize up";
-          }
-          {
-            key = "alt+l";
-            type = "plugin_action";
-            command = "herdr-splits.resize-right";
-            description = "resize right";
           }
           # herdr-navigator: fuzzy jump anywhere + tmux-style jump-back
           {

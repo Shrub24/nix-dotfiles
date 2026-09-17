@@ -160,13 +160,6 @@ in
           script = { };
         }
         {
-          id = "neovim";
-          dir = "neovim";
-          file = "matugen-template.lua";
-          out = "$XDG_CONFIG_HOME/nvim/lua/matugen.lua";
-          script = { };
-        }
-        {
           id = "obs";
           dir = "obs";
           file = "matugen.obt";
@@ -284,6 +277,15 @@ in
           pi-agent = {
             input_path = "${localTemplates}/pi-agent.json";
             output_path = "${config.home.homeDirectory}/.pi/agent/themes/noctalia.json";
+          };
+          # Fork of the community neovim template so base0C/0D/0E can use the
+          # bright tonal tier; upstream's `*_fixed_dim` roles are the same value
+          # as the base roles. Local rather than upstream so apply.sh stays out of
+          # the config.
+          neovim = {
+            input_path = "${localTemplates}/neovim.lua";
+            output_path = "$XDG_CONFIG_HOME/nvim/lua/matugen.lua";
+            post_hook = "${pkgs.procps}/bin/pkill -SIGUSR1 -x nvim || true";
           };
         };
 

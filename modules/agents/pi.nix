@@ -27,7 +27,6 @@
           skills = [ ];
         }
         "npm:@narumitw/pi-tool"
-        "npm:@narumitw/pi-stamp"
         "npm:@narumitw/pi-btw"
         "npm:@narumitw/pi-herdr"
         "npm:pi-context-view"
@@ -163,7 +162,7 @@
             assistantMessageStyle = "agent";
             assistantTurnRule = true;
 
-            renderBashDiffs = true;
+            renderBashDiffs = false;
             renderVcsDiffCommandDiffs = true;
             splitDiffs = true;
             wordDiffHighlights = true;
@@ -175,7 +174,7 @@
             compactUserMessages = true;
             compactSkillMessages = true;
             compactCompactionMessages = true;
-            maxLineWidth = 243;
+            maxLineWidth = 400;
           };
 
           # Replacement list, not additive; absolute paths (runner children
@@ -226,6 +225,41 @@
           "$schema" =
             "https://raw.githubusercontent.com/dmtrKovalenko/fff/main/packages/pi-fff/pi-fff.schema.json";
           mode = "override";
+        };
+
+        # pi-web-access routing. Provider keys auto-detect from the session env
+        # (rendered by modules/security/credentials/agents.nix) — no key config
+        # here. Parallel first while its 60-day credit lasts, then free tiers;
+        # useCurrentModel uses the Codex subscription for hosted search when on
+        # GPT models, which costs nothing extra.
+        ".pi/agent/web-search.json".source = json.generate "pi-web-search.json" {
+          searchRouting = {
+            providers = [
+              "parallel"
+              "brave"
+              "tavily"
+              "jina"
+              "serpdive"
+              "tinyfish"
+              "gemini"
+            ];
+            useCurrentModel = true;
+            fallbackOn = [
+              "unsupported"
+              "transient"
+              "quota"
+              "network"
+              "invalid-response"
+            ];
+          };
+          fetchRouting.providers = [
+            "http"
+            "firecrawl"
+            "jina"
+            "parallel"
+            "tinyfish"
+            "gemini"
+          ];
         };
 
         ".pi/agent/extensions/subagent/config.json".source = json.generate "pi-subagents-config.json" {
