@@ -278,6 +278,9 @@
 
         ".pi/agent/agents".source = ./pi/agents;
 
+        # Global main-agent instructions: skill routing + delegation policy.
+        ".pi/agent/AGENTS.md".source = ./pi/AGENTS.md;
+
         ".pi/agent/skills".source = ./pi/skills;
 
         # Out-of-store symlink so the fork is edited in place, no rebuild needed.
