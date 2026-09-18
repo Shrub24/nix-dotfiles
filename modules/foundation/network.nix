@@ -56,7 +56,6 @@ _: {
       networking.firewall.interfaces.tailscale0 = {
         allowedTCPPorts = [
           22000 # syncthing data (relay/TCP)
-          webServices.litellm.port
           webServices.web-catalog.port
         ];
         allowedUDPPorts = [
