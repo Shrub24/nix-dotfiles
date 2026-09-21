@@ -30,7 +30,7 @@ _: {
 
       config = lib.mkIf cfg.enable {
         sops.templates."docs-mcp.env".content = ''
-          OPENAI_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
+          OPENAI_API_KEY=${config.sops.placeholder.OMNIROUTE_API_KEY}
         '';
 
         systemd.user.services.docs-mcp = {
@@ -52,7 +52,7 @@ _: {
             Restart = "on-failure";
             RestartSec = "10s";
             Environment = [
-              "OPENAI_API_BASE=http://localhost:${toString config.programs.litellm.port}/v1"
+              "OPENAI_API_BASE=http://home-forge:20128/v1"
               "DOCS_MCP_EMBEDDING_MODEL=embedding"
               "DOCS_MCP_EMBEDDINGS_VECTOR_DIMENSION=4096"
             ];

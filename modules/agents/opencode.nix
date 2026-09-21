@@ -2,31 +2,20 @@ _: {
   flake.modules.homeManager.opencode =
     {
       config,
-      lib,
-      pkgs,
       ...
     }:
 
-    let
-      litellmGenerated = (import ./litellm/_generated.nix) {
-        inherit lib;
-        headroomEnable = config.programs.litellm.headroom.enable;
-        headroomPort = config.programs.litellm.headroomPort;
-        port = config.programs.litellm.port;
-        modelRegistryFile = pkgs.models-dev;
-      };
-    in
     {
       home = {
         file = {
           ".config/opencode".source =
             config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.dotfiles/apps/opencode";
-          ".config/opencode-litellm.json".text = builtins.toJSON litellmGenerated.opencodeExtraConfig;
           ".agents".source =
             config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.dotfiles/apps/agents";
+          # The litellm provider overlay (opencode-litellm.json, injected via
+          # OPENCODE_CONFIG) is parked 2026-09-20 while the litellm gateway is
+          # disabled; opencode uses its own opencode-omniroute provider.
         };
-
-        sessionVariables.OPENCODE_CONFIG = "${config.home.homeDirectory}/.config/opencode-litellm.json";
       };
     }
 

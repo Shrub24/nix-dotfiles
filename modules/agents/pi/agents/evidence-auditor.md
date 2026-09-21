@@ -4,37 +4,33 @@ description: Independent evidence reviewer; audits research claims via web-resea
 advertise: true
 skills: web-research, evidence-discipline
 model: omniroute/coder-high
-fallbackModels:
-  - openai-codex/gpt-5.6-sol
 thinking: high
 acceptanceRole: read-only
 completionGuard: false
+async: true
 systemPromptMode: replace
 inheritProjectContext: true
-inheritSkills: false
+inheritSkills: true
 tools:
   - read
   - grep
   - find
   - ls
+  - bash
+  - todowrite
+  - ctx_search
+  - bg_task
+  - bg_status
+  - contact_supervisor
   - web_search
   - fetch_content
   - get_search_content
   - source_check
-  - mcp
-  - mcpScript
-  - mcp:docs-mcp-server/search_docs
-  - mcp:docs-mcp-server/list_libraries
-  - mcp:docs-mcp-server/find_version
-  - mcp:docs-mcp-server/list_jobs
-  - mcp:docs-mcp-server/get_job_info
-  - mcp:nixos
-  - ctx_search
-  - ctx_expand
-  - ctx_memory
+  - mcp:docs-mcp-server
+  - mcp:grep.app
+  - mcp:sourcegraph
 subagentOnlyExtensions:
   - ../npm/node_modules/pi-web-access/index.ts
-  - ../npm/node_modules/@cortexkit/pi-magic-context/dist/index.js
 ---
 
 You are an evidence-auditing subagent.

@@ -3,14 +3,13 @@ name: worker
 description: Implementation agent for normal tasks and approved oracle handoffs; explores via codebase-explore
 advertise: true
 aliases: developer, coder, implementer, develop
-skills: codebase-explore
+skills: codebase-explore, ast-grep, codebase-memory
 model: omniroute/coder-high
-fallbackModels:
-  - omniroute/smart-budget
-thinking: max
+thinking: xhigh
+async: true
 systemPromptMode: replace
 inheritProjectContext: true
-inheritSkills: false
+inheritSkills: true
 defaultContext: fork
 defaultReads: context.md, plan.md
 defaultProgress: true
@@ -20,27 +19,31 @@ tools:
   - find
   - ls
   - bash
+  - todowrite
+  - ctx_search
+  - bg_task
+  - bg_status
+  - contact_supervisor
   - edit
   - write
-  - contact_supervisor
-  - search_graph
-  - resolve_symbol
-  - read_symbol
-  - get_code_snippet
-  - get_code_snippets
-  - read_symbols
-  - search_and_read_symbols
-  - trace_path
+  - check_index_coverage
+  - compare_graphs
+  - detect_changes
   - get_architecture
+  - get_code_snippet
+  - get_file_outline
   - get_graph_schema
+  - index_status
+  - list_projects
   - query_graph
   - search_code
-  - detect_changes
-  - mcp
-  - mcpScript
+  - search_graph
+  - trace_path
   - mcp:semble
   - mcp:docs-mcp-server
   - mcp:nixos
+  - mcp:sourcegraph
+  - mcp:grep.app
 subagentOnlyExtensions:
   - ../npm/node_modules/@ff-labs/pi-fff/src/index.ts
 ---
@@ -56,6 +59,7 @@ Read the inherited context, supplied files, plan, task paths, and named seams fi
 If the task is framed as an approved direction, oracle handoff, or execution plan, treat that direction as the contract. Validate it against the actual code, but do not silently make new product, architecture, or scope decisions.
 
 Default responsibilities:
+
 - validate the task or approved direction against the actual code
 - implement the smallest correct change
 - follow existing patterns in the codebase
@@ -64,6 +68,7 @@ Default responsibilities:
 - report back clearly with changes, validation, risks, and next steps
 
 Working rules:
+
 - Prefer narrow, correct changes over broad rewrites.
 - Preserve source discoverability: use specific names, clear types, one spelling per concept, source-named tests, and definition comments only when they explain a needed constraint.
 - Do not add speculative scaffolding or future-proofing unless explicitly required.
@@ -74,6 +79,7 @@ Working rules:
 - If `contact_supervisor` is unavailable, stop and report the required decision in your final response. Do not finish with a question that requires the supervisor to choose before you can continue.
 
 When running in a chain, expect instructions about:
+
 - which files to read first
 - where to maintain progress tracking
 - where to write output if a file target is provided

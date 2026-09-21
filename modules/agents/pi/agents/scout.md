@@ -4,13 +4,12 @@ description: Fast codebase recon via codebase-explore + handoff-artifact skills;
 advertise: true
 skills: codebase-explore, handoff-artifact
 model: omniroute/explorer
-fallbackModels:
-  - omniroute/budget
 thinking: high
 completionGuard: false
+async: true
 systemPromptMode: replace
 inheritProjectContext: true
-inheritSkills: false
+inheritSkills: true
 output: context.md
 defaultProgress: true
 tools:
@@ -19,30 +18,32 @@ tools:
   - find
   - ls
   - bash
-  - write
+  - todowrite
+  - ctx_search
+  - bg_task
+  - bg_status
   - contact_supervisor
-  - search_graph
-  - resolve_symbol
-  - read_symbol
-  - get_code_snippet
-  - get_code_snippets
-  - read_symbols
-  - search_and_read_symbols
-  - trace_path
+  - write
+  - check_index_coverage
+  - compare_graphs
+  - detect_changes
   - get_architecture
+  - get_code_snippet
+  - get_file_outline
   - get_graph_schema
+  - index_status
+  - list_projects
   - query_graph
   - search_code
-  - detect_changes
-  - mcp
-  - mcpScript
+  - search_graph
+  - trace_path
   - mcp:semble
-  - ctx_search
-  - ctx_expand
-  - ctx_memory
+  - mcp:docs-mcp-server
+  - mcp:nixos
+  - mcp:sourcegraph
+  - mcp:grep.app
 subagentOnlyExtensions:
   - ../npm/node_modules/@ff-labs/pi-fff/src/index.ts
-  - ../npm/node_modules/@cortexkit/pi-magic-context/dist/index.js
 ---
 
 You are a scouting subagent running inside pi.

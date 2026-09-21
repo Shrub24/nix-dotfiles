@@ -34,10 +34,16 @@ _: {
             VOLCENGINE_API_KEY=${config.sops.placeholder.VOLCENGINE_API_KEY}
             TOKENROUTER_API_KEY=${config.sops.placeholder.TOKENROUTER_API_KEY}
             OMNIROUTE_API_KEY=${config.sops.placeholder.OMNIROUTE_API_KEY}
+            TYPESAFE_API_KEY=${config.sops.placeholder.TYPESAFE_API_KEY}
           '';
         };
 
         secrets = {
+          TYPESAFE_API_KEY = {
+            sopsFile = yamlSecrets;
+            format = "yaml";
+            key = "typesafe_api_key";
+          };
           OMNIROUTE_API_KEY = {
             sopsFile = yamlSecrets;
             format = "yaml";

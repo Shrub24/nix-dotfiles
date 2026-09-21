@@ -20,7 +20,7 @@
       imports = [ upstreamModule ];
 
       sops.templates."hermes.env".content = ''
-        OPENAI_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
+        OPENAI_API_KEY=${config.sops.placeholder.OMNIROUTE_API_KEY}
       '';
 
       services.hermes-agent = {
@@ -48,8 +48,8 @@
         settings = lib.mkDefault {
           model = {
             provider = "custom";
-            base_url = "http://localhost:${toString config.programs.litellm.port}/v1";
-            default = "main";
+            base_url = "http://home-forge:20128/v1";
+            default = "coder-high";
           };
           platform_toolsets.cli = [
             "web"
@@ -77,7 +77,7 @@
           auxiliary = {
             compression = {
               provider = "main";
-              model = "summariser";
+              model = "budget";
             };
             web_extract = {
               provider = "main";

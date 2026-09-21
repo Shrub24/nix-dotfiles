@@ -5,6 +5,10 @@
     {
       programs.herdr.package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr;
 
+      home.packages = [
+        inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hunk
+      ];
+
       # Rendered to $XDG_CONFIG_HOME/herdr/config.toml; the rest of that directory
       # is Herdr-owned runtime state and stays unmanaged.
       #
@@ -32,6 +36,8 @@
             ]
           ];
         };
+        # Prefix: herdr default (ctrl+b) for now — shift+space proved
+        # non-capturable in practice; revisit with a plugin later.
         # Plugin hotkeys — nvim-like movement, workspace jump, nvim sidebar.
         # Action ids are <plugin_id>.<action_id>; herdr binds none by default.
         # Navigation goes through smart-splits.nvim's herdr plugin (the same
@@ -42,6 +48,41 @@
         keys.resize_pane_up = "alt+k";
         keys.resize_pane_right = "alt+l";
         keys.command = [
+          # herdr-scratch: persistent workspace-scoped popup shell (herdr
+          # native popup — ctrl+b q hides it, state survives toggle).
+          {
+            key = "prefix+p";
+            type = "plugin_action";
+            command = "herdr.scratch.toggle";
+            description = "toggle scratch popup";
+          }
+          # herdr-nvim sidebar as a zoomed full-screen pane (toggle).
+          {
+            key = "prefix+n";
+            type = "shell";
+            command = "${pkgs.herdr-nvim-zoom}/bin/herdr-nvim-zoom";
+            description = "nvim fullscreen toggle (zoomed sidebar)";
+          }
+          # Full-pane tool launchers (popups; singleton-tab revisit later
+          # via a herdr plugin).
+          {
+            key = "prefix+j";
+            type = "popup";
+            width = "80%";
+            height = "85%";
+            command = "jjui";
+            description = "jjui (popup)";
+          }
+          {
+            key = "prefix+r";
+            type = "popup";
+            width = "80%";
+            height = "85%";
+            command = "${
+              inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hunk
+            }/bin/hunk diff --vcs jj";
+            description = "hunk code review (popup)";
+          }
           {
             key = "ctrl+h";
             type = "plugin_action";
@@ -111,13 +152,6 @@
             type = "plugin_action";
             command = "chmarax.herdr-nvim.pick-file";
             description = "nvim: open file from agent output";
-          }
-          # reviewr: diff review pane beside the chat
-          {
-            key = "alt+r";
-            type = "plugin_action";
-            command = "persiyanov.reviewr.toggle";
-            description = "reviewr: diff review pane";
           }
           # annotate + herdr-flash: selection tooling
           {

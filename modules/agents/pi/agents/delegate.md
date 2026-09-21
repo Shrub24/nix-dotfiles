@@ -4,40 +4,43 @@ description: Lightweight subagent that inherits the parent model; explores via c
 advertise: true
 skills: codebase-explore
 model: omniroute/coder-high
-fallbackModels:
-  - omniroute/explorer
 thinking: high
 acceptanceRole: writer
 systemPromptMode: append
+async: true
 inheritProjectContext: true
-inheritSkills: false
+inheritSkills: true
 tools:
   - read
   - grep
   - find
   - ls
   - bash
+  - todowrite
+  - ctx_search
+  - bg_task
+  - bg_status
+  - contact_supervisor
   - edit
   - write
-  - contact_supervisor
-  - search_graph
-  - resolve_symbol
-  - read_symbol
-  - get_code_snippet
-  - get_code_snippets
-  - read_symbols
-  - search_and_read_symbols
-  - trace_path
+  - check_index_coverage
+  - compare_graphs
+  - detect_changes
   - get_architecture
+  - get_code_snippet
+  - get_file_outline
   - get_graph_schema
+  - index_status
+  - list_projects
   - query_graph
   - search_code
-  - detect_changes
-  - mcp
-  - mcpScript
+  - search_graph
+  - trace_path
+  - mcp:semble
   - mcp:docs-mcp-server
   - mcp:nixos
-  - mcp:semble
+  - mcp:sourcegraph
+  - mcp:grep.app
 subagentOnlyExtensions:
   - ../npm/node_modules/@ff-labs/pi-fff/src/index.ts
 ---

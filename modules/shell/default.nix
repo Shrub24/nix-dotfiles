@@ -58,6 +58,9 @@ _: {
           BAT_THEME = "noctalia";
           OMNIROUTE_BASE_URL = "http://home-forge:20128";
           OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS = true;
+          # pi-cache-optimizer: keep prompts/skill XML verbatim.
+          PI_CACHE_OPTIMIZER_NO_PROMPT_REWRITE = "1";
+          PI_CACHE_OPTIMIZER_NO_SKILL_COMPRESSION = "1";
         };
       };
 

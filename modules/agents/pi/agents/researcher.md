@@ -4,13 +4,12 @@ description: Autonomous web researcher; runs web-research + evidence-discipline 
 advertise: true
 skills: web-research, evidence-discipline, handoff-artifact
 model: omniroute/coder-high
-fallbackModels:
-  - omniroute/budget
 thinking: high
 completionGuard: false
+async: true
 systemPromptMode: replace
 inheritProjectContext: true
-inheritSkills: false
+inheritSkills: true
 output: research.md
 defaultProgress: true
 tools:
@@ -19,17 +18,19 @@ tools:
   - find
   - ls
   - bash
-  - write
+  - todowrite
+  - ctx_search
+  - bg_task
+  - bg_status
   - contact_supervisor
+  - write
   - web_search
   - fetch_content
   - get_search_content
   - source_check
-  - mcp
-  - mcpScript
   - mcp:docs-mcp-server
-  - mcp:nixos
-  - mcp:semble
+  - mcp:sourcegraph
+  - mcp:grep.app
 subagentOnlyExtensions:
   - ../npm/node_modules/pi-web-access/index.ts
 ---

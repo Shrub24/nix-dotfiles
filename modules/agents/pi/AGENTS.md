@@ -4,10 +4,12 @@
 
 This machine has codebase-memory (cbm) indexing, semble, and qmd. When you need
 to locate, read, or trace code, load the `codebase-explore` skill and follow it:
-graph tools first (`search_graph`, `read_symbol`, `trace_path`), semble for
-unindexed or cross-repo targets, raw `grep`/`find` only as a scoped fallback for
-exact literals. Do not fall back to repeated `grep`+`read` scanning when the
-graph tools are available — it is slower and noisier for both you and the user.
+**semble first** for semantic "where is this concept" discovery (behavior
+descriptions, cross-repo), then **graph tools** (`search_graph`, `get_code_snippet`,
+`trace_path`) to narrow structure once you hold real symbol names — flows,
+callers, impact. Raw `grep`/`find` only as a scoped fallback for exact
+literals. Do not fall back to repeated `grep`+`read` scanning when the indexed
+tools are available — it is slower and noisier for both you and the user.
 
 The same applies to repository documentation: query qmd (scoped to
 `project-root`) instead of re-reading README/ARCHITECTURE files, and prefer the
