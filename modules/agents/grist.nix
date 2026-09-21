@@ -102,7 +102,7 @@ _: {
               ExecStartPre = "${pkgs.podman}/bin/podman pull --quiet ${ociImages.grist}";
               ExecStart = ''
                 ${pkgs.podman}/bin/podman run --rm --replace --name grist \
-                  -p 127.0.0.1:${toString cfg.port}:8484 \
+                  -p 127.0.0.1:${toString cfg.port}:${toString webServices.grist.port} \
                   -v %h/.local/share/grist:/persist \
                   --env-file ${config.sops.templates."grist.env".path} \
                   ${lib.concatStringsSep " \\\n    " gristEnvArgs} \
