@@ -35,5 +35,8 @@ in
   models-dev = final.callPackage ./models-dev { };
   noctalia-template-hooks = final.callPackage ./noctalia-template-hooks { };
   niks3-hook = inputs.niks3.packages.${system}.niks3-hook;
+  herdr-nvim-zoom = final.callPackage ./herdr-nvim-zoom {
+    herdr = inputs.llm-agents.packages.${system}.herdr;
+  };
   keypeek = final.callPackage ./keypeek { inherit inputs system; };
 }

@@ -48,7 +48,7 @@ _: {
         # Formatters ------------------------------------------------------
         stylua
         shfmt
-        nixfmt-rfc-style
+        nixfmt
         markdown-toc
       ];
     };
