@@ -21,10 +21,8 @@
         settings.auto_index_on_search = true;
       };
 
-      # Upstream's `memex skill install` writes this file imperatively; declaring
-      # it keeps the CLI-recall skill in the cross-tool directory, so the agent can
-      # fall back to `memex search` when the MCP route is not the right tool.
-      home.file.".agents/skills/memex-search/SKILL.md".source =
-        "${inputs.memex.outPath}/skills/memex-search/SKILL.md";
+      # The CLI-recall skill ships with pi's skills directory (vendored from the
+      # fork into modules/agents/pi/skills/memex-search); ~/.agents is an
+      # out-of-store symlink, so home.file cannot write into it.
     };
 }
