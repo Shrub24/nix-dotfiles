@@ -4,7 +4,12 @@ let
 in
 {
   flake.modules.homeManager.pi =
-    { config, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       json = pkgs.formats.json { };
 
@@ -48,6 +53,11 @@ in
         "npm:@vanillagreen/pi-output-policy"
         "npm:@gotgenes/pi-permission-system"
         "npm:pi-typesafe"
+        # Semantic decision substrate (local workspace): the permission-chain
+        # link (pi-jev authorizer) and the intent/nudge entry. Both load as
+        # separate entries and share one process-global core.
+        "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-jev/extensions/permission-authorizer.ts"
+        "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-jev/extensions/tool-intent.ts"
         # "npm:@howaboua/pi-codex-conversion"
         # "npm:@vanillagreen/pi-hooks"
         # "@spences10/pi-context"
@@ -74,16 +84,13 @@ in
                   old.postInstall;
             });
 
-        # Rendered to ~/.pi/agent/settings.json as a read-only store path.
-        # `lastChangelogVersion` is deliberately absent: with it set, Pi
-        # re-attempts a write that cannot succeed.
         settings = {
-          # Noctalia renders ~/.pi/agent/themes/noctalia.json from the live palette.
           theme = "noctalia";
           npmCommand = [ "bun" ];
           inherit packages;
 
-          defaultModel = "omniroute/coder-high";
+          defaultProvider = "omniroute";
+          defaultModel = "coder-high";
 
           enabledModels = [
             "openai-codex/gpt-5.6-sol"
@@ -101,22 +108,13 @@ in
           quietStartup = false;
           enableInstallTelemetry = false;
           doubleEscapeAction = "tree";
-          # Drain every queued follow-up as one prompt. Background-task exit
-          # wakes are queued follow-ups: this is what lets Pi coalesce several
-          # completions into a single turn instead of one turn each.
           followUpMode = "all";
           tuiMode = "regular";
           hideThinkingBlock = false;
 
-          # Slow-command seed list from 65k historical bash timings (p90 >= 10s,
-          # high-confidence forms only). newline-separated; # comments, /re/flags.
           kendex.extensionManager.config."@vanillagreen/pi-background-tasks" = {
             autoBackgroundBash = true;
-            # Pattern list intentionally empty: commands stay foreground and only
-            # yield on time (foregroundYieldMs). Re-add patterns here when forced
-            # backgrounding is wanted again (nix/rebuild/test/build commands).
             autoBackgroundPatterns = "";
-            # Wake notifications render as one dim line instead of a ruled banner.
             wakeMessageStyle = "line";
             forcedBackgroundNotifyOnOutput = false;
             defaultTimeoutSeconds = 0;
@@ -125,8 +123,6 @@ in
             toolRenderMode = "stacked";
             toolExpandedLogLines = 12;
             showWidget = true;
-            # Force-next-bash-to-background; arm then run the command.
-            # alt+g not alt+h: herdr-splits owns alt+hjkl for pane resize.
             backgroundBashShortcut = "alt+.";
             widgetToggleShortcut = "alt+g";
             dashboardShortcut = "f5";
@@ -148,9 +144,6 @@ in
             assistantMessageStyle = "agent";
             assistantTurnRule = true;
 
-            # Inline message timestamps (replaces the pi-stamp extension): dim
-            # clock at the right edge of each message's own last line, plus the
-            # assistant response duration when it is known.
             messageStamps = "inline";
             messageStampFormat = "24h";
             messageStampSeconds = true;
@@ -168,6 +161,19 @@ in
             compactSkillMessages = true;
             compactCompactionMessages = true;
             maxLineWidth = 400;
+          };
+
+          # Semantic decision substrate: Jev-judged asks. Defaults are
+          # deliberate — shadow mode (defers everything, logs verdicts),
+          # all nudge delivery off. Flip mode to "live" only after the
+          # shadow log agrees with human decisions; flip deliver* switches
+          # when the bands have labels behind them.
+          kendex.extensionManager.config."@vanillagreen/pi-jev" = {
+            mode = "shadow";
+            deliverNudges = false;
+            deliverIntentNudges = false;
+            deliverSubagentNudges = false;
+            orchestratorCheckInMs = 0;
           };
 
           # Replacement list, not additive; absolute paths (runner children
@@ -274,6 +280,19 @@ in
             sourcegraph = {
               url = "https://sourcegraph.com/.api/mcp";
               headers.Authorization = "token $env:SOURCEGRAPH_TOKEN";
+            };
+          }
+          // lib.optionalAttrs (config.programs.memex.enable or false) {
+            memex = {
+              # "search" keeps the six memex tools inactive, reachable only
+              # through the mcp proxy — which also stays visible.
+              directTools = "search";
+              command = "memex";
+              args = [
+                "mcp"
+                "--transport"
+                "stdio"
+              ];
             };
           };
         };
