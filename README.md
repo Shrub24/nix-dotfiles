@@ -26,8 +26,11 @@ nh home switch -c saurabhj
 # Switch system configuration (system-manager, non-NixOS host)
 system-manager switch --flake .#arch
 
-# Switch the NixOS configuration (bare-metal host)
+# Switch the NixOS configuration (bare-metal desktop host)
 nh os switch .#shrub
+
+# Switch the NixOS configuration (portable laptop host)
+nh os switch .#spectre
 
 # Validate: format, lint, and evaluate all host configurations (same as CI)
 nix flake check --no-build --no-write-lock-file

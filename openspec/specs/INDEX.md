@@ -16,3 +16,5 @@
 | `web-service-catalog` | active | `archive/2026-08-09-web-services-ssot` | `openspec/changes/archive/2026-08-09-web-services-ssot/specs/web-service-catalog/spec.md` |
 | `wezterm-config` | active | `archive/2026-08-09-migrate-to-wezterm` | `openspec/changes/archive/2026-08-09-migrate-to-wezterm/specs/wezterm-config/spec.md` |
 | `secrets-ownership-model` | active | `dendritic-cleanup-pre-nixos` | `openspec/changes/dendritic-cleanup-pre-nixos/design.md` |
+| `current-host-facts` | active | `archive/2026-09-21-current-host-facts` | `openspec/changes/archive/2026-09-21-current-host-facts/specs/current-host-facts/spec.md` |
+| `spectre-host` | active | `add-spectre-host` | `openspec/changes/add-spectre-host/specs/spectre-host/spec.md` |

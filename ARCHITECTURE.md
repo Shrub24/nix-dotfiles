@@ -1,12 +1,15 @@
 # Architecture
 
-This repository is a single-user Nix configuration for one Arch desktop host.
+This repository is a single-user Nix configuration for two hosts: an Arch desktop
+(`shrub`) and a portable NixOS laptop (`spectre`, HP Spectre x360
+13-aw0039TU).
 It composes three privilege-scoped layers from feature modules that are
 discovered by directory scan but activated only by explicit host selection:
 a user-scoped Home Manager configuration, a root-scoped system-manager
 configuration (transitional, for the non-NixOS host), and a NixOS
-configuration for the bare-metal host (`nixosConfigurations.shrub`; the
-aspect side-port has landed, bare-metal install remains follow-up work).
+configuration for the bare-metal hosts (`nixosConfigurations.shrub` on the
+desktop, `nixosConfigurations.spectre` on the laptop; the aspect side-port has
+landed, the desktop's bare-metal install remains follow-up work).
 
 `README.md` covers setup and operator commands. This document records the
 durable boundaries, the composition model, and the design rationale.
@@ -31,7 +34,7 @@ The split is along a privilege boundary, not a feature boundary:
   plus the full Home Manager composition embedded via
   `home-manager.nixosModules.home-manager` (`useGlobalPkgs`/`useUserPackages`
   over `embeddedHmAspects` — the HM aspect set minus the system-owned
-  tailscale/syncthing/mosh/surge/niks3 aspects, plus the NixOS-only
+  tailscale/syncthing/mosh/niks3 aspects, plus the NixOS-only
   cuda/libcamera aspects; `specialArgs` stays empty).
   Hardware configuration follows the `nixos-generate-config` convention at
   `modules/hosts/arch/_hardware.nix`: redistributable firmware, i2c,
@@ -67,30 +70,64 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ apps/*.nix           end-user GUI apps (media, zathura, pavucontrol)
   ├─ apps/browser/*.nix   firefox, chromium, thunderbird, brave-origin — lazy HM enable
   ├─ desktop/*.nix        compositor + shell env (niri, noctalia, monique, vicinae, portals, greeter)
-  ├─ foundation/*.nix    network, boot → systemManager aspects; nixos.nix (base-OS aspect)
+  ├─ foundation/*.nix    network → systemManager aspect; boot + nixos.nix (base-OS aspects)
+  ├─ policy/*.nix        typed topology schema, fleet registry, service endpoints, currentHost
   ├─ shell/*.nix         per-shell homeManager aspects + terminals (wezterm, ghostty, tmux)
   ├─ security/*.nix      sops-foundation + shared credentials aspects
   ├─ *.nix               nixbuild (systemManager), niks3/mosh/mutagen/syncthing
   │                      (homeManager); all but mutagen also publish a nixos aspect
   ├─ nix.nix ssh.nix tailscale.nix   homeManager AND systemManager AND nixos
   ├─ hosts/arch.nix      selects explicit aspect lists → host outputs (HM, system, NixOS)
-  └─ hosts/arch/_*.nix   raw host files (_home, _system, _nixos, _hardware) — ignored
+  ├─ hosts/spectre.nix   selects the lean NixOS laptop set → nixosConfigurations.spectre
+  ├─ hosts/arch/_*.nix   raw host files (_home, _system, _nixos, _hardware) — ignored
+  └─ hosts/spectre/_*.nix  raw host files (_home, _nixos, _hardware) — ignored
 
-Host composition lives in modules/hosts/arch.nix, not flake.nix:
-  ├─ ~40 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
+Host composition lives in modules/hosts/arch.nix and modules/hosts/spectre.nix,
+not flake.nix:
+  ├─ 59 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
   ├─ 7 systemManager aspects + _system.nix → systemConfigs.arch
-  └─ 17 nixos aspects + _nixos.nix + embedded HM → nixosConfigurations.shrub
+  └─ 19 nixos aspects + _nixos.nix + embedded HM → nixosConfigurations.shrub
+
+modules/hosts/spectre.nix composes the laptop as a NixOS-only host —
+no standalone HM output and no system-manager counterpart (the embedded
+Home Manager is its only configuration path):
+  └─ 37 lean HM aspects (phase-gated) + _home.nix, 15 nixos aspects +
+     _nixos.nix + _hardware.nix + embedded HM → nixosConfigurations.spectre
+
+The NixOS builder declaration (`nix.distributedBuilds`, `nix.buildMachines`) is
+its own `builders` aspect rather than part of the shared `nix` aspect, because it
+requires root to hold a builder's private key: the desktop selects it, the laptop
+does not. The builder is scoped with `mandatoryFeatures = [ "nixos-test" ]`,
+because a build hook (which is what `nix.buildMachines` produces here) ranks only
+the configured machines against each other — a free remote slot wins over local
+capacity, and no speed factor expresses "prefer local". Mandatory features are
+the lever that decides which derivations the builder accepts, so VM tests are
+offloaded and everything else stays local.
 ```
 
-Service and host topology and machine identity live once in the typed
-`topology` option (`topology.hosts.<name>`, `topology.services.<name>.host`)
-declared at the host composition layer in `modules/hosts/arch.nix`, plus
-native Home Manager options (`home.username`, `home.homeDirectory`,
-`pkgs.stdenv.hostPlatform.system`) for host identity. Feature modules read
-these via the normal module system — there is no `specialArgs`/`extraSpecialArgs`
-argument bus and no ambient facts record. Package recipes and the local
-overlay are owned by `pkgs/default.nix`; feature modules reference published
-packages rather than defining derivations inline.
+The fleet registry and the service endpoint map are typed options
+(`topology.hosts.<id>`, `topology.services.<name>.host`) declared in
+`modules/policy/topology.nix` — their declaration sits beside the schema because
+they describe machines and endpoints, not one host: a machine this repository
+configures contributes its own registry entry from its own host file, and the
+machines it only reaches are declared with the schema. Consumers read them via
+the normal module system — there is no `specialArgs`/`extraSpecialArgs` argument
+bus and no ambient facts record.
+
+A reusable feature never reads a registry key, because that would make one aspect
+value serve only the machine whose key it names. Each host composition projects
+its own entry into `currentHost` (`id`, `primaryUser`, `peers`), under the
+`current-host` aspect published for all three classes, so an aspect reads
+`config.currentHost.primaryUser` or `config.currentHost.peers.<name>.sshUser` and
+is identical in every evaluation. The projection is computed from the registry at
+the composition boundary — the only place that knows which entry is "self" — and
+nothing is injected into the class evaluations. Native facts are read where a
+native option exists: hostname and state version are declared by the host's own
+NixOS module, and a package's architecture comes from
+`pkgs.stdenv.hostPlatform.system` rather than the topology.
+
+Package recipes and the local overlay are owned by `pkgs/default.nix`; feature
+modules reference published packages rather than defining derivations inline.
 
 ## Secrets & Privilege
 
@@ -142,9 +179,14 @@ unpack/restart loop that exhausted disk. LiteLLM runs from an OCI image
 because its Prisma client and migrations are impractical to package in Nix —
 see Durable Decisions.
 
-Active user services: docs-mcp, grist, litellm (with optional headroom
-sidecar), qmd, web-catalog, moniqued, niks3-auto-upload (a socket-activated
-cache upload queue), and the weekly nh-clean timer.
+Active user services: docs-mcp, grist, qmd, web-catalog, moniqued, surge (the
+headless download daemon on port 1700), niks3-auto-upload (a socket-activated
+cache upload queue), and the weekly nh-clean timer — which is a user timer only on the non-NixOS host: on
+NixOS the system-scoped `programs.nh.clean` runs `nh clean all` as root, which
+covers user generations too, so GC has exactly one owner per host scope.
+The LiteLLM gateway aspect and its OCI image are retained but disabled at the
+host (`programs.litellm.enable = false`); consumers target the OmniRoute gateway
+on the builder host instead.
 Service ports and display metadata are owned by `lib/web-services.nix`
 (grist 8484, litellm 8765, docs-mcp 6280, qmd 8181, web-catalog 8123);
 canonical contract: [web-service-catalog](openspec/specs/web-service-catalog/spec.md).
@@ -154,6 +196,9 @@ On NixOS, exposure is tailnet-scoped: the global firewall stays closed, and
 Mosh (UDP 60000–61000), LiteLLM 8765, web-catalog 8123, and Syncthing's
 relay/discovery ports are allowed on `tailscale0` only — Syncthing sets
 `openDefaultPorts = false` so its ports follow the same rules.
+The laptop (`spectre`) selects no local service tier: its clients reach the
+desktop's and the forge's services over the tailnet, so the service list above
+describes only machines that are always on.
 The LiteLLM gateway behavior is contracted by
 [litellm-gateway](openspec/specs/litellm-gateway/spec.md).
 
@@ -183,10 +228,12 @@ The LiteLLM gateway behavior is contracted by
 - **Discovery is scoped to the single `modules/` tree** — `import-tree` scans
   only `modules/`; raw class modules live at `_`-prefixed paths, which
   `import-tree` ignores, so dormant files cannot alter a host accidentally.
-- **Hosts and services own their topology** — identity and service data live
-  once in the typed `topology` option and native Home Manager options, declared
-  at the host composition layer and read via the module system, never hardcoded
-  in feature modules or passed through an argument bus.
+- **Hosts and services own their topology** — the fleet registry and service
+  endpoints are typed options declared in `modules/policy/topology.nix`, and each
+  host composition projects its own entry into `currentHost` for the class
+  evaluations it builds. Features read the projection or the native option, never
+  a registry key and never a hardcoded hostname, so one aspect value is correct
+  for every host and nothing travels through an argument bus.
 - **System secrets stay out of user scope** — owned end to end by
   system-manager on Arch and by the sops-nix OS module on NixOS; a root
   credential is never rendered through user-scoped Home Manager state.
