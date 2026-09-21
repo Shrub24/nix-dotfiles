@@ -10,6 +10,10 @@ let
     protocol = "ssh-ng";
     inherit system;
     maxJobs = 2;
+    # The build hook ranks remote machines against each other only — any free
+    # remote slot beats local capacity — so `mandatoryFeatures`, not
+    # `speedFactor`, decides which derivations are sent here.
+    mandatoryFeatures = [ "nixos-test" ];
     speedFactor = 2;
     supportedFeatures = [
       "big-parallel"
@@ -21,8 +25,22 @@ let
     system:
     let
       builder = homeForgeBuilder system;
+      optionalField = values: if values == [ ] then "-" else builtins.concatStringsSep "," values;
     in
-    "${builder.protocol}://${builder.sshUser}@${builder.hostName} ${builder.system} ${builder.sshKey} ${toString builder.maxJobs} ${toString builder.speedFactor} ${builtins.concatStringsSep "," builder.supportedFeatures}";
+    "${builder.protocol}://${builder.sshUser}@${builder.hostName} ${builder.system} ${builder.sshKey} ${toString builder.maxJobs} ${toString builder.speedFactor} ${optionalField builder.supportedFeatures} ${optionalField builder.mandatoryFeatures}";
+
+  # Substitution policy, owned by the system-scoped classes because the daemon
+  # is what substitutes: an unresponsive substituter must cost seconds, not
+  # minutes per path, and a cold cache must not be stampeded by the fan-out.
+  substitutionSettings = {
+    "connect-timeout" = 5;
+    "stalled-download-timeout" = 30;
+    "download-attempts" = 2;
+    "http-connections" = 8;
+    "max-substitution-jobs" = 8;
+    # Misses are cheap; the built-in one-hour negative cache is not.
+    "narinfo-cache-negative-ttl" = 60;
+  };
 in
 {
   flake.modules.homeManager.nix =
@@ -128,7 +146,7 @@ in
         mode = "0644";
       };
 
-      nix.settings = {
+      nix.settings = substitutionSettings // {
         "trusted-users" = [
           "root"
           primaryUser.name
@@ -161,8 +179,6 @@ in
         "warn-dirty" = false;
         "accept-flake-config" = true;
         "download-buffer-size" = 268435456;
-        "http-connections" = 64;
-        "max-substitution-jobs" = 16;
         "post-build-hook" = lib.getExe niks3UploadHook;
       };
 
@@ -195,7 +211,7 @@ in
         extraArgs = "--keep-since 7d";
       };
 
-      nix.settings = {
+      nix.settings = substitutionSettings // {
         "trusted-users" = [
           "root"
           config.currentHost.primaryUser.name
@@ -227,8 +243,6 @@ in
         "warn-dirty" = false;
         "accept-flake-config" = true;
         "download-buffer-size" = 268435456;
-        "http-connections" = 64;
-        "max-substitution-jobs" = 16;
       };
       nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
     }
