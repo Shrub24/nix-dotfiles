@@ -18,3 +18,5 @@
 | `secrets-ownership-model` | active | `dendritic-cleanup-pre-nixos` | `openspec/changes/dendritic-cleanup-pre-nixos/design.md` |
 | `current-host-facts` | active | `archive/2026-09-21-current-host-facts` | `openspec/changes/archive/2026-09-21-current-host-facts/specs/current-host-facts/spec.md` |
 | `spectre-host` | active | `add-spectre-host` | `openspec/changes/add-spectre-host/specs/spectre-host/spec.md` |
+| `filesystem-bootstrap` | active | `archive/2026-09-21-nixos-filesystem-bootstrap` | `openspec/changes/archive/2026-09-21-nixos-filesystem-bootstrap/specs/filesystem-bootstrap/spec.md` |
+| `nixos-bare-metal-readiness` | active | `archive/2026-09-21-nixos-bare-metal-readiness` | `openspec/changes/archive/2026-09-21-nixos-bare-metal-readiness/specs/nixos-bare-metal-readiness/spec.md` |

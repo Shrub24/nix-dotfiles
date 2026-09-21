@@ -36,9 +36,15 @@ A service's own secrets and rendered environment templates SHALL be declared in 
 
 #### Scenario: A service owns its env template
 
-- **WHEN** a service (e.g. litellm, hermes, docs-mcp, grist, niks3, aichat, nix) needs a rendered environment or access-token file
-- **THEN** the `sops.secrets.<NAME>` and `sops.templates."<name>"` declarations live in that service's feature module
-- **AND** the fully-merged sops config decrypts and renders the whole set once, regardless of which module declared each secret
+- **WHEN** a service needs a secret file or a rendered environment derived from secrets
+- **THEN** the `sops.secrets.<NAME>` declaration and any required `sops.templates."<name>"` declaration live in that service's feature module
+- **AND** the fully-merged sops config decrypts and, when required, renders the whole set once, regardless of which module declared each secret
+
+#### Scenario: A system-scoped service secret is root-owned
+
+- **WHEN** a service feature module declares an upload credential for the NixOS target (e.g. Niks3's auth token)
+- **THEN** the secret is declared in that feature module at system scope, decrypted to a root-owned path, and referenced directly by the consuming service
+- **AND** the secret value SHALL NOT be exposed in the repository, the Nix store, or user scope
 
 ### Requirement: Cross-module references use merged placeholders
 

@@ -20,6 +20,12 @@ Settings consumed by the Nix daemon, including daemon-level substituter policy a
 - **WHEN** the Nix daemon performs an operation that requires substituter or trusted key policy
 - **THEN** it uses configuration declared at system scope
 
+#### Scenario: NixOS daemon policy lives in nix.settings
+
+- **WHEN** the NixOS target is active
+- **THEN** daemon-level Nix policy is declared in the NixOS `nix.settings`
+- **AND** the NixOS `nix` aspect SHALL NOT set a user-runtime-socket post-build hook
+
 ### Requirement: nixbuild.net access is available to daemon-scoped execution
 
 The system SHALL provide nixbuild.net access configuration and credentials in root-owned system scope so daemon-scoped Nix execution does not depend on Home Manager state or an interactive user shell.
@@ -45,3 +51,18 @@ System-manager secrets SHALL be decrypted using a pre-generated root-owned age i
 - **WHEN** system-manager installs root-owned secrets
 - **THEN** it SHALL use a persistent age identity readable only by root
 - **AND** the encrypted secret recipients SHALL include that identity
+
+### Requirement: Native system Niks3 auto-upload is the NixOS post-build path
+
+On the NixOS target, store-path upload SHALL use the native `services.niks3-auto-upload` system service with a root-owned auth token; the user-runtime uploader and its socket hook SHALL NOT be used.
+
+#### Scenario: Native Niks3 uploads built paths
+
+- **WHEN** the NixOS daemon finishes a build
+- **THEN** the native `services.niks3-auto-upload` service uploads the store paths to the configured niks3 server
+- **AND** the upload uses a root-owned token readable by the service
+
+#### Scenario: No user-runtime post-build hook on NixOS
+
+- **WHEN** the NixOS `nix` aspect is evaluated
+- **THEN** it sets no post-build hook referencing the user runtime socket
