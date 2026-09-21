@@ -1,4 +1,27 @@
 { inputs, ... }: {
+  flake-file.inputs = {
+    fish-abbreviation-tips = {
+      url = "github:Gazorby/fish-abbreviation-tips";
+      flake = false;
+    };
+    fish-autopair = {
+      url = "github:jorgebucaran/autopair.fish";
+      flake = false;
+    };
+    fish-done = {
+      url = "github:franciscolourenco/done";
+      flake = false;
+    };
+    fish-replay = {
+      url = "github:jorgebucaran/replay.fish";
+      flake = false;
+    };
+    fish-sponge = {
+      url = "github:meaningful-ooo/sponge";
+      flake = false;
+    };
+  };
+
   flake.modules.homeManager.fish =
     {
       lib,

@@ -1,86 +1,35 @@
+# DO-NOT-EDIT. This file was auto-generated using github:denful/flake-file.
+# Use `nix run .#write-flake` to regenerate it.
 {
   description = "saurabhj's Nix configuration — dendritic home-manager";
 
+  outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
+
   nixConfig = {
     extra-substituters = [ "https://vicinae.cachix.org" ];
-    extra-trusted-public-keys = [
-      "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc="
-    ];
+    extra-trusted-public-keys = [ "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc=" ];
   };
 
   inputs = {
-    nixpkgs = {
-      url = "github:NixOS/nixpkgs/nixos-unstable";
+    codebase-memory-mcp = {
+      url = "github:DeusData/codebase-memory-mcp/v0.11.0";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
-    flake-parts = {
-      url = "github:hercules-ci/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs";
+    community-templates = {
+      url = "github:noctalia-dev/community-templates";
+      flake = false;
+    };
+    crane = {
+      url = "github:ipetkov/crane";
     };
     direnv-instant = {
       url = "github:Mic92/direnv-instant";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    system-manager = {
-      url = "github:numtide/system-manager";
+    fenix = {
+      url = "github:nix-community/fenix/monthly";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    sops-nix = {
-      url = "github:Mic92/sops-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    home-manager = {
-      url = "github:nix-community/home-manager/master";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    import-tree = {
-      url = "github:denful/import-tree";
-    };
-    # Packaging layer for the Neovim config: owns the neovim build, the plugin
-    # closure, treesitter grammars and runtime binaries. See modules/editors/nvim/.
-    wrappers = {
-      url = "github:nix-community/nix-wrapper-modules";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    treefmt-nix = {
-      url = "github:numtide/treefmt-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    noctalia = {
-      url = "github:noctalia-dev/noctalia";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    # Community template inputs. Noctalia fetches these from api.noctalia.dev at
-    # runtime; pinning the source repo instead keeps the inputs declarative and
-    # lets the user-template definitions in modules/desktop/noctalia.nix point
-    # at a store path.
-    community-templates = {
-      url = "github:noctalia-dev/community-templates";
-      flake = false;
-    };
-    monique = {
-      url = "github:ToRvaLDz/monique";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    llm-agents = {
-      url = "github:numtide/llm-agents.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    hermes-agent = {
-      url = "github:NousResearch/hermes-agent";
-    };
-    codebase-memory-mcp = {
-      url = "github:DeusData/codebase-memory-mcp";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    niks3 = {
-      url = "github:Mic92/niks3";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    memex = {
-      url = "github:nicosuave/memex";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     fish-abbreviation-tips = {
       url = "github:Gazorby/fish-abbreviation-tips";
       flake = false;
@@ -101,36 +50,77 @@
       url = "github:meaningful-ooo/sponge";
       flake = false;
     };
-    naersk = {
-      url = "github:nix-community/naersk";
-      inputs.nixpkgs.follows = "nixpkgs";
+    flake-file = {
+      url = "github:denful/flake-file";
     };
-    crane = {
-      url = "github:ipetkov/crane";
-    };
-    fenix = {
-      url = "github:nix-community/fenix/monthly";
-      inputs.nixpkgs.follows = "nixpkgs";
+    flake-parts = {
+      follows = "nix-fleet/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
     };
     fsel = {
       url = "github:Mjoyufull/fsel";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.naersk.follows = "naersk";
     };
-    vicinae = {
-      url = "github:vicinaehq/vicinae";
+    hermes-agent = {
+      url = "github:NousResearch/hermes-agent";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    home-manager = {
+      url = "github:nix-community/home-manager/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    import-tree = {
+      follows = "nix-fleet/import-tree";
     };
     keypeek = {
       url = "github:srwi/keypeek";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-  };
-
-  outputs =
-    inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ (inputs.import-tree ./modules) ];
-
-      systems = [ "x86_64-linux" ];
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
+    memex = {
+      url = "github:nicosuave/memex";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    monique = {
+      url = "github:ToRvaLDz/monique";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    niks3 = {
+      url = "github:Mic92/niks3";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nix-fleet = {
+      url = "github:Shrub24/nix-fleet";
+    };
+    nixpkgs = {
+      follows = "nix-fleet/nixpkgs";
+    };
+    noctalia = {
+      url = "github:noctalia-dev/noctalia";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    system-manager = {
+      url = "github:numtide/system-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    treefmt-nix = {
+      follows = "nix-fleet/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    vicinae = {
+      url = "github:vicinaehq/vicinae";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    wrappers = {
+      url = "github:nix-community/nix-wrapper-modules";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
 }

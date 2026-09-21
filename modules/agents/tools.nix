@@ -1,5 +1,10 @@
 { inputs, ... }:
 {
+  flake-file.inputs = {
+    codebase-memory-mcp.url = "github:DeusData/codebase-memory-mcp/v0.11.0";
+    memex.url = "github:nicosuave/memex";
+  };
+
   flake.modules.homeManager.tools =
     {
       config,

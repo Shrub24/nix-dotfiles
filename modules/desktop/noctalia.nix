@@ -3,6 +3,17 @@
   ...
 }:
 {
+  flake-file.inputs = {
+    noctalia.url = "github:noctalia-dev/noctalia";
+
+    # Noctalia fetches community templates from api.noctalia.dev at runtime;
+    # pinning the source repo keeps the template inputs declarative.
+    community-templates = {
+      url = "github:noctalia-dev/community-templates";
+      flake = false;
+    };
+  };
+
   flake.modules.homeManager.noctalia =
     {
       config,

@@ -1,4 +1,6 @@
 { inputs, ... }: {
+  flake-file.inputs.direnv-instant.url = "github:Mic92/direnv-instant";
+
   flake.modules.homeManager.direnv =
     {
       ...

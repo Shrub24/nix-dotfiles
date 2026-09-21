@@ -32,7 +32,6 @@ let
       health.path = "/status";
     };
 
-
     docs-mcp = {
       name = "Docs MCP";
       port = 6280;

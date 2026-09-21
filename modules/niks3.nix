@@ -9,6 +9,8 @@ let
   niks3ServerUrl = config.topology.services.niks3.host;
 in
 {
+  flake-file.inputs.niks3.url = "github:Mic92/niks3";
+
   flake.modules.nixos.niks3 =
     { config, ... }:
     {

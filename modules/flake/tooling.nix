@@ -3,45 +3,28 @@
   ...
 }:
 {
-  imports = [ inputs.treefmt-nix.flakeModule ];
+  # nix-fleet owns the shared treefmt definition (nixfmt, statix, deadnix,
+  # mdformat, taplo, yamlfmt, jsonfmt) and the formatter priorities that make
+  # the chain converge. This file adds only what is specific to this repository.
+  imports = [ inputs.nix-fleet.flakeModules.tooling ];
 
   perSystem =
     { pkgs, ... }:
     {
-      treefmt = {
-        projectRootFile = "flake.nix";
-
-        settings.global.excludes = [
-          "pkgs/_sources/**"
-          # Pi subagent definitions are verbatim prompt text with YAML
-          # frontmatter; mdformat would renumber their ordered lists and
-          # defeat byte-level comparison against upstream's bundled agents.
-          "modules/agents/pi/agents/**"
-          "secrets/**"
-          ".brv/**"
-          ".qmd/**"
-          ".direnv/**"
-          ".jj/**"
-          ".opencode/**"
-          ".pi/**"
-          ".ocx/**"
-          ".firecrawl/**"
-          "result"
-          "result-*"
-          "flake.lock"
-        ];
-
-        programs = {
-          nixfmt.enable = true;
-          statix.enable = true;
-          deadnix.enable = true;
-          mdformat.enable = true;
-          mdformat.plugins = ps: [ ps.mdformat-frontmatter ];
-          taplo.enable = true;
-          yamlfmt.enable = true;
-          jsonfmt.enable = true;
-        };
-      };
+      treefmt.settings.global.excludes = [
+        "pkgs/_sources/**"
+        # Pi subagent definitions are verbatim prompt text with YAML
+        # frontmatter; mdformat would renumber their ordered lists and
+        # defeat byte-level comparison against upstream's bundled agents.
+        "modules/agents/pi/agents/**"
+        "secrets/**"
+        ".brv/**"
+        ".qmd/**"
+        ".direnv/**"
+        ".opencode/**"
+        ".ocx/**"
+        ".firecrawl/**"
+      ];
 
       devShells.default = pkgs.mkShell {
         packages = with pkgs; [

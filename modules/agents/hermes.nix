@@ -7,6 +7,8 @@ let
   omniroute = config.topology.services.omniroute.host;
 in
 {
+  flake-file.inputs.hermes-agent.url = "github:NousResearch/hermes-agent";
+
   flake.modules.homeManager.hermes =
     {
       config,

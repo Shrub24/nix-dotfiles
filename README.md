@@ -45,6 +45,33 @@ nix develop -c lefthook install
 nh clean all --keep-since 7d
 ```
 
+## Flake inputs
+
+`flake.nix` is **generated** by [flake-file](https://flake-file.denful.dev) from
+input declarations in the module tree — never edit it by hand. Declare an input
+next to the feature that consumes it, or in `modules/flake/inputs.nix` when it
+belongs to the flake plumbing or the package layer. Regenerate and verify:
+
+```bash
+nix run .#write-flake                              # rewrite flake.nix + flake.lock
+nix flake check --no-build --no-write-lock-file    # includes the in-sync check
+```
+
+[`Shrub24/nix-fleet`](https://github.com/Shrub24/nix-fleet) is the fleet's
+platform repository and owns the pins both repositories share: `nixpkgs`,
+`flake-parts`, `import-tree` and `treefmt-nix` are *follows* onto it, so a single
+nix-fleet update moves them together. Everything else here — home-manager,
+system-manager, Noctalia, agent and desktop tooling — is this repository's own
+input and updates independently.
+
+To test against a coordinated nix-fleet change, point the input at a local
+checkout without touching the committed URL:
+
+```bash
+just fleet-check                       # NIX_FLEET_DIR, default ../nix-fleet
+nix flake check --no-build --override-input nix-fleet path:../nix-fleet
+```
+
 ## Architecture
 
 Setup and operator commands live here; the durable design — directory layout,

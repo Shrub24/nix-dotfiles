@@ -1,4 +1,6 @@
 { inputs, ... }: {
+  flake-file.inputs.vicinae.url = "github:vicinaehq/vicinae";
+
   flake.modules.homeManager.vicinae =
     { ... }:
     {

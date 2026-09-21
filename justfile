@@ -26,3 +26,8 @@ models-dev:
     sri=$(nix hash convert --hash-algo sha256 --to sri "$hash")
     sed -i -E "s|hash = \"sha256-[^\"]*\";|hash = \"$sri\";|" pkgs/models-dev/default.nix
     echo "models-dev pinned to $sri"
+
+# Point the nix-fleet input at a local checkout (default ../nix-fleet) so a
+# dotfiles change can be tested against a coordinated nix-fleet change.
+fleet-check fleet_dir=env("NIX_FLEET_DIR", "../nix-fleet"):
+    nix flake check --no-build --no-write-lock-file --override-input nix-fleet path:{{fleet_dir}}
