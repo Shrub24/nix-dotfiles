@@ -1,1 +1,0 @@
-The Nix daemon configuration moves substituter policy and trusted keys to system scope, enabling daemon-scoped access to nixbuild.net without an interactive user shell.
