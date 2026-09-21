@@ -66,7 +66,7 @@ ignored.
 modules/                 ← import-tree scan (the only discovery root)
   ├─ flake/*.nix         declares the flake.modules option; perSystem tooling
   ├─ agents/<feature>.nix  one file per feature → homeManager aspect
-  ├─ agents/litellm/     default.nix publishes the aspect; _*.nix raw modules
+  ├─ editors/nvim/       nvim.nix publishes the aspect; _*.nix raw modules
   ├─ apps/*.nix           end-user GUI apps (media, zathura, pavucontrol)
   ├─ apps/browser/*.nix   firefox, chromium, thunderbird, brave-origin — lazy HM enable
   ├─ desktop/*.nix        compositor + shell env (niri, noctalia, monique, vicinae, portals, greeter)
@@ -84,7 +84,7 @@ modules/                 ← import-tree scan (the only discovery root)
 
 Host composition lives in modules/hosts/arch.nix and modules/hosts/spectre.nix,
 not flake.nix:
-  ├─ 59 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
+  ├─ 58 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
   ├─ 7 systemManager aspects + _system.nix → systemConfigs.arch
   └─ 19 nixos aspects + _nixos.nix + embedded HM → nixosConfigurations.shrub
 
@@ -156,7 +156,7 @@ age key + tooling), a shared credentials aspect
 (`modules/security/credentials/agents.nix`, the ~20 cross-feature LLM/provider
 API keys from `secrets/agents.yaml` plus the shell-wide `zsh-secrets.env`),
 and each service's own feature module (its service-specific secrets and
-rendered env templates — `litellm.env`, `aichat.env`, `grist.env`,
+rendered env templates — `aichat.env`, `grist.env`,
 `docs-mcp.env`, `hermes.env`, `niks3-auth-token`, `nix-access-tokens`).
 Secrets decrypt once by the merged sops config and templates render into the
 Home Manager generation, so ownership is relocated without changing the
@@ -167,47 +167,33 @@ secret is rendered into user state. Canonical contract:
 ## Service Lifecycle
 
 User services follow systemd's own lifecycle model instead of activation
-orchestration. Docs MCP, LiteLLM, and Grist declare `X-Restart-Triggers`
-on their generated config and decrypted secret paths, so a config or
-secret change restarts the service declaratively. Activation hooks remain only where the
+orchestration. Docs MCP and Grist declare `X-Restart-Triggers` on their
+generated config and decrypted secret paths, so a config or secret change
+restarts the service declaratively. Activation hooks remain only where the
 service manager cannot model the work.
-
-The one retained Home Manager activation is the LiteLLM OCI image load
-(`home.activation.litellmImageLoad`): the patched image is loaded into podman
-once at activation rather than in `ExecStartPre`, avoiding the repeated
-unpack/restart loop that exhausted disk. LiteLLM runs from an OCI image
-because its Prisma client and migrations are impractical to package in Nix —
-see Durable Decisions.
 
 Active user services: docs-mcp, grist, qmd, web-catalog, moniqued, surge (the
 headless download daemon on port 1700), niks3-auto-upload (a socket-activated
 cache upload queue), and the weekly nh-clean timer — which is a user timer only on the non-NixOS host: on
 NixOS the system-scoped `programs.nh.clean` runs `nh clean all` as root, which
 covers user generations too, so GC has exactly one owner per host scope.
-The LiteLLM gateway aspect and its OCI image are retained but disabled at the
-host (`programs.litellm.enable = false`); consumers target the OmniRoute gateway
-on the builder host instead.
+LLM traffic goes to the OmniRoute gateway on the builder host, an endpoint the
+fleet topology carries (`topology.services.omniroute.host`).
 Service ports and display metadata are owned by `lib/web-services.nix`
-(grist 8484, litellm 8765, docs-mcp 6280, qmd 8181, web-catalog 8123);
+(grist 8484, docs-mcp 6280, qmd 8181, web-catalog 8123);
 canonical contract: [web-service-catalog](openspec/specs/web-service-catalog/spec.md).
 Grist binds loopback only (`127.0.0.1:8484`) and is not reverse-proxied;
 its bundled SQLite state persists at `~/.local/share/grist`.
 On NixOS, exposure is tailnet-scoped: the global firewall stays closed, and
-Mosh (UDP 60000–61000), LiteLLM 8765, web-catalog 8123, and Syncthing's
+Mosh (UDP 60000–61000), web-catalog 8123, and Syncthing's
 relay/discovery ports are allowed on `tailscale0` only — Syncthing sets
 `openDefaultPorts = false` so its ports follow the same rules.
 The laptop (`spectre`) selects no local service tier: its clients reach the
 desktop's and the forge's services over the tailnet, so the service list above
 describes only machines that are always on.
-The LiteLLM gateway behavior is contracted by
-[litellm-gateway](openspec/specs/litellm-gateway/spec.md).
 
 ## Durable Decisions
 
-- **LiteLLM runs from a patched OCI image** — its Prisma client requires
-  schema-specific pre-generation across npm, prisma-engines, and a Python
-  build environment that breaks across versions; the upstream OCI image ships
-  a working Prisma runtime.
 - **Monique is the sole monitor authority** — niri's store-linked config
   includes Monique-owned runtime state and HM defines no inline output
   blocks, so hotplug handling is never split between config layers.

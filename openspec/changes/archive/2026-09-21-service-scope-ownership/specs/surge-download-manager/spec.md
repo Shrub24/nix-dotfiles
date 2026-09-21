@@ -14,9 +14,7 @@ owns the files it writes.
 The Home Manager aspect (`flake.modules.homeManager.surge`) SHALL add
 `pkgs.surge-downloader` to `home.packages` and SHALL run the headless server as a
 `systemd.user` service: `WantedBy = [ "default.target" ]`, after/wants
-`network-online.target`, `ExecStart = ${pkgs.surge-downloader}/bin/surge server
-start --port 1700 --output ${config.home.homeDirectory}/Downloads`, `Restart =
-"on-failure"`, `RestartSec = "5s"`.
+`network-online.target`, `ExecStart = ${pkgs.surge-downloader}/bin/surge server start --port 1700 --output ${config.home.homeDirectory}/Downloads`, `Restart = "on-failure"`, `RestartSec = "5s"`.
 
 The output directory SHALL be set explicitly, because `surge server start`
 defaults it to the working directory. The daemon SHALL NOT run as a system

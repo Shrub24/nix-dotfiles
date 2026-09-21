@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  omniroute = config.topology.services.omniroute.host;
+in
+{
   flake.modules.homeManager.shell =
     {
       config,
@@ -56,7 +60,7 @@ _: {
           EDITOR = "nvim";
           LESS = "-R --use-color";
           BAT_THEME = "noctalia";
-          OMNIROUTE_BASE_URL = "http://home-forge:20128";
+          OMNIROUTE_BASE_URL = omniroute;
           OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS = true;
           # pi-cache-optimizer: keep prompts/skill XML verbatim.
           PI_CACHE_OPTIMIZER_NO_PROMPT_REWRITE = "1";

@@ -16,7 +16,7 @@ a second host can select them.
   from a lean aspect set: the full interactive environment (niri, noctalia,
   vicinae, portals, fonts, libinput, audio, kde-apps) plus terminals, CLI/dev
   tooling, agent CLIs, browsers, ssh/mosh/tailscale, and sops/credentials — and
-  none of the local service tier (grist, litellm, docs-mcp, hermes, qmd,
+  none of the local service tier (grist, docs-mcp, hermes, qmd,
   web-catalog, syncthing, surge, niks3, monique, mutagen, modal, cuda,
   libcamera). Those stay on the desktop and `home-forge`; the laptop's clients
   point at them.

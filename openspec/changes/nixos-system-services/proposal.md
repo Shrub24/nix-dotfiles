@@ -18,9 +18,8 @@ Adopt all 18 native NixOS modules as per-feature nixos aspects (user-confirmed:
 per-feature over a single grab-bag or noctalia.recommendedServices bundle).
 Side-port syncthing from HM to NixOS `services.syncthing` (user-scoping
 preserved via `user`/`dataDir` options). Add `services.openssh.enable` to the
-ssh aspect (server side). Skip ollama (deferred). Skip litellm side-port
-(`services.litellm` runs native package; Prisma constraint per memory #452
-requires OCI image). Use `networking.firewall` (NixOS-native nftables) over
+ssh aspect (server side). Skip ollama (deferred). No LLM gateway side-port is planned: traffic goes to
+the OmniRoute gateway on the builder host. Use `networking.firewall` (NixOS-native nftables) over
 `services.firewalld`.
 
 ## Scope

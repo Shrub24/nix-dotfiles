@@ -17,7 +17,7 @@
 - [x] 1.2 Add `modules/hosts/spectre/_nixos.nix` (hostname `spectre`, state
   version, `en_AU.UTF-8`, `Australia/Melbourne`, importing `_hardware.nix`) and
   `modules/hosts/spectre/_home.nix` (identity, `home-manager.enable`, the lean
-  program set — no litellm/grist/hermes/aichat wiring).
+  program set — no grist/hermes/aichat wiring).
 
   - refs: design D2; spec spectre-host "The portable host is a composed NixOS output"
   - criteria: the raw modules remain outside import-tree discovery (`_` prefix)

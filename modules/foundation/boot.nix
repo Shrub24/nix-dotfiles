@@ -1,5 +1,4 @@
-_:
-{
+_: {
   # NixOS owns boot natively through boot.loader.* / boot.initrd.* (see
   # modules/hosts/arch/_hardware.nix). The Arch systemManager boot configuration —
   # the dracut drop-in and the Limine/snapper conf — names one machine's disk and

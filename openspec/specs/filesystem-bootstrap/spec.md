@@ -1,6 +1,7 @@
 # filesystem-bootstrap Specification
 
 ## Purpose
+
 Defines how a fresh NixOS and Home Manager switch creates required mutable
 filesystem state without relying on leftovers from an earlier installation.
 

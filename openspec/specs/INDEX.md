@@ -10,9 +10,6 @@
 | `mutagen` | active | `archive/2026-08-09-tmux-ssh-mutagen-modules` | `openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/mutagen/spec.md` |
 | `ssh-client` | active | `archive/2026-08-09-tmux-ssh-mutagen-modules` | `openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/ssh-client/spec.md` |
 | `tmux` | active | `archive/2026-08-09-tmux-ssh-mutagen-modules` | `openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/tmux/spec.md` |
-| `litellm-client-integration` | active | `archive/2026-06-17-migrate-bifrost-to-litellm` | `openspec/changes/archive/2026-06-17-migrate-bifrost-to-litellm/specs/litellm-client-integration/spec.md` |
-| `litellm-gateway` | active | `archive/2026-06-17-migrate-bifrost-to-litellm` | `openspec/changes/archive/2026-06-17-migrate-bifrost-to-litellm/specs/litellm-gateway/spec.md` |
-| `litellm-model-routing` | active | `archive/2026-06-17-migrate-bifrost-to-litellm` | `openspec/changes/archive/2026-06-17-migrate-bifrost-to-litellm/specs/litellm-model-routing/spec.md` |
 | `web-service-catalog` | active | `archive/2026-08-09-web-services-ssot` | `openspec/changes/archive/2026-08-09-web-services-ssot/specs/web-service-catalog/spec.md` |
 | `wezterm-config` | active | `archive/2026-08-09-migrate-to-wezterm` | `openspec/changes/archive/2026-08-09-migrate-to-wezterm/specs/wezterm-config/spec.md` |
 | `secrets-ownership-model` | active | `dendritic-cleanup-pre-nixos` | `openspec/changes/dendritic-cleanup-pre-nixos/design.md` |

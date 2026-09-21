@@ -27,10 +27,7 @@ _: {
             DATALAB_API_KEY=${config.sops.placeholder.DATALAB_API_KEY}
             NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
             CURSOR_API_KEY=${config.sops.placeholder.CURSOR_API_KEY}
-            LITELLM_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
-            LITELLM_MASTER_KEY=${config.sops.placeholder.LITELLM_MASTER_KEY}
-            OPENCODE_LITELLM_API_KEY=${config.sops.placeholder.OPENCODE_LITELLM_API_KEY}
-            OPENAI_COMPATIBLE_API_KEY=${config.sops.placeholder.LITELLM_API_KEY}
+            OPENAI_COMPATIBLE_API_KEY=${config.sops.placeholder.OMNIROUTE_API_KEY}
             VOLCENGINE_API_KEY=${config.sops.placeholder.VOLCENGINE_API_KEY}
             TOKENROUTER_API_KEY=${config.sops.placeholder.TOKENROUTER_API_KEY}
             OMNIROUTE_API_KEY=${config.sops.placeholder.OMNIROUTE_API_KEY}
@@ -143,26 +140,6 @@ _: {
             sopsFile = yamlSecrets;
             format = "yaml";
             key = "cursor_api_key";
-          };
-          LITELLM_MASTER_KEY = {
-            sopsFile = yamlSecrets;
-            format = "yaml";
-            key = "litellm_master_key";
-          };
-          LITELLM_API_KEY = {
-            sopsFile = yamlSecrets;
-            format = "yaml";
-            key = "litellm_api_key";
-          };
-          LITELLM_DATABASE_PASSWORD = {
-            sopsFile = yamlSecrets;
-            format = "yaml";
-            key = "litellm_database_password";
-          };
-          OPENCODE_LITELLM_API_KEY = {
-            sopsFile = yamlSecrets;
-            format = "yaml";
-            key = "opencode_litellm_api_key";
           };
         };
       };

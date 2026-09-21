@@ -32,7 +32,7 @@ profile, storage layout, secrets bootstrap, and the install runbook.
 
 **Non-Goals:**
 
-- Copying the desktop's service tier to the laptop. Grist, LiteLLM, docs-mcp,
+- Copying the desktop's service tier to the laptop. Grist, docs-mcp,
   hermes-agent, qmd, web-catalog, Syncthing, the niks3 uploader, Monique, CUDA
   and libcamera stay on machines that are always on.
 - Distributed builds on the laptop. Root would need an ssh key for a builder,
@@ -69,7 +69,7 @@ bluetooth, power, containers, desktop-services, kde-apps, mosh.
 
 Three deliberate constraints shape the profile. The local service tier is absent
 because every service is a machine that is always on doing the job instead: the
-desktop runs them, the `hermes`/`litellm` clients are pointed at `home-forge`, and
+desktop runs them, the `hermes`/`aichat` clients are pointed at `home-forge`, and
 knowledge services stay where their state lives. No Chromium-class browser beyond
 Firefox and no Electron editor is selected: a second and third browser plus VS
 Code would cost more memory than 8 GB of soldered RAM can spare, and on this

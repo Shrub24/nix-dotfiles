@@ -1,6 +1,7 @@
 # nixos-bare-metal-readiness Specification
 
 ## Purpose
+
 Makes `nixosConfigurations.shrub` a switchable bare-metal host: the full Home Manager composition embedded in NixOS target mode, hardware and firmware enabled, the live host's identity and service topology preserved, and validation kept to the existing scoped checks. A prerequisite for `nixos-dual-boot-install`, which owns all install-day work.
 
 ## Requirements
@@ -38,7 +39,7 @@ The NixOS host SHALL reproduce the live Arch host identity: the primary user's p
 
 ### Requirement: Selected services are tailnet-scoped
 
-The native Mosh package SHALL be present with its UDP range permitted only on `tailscale0`; LiteLLM TCP 8765 and web-catalog TCP 8123 SHALL be reachable only on `tailscale0`; none of these ports SHALL be exposed globally; Surge SHALL remain unselected.
+The native Mosh package SHALL be present with its UDP range permitted only on `tailscale0`; web-catalog TCP 8123 SHALL be reachable only on `tailscale0`; none of these ports SHALL be exposed globally; Surge SHALL remain unselected.
 
 #### Scenario: Mosh is reachable over the tailnet only
 
@@ -49,7 +50,7 @@ The native Mosh package SHALL be present with its UDP range permitted only on `t
 #### Scenario: User web services are reachable only on the tailnet
 
 - **WHEN** the NixOS firewall is active
-- **THEN** LiteLLM TCP 8765 and web-catalog TCP 8123 are allowed on `tailscale0`
+- **THEN** web-catalog TCP 8123 is allowed on `tailscale0`
 - **AND** neither port is opened on global interfaces
 
 #### Scenario: Surge stays unselected

@@ -116,6 +116,7 @@ in
     };
 
     topology.services = {
+      omniroute.host = "http://home-forge:20128";
       database.host = "oci-melb-1";
       niks3.host = "http://oci-melb-1:5751";
     };

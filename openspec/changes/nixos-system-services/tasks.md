@@ -102,8 +102,6 @@
 ## Deferred (explicit non-goals)
 
 - [ ] `D1.` Ollama adoption (`services.ollama` with CUDA) — user deferred
-- [ ] `D2.` LiteLLM side-port to `services.litellm` — blocked by Prisma OCI
-  constraint (memory #452); stays HM podman
 - [ ] `D3.` Snapper btrfs snapshot configs — needs `.snapshots` subvolume
   setup (install-day concern); `services.btrfs.autoScrub` covers integrity
 - [ ] `D4.` `services.firewalld` — user chose `networking.firewall` (nftables)

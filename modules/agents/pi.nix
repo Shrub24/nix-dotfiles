@@ -1,4 +1,7 @@
-{ inputs, ... }:
+{ config, inputs, ... }:
+let
+  omniroute = config.topology.services.omniroute.host;
+in
 {
   flake.modules.homeManager.pi =
     { config, pkgs, ... }:
@@ -89,7 +92,6 @@
             "omniroute/budget"
             "omniroute/smart-budget"
             "omniroute/vision"
-            "opencode/muse-spark-1.3-contributor-free"
           ];
 
           compaction.enabled = false;
@@ -231,7 +233,7 @@
           embedding = {
             provider = "openai-compatible";
             model = "embedding";
-            endpoint = "http://home-forge:20128/v1";
+            endpoint = "${omniroute}/v1";
             api_key = "{env:OMNIROUTE_API_KEY}";
           };
           cache_ttl = {
@@ -326,47 +328,6 @@
           missions.enabled = false;
           scheduledRuns.enabled = false;
         };
-        #
-        # ".pi/agent/pi-auto-permissions/config.json".source =
-        #   json.generate "pi-auto-permissions-config.json"
-        #     {
-        #       rules = [
-        #         {
-        #           pattern = "\\bgit\\s+commit\\b";
-        #           flags = "i";
-        #           level = "guarded";
-        #           group = "git";
-        #           label = "Git commit";
-        #         }
-        #         {
-        #           pattern = "\\bgit\\s+push\\b";
-        #           flags = "i";
-        #           level = "guarded";
-        #           group = "git";
-        #           label = "Git push";
-        #         }
-        #         {
-        #           pattern = "\\bnh\\s+(os|home)\\s+(switch|boot)\\b";
-        #           flags = "i";
-        #           level = "guarded";
-        #           group = "nix";
-        #           label = "NixOS/home-manager switch";
-        #         }
-        #         {
-        #           pattern = "\\bnpm\\s+publish\\b";
-        #           flags = "i";
-        #           level = "guarded";
-        #           group = "npm";
-        #           label = "npm publish";
-        #         }
-        #       ];
-        #       reviewer = {
-        #         provider = "omniroute";
-        #         model = "coder-high";
-        #         reasoningEffort = "low";
-        #         timeoutMs = 30000;
-        #       };
-        #     };
         #
         ".pi/agent/pi-starship.toml".source = ./pi/pi-starship.toml;
 

@@ -22,6 +22,7 @@ let
     peers = lib.removeAttrs config.topology.hosts [ hostId ];
   };
   currentHostModule = { inherit currentHost; };
+  omniroute = config.topology.services.omniroute.host;
   overlay = import ../../pkgs { inherit inputs system; };
   # Applied to both the standalone HM pkgs and the NixOS global pkgs.
   unfreePredicate =
@@ -126,7 +127,6 @@ let
     "vscode"
     "sops-foundation"
     "grist"
-    "litellm"
     "docs-mcp"
     "modal"
     "qmd"
@@ -189,7 +189,7 @@ let
     inherit pkgs;
     modules = [
       currentHostModule
-      (import ./arch/_home.nix { inherit primaryUser; })
+      (import ./arch/_home.nix { inherit omniroute primaryUser; })
       # Standalone-only: the embedded NixOS eval must not see these.
       {
         targets.genericLinux.gpu.nvidia = {
@@ -232,7 +232,7 @@ let
           users.${primaryUser.name} = {
             imports = [
               currentHostModule
-              (import ./arch/_home.nix { inherit primaryUser; })
+              (import ./arch/_home.nix { inherit omniroute primaryUser; })
               { targets.genericLinux.enable = false; }
             ]
             ++ map hmAspect embeddedHmAspects;

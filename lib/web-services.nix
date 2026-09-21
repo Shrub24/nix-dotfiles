@@ -32,15 +32,6 @@ let
       health.path = "/status";
     };
 
-    litellm = {
-      name = "LiteLLM";
-      port = 8765;
-      icon = "litellm";
-      description = "LLM API gateway";
-      ui.path = "/";
-      health.path = "/health";
-      openapi.path = "/openapi.json";
-    };
 
     docs-mcp = {
       name = "Docs MCP";

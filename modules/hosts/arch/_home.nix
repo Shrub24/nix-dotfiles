@@ -1,4 +1,4 @@
-{ primaryUser }:
+{ omniroute, primaryUser }:
 {
   config,
   lib,
@@ -31,10 +31,6 @@
     pi-coding-agent.enable = true;
     herdr.enable = true;
 
-    # litellm gateway disabled 2026-09-20: all consumers now target the
-    # OmniRoute gateway (http://home-forge:20128/v1). Module + OCI image are
-    # kept for a one-line re-enable.
-    litellm.enable = false;
     grist = {
       enable = true;
       administratorEmail = "jhanjeesaurabh@gmail.com";
@@ -48,7 +44,7 @@
           {
             type = "openai-compatible";
             name = "omniroute";
-            api_base = "http://home-forge:20128/v1";
+            api_base = "${omniroute}/v1";
             models = [
               {
                 name = "coder-high";

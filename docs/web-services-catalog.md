@@ -45,7 +45,7 @@ The catalog is a pure Nix data file. It returns an attrset with two keys:
 ```
 
 - `defaults` — applied to every service unless overridden
-- `services` — keyed by service id (e.g., `litellm`, `docs-mcp`)
+- `services` — keyed by service id (e.g., `grist`, `docs-mcp`)
 
 ### Service entry shape
 
@@ -74,7 +74,6 @@ filter for homepage inclusion.
 | Service | Port | UI | Health | OpenAPI |
 | ------------- | ---- | -- | -------- | ------------- |
 | `grist` | 8484 | `/` | `/status` | — |
-| `litellm` | 8765 | `/` | `/health` | `/openapi.json` |
 | `docs-mcp` | 6280 | `/` | — | — |
 | `qmd` | 8181 | `/` | — | — |
 | `web-catalog` | 8123 | `/` | `/` | — |
@@ -109,18 +108,17 @@ Each entry in `.#webServiceCatalog` has:
 
 ```nix
 {
-  id = "litellm";
-  name = "LiteLLM";
+  id = "grist";
+  name = "Grist";
   group = "AI Services";
-  port = 8765;
+  port = 8484;
   scheme = "http";
   host = "localhost";
-  baseUrl = "http://localhost:8765";
-  uiUrl = "http://localhost:8765/";
-  healthUrl = "http://localhost:8765/health";
-  openapiUrl = "http://localhost:8765/openapi.json";
-  icon = "litellm";
-  description = "LLM API gateway";
+  baseUrl = "http://localhost:8484";
+  uiUrl = "http://localhost:8484/";
+  healthUrl = "http://localhost:8484/status";
+  icon = "grist";
+  description = "Spreadsheet database";
 }
 ```
 
@@ -183,19 +181,19 @@ Service modules under `modules/agents/` reference catalog ports instead of
 hardcoding them. This keeps module defaults in sync with the catalog:
 
 ```nix
-# modules/agents/litellm/_hm.nix  (default.nix publishes the aspect)
+# modules/agents/grist.nix  (the HM module body)
 let
-  webServices = (import ../../../lib/web-services.nix { inherit lib pkgs; }).services;
+  webServices = (import ../../lib/web-services.nix { inherit lib; }).services;
 in
 {
-  options.programs.litellm.port = mkOption {
-    default = webServices.litellm.port;
+  options.programs.grist.port = mkOption {
+    default = webServices.grist.port;
     # ...
   };
 }
 ```
 
-Wired modules: `grist`, `litellm`, `docs-mcp`, `qmd`, `web-catalog`.
+Wired modules: `grist`, `docs-mcp`, `qmd`, `web-catalog`.
 
 ## Adding a new service
 

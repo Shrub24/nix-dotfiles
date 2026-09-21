@@ -1,7 +1,11 @@
 {
+  config,
   inputs,
   ...
 }:
+let
+  omniroute = config.topology.services.omniroute.host;
+in
 {
   flake.modules.homeManager.hermes =
     {
@@ -48,7 +52,7 @@
         settings = lib.mkDefault {
           model = {
             provider = "custom";
-            base_url = "http://home-forge:20128/v1";
+            base_url = "${omniroute}/v1";
             default = "coder-high";
           };
           platform_toolsets.cli = [

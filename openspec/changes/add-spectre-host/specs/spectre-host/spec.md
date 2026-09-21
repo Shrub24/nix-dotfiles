@@ -35,7 +35,7 @@ with no `systemConfigs` output, no standalone `homeConfigurations` output, and n
 #### Scenario: The host selects no local service tier
 
 - **WHEN** the laptop's aspect lists are read
-- **THEN** the always-on services (LiteLLM, Grist, docs-mcp, hermes-agent, qmd,
+- **THEN** the always-on services (Grist, docs-mcp, hermes-agent, qmd,
   web-catalog, Syncthing, the niks3 uploader) SHALL NOT be selected
 - **AND** clients that target those services SHALL point at the machines that run
   them

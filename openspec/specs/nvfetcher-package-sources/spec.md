@@ -19,7 +19,7 @@ The repository SHALL define committed nvfetcher source metadata only for the act
 
 - **WHEN** a maintainer reviews the repository source-update configuration
 - **THEN** every declared nvfetcher source SHALL be consumed by an active custom package
-- **AND** inactive Snip and LiteLLM source records SHALL be absent
+- **AND** inactive Snip source records SHALL be absent
 
 ### Requirement: Target derivations consume generated nvfetcher metadata
 

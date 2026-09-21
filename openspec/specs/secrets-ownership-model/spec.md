@@ -52,7 +52,7 @@ Because sops-nix builds `config.sops.placeholder.X` from the fully-merged module
 
 #### Scenario: A template references a shared credential
 
-- **WHEN** a feature-owned template (e.g. `litellm.env`, `hermes.env`, `nix-access-tokens`) needs a value declared in the shared credentials aspect
+- **WHEN** a feature-owned template (e.g. `aichat.env`, `hermes.env`, `nix-access-tokens`) needs a value declared in the shared credentials aspect
 - **THEN** the template content interpolates `config.sops.placeholder.<NAME>`
 - **AND** no explicit cross-module secret-forwarding is required
 

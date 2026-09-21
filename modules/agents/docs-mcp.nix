@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  omniroute = config.topology.services.omniroute.host;
+in
+{
   flake.modules.homeManager.docs-mcp =
     {
       config,
@@ -52,7 +56,7 @@ _: {
             Restart = "on-failure";
             RestartSec = "10s";
             Environment = [
-              "OPENAI_API_BASE=http://home-forge:20128/v1"
+              "OPENAI_API_BASE=${omniroute}/v1"
               "DOCS_MCP_EMBEDDING_MODEL=embedding"
               "DOCS_MCP_EMBEDDINGS_VECTOR_DIMENSION=4096"
             ];
