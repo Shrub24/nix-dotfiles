@@ -84,7 +84,7 @@ modules/                 ← import-tree scan (the only discovery root)
 
 Host composition lives in modules/hosts/arch.nix and modules/hosts/spectre.nix,
 not flake.nix:
-  ├─ 58 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
+  ├─ 59 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
   ├─ 7 systemManager aspects + _system.nix → systemConfigs.arch
   └─ 19 nixos aspects + _nixos.nix + embedded HM → nixosConfigurations.shrub
 
@@ -144,7 +144,7 @@ file and the declarations disagree.
 
 Dependency authority is explicit. `nix-fleet` owns the pins both repositories
 share — `nixpkgs`, `flake-parts`, `import-tree`, `treefmt-nix` — and this flake
-consumes them as *follows* onto `nix-fleet/<input>` rather than carrying its own
+consumes them as _follows_ onto `nix-fleet/<input>` rather than carrying its own
 URLs, so a single nix-fleet update moves them together instead of letting two
 copies drift. Everything else — home-manager, system-manager, Noctalia, desktop
 and agent tooling — is this repository's own input, updating independently and
@@ -201,7 +201,8 @@ generated config and decrypted secret paths, so a config or secret change
 restarts the service declaratively. Activation hooks remain only where the
 service manager cannot model the work.
 
-Active user services: docs-mcp, grist, qmd, web-catalog, moniqued, surge (the
+Active user services: docs-mcp, grist, qmd, web-catalog, moniqued, memex's
+hourly index timer, surge (the
 headless download daemon on port 1700), niks3-auto-upload (a socket-activated
 cache upload queue), and the weekly nh-clean timer — which is a user timer only on the non-NixOS host: on
 NixOS the system-scoped `programs.nh.clean` runs `nh clean all` as root, which

@@ -716,15 +716,16 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1789768730,
-        "narHash": "sha256-so9f16rQQkL2Q6H4KEp6e2HWs8f90+7/m0b0I3hR/PE=",
-        "owner": "nicosuave",
+        "lastModified": 1790007773,
+        "narHash": "sha256-eXq1CGSQSHx638jYqflF6gxgE8X5gbFBnU9n0zdawAg=",
+        "owner": "Shrub24",
         "repo": "memex",
-        "rev": "604437114ecdff208202a6241394a8cf11b5b7a4",
+        "rev": "53b5e2c7e5019adba270fadcebf420892bce9c3e",
         "type": "github"
       },
       "original": {
-        "owner": "nicosuave",
+        "owner": "Shrub24",
+        "ref": "deploy/live",
         "repo": "memex",
         "type": "github"
       }

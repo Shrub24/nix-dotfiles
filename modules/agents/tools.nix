@@ -6,7 +6,6 @@
       # Keeps its own nixpkgs: a version-pinned Rust tool, not a churn follower.
       inputs.nixpkgs.autoFollow = false;
     };
-    memex.url = "github:nicosuave/memex";
   };
 
   flake.modules.homeManager.tools =
@@ -40,11 +39,9 @@
           brave-search-cli
           inputs.codebase-memory-mcp.packages.${system}.default
           xberg-cli
-          # cass disabled 2026-09-20: trialling memex for session recall;
-          # derivation + nvfetcher source kept for quick re-enable.
-          # memex trial parked 2026-09-20: ort-sys ONNX build needs
-          # ORT_LIB_PATH/ORT_PREFER_DYNAMIC_LINK overrides (patch drafted
-          # in git history); flake input memex stays pinned.
+          # cass disabled 2026-09-20: superseded by memex for session recall
+          # (modules/agents/memex.nix); derivation + nvfetcher source kept for
+          # quick re-enable.
         ];
       };
     };

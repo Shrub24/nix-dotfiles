@@ -78,7 +78,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     memex = {
-      url = "github:nicosuave/memex";
+      url = "github:Shrub24/memex/deploy/live";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     monique = {

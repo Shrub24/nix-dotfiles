@@ -85,6 +85,7 @@ let
     "herdr"
     "hermes"
     "tools"
+    "memex"
     "dev-tools"
     "lsp"
     "nvim"
