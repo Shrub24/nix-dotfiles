@@ -25,16 +25,16 @@ See proposal.md — Why. Current state that shapes the design:
 
 **D1 — Hybrid port: `settings` for structure, `extraConfig` for binds/rules.**
 `settings` carries the nodes the KDL serializer maps cleanly: `workspace`, `input`, `layout` (incl. `preset-column-widths`, `shadow`, `focus-ring`, `border`, `tab-indicator`), `blur`, `animations`, `overview`, `gestures`, `config-notification`, `cursor`, `prefer-no-csd`, `screenshot-path`, `spawn-at-startup` (incl. `"noctalia"`), `layer-rule` (kept only if still needed), `hotkey-overlay`, `window-rule` basic blocks where practical. `extraConfig` holds the ~250-line `binds` block and the regex-heavy `window-rule` blocks verbatim.
-*Rationale*: repeated same-name nodes (15 `window-rule`, many `match` lines, nested gradients) become `_children`/`_props` soup with zero behavior gain; KDL stays diffable. `checkConfig` still validates the merged output, so structural mistakes are caught at build time either way.
-*Alternative rejected*: full settings port (high churn, review noise) and everything-in-extraConfig (loses the module's structured config point).
+_Rationale_: repeated same-name nodes (15 `window-rule`, many `match` lines, nested gradients) become `_children`/`_props` soup with zero behavior gain; KDL stays diffable. `checkConfig` still validates the merged output, so structural mistakes are caught at build time either way.
+_Alternative rejected_: full settings port (high churn, review noise) and everything-in-extraConfig (loses the module's structured config point).
 
 **D2 — Noctalia: flake input with `inputs.nixpkgs.follows` + `programs.noctalia.package = pkgs.noctalia`.**
 Single nixpkgs in the closure; the module's `mkDefault` package is overridden to nixpkgs' derivation, which is prebuilt on cache.nixos.org and identical to upstream's (same tag, same stb override). Cachix route rejected: second nixpkgs input, unverifiable CI warmth, only buys main-branch commits between tags.
-*Escalation path*: if a main-branch fix is needed before the next tag, temporarily drop `follows` and add `noctalia.cachix.org`.
+_Escalation path_: if a main-branch fix is needed before the next tag, temporarily drop `follows` and add `noctalia.cachix.org`.
 
 **D3 — Mod+Space stays on vicinae.**
 Noctalia launcher binds go to the documented IPC binds that don't collide: `Mod+S` control-center, `Mod+Comma` settings-toggle (currently DMS settings), `Alt+Tab` window-switcher stays niri's. Noctalia launcher gets no keybind initially (accessible via panel toggle IPC if desired).
-*Rationale*: don't churn muscle memory mid-migration; launcher choice is a one-line bind change later.
+_Rationale_: don't churn muscle memory mid-migration; launcher choice is a one-line bind change later.
 
 **D4 — Lock/volume/brightness binds re-point to `noctalia msg`.**
 `Ctrl+Alt+L` → `noctalia msg session lock`; `XF86AudioRaiseVolume/LowerVolume/Mute`, `XF86AudioMicMute`, `XF86MonBrightnessUp/Down` → `noctalia msg volume-*`/`brightness-*`. DMS-only binds without noctalia equivalents (notepad, processlist, dankdash wallpaper, notification center) are dropped or mapped to available IPC (`panel-toggle control-center` covers notifications). Full IPC surface enumerated at implementation time via `noctalia msg --help`.
@@ -50,19 +50,19 @@ The pre-migration `config.kdl` is committed to the repo (`niri.config.kdl.impera
 
 **D8 — Monique owns mutable monitor profiles.**
 Home Manager installs Monique from its upstream flake and starts `moniqued`, but does not manage Monique's `monitors.kdl`, settings, or profile JSON. The store-linked niri config declares an unmarked optional include for `monitors.kdl`; Monique recognizes it as user-authored and does not try to mutate `config.kdl`. Inline niri output blocks and Shikane autostart are removed so only one hotplug daemon applies layouts.
-*Rationale*: monitor topology changes across docks and locations; Monique keeps desired state in a persistent config while providing a Niri-native editor and hotplug profiles. Nix owns the tool and boundary, not frequently changing hardware state.
+_Rationale_: monitor topology changes across docks and locations; Monique keeps desired state in a persistent config while providing a Niri-native editor and hotplug profiles. Nix owns the tool and boundary, not frequently changing hardware state.
 
 **D9 — Nirius follows upstream while nixpkgs trails.**
 `pkgs/nirius/default.nix` reuses the nixpkgs Rust packaging pattern but pins SourceHut tag `nirius-0.9.0` with fixed source and Cargo hashes. The overlay exposes it as `pkgs.nirius`; Home Manager installs both binaries and niri starts `niriusd` directly.
-*Rationale*: nixpkgs currently provides 0.8.0 and upstream has no flake. A small project-local derivation is less machinery than another source-management workflow and can be deleted once nixpkgs catches up.
+_Rationale_: nixpkgs currently provides 0.8.0 and upstream has no flake. A small project-local derivation is less machinery than another source-management workflow and can be deleted once nixpkgs catches up.
 
 **D10 — Noctalia Greeter follows its upstream flake and keeps mutable sync state.**
 The greeter package is pinned independently at 1.2.1 and shared by system-manager and Home Manager. System-manager owns the greetd session, declarative `greeter.toml`, and a local root wrapper. The wrapper accepts no arguments, opens only the fixed user-owned staging directory with no-follow descriptors, copies whitelisted regular files into a root-owned temporary directory, then invokes the upstream helper. Noctalia calls it through Arch's setuid `/usr/bin/pkexec`; a Nix-store binary cannot carry that privilege. The wrapper is installed by tmpfiles at a fixed root-owned path (`/usr/local/libexec/noctalia-greeter-sync`), and the user-side launcher references that stable path — never a store path, which would drift between the separately-switched Home Manager and system-manager generations. Authorization is a polkit rule (installed via `environment.etc`, so switch-atomic) that grants `YES` on the generic `org.freedesktop.policykit.exec` action when `action.lookup("program")` equals the fixed helper path, for the active local host user — the pattern documented in polkit(8). No custom `.policy` action is used: a tmpfiles-managed action file's `exec.path` annotation could not be refreshed reliably (`C+` only creates, never replaces an existing file), so authorization depends solely on the switch-atomic rule. UWSM output is sent to the journal rather than the greeter VT.
-*Rationale*: the pinned nixpkgs greeter predates output-layout sync and clean VT logging; one upstream package avoids helper/protocol drift without updating all of nixpkgs. `run0` authorizes arbitrary transient root units through `systemd1.manage-units`. The upstream helper accepts arbitrary staging paths and follows source symlinks, so it must receive a root-owned, copied staging directory rather than user-controlled paths.
+_Rationale_: the pinned nixpkgs greeter predates output-layout sync and clean VT logging; one upstream package avoids helper/protocol drift without updating all of nixpkgs. `run0` authorizes arbitrary transient root units through `systemd1.manage-units`. The upstream helper accepts arbitrary staging paths and follows source symlinks, so it must receive a root-owned, copied staging directory rather than user-controlled paths.
 
 **D11 — Lock screen authenticates through a dedicated patched PAM service.**
 The overlay shadows `pkgs.noctalia` with a one-string patch redirecting the lock screen's hardcoded `pam_service = "login"` to `noctalia-lock`, and system-manager installs a minimal `/etc/pam.d/noctalia-lock` (`pam_unix` auth and account only).
-*Rationale*: Arch's `login` stack includes `pam_faillock`, whose root-owned state an unprivileged locker cannot reach (`pam_authenticate` rc=9); upstream hardcodes the service with no config key (issue #3277). `pam_unix` verifies the caller's own password unprivileged via Arch's setuid `unix_chkpwd`, so the system `login` policy stays untouched. `--replace-fail` turns upstream drift into a build error.
+_Rationale_: Arch's `login` stack includes `pam_faillock`, whose root-owned state an unprivileged locker cannot reach (`pam_authenticate` rc=9); upstream hardcodes the service with no config key (issue #3277). `pam_unix` verifies the caller's own password unprivileged via Arch's setuid `unix_chkpwd`, so the system `login` policy stays untouched. `--replace-fail` turns upstream drift into a build error.
 
 ## Risks / Trade-offs
 

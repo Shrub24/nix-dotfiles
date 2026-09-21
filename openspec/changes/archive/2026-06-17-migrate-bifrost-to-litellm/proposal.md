@@ -21,15 +21,15 @@ The current local LLM gateway is built on Bifrost, which is sufficient for stati
 
 ### Modified Capabilities
 
-- *(none — no existing spec capabilities are being modified)*
+- _(none — no existing spec capabilities are being modified)_
 
 ## Impact
 
-| Area | Affected |
-|------|----------|
-| Home Manager agents | Replace `modules/home/agents/bifrost/*` service/config generation with LiteLLM equivalents |
-| Secrets | Replace `bifrost.env` runtime template with LiteLLM runtime env/config wiring in `modules/home/sops.nix` |
+| Area                 | Affected                                                                                                               |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Home Manager agents  | Replace `modules/home/agents/bifrost/*` service/config generation with LiteLLM equivalents                             |
+| Secrets              | Replace `bifrost.env` runtime template with LiteLLM runtime env/config wiring in `modules/home/sops.nix`               |
 | OpenCode integration | Update `modules/home/opencode.nix` generated provider overlay to target LiteLLM and use LiteLLM-native provider naming |
-| Local AI clients | Update `hosts/arch/home.nix` wiring for aichat, agentmemory, and any other localhost gateway consumers |
-| Gateway runtime | Replace Bifrost process management with LiteLLM proxy startup and restart behavior |
-| Cleanup | Remove or retire stale Bifrost-specific config/docs after parity migration |
+| Local AI clients     | Update `hosts/arch/home.nix` wiring for aichat, agentmemory, and any other localhost gateway consumers                 |
+| Gateway runtime      | Replace Bifrost process management with LiteLLM proxy startup and restart behavior                                     |
+| Cleanup              | Remove or retire stale Bifrost-specific config/docs after parity migration                                             |

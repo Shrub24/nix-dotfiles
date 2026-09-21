@@ -84,9 +84,9 @@ working tree outside this repository and is genuinely host-local.
 The files split cleanly along that line, which is also the line that decides
 whether a store symlink breaks something.
 
-| Nix-owned | Application-owned |
-|---|---|
-| `herdr/config.toml` | `herdr/plugins.json`, `herdr/plugins/`, `herdr/session.json`, `herdr/release-notes.json`, `herdr/.plugins.lock`, `herdr*.log`, `herdr*.sock` |
+| Nix-owned                                                                                                                                                                                       | Application-owned                                                                                                                                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `herdr/config.toml`                                                                                                                                                                             | `herdr/plugins.json`, `herdr/plugins/`, `herdr/session.json`, `herdr/release-notes.json`, `herdr/.plugins.lock`, `herdr*.log`, `herdr*.sock`                                                                                                                                                  |
 | `pi/settings.json`, `pi/mcp.json`, `pi/pi-fff.json`, `pi/pi-starship.toml`, `pi/pi-auto-permissions/config.json`, `pi/extensions/subagent/config.json`, `pi/agents/`, `pi/extensions/omniroute` | `pi/pi-tool.json`, `pi/pi-stamp.json`, `pi/pi-herdr.json`, `pi/extensions/pi-tool-display/config.json`, `pi/auth.json`, `pi/trust.json`, `pi/mcp-cache.json`, `pi/models-store.json`, `pi/run-history.jsonl`, `pi/sessions/`, `pi/git/`, `pi/npm/`, `pi/fff/`, `pi/missions/`, `pi/intercom/` |
 
 `auth.json` and the project trust store are excluded on ownership grounds as
@@ -99,7 +99,7 @@ reason is stronger than “the app edits them”. `@narumitw/pi-tool`,
 `@narumitw/pi-stamp`, `@narumitw/pi-herdr`, and `pi-tool-display` all save with
 a temporary file plus a rename — `rename(temporaryPath, path)` in
 `@narumitw/pi-tool/src/settings.ts:181`, and `renameSync(tmpFile, configFile)` in
-`pi-tool-display/src/config-store.ts:279`. `rename()` replaces the *symlink*,
+`pi-tool-display/src/config-store.ts:279`. `rename()` replaces the _symlink_,
 not the link target, so a declared file would be swapped for a real file
 without an error, and the next activation would either refuse to clobber it or
 overwrite the user's change. Pi's own `settings.json` fails differently:
@@ -139,14 +139,14 @@ directory — it already holds OpenCode's skills and is symlinked by
 pollution in a directory this repository does not own. Pi's own agent dir is
 scanned as well: `pi-subagents` builds its user discovery list as
 `[...extraUserAgentDirs(), ...userScanDirs.dirs, ~/.pi/agent/agents, ~/.agents]` (`src/agents/agents.ts:2578`), so `~/.pi/agent/agents` is a
-first-class location and only the *eject target* prefers `~/.agents`
+first-class location and only the _eject target_ prefers `~/.agents`
 (`src/agents/agents.ts:2609`).
 
 Two consequences worth recording:
 
 - **Overrides outrank frontmatter.** `settings.json` overrides are applied on
   top of a matching custom agent and replace the same frontmatter fields. An
-  `eject` copies the *bundled* file, not the effective configuration, so the
+  `eject` copies the _bundled_ file, not the effective configuration, so the
   override values must be ported into the frontmatter before
   `subagents.agentOverrides` is deleted. Removing the overrides first silently
   strips the agents down to their bundled tool lists — 5 to 8 tools instead of

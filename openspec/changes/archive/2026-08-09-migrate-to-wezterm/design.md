@@ -21,30 +21,30 @@ The existing WezTerm configuration is a 120-line Lua file that mixes simple sett
 
 ## Config Breakdown
 
-| Existing Lua section | Home Manager surface | Notes |
-| ------------------------------ | ----------------------------- | -------------------------------------------------------------- |
-| `config.font` (font_with_fallback) | `settings.font` with `mkLuaInline` | Needs raw Lua for `wezterm.font_with_fallback` |
-| `config.font_size` | `settings.font_size` | Simple value |
-| `config.color_scheme` | `settings.color_scheme` | Simple string, references the dynamic theme by name |
-| `config.window_decorations` | `settings.window_decorations` | Simple string |
-| `config.window_background_opacity` | `settings.window_background_opacity` | Simple float |
-| `config.line_height` | `settings.line_height` | Simple float |
-| `config.initial_cols` | `settings.initial_cols` | Simple integer |
-| `config.use_fancy_tab_bar` | `settings.use_fancy_tab_bar` | Simple boolean |
-| `config.warn_about_missing_glyphs` | `settings.warn_about_missing_glyphs` | Simple boolean |
-| `config.detect_password_input` | `settings.detect_password_input` | Simple boolean |
-| `config.adjust_window_size_when_changing_font_size` | `settings.adjust_window_size_when_changing_font_size` | Simple boolean |
-| `config.enable_kitty_keyboard` | `settings.enable_kitty_keyboard` | Simple boolean |
-| `config.hyperlink_rules` | `extraConfig` | Needs `wezterm.default_hyperlink_rules()` |
-| `config.keys` (key bindings) | `extraConfig` | Uses `wezterm.action` and custom event emission |
-| `config.ssh_domains` | `settings.ssh_domains` | List of attribute sets — should be expressible in Nix |
-| `config.window_padding.left` | `extraConfig` | String value `"0.25cell"` — Lua string, safer in extraConfig |
-| `config.freetype_load_target` | `settings.freetype_load_target` | Simple string |
-| `config.freetype_render_target` | `settings.freetype_render_target` | Simple string |
-| Plugin loading (resurrect, workspace_switcher, wezterm-replay, tabline, smart-splits) | `extraConfig` | Requires `wezterm.plugin.require` |
-| `wezterm.on("toggle-opencode", ...)` | `extraConfig` | Event handler with Lua state |
-| `tabline.setup` and `tabline.set_theme` | `extraConfig` | Complex Lua with wezterm API calls |
-| Color scheme (dank-theme.toml) | external watched file referenced from `extraConfig` | Keep `wezterm.config_dir .. "/colors/dank-theme.toml"` dynamic |
+| Existing Lua section                                                                  | Home Manager surface                                  | Notes                                                          |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------- |
+| `config.font` (font_with_fallback)                                                    | `settings.font` with `mkLuaInline`                    | Needs raw Lua for `wezterm.font_with_fallback`                 |
+| `config.font_size`                                                                    | `settings.font_size`                                  | Simple value                                                   |
+| `config.color_scheme`                                                                 | `settings.color_scheme`                               | Simple string, references the dynamic theme by name            |
+| `config.window_decorations`                                                           | `settings.window_decorations`                         | Simple string                                                  |
+| `config.window_background_opacity`                                                    | `settings.window_background_opacity`                  | Simple float                                                   |
+| `config.line_height`                                                                  | `settings.line_height`                                | Simple float                                                   |
+| `config.initial_cols`                                                                 | `settings.initial_cols`                               | Simple integer                                                 |
+| `config.use_fancy_tab_bar`                                                            | `settings.use_fancy_tab_bar`                          | Simple boolean                                                 |
+| `config.warn_about_missing_glyphs`                                                    | `settings.warn_about_missing_glyphs`                  | Simple boolean                                                 |
+| `config.detect_password_input`                                                        | `settings.detect_password_input`                      | Simple boolean                                                 |
+| `config.adjust_window_size_when_changing_font_size`                                   | `settings.adjust_window_size_when_changing_font_size` | Simple boolean                                                 |
+| `config.enable_kitty_keyboard`                                                        | `settings.enable_kitty_keyboard`                      | Simple boolean                                                 |
+| `config.hyperlink_rules`                                                              | `extraConfig`                                         | Needs `wezterm.default_hyperlink_rules()`                      |
+| `config.keys` (key bindings)                                                          | `extraConfig`                                         | Uses `wezterm.action` and custom event emission                |
+| `config.ssh_domains`                                                                  | `settings.ssh_domains`                                | List of attribute sets — should be expressible in Nix          |
+| `config.window_padding.left`                                                          | `extraConfig`                                         | String value `"0.25cell"` — Lua string, safer in extraConfig   |
+| `config.freetype_load_target`                                                         | `settings.freetype_load_target`                       | Simple string                                                  |
+| `config.freetype_render_target`                                                       | `settings.freetype_render_target`                     | Simple string                                                  |
+| Plugin loading (resurrect, workspace_switcher, wezterm-replay, tabline, smart-splits) | `extraConfig`                                         | Requires `wezterm.plugin.require`                              |
+| `wezterm.on("toggle-opencode", ...)`                                                  | `extraConfig`                                         | Event handler with Lua state                                   |
+| `tabline.setup` and `tabline.set_theme`                                               | `extraConfig`                                         | Complex Lua with wezterm API calls                             |
+| Color scheme (dank-theme.toml)                                                        | external watched file referenced from `extraConfig`   | Keep `wezterm.config_dir .. "/colors/dank-theme.toml"` dynamic |
 
 ## Risks and Mitigations
 

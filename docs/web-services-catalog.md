@@ -52,18 +52,18 @@ The catalog is a pure Nix data file. It returns an attrset with two keys:
 Each service entry is an attrset. Required fields: `name`, `port`,
 `description`. Optional fields inherit from `defaults` or are omitted entirely.
 
-| Field | Type | Required | Description |
-| --------------- | -------- | -------- | ------------------------------------------------ |
-| `name` | string | yes | Display name |
-| `port` | int | yes | Listen port |
-| `description` | string | yes | Short description |
-| `icon` | string | no | Homepage icon id (see gethomepage.dev icon set) |
-| `scheme` | string | no | URL scheme (default: `"http"`) |
-| `host` | string | no | Hostname (default: `"localhost"`) |
-| `group` | string | no | Homepage group label (default: `"AI Services"`) |
-| `ui.path` | string | no | Browser UI path (e.g., `"/"`) |
-| `health.path` | string | no | Health endpoint path (e.g., `"/health"`) |
-| `openapi.path` | string | no | OpenAPI spec path (e.g., `"/openapi.json"`) |
+| Field          | Type   | Required | Description                                     |
+| -------------- | ------ | -------- | ----------------------------------------------- |
+| `name`         | string | yes      | Display name                                    |
+| `port`         | int    | yes      | Listen port                                     |
+| `description`  | string | yes      | Short description                               |
+| `icon`         | string | no       | Homepage icon id (see gethomepage.dev icon set) |
+| `scheme`       | string | no       | URL scheme (default: `"http"`)                  |
+| `host`         | string | no       | Hostname (default: `"localhost"`)               |
+| `group`        | string | no       | Homepage group label (default: `"AI Services"`) |
+| `ui.path`      | string | no       | Browser UI path (e.g., `"/"`)                   |
+| `health.path`  | string | no       | Health endpoint path (e.g., `"/health"`)        |
+| `openapi.path` | string | no       | OpenAPI spec path (e.g., `"/openapi.json"`)     |
 
 **Endpoint presence encodes capability.** A service with `ui.path` has a
 browser UI; a service without it doesn't. Consumers use `uiUrl != null` to
@@ -71,12 +71,12 @@ filter for homepage inclusion.
 
 ### Current services
 
-| Service | Port | UI | Health | OpenAPI |
-| ------------- | ---- | -- | -------- | ------------- |
-| `grist` | 8484 | `/` | `/status` | — |
-| `docs-mcp` | 6280 | `/` | — | — |
-| `qmd` | 8181 | `/` | — | — |
-| `web-catalog` | 8123 | `/` | `/` | — |
+| Service       | Port | UI  | Health    | OpenAPI |
+| ------------- | ---- | --- | --------- | ------- |
+| `grist`       | 8484 | `/` | `/status` | —       |
+| `docs-mcp`    | 6280 | `/` | —         | —       |
+| `qmd`         | 8181 | `/` | —         | —       |
+| `web-catalog` | 8123 | `/` | `/`       | —       |
 
 ## URL derivation
 
@@ -96,11 +96,11 @@ If `scheme`, `host`, or `group` changes, only one field updates.
 Three outputs are exposed. **Homepage rendering is NOT exposed** — this repo is
 a catalog only. Consumers filter and render their own format.
 
-| Output | Type | Description |
-| ----------------------- | ------------- | -------------------------------------------------------- |
-| `.#webServices` | attrset | Raw SSOT catalog: `{ defaults, services }` |
-| `.#webServiceCatalog` | list | Normalized entries with derived URLs (`baseUrl`, `uiUrl`, `healthUrl`, `openapiUrl`) |
-| `.#webServiceCatalogJSON` | store path | JSON file containing `{ version, services }` |
+| Output                    | Type       | Description                                                                          |
+| ------------------------- | ---------- | ------------------------------------------------------------------------------------ |
+| `.#webServices`           | attrset    | Raw SSOT catalog: `{ defaults, services }`                                           |
+| `.#webServiceCatalog`     | list       | Normalized entries with derived URLs (`baseUrl`, `uiUrl`, `healthUrl`, `openapiUrl`) |
+| `.#webServiceCatalogJSON` | store path | JSON file containing `{ version, services }`                                         |
 
 ### Normalized entry shape
 

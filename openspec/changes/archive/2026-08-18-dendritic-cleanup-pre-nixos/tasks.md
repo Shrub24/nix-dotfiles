@@ -6,7 +6,7 @@
 > - `openspec validate --strict` (MUST pass at the end)
 > - Group D adds a byte-comparison check against the pre-change rendered config.
 
-______________________________________________________________________
+---
 
 ## Group A — Mechanical SSOT Cleanup
 
@@ -81,11 +81,11 @@ User decision: leave the debt. All listed sites are system-manager-scoped / tran
 
 - [ ] **No work in this change.** See `design.md` §5 (non-goals).
 
-______________________________________________________________________
+---
 
 ## Group B — Eliminate `inputs`/`hostFacts` anti-pattern + typed topology
 
-> Canonical justification: `mightyiam/dendritic` Anti-patterns → *`### specialArgs pass-thru`*; `dendrix.denful.dev/Dendritic.html` → *"No need to use `specialArgs` for communicating values"*. Skill tenets 7-9.
+> Canonical justification: `mightyiam/dendritic` Anti-patterns → _`### specialArgs pass-thru`_; `dendrix.denful.dev/Dendritic.html` → _"No need to use `specialArgs` for communicating values"_. Skill tenets 7-9.
 
 ### B1. Define typed top-level `topology` option
 
@@ -185,7 +185,7 @@ For each lower-level module currently destructuring `inputs` from specialArgs, u
 `refs:` `_facts.nix` (17 lines).
 `criteria:` `_facts.nix` either removed or reduced to literals only used at `arch.nix` composition.
 
-______________________________________________________________________
+---
 
 ## Group C — Secrets Hybrid Aspect-Owned Design
 
@@ -250,14 +250,14 @@ ______________________________________________________________________
 ### C8. Spec / durable-doc rewrites
 
 - [x] Rewrite `openspec/specs/system-manager-foundation/spec.md` if it documents the `hostFacts`/`secrets.nix` layout (verify current content; see `design.md` §6).
-- [x] Rewrite `openspec/specs/dendritic-module-composition/spec.md` Requirement *"Host facts remain host-owned"* to the typed-topology + native-option model.
-- [x] Update `ARCHITECTURE.md` durable decision *"Hosts own facts"* and the `hostFacts` specialArgs description.
+- [x] Rewrite `openspec/specs/dendritic-module-composition/spec.md` Requirement _"Host facts remain host-owned"_ to the typed-topology + native-option model.
+- [x] Update `ARCHITECTURE.md` durable decision _"Hosts own facts"_ and the `hostFacts` specialArgs description.
 - [x] Add a new canonical spec (or update the above) describing the new secrets ownership model (foundation + credentials + feature-owned templates).
 
 `refs:` `openspec/specs/dendritic-module-composition/spec.md:37-45`; `ARCHITECTURE.md` ("Hosts own facts"); `design.md` §6.
 `criteria:` No canonical spec documents the removed `hostFacts`/secrets-monolith patterns.
 
-______________________________________________________________________
+---
 
 ## Group D — Niri KDL File-Include Refactor (DMS-style)
 
@@ -300,7 +300,7 @@ ______________________________________________________________________
 `refs:` `design.md` §4.
 `verify:` rendered config byte-equivalence OR `niri validate` passing + manual diff; `nix flake check --no-build --no-write-lock-file`.
 
-______________________________________________________________________
+---
 
 ## Final Validation
 

@@ -18,15 +18,15 @@ The repo currently ships a custom `tokf` package for agent-oriented shell output
 
 ### Modified Capabilities
 
-- *(none — no existing spec capabilities are being modified)*
+- _(none — no existing spec capabilities are being modified)_
 
 ## Impact
 
-| Area | Affected |
-|------|----------|
-| Packages | New: `pkgs/snip`; Removed: `pkgs/tokf` |
-| Flake overlay | `flake.nix` package overlay entry |
-| Home Manager | `modules/home/agents/tools.nix` agent tool bundle |
-| OpenCode config | `apps/opencode/opencode.jsonc` plugin list |
-| Documentation | `ARCHITECTURE.md`, `STRUCTURE.md` |
-| Verification | Home Manager evaluation/build, OpenCode plugin wiring sanity |
+| Area            | Affected                                                     |
+| --------------- | ------------------------------------------------------------ |
+| Packages        | New: `pkgs/snip`; Removed: `pkgs/tokf`                       |
+| Flake overlay   | `flake.nix` package overlay entry                            |
+| Home Manager    | `modules/home/agents/tools.nix` agent tool bundle            |
+| OpenCode config | `apps/opencode/opencode.jsonc` plugin list                   |
+| Documentation   | `ARCHITECTURE.md`, `STRUCTURE.md`                            |
+| Verification    | Home Manager evaluation/build, OpenCode plugin wiring sanity |

@@ -74,7 +74,7 @@ config directory. Steps 5.1–5.5 are the dark window; the rest is verification.
 
 **Ordering constraint that drives the whole sequence.** `~/.pi/agent` and
 `~/.config/herdr` are currently Home Manager link-farm symlinks whose targets
-live in `/nix/store`. Once the modules declare files *inside* those
+live in `/nix/store`. Once the modules declare files _inside_ those
 directories, activation has to create them — writing through a store symlink
 fails with `EACCES`, and creating a file where a foreign symlink already exists
 is refused rather than clobbered. So the old symlinks must be gone **before**

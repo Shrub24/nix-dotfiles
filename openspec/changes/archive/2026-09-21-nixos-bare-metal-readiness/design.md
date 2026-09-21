@@ -104,13 +104,13 @@ value — no new option, no argument bus.
 HM aspects that duplicate a NixOS-owned system service or package are omitted
 from the embedded HM:
 
-| HM aspect | NixOS owner | Why filtered |
-|---|---|---|
-| `tailscale` (package) | `services.tailscale` (CLI + daemon) | duplicate package |
-| `syncthing` (user service) | `services.syncthing` system service | duplicate service |
-| `mosh` (package) | native NixOS package (D9) | NixOS owns the package |
-| `surge` (package) | `nixos.surge` aspect when selected | NixOS owns daemon + package; unselected now |
-| `niks3` user uploader | `services.niks3-auto-upload` (D5) | user-runtime socket is pre-login-incompatible |
+| HM aspect                  | NixOS owner                         | Why filtered                                  |
+| -------------------------- | ----------------------------------- | --------------------------------------------- |
+| `tailscale` (package)      | `services.tailscale` (CLI + daemon) | duplicate package                             |
+| `syncthing` (user service) | `services.syncthing` system service | duplicate service                             |
+| `mosh` (package)           | native NixOS package (D9)           | NixOS owns the package                        |
+| `surge` (package)          | `nixos.surge` aspect when selected  | NixOS owns daemon + package; unselected now   |
+| `niks3` user uploader      | `services.niks3-auto-upload` (D5)   | user-runtime socket is pre-login-incompatible |
 
 KDE Connect stays HM-owned: the `kde-apps` HM aspect keeps
 `services.kdeconnect` (package + user daemon) and the NixOS `kde-apps` aspect

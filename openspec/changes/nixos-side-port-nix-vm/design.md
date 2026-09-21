@@ -30,12 +30,12 @@ _: {
 
 **Translation table** (systemManager -> NixOS):
 
-| systemManager aspect | NixOS aspect | Notes |
-|---|---|---|
-| `nix.enable = true` | (removed) | NixOS enables nix by default; the option is system-manager-specific. |
-| `nix.settings = { ... }` | `nix.settings = { ... }` | Identical option name and shape on NixOS. Verbatim copy. |
-| `environment.etc."profile.d/nix-path.sh".text = "export NIX_PATH=..."` | `nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];` | NixOS owns `NIX_PATH` via `nix.nixPath`; the etc shim is system-manager's workaround for the lack of a native option. |
-| `niks3UploadHook` (post-build-hook) | `niks3UploadHook` (post-build-hook) | Identical; references `/run/user/1000/...` which is valid on single-user NixOS desktop where builds happen while logged in. |
+| systemManager aspect                                                   | NixOS aspect                                 | Notes                                                                                                                       |
+| ---------------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `nix.enable = true`                                                    | (removed)                                    | NixOS enables nix by default; the option is system-manager-specific.                                                        |
+| `nix.settings = { ... }`                                               | `nix.settings = { ... }`                     | Identical option name and shape on NixOS. Verbatim copy.                                                                    |
+| `environment.etc."profile.d/nix-path.sh".text = "export NIX_PATH=..."` | `nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];` | NixOS owns `NIX_PATH` via `nix.nixPath`; the etc shim is system-manager's workaround for the lack of a native option.       |
+| `niks3UploadHook` (post-build-hook)                                    | `niks3UploadHook` (post-build-hook)          | Identical; references `/run/user/1000/...` which is valid on single-user NixOS desktop where builds happen while logged in. |
 
 **What stays the same:** the `homeManager.nix` aspect (user-side tooling,
 sops templates, nh-clean timer, allowUnfreePredicate) is class-agnostic -
@@ -144,14 +144,14 @@ to be evaluable and runnable locally).
 
 Tracked in `tasks.md` Group C. Each entry is a follow-up change:
 
-| Current systemManager aspect | NixOS target | Notes |
-|---|---|---|
-| `network` | `networking.*` / NetworkManager | Resolution choice: NetworkManager vs systemd-networkd; mDNS tweak. |
-| `boot` | `boot.loader.systemd-boot` | Limine conf path via environment.etc -> native boot.loader. |
-| `ssh` | `services.openssh` | HM side stays; systemManager side ports. |
-| `tailscale` | `services.tailscale` | HM side stays; systemManager side ports. |
-| `greeter` | `services.greetd` + noctalia | Noctalia NixOS module wiring. |
-| `nixbuild` | native NixOS remote-build; drop transitional | Pure simplification. |
+| Current systemManager aspect | NixOS target                                 | Notes                                                              |
+| ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------ |
+| `network`                    | `networking.*` / NetworkManager              | Resolution choice: NetworkManager vs systemd-networkd; mDNS tweak. |
+| `boot`                       | `boot.loader.systemd-boot`                   | Limine conf path via environment.etc -> native boot.loader.        |
+| `ssh`                        | `services.openssh`                           | HM side stays; systemManager side ports.                           |
+| `tailscale`                  | `services.tailscale`                         | HM side stays; systemManager side ports.                           |
+| `greeter`                    | `services.greetd` + noctalia                 | Noctalia NixOS module wiring.                                      |
+| `nixbuild`                   | native NixOS remote-build; drop transitional | Pure simplification.                                               |
 
 Plus install-day work: `_hardware.nix` population via `nixos-generate-config`,
 bare-metal install.

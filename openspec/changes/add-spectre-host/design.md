@@ -111,20 +111,20 @@ feature it provides — the laptop not importing it is the whole mechanism, and 
 This is an Ice Lake machine, not the 8th/9th-generation guess it started as, and
 the confirmed device list fixes most of the profile before anything is probed:
 
-| Device | Handling |
-|---|---|
-| i5-1035G4 (Ice Lake) | `hardware.cpu.intel.updateMicrocode`; `thermald` — this generation runs warm |
-| Iris Plus G4 (8086:8a52) | `hardware.graphics.enable` plus the Intel VA-API driver; no dGPU, no PRIME |
-| Wi-Fi 6 AX201 (8086:34f0) | `iwlwifi` firmware via the redistributable-firmware path |
-| Realtek ALC285 (8086:34c8) | requires Sound Open Firmware: `hardware.firmware = [ pkgs.sof-firmware ]` |
-| Synaptics touchpad (06cb:cd50) | `libinput` only |
-| Elantech touchscreen + pen (04f3:29f9) | works; pen buttons are imperfect upstream |
-| Realtek card reader (10ec:525a) | works unconfigured; the microSD slot is spare storage |
-| Two Thunderbolt 3 ports | `services.hardware.bolt.enable` for dock authorisation |
-| TPM 2 | required by the LUKS2 keyslot plan in D5 |
-| Synaptics fingerprint (06cb:00c9) | **not supported**: upstream libfprint has no driver, only a reverse-engineering fork — no `fprintd`, recorded as a host-file comment |
-| Accelerometer | `iio-sensor-proxy`; note that auto-rotation needs a userspace agent, which niri does not provide, so it is optional rather than part of this change |
-| Battery | zram plus the hibernation swapfile (D5); hp-wmi charge threshold where the firmware exposes it |
+| Device                                 | Handling                                                                                                                                            |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| i5-1035G4 (Ice Lake)                   | `hardware.cpu.intel.updateMicrocode`; `thermald` — this generation runs warm                                                                        |
+| Iris Plus G4 (8086:8a52)               | `hardware.graphics.enable` plus the Intel VA-API driver; no dGPU, no PRIME                                                                          |
+| Wi-Fi 6 AX201 (8086:34f0)              | `iwlwifi` firmware via the redistributable-firmware path                                                                                            |
+| Realtek ALC285 (8086:34c8)             | requires Sound Open Firmware: `hardware.firmware = [ pkgs.sof-firmware ]`                                                                           |
+| Synaptics touchpad (06cb:cd50)         | `libinput` only                                                                                                                                     |
+| Elantech touchscreen + pen (04f3:29f9) | works; pen buttons are imperfect upstream                                                                                                           |
+| Realtek card reader (10ec:525a)        | works unconfigured; the microSD slot is spare storage                                                                                               |
+| Two Thunderbolt 3 ports                | `services.hardware.bolt.enable` for dock authorisation                                                                                              |
+| TPM 2                                  | required by the LUKS2 keyslot plan in D5                                                                                                            |
+| Synaptics fingerprint (06cb:00c9)      | **not supported**: upstream libfprint has no driver, only a reverse-engineering fork — no `fprintd`, recorded as a host-file comment                |
+| Accelerometer                          | `iio-sensor-proxy`; note that auto-rotation needs a userspace agent, which niri does not provide, so it is optional rather than part of this change |
+| Battery                                | zram plus the hibernation swapfile (D5); hp-wmi charge threshold where the firmware exposes it                                                      |
 
 Only three things still need the machine itself: the SSD's real capacity, the
 ESP's size and the disk's identifier by serial/WWN, and whether the fingerprint
@@ -134,10 +134,10 @@ reader's USB id matches the documented `06cb:00c9`.
 
 Partition plan, fixed before anything is written to disk:
 
-| # | Size | Purpose |
-|---|---|---|
-| 1 | 1 GiB | ESP, vfat, mounted `/boot` |
-| 2 | remainder | LUKS2 container holding btrfs (`@`, `@nix`, `@home`, `@swap`) |
+| #   | Size      | Purpose                                                       |
+| --- | --------- | ------------------------------------------------------------- |
+| 1   | 1 GiB     | ESP, vfat, mounted `/boot`                                    |
+| 2   | remainder | LUKS2 container holding btrfs (`@`, `@nix`, `@home`, `@swap`) |
 
 Two partitions, nothing unallocated. The ESP is 1 GiB because kernels and
 initrds live on it, not because firmware wants the space: at roughly 50 MB per

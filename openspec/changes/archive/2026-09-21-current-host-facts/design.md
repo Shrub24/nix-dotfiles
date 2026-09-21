@@ -115,12 +115,12 @@ have native homes and are read from them.
 
 ### D4. Native module facts take precedence over custom records
 
-| Fact | Source after this change |
-|---|---|
+| Fact                  | Source after this change                                      |
+| --------------------- | ------------------------------------------------------------- |
 | `networking.hostName` | the host's raw NixOS module, not the shared foundation aspect |
-| `system.stateVersion` | the host's raw NixOS/Home Manager modules |
-| build architecture | `pkgs.stdenv.hostPlatform.system` |
-| home path, username | `home.username`, `home.homeDirectory` |
+| `system.stateVersion` | the host's raw NixOS/Home Manager modules                     |
+| build architecture    | `pkgs.stdenv.hostPlatform.system`                             |
+| home path, username   | `home.username`, `home.homeDirectory`                         |
 
 The shared NixOS foundation aspect keeps only the account and group creation
 that the registry's `primaryUser` drives, and stops restating the hostname and

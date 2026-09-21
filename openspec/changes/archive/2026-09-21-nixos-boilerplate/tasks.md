@@ -3,41 +3,41 @@
 ## Group A — Skeleton (executable in this change)
 
 - [x] `A1.` Add `nixosAspect` helper to `modules/hosts/arch.nix` (mirror
-  `hmAspect`/`systemAspect`).
+      `hmAspect`/`systemAspect`).
 - [x] `A2.` Create `modules/hosts/arch/_hardware.nix` (raw, host-local, TODO stub
-  with `fileSystems = {};` etc + `ponytail:` comment naming install-day
-  `nixos-generate-config` flow).
+      with `fileSystems = {};` etc + `ponytail:` comment naming install-day
+      `nixos-generate-config` flow).
 - [x] `A3.` Create `modules/hosts/arch/_nixos.nix` (raw, host-local; imports
-  `_hardware.nix`; sets `system.stateVersion = "26.11"`,
-  `networking.hostName = "arch"`, `users.users.saurabhj = { isNormalUser = true; extraGroups = ["wheel"]; };`).
+      `_hardware.nix`; sets `system.stateVersion = "26.11"`,
+      `networking.hostName = "arch"`, `users.users.saurabhj = { isNormalUser = true; extraGroups = ["wheel"]; };`).
 - [x] `A4.` Create `modules/foundation/nixos.nix` (smoke-test aspect publishing
-  `flake.modules.nixos.foundation` — minimal bootstrap content: stateVersion,
-  hostname, user placeholder, nothing else).
+      `flake.modules.nixos.foundation` — minimal bootstrap content: stateVersion,
+      hostname, user placeholder, nothing else).
 - [x] `A5.` Wire `nixosConfigurations.arch` in `modules/hosts/arch.nix` via
-  `inputs.nixpkgs.lib.nixosSystem { modules = [ ./arch/_nixos.nix ] ++ map nixosAspect nixosAspects; specialArgs = {}; };` — note empty `specialArgs`
-  (NO `inputs`/`hostFacts` bus — maintain the cleanup invariant).
+      `inputs.nixpkgs.lib.nixosSystem { modules = [ ./arch/_nixos.nix ] ++ map nixosAspect nixosAspects; specialArgs = {}; };` — note empty `specialArgs`
+      (NO `inputs`/`hostFacts` bus — maintain the cleanup invariant).
 - [x] `A6.` Add `flake.checks.x86_64-linux.nixos-system = config.flake.nixosConfigurations.arch.config.system.build.toplevel;`
-  in `modules/hosts/arch.nix`.
+      in `modules/hosts/arch.nix`.
 - [x] `A7.` Register `nixosAspects = [ "foundation" ];` (just the smoke test).
 - [x] `A8.` Verify `flake.modules.nixos` class is accepted by the existing
-  `flake.modules` option (read `modules/flake/scaffold.nix` + flake-parts
-  `modules` extra first — type is `lazyAttrsOf (lazyAttrsOf deferredModule)`,
-  so any class string is accepted; no enum to extend).
+      `flake.modules` option (read `modules/flake/scaffold.nix` + flake-parts
+      `modules` extra first — type is `lazyAttrsOf (lazyAttrsOf deferredModule)`,
+      so any class string is accepted; no enum to extend).
 - [x] `A9.` Verify gates: `nix flake check --no-build --no-write-lock-file` green;
-  `openspec validate --strict` green.
+      `openspec validate --strict` green.
 - [x] `A10.` Manually eval
-  `nix eval .#nixosConfigurations.arch.config.system.build.toplevel.drvPath`
-  to confirm NixOS eval works (not just `--no-build`).
+      `nix eval .#nixosConfigurations.arch.config.system.build.toplevel.drvPath`
+      to confirm NixOS eval works (not just `--no-build`).
 
 ## Group B — Documentation + deferred inventory
 
 - [x] `B1.` Update `ARCHITECTURE.md` to mention NixOS class as target
-  (composition paragraph + `hosts/arch` tree note).
+      (composition paragraph + `hosts/arch` tree note).
 - [x] `B2.` Update `openspec/specs/system-manager-foundation/spec.md` if needed
-  (probably no change — spec already frames system-manager as "for non-NixOS
-  hosts" and names NixOS as the target class).
+      (probably no change — spec already frames system-manager as "for non-NixOS
+      hosts" and names NixOS as the target class).
 - [x] `B3.` Verify the deferred aspect side-port list below (Group C) reads
-  correctly as a tracking inventory.
+      correctly as a tracking inventory.
 
 ## Group C — Deferred (explicit non-goals — checkboxes left unchecked)
 

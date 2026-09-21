@@ -1,28 +1,16 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ],
-  "labels": [
-    "dependencies"
-  ],
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
   "automerge": false,
-  "schedule": [
-    "before 6am on monday"
-  ],
+  "schedule": ["before 6am on monday"],
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": [
-      "before 6am on monday"
-    ]
+    "schedule": ["before 6am on monday"]
   },
-  "enabledManagers": [
-    "nix",
-    "github-actions",
-    "custom.regex"
-  ],
+  "enabledManagers": ["nix", "github-actions", "custom.regex"],
   "nix": {
     "enabled": true
   },
@@ -30,9 +18,7 @@
     {
       "customType": "regex",
       "description": "Update OCI image refs (tag + digest) in policy/oci-images.nix",
-      "managerFilePatterns": [
-        "/policy/oci-images\\.nix$/"
-      ],
+      "managerFilePatterns": ["/policy/oci-images\\.nix$/"],
       "matchStrings": [
         "\"(?<depName>[^\"]+):(?<currentValue>[^\"]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
       ],
@@ -43,37 +29,22 @@
   "packageRules": [
     {
       "description": "A nix-fleet bump is the fleet's baseline update: it moves the shared pins (nixpkgs, flake-parts, import-tree, treefmt-nix) as one change.",
-      "matchManagers": [
-        "nix"
-      ],
-      "matchDepNames": [
-        "nix-fleet"
-      ],
+      "matchManagers": ["nix"],
+      "matchDepNames": ["nix-fleet"],
       "groupName": "nix-fleet baseline"
     },
     {
       "description": "Shared pins are owned by Shrub24/nix-fleet; updating them here would let the two repositories drift apart.",
-      "matchManagers": [
-        "nix"
-      ],
-      "matchDepNames": [
-        "nixpkgs",
-        "flake-parts",
-        "import-tree",
-        "treefmt-nix"
-      ],
+      "matchManagers": ["nix"],
+      "matchDepNames": ["nixpkgs", "flake-parts", "import-tree", "treefmt-nix"],
       "enabled": false
     },
     {
-      "matchManagers": [
-        "nix"
-      ],
+      "matchManagers": ["nix"],
       "groupName": "nix flake inputs"
     },
     {
-      "matchManagers": [
-        "custom.regex"
-      ],
+      "matchManagers": ["custom.regex"],
       "groupName": "OCI image refs",
       "commitMessageTopic": "OCI image refs"
     }

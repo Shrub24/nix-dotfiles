@@ -1,21 +1,21 @@
 # Canonical Spec Index
 
-| Capability | Status | Source change | Source spec |
-|---|---|---|---|
-| `daemon-nix-config` | active | `archive/2026-06-17-add-system-manager` | `openspec/changes/archive/2026-06-17-add-system-manager/specs/daemon-nix-config/spec.md` |
-| `system-manager-foundation` | active | `archive/2026-06-17-add-system-manager` | `openspec/changes/archive/2026-06-17-add-system-manager/specs/system-manager-foundation/spec.md` |
-| `nvfetcher-package-sources` | active | `archive/2026-06-19-add-nvfetcher-for-packages` | `openspec/changes/archive/2026-06-19-add-nvfetcher-for-packages/specs/nvfetcher-package-sources/spec.md` |
-| `opencode-snip-integration` | active | `archive/2026-08-09-migrate-tokf-to-snip` | `openspec/changes/archive/2026-08-09-migrate-tokf-to-snip/specs/opencode-snip-integration/spec.md` |
-| `snip-package` | active | `archive/2026-08-09-migrate-tokf-to-snip` | `openspec/changes/archive/2026-08-09-migrate-tokf-to-snip/specs/snip-package/spec.md` |
-| `mutagen` | active | `archive/2026-08-09-tmux-ssh-mutagen-modules` | `openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/mutagen/spec.md` |
-| `ssh-client` | active | `archive/2026-08-09-tmux-ssh-mutagen-modules` | `openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/ssh-client/spec.md` |
-| `tmux` | active | `archive/2026-08-09-tmux-ssh-mutagen-modules` | `openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/tmux/spec.md` |
-| `web-service-catalog` | active | `archive/2026-08-09-web-services-ssot` | `openspec/changes/archive/2026-08-09-web-services-ssot/specs/web-service-catalog/spec.md` |
-| `wezterm-config` | active | `archive/2026-08-09-migrate-to-wezterm` | `openspec/changes/archive/2026-08-09-migrate-to-wezterm/specs/wezterm-config/spec.md` |
-| `secrets-ownership-model` | active | `dendritic-cleanup-pre-nixos` | `openspec/changes/dendritic-cleanup-pre-nixos/design.md` |
-| `current-host-facts` | active | `archive/2026-09-21-current-host-facts` | `openspec/changes/archive/2026-09-21-current-host-facts/specs/current-host-facts/spec.md` |
-| `spectre-host` | active | `add-spectre-host` | `openspec/changes/add-spectre-host/specs/spectre-host/spec.md` |
-| `filesystem-bootstrap` | active | `archive/2026-09-21-nixos-filesystem-bootstrap` | `openspec/changes/archive/2026-09-21-nixos-filesystem-bootstrap/specs/filesystem-bootstrap/spec.md` |
-| `nixos-bare-metal-readiness` | active | `archive/2026-09-21-nixos-bare-metal-readiness` | `openspec/changes/archive/2026-09-21-nixos-bare-metal-readiness/specs/nixos-bare-metal-readiness/spec.md` |
-| `kdeconnect-service` | active | `archive/2026-09-21-adopt-native-kde-qt-integrations` | `openspec/changes/archive/2026-09-21-adopt-native-kde-qt-integrations/specs/kdeconnect-service/spec.md` |
-| `qt-platform-theme` | active | `archive/2026-09-21-adopt-native-kde-qt-integrations` | `openspec/changes/archive/2026-09-21-adopt-native-kde-qt-integrations/specs/qt-platform-theme/spec.md` |
+| Capability                   | Status | Source change                                         | Source spec                                                                                               |
+| ---------------------------- | ------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `daemon-nix-config`          | active | `archive/2026-06-17-add-system-manager`               | `openspec/changes/archive/2026-06-17-add-system-manager/specs/daemon-nix-config/spec.md`                  |
+| `system-manager-foundation`  | active | `archive/2026-06-17-add-system-manager`               | `openspec/changes/archive/2026-06-17-add-system-manager/specs/system-manager-foundation/spec.md`          |
+| `nvfetcher-package-sources`  | active | `archive/2026-06-19-add-nvfetcher-for-packages`       | `openspec/changes/archive/2026-06-19-add-nvfetcher-for-packages/specs/nvfetcher-package-sources/spec.md`  |
+| `opencode-snip-integration`  | active | `archive/2026-08-09-migrate-tokf-to-snip`             | `openspec/changes/archive/2026-08-09-migrate-tokf-to-snip/specs/opencode-snip-integration/spec.md`        |
+| `snip-package`               | active | `archive/2026-08-09-migrate-tokf-to-snip`             | `openspec/changes/archive/2026-08-09-migrate-tokf-to-snip/specs/snip-package/spec.md`                     |
+| `mutagen`                    | active | `archive/2026-08-09-tmux-ssh-mutagen-modules`         | `openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/mutagen/spec.md`                      |
+| `ssh-client`                 | active | `archive/2026-08-09-tmux-ssh-mutagen-modules`         | `openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/ssh-client/spec.md`                   |
+| `tmux`                       | active | `archive/2026-08-09-tmux-ssh-mutagen-modules`         | `openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/tmux/spec.md`                         |
+| `web-service-catalog`        | active | `archive/2026-08-09-web-services-ssot`                | `openspec/changes/archive/2026-08-09-web-services-ssot/specs/web-service-catalog/spec.md`                 |
+| `wezterm-config`             | active | `archive/2026-08-09-migrate-to-wezterm`               | `openspec/changes/archive/2026-08-09-migrate-to-wezterm/specs/wezterm-config/spec.md`                     |
+| `secrets-ownership-model`    | active | `dendritic-cleanup-pre-nixos`                         | `openspec/changes/dendritic-cleanup-pre-nixos/design.md`                                                  |
+| `current-host-facts`         | active | `archive/2026-09-21-current-host-facts`               | `openspec/changes/archive/2026-09-21-current-host-facts/specs/current-host-facts/spec.md`                 |
+| `spectre-host`               | active | `add-spectre-host`                                    | `openspec/changes/add-spectre-host/specs/spectre-host/spec.md`                                            |
+| `filesystem-bootstrap`       | active | `archive/2026-09-21-nixos-filesystem-bootstrap`       | `openspec/changes/archive/2026-09-21-nixos-filesystem-bootstrap/specs/filesystem-bootstrap/spec.md`       |
+| `nixos-bare-metal-readiness` | active | `archive/2026-09-21-nixos-bare-metal-readiness`       | `openspec/changes/archive/2026-09-21-nixos-bare-metal-readiness/specs/nixos-bare-metal-readiness/spec.md` |
+| `kdeconnect-service`         | active | `archive/2026-09-21-adopt-native-kde-qt-integrations` | `openspec/changes/archive/2026-09-21-adopt-native-kde-qt-integrations/specs/kdeconnect-service/spec.md`   |
+| `qt-platform-theme`          | active | `archive/2026-09-21-adopt-native-kde-qt-integrations` | `openspec/changes/archive/2026-09-21-adopt-native-kde-qt-integrations/specs/qt-platform-theme/spec.md`    |

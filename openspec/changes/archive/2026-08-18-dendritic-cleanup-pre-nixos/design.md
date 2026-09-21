@@ -5,9 +5,9 @@
 The repo-local dialect (`.skills/dendritic-nix/SKILL.md`) gates several current
 patterns behind explicit approval. The canonical sources
 ([`mightyiam/dendritic`](https://github.com/mightyiam/dendritic) →
-*Anti-patterns* → *`### specialArgs pass-thru`*; and
+_Anti-patterns_ → _`### specialArgs pass-thru`_; and
 [`dendrix.denful.dev/Dendritic.html`](https://dendrix.denful.dev/Dendritic.html)
-→ *"No need to use `specialArgs` for communicating values"*) are unambiguous:
+→ _"No need to use `specialArgs` for communicating values"_) are unambiguous:
 lower-level modules must not receive `inputs` or host inventories through a
 dependency-injection bus. The skill's own tenets restate this:
 
@@ -148,12 +148,12 @@ These are consciously excluded so this change stays cleanup-scoped:
 The following canonical artifacts document the patterns being removed and are
 rewritten as part of this change:
 
-- `openspec/specs/dendritic-module-composition/spec.md` — Requirement *"Host
-  facts remain host-owned"* (the `hostFacts` pass-thru pattern) is replaced by
+- `openspec/specs/dendritic-module-composition/spec.md` — Requirement _"Host
+  facts remain host-owned"_ (the `hostFacts` pass-thru pattern) is replaced by
   the typed-topology + native-option model.
 - `openspec/specs/system-manager-foundation/spec.md` — if it references
   `hostFacts`/`specialArgs`, align with the new model.
-- `ARCHITECTURE.md` — durable decision *"Hosts own facts"* and the
+- `ARCHITECTURE.md` — durable decision _"Hosts own facts"_ and the
   `hostFacts` specialArgs description are rewritten.
 - A new canonical spec (or changes to the above) describing the secrets
   ownership model once the monolith split lands.

@@ -79,8 +79,8 @@ naming the install-day flow:
 # then hand-edit this file down to minimal (fileSystems, boot.loader.grub/systemd-boot).
 ```
 
-This keeps the skeleton *evaluable* (NixOS evaluates with empty `fileSystems`)
-without pretending it is *switchable*. Population is a deferred follow-up
+This keeps the skeleton _evaluable_ (NixOS evaluates with empty `fileSystems`)
+without pretending it is _switchable_. Population is a deferred follow-up
 (task C8).
 
 ## 4. Smoke-test aspect
@@ -126,7 +126,7 @@ flake.checks.${system} = {
 Binding `toplevel` forces `nixosSystem` to evaluate its full config under
 `nix flake check`. Under `--no-build` this validates evaluation only — it does
 **not** build the store closure, which is the intended scope (skeleton is
-*evaluable*, not *switchable*).
+_evaluable_, not _switchable_).
 
 Two verification commands gate the change:
 
@@ -174,7 +174,7 @@ change, not folded into this skeleton.
 
 - `system-manager-foundation/spec.md` was already updated during the cleanup
   (its `source-change` is the archived add-system-manager change and the text
-  frames system-manager as *"for non-NixOS hosts"*, naming NixOS as the target
+  frames system-manager as _"for non-NixOS hosts"_, naming NixOS as the target
   class). **No change needed** this change (task B2 confirms as a no-op check).
 - `dendritic-module-composition/spec.md` already contracts the
   typed-`topology`/native-option model this change inherits; the NixOS class
@@ -190,15 +190,15 @@ C), not implemented here.
 
 **System-manager aspects to side-port (each a follow-up change):**
 
-| Current | NixOS target |
-|---|---|
-| `modules/foundation/network.nix` (systemManager) | `networking.*` / NetworkManager |
-| `modules/foundation/boot.nix` (systemManager) | `boot.loader.systemd-boot` |
-| `modules/ssh.nix` (systemManager side) | `services.openssh` |
-| `modules/tailscale.nix` (systemManager side) | `services.tailscale` |
-| `modules/desktop/greeter.nix` (systemManager) | `services.greetd` + noctalia |
-| `modules/nix.nix` (systemManager side) | `nix.settings` (most direct) |
-| `modules/nixbuild.nix` | native NixOS remote-build; drop transitional shape |
+| Current                                          | NixOS target                                       |
+| ------------------------------------------------ | -------------------------------------------------- |
+| `modules/foundation/network.nix` (systemManager) | `networking.*` / NetworkManager                    |
+| `modules/foundation/boot.nix` (systemManager)    | `boot.loader.systemd-boot`                         |
+| `modules/ssh.nix` (systemManager side)           | `services.openssh`                                 |
+| `modules/tailscale.nix` (systemManager side)     | `services.tailscale`                               |
+| `modules/desktop/greeter.nix` (systemManager)    | `services.greetd` + noctalia                       |
+| `modules/nix.nix` (systemManager side)           | `nix.settings` (most direct)                       |
+| `modules/nixbuild.nix`                           | native NixOS remote-build; drop transitional shape |
 
 **HM-side aspects (mostly no-op on NixOS):** niri, noctalia, monique, vicinae,
 portals, shell/fish/zsh, and the rest — Home Manager is class-agnostic, so no
