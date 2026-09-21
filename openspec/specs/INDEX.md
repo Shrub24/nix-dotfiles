@@ -17,3 +17,5 @@
 | `spectre-host` | active | `add-spectre-host` | `openspec/changes/add-spectre-host/specs/spectre-host/spec.md` |
 | `filesystem-bootstrap` | active | `archive/2026-09-21-nixos-filesystem-bootstrap` | `openspec/changes/archive/2026-09-21-nixos-filesystem-bootstrap/specs/filesystem-bootstrap/spec.md` |
 | `nixos-bare-metal-readiness` | active | `archive/2026-09-21-nixos-bare-metal-readiness` | `openspec/changes/archive/2026-09-21-nixos-bare-metal-readiness/specs/nixos-bare-metal-readiness/spec.md` |
+| `kdeconnect-service` | active | `archive/2026-09-21-adopt-native-kde-qt-integrations` | `openspec/changes/archive/2026-09-21-adopt-native-kde-qt-integrations/specs/kdeconnect-service/spec.md` |
+| `qt-platform-theme` | active | `archive/2026-09-21-adopt-native-kde-qt-integrations` | `openspec/changes/archive/2026-09-21-adopt-native-kde-qt-integrations/specs/qt-platform-theme/spec.md` |

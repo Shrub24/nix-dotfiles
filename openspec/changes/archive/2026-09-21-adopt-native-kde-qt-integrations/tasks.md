@@ -51,7 +51,7 @@
   - delegate: BuildAgent
   - verify: `just --fmt --check`; `nix flake check --no-build --no-write-lock-file`; `openspec validate --all --strict`.
 
-- [ ] 3.3 Post-switch manual verification
+- [x] 3.3 Post-switch manual verification
 
   - refs: `design.md` "Manual post-switch verification"
   - criteria: `kdeconnectd` running; firewall ranges 1714–1764 TCP/UDP; phone pairing/sync; one Qt app renders GTK3.
