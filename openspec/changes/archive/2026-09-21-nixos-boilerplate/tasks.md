@@ -43,6 +43,8 @@
 
 Each item below is a tracking checkbox for a follow-up change. They are NOT
 executed in this change; leaving `- [ ]` documents that the work remains.
+C1-C7 and C9 have since landed through the later NixOS changes; the remaining
+install-day items (C8, C10) are tracked by `nixos-dual-boot-install`.
 
 - [ ] `C1.` Side-port `network` aspect → `networking.*`/NetworkManager
 - [ ] `C2.` Side-port `boot` aspect → `boot.loader.systemd-boot`
@@ -59,4 +61,4 @@ executed in this change; leaving `- [ ]` documents that the work remains.
 
 - [x] `nix flake check --no-build --no-write-lock-file` passes.
 - [x] `openspec validate --strict` passes.
-- [ ] User confirms the skeleton evals cleanly before side-port work begins.
+- [x] User confirms the skeleton evals cleanly before side-port work begins.
