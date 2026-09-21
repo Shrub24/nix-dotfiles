@@ -166,6 +166,14 @@
             command = "youguanxinqing.herdr-flash.flash";
             description = "flash: search + yank visible text";
           }
+          # memex session desk; needs `herdr plugin install Shrub24/memex` once,
+          # which reuses the memex already on PATH.
+          {
+            key = "prefix+m";
+            type = "plugin_action";
+            command = "nicosuave.memex.palette";
+            description = "memex: session palette";
+          }
         ];
       };
     };
