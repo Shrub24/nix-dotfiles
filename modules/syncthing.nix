@@ -1,10 +1,4 @@
-{
-  config,
-  ...
-}:
-let
-  primaryUser = config.topology.hosts.arch.primaryUser;
-in
+_:
 {
   flake.modules.homeManager.syncthing = _: {
     services.syncthing = {
@@ -50,6 +44,9 @@ in
   flake.modules.nixos.syncthing =
     { config, ... }:
     let
+      # Both the account and its home come from the projection; the NixOS eval
+      # has no `home.*` options of its own.
+      primaryUser = config.currentHost.primaryUser;
       home = config.users.users.${primaryUser.name}.home;
     in
     {

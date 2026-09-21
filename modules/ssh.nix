@@ -1,15 +1,8 @@
-{
-  config,
-  ...
-}:
-let
-  # Typed remote-host topology read at the flake-parts level, closed over by the
-  # lower-level HM/System Manager modules.
-  remoteHosts = config.topology.hosts.arch.remoteHosts;
-in
+_:
 {
   flake.modules.homeManager.ssh =
     {
+      config,
       lib,
       ...
     }:
@@ -43,17 +36,22 @@ in
             StrictHostKeyChecking = "accept-new";
           };
 
-          "Host ${lib.concatStringsSep " " remoteHosts}" = {
-            User = "dev";
-            ControlMaster = "auto";
-          };
-
           "Host github.com gitlab.com" = {
             User = "git";
             IdentityFile = "~/.ssh/id_ed25519";
             ControlMaster = "auto";
           };
-        };
+        }
+        # One alias per peer carrying that machine's own login user: machines this
+        # repository owns authenticate as their own account, the build and admin
+        # boxes as theirs.
+        // lib.mapAttrs' (
+          name: peer:
+          lib.nameValuePair "Host ${name}" {
+            User = peer.sshUser;
+            ControlMaster = "auto";
+          }
+        ) config.currentHost.peers;
       };
     }
 
@@ -61,6 +59,7 @@ in
 
   flake.modules.systemManager.ssh =
     {
+      config,
       lib,
       ...
     }:
@@ -68,7 +67,7 @@ in
       environment.etc."ssh/ssh_config.d/30-remote-hosts.conf" = {
         text = ''
           # Remote build/managed hosts — ControlMaster enabled for multiplexing
-          Host ${lib.concatStringsSep " " remoteHosts}
+          Host ${lib.concatStringsSep " " (builtins.attrNames config.currentHost.peers)}
             ControlMaster auto
             ControlPersist 600
             ControlPath /run/ssh-%r@%h:%p
@@ -87,6 +86,7 @@ in
 
   flake.modules.nixos.ssh =
     {
+      config,
       lib,
       ...
     }:
@@ -102,7 +102,7 @@ in
       environment.etc."ssh/ssh_config.d/30-remote-hosts.conf" = {
         text = ''
           # Remote build/managed hosts — ControlMaster enabled for multiplexing
-          Host ${lib.concatStringsSep " " remoteHosts}
+          Host ${lib.concatStringsSep " " (builtins.attrNames config.currentHost.peers)}
             ControlMaster auto
             ControlPersist 600
             ControlPath /run/ssh-%r@%h:%p

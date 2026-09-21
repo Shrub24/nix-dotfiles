@@ -1,58 +1,11 @@
-{ config, ... }:
-let
-  primaryUser = config.topology.hosts.arch.primaryUser;
-in
+_:
 {
-  flake.modules.systemManager.boot = {
-    environment.etc."dracut.conf.d/10-optimise.conf".text = ''
-      reproducible="yes"
-      hostonly="yes"
-      hostonly_mode="strict"
-      compress="zstd"
-      omit_drivers+=" nouveau "
-    '';
-
-    # Matches the pre-existing live file (DRACUT_FALLBACK deliberately absent);
-    # replaceExisting backs up the original before the first takeover.
-    environment.etc."default/limine" = {
-      replaceExisting = true;
-      text = ''
-        TARGET_OS_NAME="Endeavour OS"
-
-        MAX_SNAPSHOT_ENTRIES="auto"
-
-        EXCLUDE_SNAPSHOT_TYPES="post"
-
-        SNAPPER_CONFIG_NAME="root"
-
-        ROOT_SUBVOLUME_PATH="/@"
-
-        ROOT_SNAPSHOTS_PATH="/@snapshots"
-
-        ENABLE_RSYNC_ASK=no
-
-        NOTIFICATION_ICON="/usr/share/icons/hicolor/128x128/apps/LimineSnapperSync.png"
-
-        KERNEL_CMDLINE[default]+="quiet nowatchdog splash systemd.show_status=no rw nvme_core.default_ps_max_latency_us=0 zswap.enabled=0 rootflags=subvol=/@ root=UUID=35eb40c3-6466-4e66-ad20-9b7da9140992"
-
-        SNAPSHOT_KERNEL_PARAMETERS-="quiet"
-        SNAPSHOT_KERNEL_PARAMETERS-="splash"
-      '';
-    };
-  }
-
-  ;
-
-  # NixOS owns boot natively via boot.loader.* / boot.initrd.* (see
-  # modules/hosts/arch/_hardware.nix). The systemManager aspect's Limine conf and
-  # dracut drop-in are Arch-only; NixOS uses systemd-boot and its own initrd.
+  # NixOS owns boot natively through boot.loader.* / boot.initrd.* (see
+  # modules/hosts/arch/_hardware.nix). The Arch systemManager boot configuration —
+  # the dracut drop-in and the Limine/snapper conf — names one machine's disk and
+  # lives in that host's own raw module (modules/hosts/arch/_system.nix).
   flake.modules.nixos.boot = _: {
     boot.plymouth.enable = true;
     services.btrfs.autoScrub.enable = true;
-    services.snapper.configs = {
-      root.SUBVOLUME = "/";
-      home.SUBVOLUME = "/home/${primaryUser.name}";
-      data.SUBVOLUME = "/mnt/LinuxData";
-    };
   };
 }

@@ -13,6 +13,15 @@ let
     gid = 1000;
   };
   system = "x86_64-linux";
+  hostId = "shrub";
+  # Evaluation-local projection: features read config.currentHost, so one aspect
+  # value serves every host and only the composition names "self".
+  currentHost = {
+    id = hostId;
+    inherit primaryUser;
+    peers = lib.removeAttrs config.topology.hosts [ hostId ];
+  };
+  currentHostModule = { inherit currentHost; };
   overlay = import ../../pkgs { inherit inputs system; };
   # Applied to both the standalone HM pkgs and the NixOS global pkgs.
   unfreePredicate =
@@ -70,11 +79,14 @@ let
   systemAspect = name: config.flake.modules.systemManager.${name};
   nixosAspect = name: config.flake.modules.nixos.${name};
   hmAspects = [
+    "current-host"
     "pi"
     "herdr"
     "hermes"
     "tools"
     "dev-tools"
+    "lsp"
+    "nvim"
     "cli"
     "languages"
     "intelli-shell"
@@ -127,24 +139,25 @@ let
     "kitty"
     "foot"
   ];
-  # Full aspect set minus the system-owned duplicates the NixOS target provides
-  # itself: tailscale/syncthing/mosh/surge/niks3. Plus the embedded-only
-  # hardware aspects (cuda/libcamera) the standalone Arch host never selects.
+  # Full set minus the system-owned duplicates NixOS provides itself
+  # (tailscale/syncthing/mosh/niks3), plus the embedded-only hardware aspects.
   embeddedHmAspects =
     lib.subtractLists [
       "tailscale"
       "syncthing"
       "mosh"
-      "surge"
       "niks3"
     ] hmAspects
     ++ [
       "cuda"
       "libcamera"
     ];
+  # Arch boot configuration is machine-specific (dracut drop-in, Limine conf) and
+  # lives in the host's own raw module (modules/hosts/arch/_system.nix), so there
+  # is no shared systemManager boot aspect.
   systemAspects = [
+    "current-host"
     "network"
-    "boot"
     "ssh"
     "tailscale"
     "greeter"
@@ -152,6 +165,7 @@ let
     "nixbuild"
   ];
   nixosAspects = [
+    "current-host"
     "foundation"
     "network"
     "boot"
@@ -159,6 +173,7 @@ let
     "tailscale"
     "greeter"
     "nix"
+    "builders"
     "nixbuild"
     "audio"
     "bluetooth"
@@ -173,6 +188,7 @@ let
   homeConfiguration = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
     modules = [
+      currentHostModule
       (import ./arch/_home.nix { inherit primaryUser; })
       # Standalone-only: the embedded NixOS eval must not see these.
       {
@@ -188,11 +204,16 @@ let
     ++ map hmAspect hmAspects;
   };
   systemConfiguration = inputs.system-manager.lib.makeSystemConfig {
-    modules = [ ./arch/_system.nix ] ++ map systemAspect systemAspects;
+    modules = [
+      currentHostModule
+      ./arch/_system.nix
+    ]
+    ++ map systemAspect systemAspects;
     overlays = [ overlay ];
   };
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
     modules = [
+      currentHostModule
       (import ./arch/_nixos.nix { inherit primaryUser; })
       { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration; aspects see pkgs.niks3-hook
       { nixpkgs.config.allowUnfreePredicate = unfreePredicate; }
@@ -210,6 +231,7 @@ let
           useUserPackages = true;
           users.${primaryUser.name} = {
             imports = [
+              currentHostModule
               (import ./arch/_home.nix { inherit primaryUser; })
               { targets.genericLinux.enable = false; }
             ]
@@ -223,17 +245,13 @@ let
 in
 {
   config = {
-    topology.hosts.arch = {
+    # This machine's own registry entry. Fleet entries and service endpoints
+    # live beside the schema in modules/policy/topology.nix.
+    topology.hosts.${hostId} = {
       inherit system;
       inherit primaryUser;
-      remoteHosts = [
-        "oci-melb-1"
-        "home-forge"
-        "la-admin-1"
-      ];
+      sshUser = primaryUser.name;
     };
-    topology.services.database.host = "oci-melb-1";
-    topology.services.niks3.host = "http://oci-melb-1:5751";
 
     flake.homeConfigurations.${primaryUser.name} = homeConfiguration;
 
@@ -248,10 +266,35 @@ in
       # Agent-definition drift guard: pi-subagents treats a missing explicit
       # skill as an advisory warning, so a renamed or deleted skill would
       # silently under-instruct children. Fail eval instead.
+      # Skills may live in the repo skills dir OR the user-global
+      # ~/.agents/skills discovery root (cross-tool home: ast-grep,
+      # codebase-memory, ...). Globals are declared here explicitly so a
+      # rename still fails eval; repo skills are checked against skillsDir.
       pi-agent-skills-referenced =
         let
           agentsDir = ../agents/pi/agents;
           skillsDir = ../agents/pi/skills;
+          globalSkills = [
+            "ast-grep"
+            "codebase-memory"
+            "codebase-design"
+            "code-review"
+            "dendritic-nix"
+            "diagnose"
+            "docs-search"
+            "domain-modeling"
+            "find-skills"
+            "grilling"
+            "implement"
+            "jj"
+            "nh"
+            "nix-toolkit"
+            "qmd"
+            "review-local-changes"
+            "tdd"
+            "writing-for-agents"
+            "xberg"
+          ];
           agentFiles = builtins.attrNames (
             lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name) (
               builtins.readDir agentsDir
@@ -271,9 +314,9 @@ in
               ) agentFiles
             )
           );
-          available = builtins.attrNames (
-            lib.filterAttrs (_: type: type == "directory") (builtins.readDir skillsDir)
-          );
+          available =
+            builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir skillsDir))
+            ++ globalSkills;
           missing = lib.subtractLists available referenced;
         in
         if missing == [ ] then
@@ -287,7 +330,10 @@ in
         nodes.arch =
           { pkgs, ... }:
           {
-            imports = map nixosAspect nixosAspects ++ [ inputs.home-manager.nixosModules.home-manager ];
+            imports = map nixosAspect nixosAspects ++ [
+              currentHostModule
+              inputs.home-manager.nixosModules.home-manager
+            ];
             fileSystems."/" = {
               device = "/dev/vda";
               fsType = "ext4";
@@ -313,7 +359,11 @@ in
               useGlobalPkgs = true;
               useUserPackages = true;
               users.${primaryUser.name} = {
-                imports = map hmAspect [
+                imports = [
+                  currentHostModule
+                ]
+                ++ map hmAspect [
+                  "current-host"
                   "niri"
                   "noctalia"
                   "vicinae"
@@ -369,7 +419,7 @@ in
       vm-skeleton-boot = pkgs.testers.runNixOSTest {
         name = "vm-skeleton-boot";
         nodes.arch = {
-          imports = map nixosAspect nixosAspects;
+          imports = map nixosAspect nixosAspects ++ [ currentHostModule ];
           system.stateVersion = "26.11";
           networking.hostName = "shrub";
           fileSystems."/" = {

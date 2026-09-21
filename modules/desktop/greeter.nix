@@ -1,18 +1,15 @@
-{
-  config,
-  ...
-}:
-let
-  # Typed primary-user topology; the greeter and polkit sync derive user/UID here.
-  primaryUser = config.topology.hosts.arch.primaryUser;
-in
+_:
 {
   flake.modules.systemManager.greeter =
     {
+      config,
       pkgs,
       ...
     }:
     let
+      # This machine's account, projected by the host composition.
+      primaryUser = config.currentHost.primaryUser;
+
       noctaliaGreeterPackage = pkgs.noctalia-greeter;
 
       noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
@@ -121,10 +118,13 @@ in
   # store-symlink approach had the same semantics).
   flake.modules.nixos.greeter =
     {
+      config,
       pkgs,
       ...
     }:
     let
+      primaryUser = config.currentHost.primaryUser;
+
       noctaliaGreeterPackage = pkgs.noctalia-greeter;
 
       noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {

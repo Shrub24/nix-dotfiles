@@ -1,10 +1,4 @@
-{
-  config,
-  ...
-}:
-let
-  remoteHosts = config.topology.hosts.arch.remoteHosts;
-in
+_:
 {
   flake.modules.homeManager.lazyjournal =
     {
@@ -34,7 +28,8 @@ in
 
         xdg.configFile."lazyjournal/config.yml".text = lib.generators.toYAML { } {
           ssh = {
-            hosts = remoteHosts;
+            # Every other machine in the fleet, from the projection.
+            hosts = builtins.attrNames config.currentHost.peers;
           };
         };
       };

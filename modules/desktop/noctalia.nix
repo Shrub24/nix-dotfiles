@@ -1,12 +1,7 @@
 {
   inputs,
-  config,
   ...
 }:
-let
-  # Typed primary-user topology; the greeter-sync helper derives its UID from it.
-  primaryUser = config.topology.hosts.arch.primaryUser;
-in
 {
   flake.modules.homeManager.noctalia =
     {
@@ -282,14 +277,18 @@ in
           # bright tonal tier; upstream's `*_fixed_dim` roles are the same value
           # as the base roles. Local rather than upstream so apply.sh stays out of
           # the config.
+          # ~/.config/nvim is read-only from the store, so the palette renders
+          # to the cache and colors/noctalia.lua dofiles it.
           neovim = {
             input_path = "${localTemplates}/neovim.lua";
-            output_path = "$XDG_CONFIG_HOME/nvim/lua/matugen.lua";
+            output_path = "$XDG_CACHE_HOME/noctalia/nvim-palette.lua";
             post_hook = "${pkgs.procps}/bin/pkill -SIGUSR1 -x nvim || true";
           };
         };
 
-      # Specialized at the feature use site: uid from typed topology.
+      # Specialized at the feature use site: uid from the projected account.
+      primaryUser = config.currentHost.primaryUser;
+
       noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
         inherit (primaryUser) uid;
       };

@@ -1,12 +1,9 @@
-{
-  config,
-  ...
-}:
+_:
 let
-  primaryUser = config.topology.hosts.arch.primaryUser;
-  system = config.topology.hosts.arch.system;
   # systemManager lacks nix.buildMachines (#466); renders into /etc/nix/machines instead.
-  homeForgeBuilder = {
+  # The builder's architecture comes from its fleet registry entry — the local
+  # machine's arch is never assumed to be the builder's.
+  homeForgeBuilder = system: {
     hostName = "home-forge";
     sshUser = "dev";
     sshKey = "/root/.ssh/nix-remote";
@@ -21,19 +18,11 @@ let
     ];
   };
   homeForgeMachinesLine =
+    system:
     let
-      inherit (homeForgeBuilder)
-        protocol
-        sshUser
-        hostName
-        system
-        sshKey
-        maxJobs
-        speedFactor
-        supportedFeatures
-        ;
+      builder = homeForgeBuilder system;
     in
-    "${protocol}://${sshUser}@${hostName} ${system} ${sshKey} ${toString maxJobs} ${toString speedFactor} ${builtins.concatStringsSep "," supportedFeatures}";
+    "${builder.protocol}://${builder.sshUser}@${builder.hostName} ${builder.system} ${builder.sshKey} ${toString builder.maxJobs} ${toString builder.speedFactor} ${builtins.concatStringsSep "," builder.supportedFeatures}";
 in
 {
   flake.modules.homeManager.nix =
@@ -101,8 +90,13 @@ in
 
       programs.nh = {
         enable = true;
+        # GC has exactly one owner per host. On the non-NixOS host
+        # (`targets.genericLinux`, where nothing system-scoped can collect the
+        # store) this user timer (`nh clean user`) is it; on NixOS the
+        # system-scoped timer in flake.modules.nixos.nix runs `nh clean all` as
+        # root, which covers user generations too.
         clean = {
-          enable = true;
+          enable = config.targets.genericLinux.enable;
           dates = "weekly";
           extraArgs = "--keep-since 7d";
         };
@@ -113,11 +107,13 @@ in
 
   flake.modules.systemManager.nix =
     {
+      config,
       pkgs,
       lib,
       ...
     }:
     let
+      primaryUser = config.currentHost.primaryUser;
       inherit (primaryUser) uid;
 
       niks3UploadHook = pkgs.writeShellScriptBin "niks3-upload-hook" ''
@@ -128,7 +124,7 @@ in
       nix.enable = true;
 
       environment.etc."nix/machines" = {
-        text = homeForgeMachinesLine + "\n";
+        text = homeForgeMachinesLine config.currentHost.peers.home-forge.system + "\n";
         mode = "0644";
       };
 
@@ -177,47 +173,65 @@ in
 
   ;
 
-  flake.modules.nixos.nix = _: {
-    nix.distributedBuilds = true;
-    nix.buildMachines = [ homeForgeBuilder ];
-
-    nix.settings = {
-      "trusted-users" = [
-        "root"
-        primaryUser.name
-      ];
-      "extra-substituters" = [
-        "https://nix-community.cachix.org"
-        "https://cache.numtide.com"
-        "https://cache.shrublab.xyz"
-      ];
-      "trusted-substituters" = [
-        "ssh-ng://eu.nixbuild.net"
-      ];
-      "extra-trusted-public-keys" = [
-        "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
-        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-        "nix-cache-1:FW0bJll9BP5ch0mHI+bXOImcD0RKLrH117WfQC+CU4A="
-        "nixbuild.net/HWWKWC-1:dnSfpPDHQN/U9wexkK6r3GTaYrwqNwKS70SNGXistKg="
-      ];
-      "experimental-features" = [
-        "nix-command"
-        "flakes"
-      ];
-      "auto-optimise-store" = true;
-      "always-allow-substitutes" = true;
-      "builders-use-substitutes" = true;
-      "max-jobs" = "auto";
-      "nix-path" = "nixpkgs=flake:nixpkgs";
-      "keep-derivations" = true;
-      "warn-dirty" = false;
-      "accept-flake-config" = true;
-      "download-buffer-size" = 268435456;
-      "http-connections" = 64;
-      "max-substitution-jobs" = 16;
+  flake.modules.nixos.builders =
+    { config, ... }:
+    {
+      # Selected by hosts that hand builds to the fleet builder; a host that
+      # does not select it needs no root ssh key. GC stays in the nix aspect.
+      nix.distributedBuilds = true;
+      nix.buildMachines = [ (homeForgeBuilder config.currentHost.peers.home-forge.system) ];
     };
-    nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
-  }
+
+  flake.modules.nixos.nix =
+    { config, ... }:
+    {
+      # System-scoped GC: `nh clean all` as root is the only thing that can
+      # collect the system profile, and it covers user generations as well, so
+      # this is the NixOS host's single GC owner (the Home Manager timer is off
+      # there — see flake.modules.homeManager.nix above).
+      programs.nh.clean = {
+        enable = true;
+        dates = "weekly";
+        extraArgs = "--keep-since 7d";
+      };
+
+      nix.settings = {
+        "trusted-users" = [
+          "root"
+          config.currentHost.primaryUser.name
+        ];
+        "extra-substituters" = [
+          "https://nix-community.cachix.org"
+          "https://cache.numtide.com"
+          "https://cache.shrublab.xyz"
+        ];
+        "trusted-substituters" = [
+          "ssh-ng://eu.nixbuild.net"
+        ];
+        "extra-trusted-public-keys" = [
+          "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+          "nix-cache-1:FW0bJll9BP5ch0mHI+bXOImcD0RKLrH117WfQC+CU4A="
+          "nixbuild.net/HWWKWC-1:dnSfpPDHQN/U9wexkK6r3GTaYrwqNwKS70SNGXistKg="
+        ];
+        "experimental-features" = [
+          "nix-command"
+          "flakes"
+        ];
+        "auto-optimise-store" = true;
+        "always-allow-substitutes" = true;
+        "builders-use-substitutes" = true;
+        "max-jobs" = "auto";
+        "nix-path" = "nixpkgs=flake:nixpkgs";
+        "keep-derivations" = true;
+        "warn-dirty" = false;
+        "accept-flake-config" = true;
+        "download-buffer-size" = 268435456;
+        "http-connections" = 64;
+        "max-substitution-jobs" = 16;
+      };
+      nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
+    }
 
   ;
 }

@@ -1,18 +1,12 @@
-{
-  config,
-  ...
-}:
+_:
 let
-  # Typed remote-host topology read at the flake-parts level, closed over by the
-  # lower-level HM module.
-  remoteHosts = config.topology.hosts.arch.remoteHosts;
-
   # Tracked seed for the mutable theme, read as a repo path literal → store path.
   dankThemeSeed = ./wezterm-dank-theme.toml;
 in
 {
   flake.modules.homeManager.wezterm =
     {
+      config,
       lib,
       ...
     }:
@@ -48,10 +42,12 @@ in
           detect_password_input = true;
           adjust_window_size_when_changing_font_size = false;
           enable_kitty_keyboard = false;
+          # One mux domain per peer, each logging in as its own account.
           ssh_domains = map (name: {
             inherit name;
             remote_address = name;
-          }) remoteHosts;
+            username = config.currentHost.peers.${name}.sshUser;
+          }) (builtins.attrNames config.currentHost.peers);
         };
 
         extraConfig = ''

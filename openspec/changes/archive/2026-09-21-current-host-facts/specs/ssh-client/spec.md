@@ -1,15 +1,12 @@
-<!--
-canonical-spec: ssh-client
-status: active
-source-change: archive/2026-08-09-tmux-ssh-mutagen-modules
-source-spec: openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/ssh-client/spec.md
--->
+# ssh-client
 
 ## Purpose
 
-Defines the canonical requirements for the ssh client capability.
+Extends the ssh client capability so host aliases are generated from the fleet
+registry with each machine's own login user, instead of a blanket user override
+applied to a hand-maintained host list.
 
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Declarative SSH client config
 
@@ -32,6 +29,8 @@ The module SHALL NOT manage `known_hosts`, `authorized_keys`, or private key mat
 - **WHEN** no host entries are defined in the module
 - **THEN** the host config (`modules/hosts/arch/_home.nix`) MAY define Host blocks that appear in `~/.ssh/config`
 
+## ADDED Requirements
+
 ### Requirement: Host aliases carry each machine's registered login user
 
 The SSH client module SHALL read each remote machine's login user from the fleet
@@ -53,23 +52,3 @@ build/admin machines can be reached with different accounts.
 - **THEN** the machine being evaluated SHALL NOT appear in its own alias list
 - **AND** the exclusion SHALL be computed at the composition boundary rather
   than inside the ssh module
-
-### Requirement: No secret management in module
-
-The SSH module SHALL NOT manage private keys, authorized_keys, or known_hosts.
-These SHALL remain local state or be managed by other mechanisms (e.g., sops-nix if needed).
-
-#### Scenario: No known_hosts manipulation
-
-- **WHEN** the SSH module is applied
-- **THEN** the `known_hosts` file SHALL NOT be created, modified, or managed by the module
-
-#### Scenario: No authorized_keys manipulation
-
-- **WHEN** the SSH module is applied
-- **THEN** the `authorized_keys` file SHALL NOT be created, modified, or managed by the module
-
-#### Scenario: No private key references outside user control
-
-- **WHEN** the SSH module is applied
-- **THEN** private keys SHALL NOT be created or stored by the module; IdentityFile paths MAY reference existing user-managed keys
