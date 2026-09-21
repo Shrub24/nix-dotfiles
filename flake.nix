@@ -35,6 +35,18 @@
     import-tree = {
       url = "github:denful/import-tree";
     };
+    # Packaging layer for the Neovim config: owns the neovim build, the plugin
+    # closure, treesitter grammars and runtime binaries. See modules/editors/nvim/.
+    wrappers = {
+      url = "github:nix-community/nix-wrapper-modules";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    # Pins LazyVim core + extra plugins to a LazyVim release. Bump the tag to
+    # update; see flake.lock. Omit the tag to track main.
+    lazyvim = {
+      url = "github:pfassina/lazyvim-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -70,6 +82,10 @@
       url = "github:Mic92/niks3";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    memex = {
+      url = "github:nicosuave/memex";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     fish-abbreviation-tips = {
       url = "github:Gazorby/fish-abbreviation-tips";
@@ -99,7 +115,7 @@
       url = "github:ipetkov/crane";
     };
     fenix = {
-      url = "github:nix-community/fenix";
+      url = "github:nix-community/fenix/monthly";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     fsel = {

@@ -11,12 +11,17 @@
 }:
 let
   pkgsBase = inputs.nixpkgs.legacyPackages.${system};
-  inherit ((inputs.fenix.packages.${system}.toolchainOf {
-      channel = "nightly";
-      # Must match rust-toolchain.toml in the pinned cass source.
-      date = "2026-08-31";
-      sha256 = "sha256-ko0a8G9o/p60mphrxmH0dNQsUdWkKMBaGexsqEqtCF4=";
-    })) toolchain;
+  inherit
+    (
+      (inputs.fenix.packages.${system}.toolchainOf {
+        channel = "nightly";
+        # Must match rust-toolchain.toml in the pinned cass source.
+        date = "2026-08-31";
+        sha256 = "sha256-ko0a8G9o/p60mphrxmH0dNQsUdWkKMBaGexsqEqtCF4=";
+      })
+    )
+    toolchain
+    ;
   craneLib = (inputs.crane.mkLib pkgsBase).overrideToolchain toolchain;
   unpacked = pkgsBase.runCommand "cass-${version}-source" { } ''
     mkdir -p $out
