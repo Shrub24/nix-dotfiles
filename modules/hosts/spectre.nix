@@ -91,6 +91,7 @@ let
     "tailscale"
     "greeter"
     "nix"
+    "notify"
     "audio"
     "bluetooth"
     "power"
@@ -99,6 +100,10 @@ let
     "kde-apps"
     "mosh"
   ];
+
+  # NixOS mirror of the Home Manager phase gate: notify registers a system
+  # secret, so phase 1 omits it until the host's age key is a recipient.
+  nixosAspectsPhase1 = lib.subtractLists [ "notify" ] nixosAspects;
 
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
     modules = [
@@ -133,7 +138,12 @@ let
         };
       }
     ]
-    ++ map nixosAspect nixosAspects;
+    ++ map nixosAspect (if secretsEnrolled then nixosAspects else nixosAspectsPhase1)
+    ++ lib.optionals secretsEnrolled [
+      # The embedded Home Manager's activation unit; registered here rather than
+      # in the notify aspect because it exists only in host evaluations.
+      { services.notify.events."home-manager-${primaryUser.name}".failure.severity = "critical"; }
+    ];
   };
 
   # Phase 1 → phase 2 flip. While the
@@ -165,7 +175,7 @@ in
       vm-spectre-boot = pkgsUnfree.testers.runNixOSTest {
         name = "vm-spectre-boot";
         nodes.spectre = {
-          imports = map nixosAspect nixosAspects ++ [
+          imports = map nixosAspect nixosAspectsPhase1 ++ [
             currentHostModule
             inputs.home-manager.nixosModules.home-manager
           ];

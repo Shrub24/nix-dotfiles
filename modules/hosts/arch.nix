@@ -174,6 +174,7 @@ let
     "tailscale"
     "greeter"
     "nix"
+    "notify"
     "builders"
     "nixbuild"
     "audio"
@@ -349,6 +350,8 @@ in
             hardware.graphics.enable = true;
             services.btrfs.autoScrub.enable = pkgs.lib.mkForce false;
             services.niks3-auto-upload.enable = pkgs.lib.mkForce false;
+            # No age key inside the VM: keep the registration, drop the secret.
+            services.notify.secretFiles.hostSystem = pkgs.lib.mkForce null;
             system.stateVersion = "26.11";
             networking.hostName = "shrub";
             users.users.${primaryUser.name}.initialPassword = "nixos";

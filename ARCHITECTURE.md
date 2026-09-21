@@ -205,8 +205,15 @@ Active user services: docs-mcp, grist, qmd, web-catalog, moniqued, memex's
 hourly index timer, surge (the
 headless download daemon on port 1700), niks3-auto-upload (a socket-activated
 cache upload queue), and the weekly nh-clean timer — which is a user timer only on the non-NixOS host: on
-NixOS the system-scoped `programs.nh.clean` runs `nh clean all` as root, which
-covers user generations too, so GC has exactly one owner per host scope.
+NixOS the fleet's `nh-gc` capability owns that unit and runs `nh clean all` as
+root, which covers user generations too, so GC has exactly one owner per host
+scope. Podman storage is pruned weekly through the platform's own
+`virtualisation.podman.autoPrune` rather than nix-fleet's `podman-prune` aspect:
+nixpkgs defines the `podman-prune` unit unconditionally, so the two cannot
+coexist. Systemd failure notifications come from the fleet's `notify`
+capability, dispatched to ntfy — services opt in by writing
+`services.notify.events.<unit>.failure` from the module that owns the unit, or
+from the host module for units only that host runs.
 LLM traffic goes to the OmniRoute gateway on the builder host, an endpoint the
 fleet topology carries (`topology.services.omniroute.host`).
 Service ports and display metadata are owned by `lib/web-services.nix`
@@ -281,7 +288,7 @@ nix flake check --no-build --no-write-lock-file
 ```
 
 `nix fmt` (treefmt-nix) is both formatter and formatting check — nixfmt for
-Nix, mdformat for Markdown. Flake checks cover Statix and Deadnix over all
+Nix, and prettier for Markdown, YAML and JSON. Flake checks cover Statix and Deadnix over all
 maintained Nix source (nvfetcher's `pkgs/_sources` is excluded at the
 source-set level, not via suppressions), the treefmt check, and full
 evaluation of the Home Manager activation package, the system-manager

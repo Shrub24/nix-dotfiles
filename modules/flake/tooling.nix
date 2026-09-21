@@ -4,8 +4,9 @@
 }:
 {
   # nix-fleet owns the shared treefmt definition (nixfmt, statix, deadnix,
-  # mdformat, taplo, yamlfmt, jsonfmt) and the formatter priorities that make
-  # the chain converge. This file adds only what is specific to this repository.
+  # prettier for Markdown/YAML/JSON, taplo) and the formatter priorities that
+  # make the chain converge. This file adds only what is specific to this
+  # repository.
   imports = [ inputs.nix-fleet.flakeModules.tooling ];
 
   perSystem =
@@ -14,7 +15,7 @@
       treefmt.settings.global.excludes = [
         "pkgs/_sources/**"
         # Pi subagent definitions are verbatim prompt text with YAML
-        # frontmatter; mdformat would renumber their ordered lists and
+        # frontmatter; the formatter renumbers their ordered lists and would
         # defeat byte-level comparison against upstream's bundled agents.
         "modules/agents/pi/agents/**"
         "secrets/**"

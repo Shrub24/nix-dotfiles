@@ -1,4 +1,4 @@
-_:
+{ inputs, ... }:
 let
   # systemManager lacks nix.buildMachines (#466); renders into /etc/nix/machines instead.
   # The builder's architecture comes from its fleet registry entry — the local
@@ -110,9 +110,9 @@ in
         enable = true;
         # GC has exactly one owner per host. On the non-NixOS host
         # (`targets.genericLinux`, where nothing system-scoped can collect the
-        # store) this user timer (`nh clean user`) is it; on NixOS the
-        # system-scoped timer in flake.modules.nixos.nix runs `nh clean all` as
-        # root, which covers user generations too.
+        # store) this user timer (`nh clean user`) is it; on NixOS the fleet's
+        # `nh-gc` capability, selected by flake.modules.nixos.nix, runs
+        # `nh clean all` as root, which covers user generations too.
         clean = {
           enable = config.targets.genericLinux.enable;
           dates = "weekly";
@@ -204,8 +204,12 @@ in
       # System-scoped GC: `nh clean all` as root is the only thing that can
       # collect the system profile, and it covers user generations as well, so
       # this is the NixOS host's single GC owner (the Home Manager timer is off
-      # there — see flake.modules.homeManager.nix above).
-      programs.nh.clean = {
+      # there — see flake.modules.homeManager.nix above). nix-fleet owns the
+      # unit, its timer and its failure registration; this aspect selects it and
+      # binds the retention policy.
+      imports = [ inputs.nix-fleet.modules.nixos.nh-gc ];
+
+      services.nh-gc = {
         enable = true;
         dates = "weekly";
         extraArgs = "--keep-since 7d";
