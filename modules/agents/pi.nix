@@ -53,11 +53,8 @@ in
         "npm:@vanillagreen/pi-output-policy"
         "npm:@gotgenes/pi-permission-system"
         "npm:pi-typesafe"
-        # Semantic decision substrate (local workspace): the permission-chain
-        # link (pi-jev authorizer) and the intent/nudge entry. Both load as
-        # separate entries and share one process-global core.
-        "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-jev/extensions/permission-authorizer.ts"
-        "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-jev/extensions/tool-intent.ts"
+        # Package dir, not entry files — a file path fails with "package source not found".
+        "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-jev"
         # "npm:@howaboua/pi-codex-conversion"
         # "npm:@vanillagreen/pi-hooks"
         # "@spences10/pi-context"
@@ -163,11 +160,8 @@ in
             maxLineWidth = 400;
           };
 
-          # Semantic decision substrate: Jev-judged asks. Defaults are
-          # deliberate — shadow mode (defers everything, logs verdicts),
-          # all nudge delivery off. Flip mode to "live" only after the
-          # shadow log agrees with human decisions; flip deliver* switches
-          # when the bands have labels behind them.
+          # pi-jev: shadow mode, nudges off. Flip mode to "live" only when the
+          # shadow log agrees with human decisions.
           kendex.extensionManager.config."@vanillagreen/pi-jev" = {
             mode = "shadow";
             deliverNudges = false;
