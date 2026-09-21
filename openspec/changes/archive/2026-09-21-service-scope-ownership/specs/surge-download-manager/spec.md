@@ -1,4 +1,4 @@
-# surge-download-manager Specification
+# surge-download-manager
 
 ## Purpose
 
@@ -7,23 +7,16 @@ user tools. The package is `pkgs.surge-downloader` from nixpkgs — no wrapper, 
 extra flake input — and the daemon is a user service so the account that runs it
 owns the files it writes.
 
-## Requirements
-
-### Requirement: Surge is installed from nixpkgs with truthful version
-
-The user environment SHALL provide Surge via `pkgs.surge-downloader`, with `surge --version` SHALL report the nixpkgs version (0.12.1 at adoption), not a hardcoded release.
-
-#### Scenario: Version verification
-
-- **WHEN** the user runs `surge --version`
-- **THEN** the command reports the nixpkgs version for the locked nixpkgs revision
+## ADDED Requirements
 
 ### Requirement: Home Manager installs the package and its user daemon
 
 The Home Manager aspect (`flake.modules.homeManager.surge`) SHALL add
 `pkgs.surge-downloader` to `home.packages` and SHALL run the headless server as a
 `systemd.user` service: `WantedBy = [ "default.target" ]`, after/wants
-`network-online.target`, `ExecStart = ${pkgs.surge-downloader}/bin/surge server start --port 1700 --output ${config.home.homeDirectory}/Downloads`, `Restart = "on-failure"`, `RestartSec = "5s"`.
+`network-online.target`, `ExecStart = ${pkgs.surge-downloader}/bin/surge server
+start --port 1700 --output ${config.home.homeDirectory}/Downloads`, `Restart =
+"on-failure"`, `RestartSec = "5s"`.
 
 The output directory SHALL be set explicitly, because `surge server start`
 defaults it to the working directory. The daemon SHALL NOT run as a system
@@ -48,3 +41,18 @@ service, and no `systemManager` Surge service SHALL exist.
 - **WHEN** the NixOS target and the non-NixOS host are evaluated
 - **THEN** each has the same user unit from the same aspect
 - **AND** the NixOS embedded Home Manager SHALL NOT subtract the `surge` aspect
+
+## REMOVED Requirements
+
+### Requirement: Home Manager installs the package only
+
+Reason: replaced by "Home Manager installs the package and its user daemon". The
+"no user daemon" clause is superseded — the aspect now owns the user service,
+because the daemon writes files the user opens.
+
+### Requirement: NixOS aspect enables the server
+
+Reason: superseded by "Home Manager installs the package and its user daemon".
+The NixOS-only system unit was never selected by any host — `nixosAspects` did
+not contain `surge` — and its shape was wrong for a process that writes user
+files. The `flake.modules.nixos.surge` aspect is deleted.
