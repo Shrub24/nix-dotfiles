@@ -41,12 +41,6 @@
       url = "github:nix-community/nix-wrapper-modules";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Pins LazyVim core + extra plugins to a LazyVim release. Bump the tag to
-    # update; see flake.lock. Omit the tag to track main.
-    lazyvim = {
-      url = "github:pfassina/lazyvim-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
