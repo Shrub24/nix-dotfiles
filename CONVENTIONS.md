@@ -88,6 +88,9 @@ timer running `nh clean all` where the module runs `nh clean user`.
 - Pins shared with `Shrub24/nix-fleet` follow it (`follows = "nix-fleet/<input>"`)
   so one nix-fleet update moves them together; nothing here duplicates a shared
   pin as its own URL.
+- Nested `nixpkgs` follows are the default; an input whose upstream builds against
+  its own pin opts out with `inputs.nixpkgs.autoFollow = false` next to its
+  declaration, and the reason goes in the comment above it.
 
 - Every `.nix` under `modules/` is a flake-parts module that publishes named
   aspects under `flake.modules.homeManager`, `.systemManager`, or `.nixos`. A

@@ -1,7 +1,11 @@
 { inputs, ... }:
 {
   flake-file.inputs = {
-    codebase-memory-mcp.url = "github:DeusData/codebase-memory-mcp/v0.11.0";
+    codebase-memory-mcp = {
+      url = "github:DeusData/codebase-memory-mcp/v0.11.0";
+      # Keeps its own nixpkgs: a version-pinned Rust tool, not a churn follower.
+      inputs.nixpkgs.autoFollow = false;
+    };
     memex.url = "github:nicosuave/memex";
   };
 

@@ -13,7 +13,6 @@
   inputs = {
     codebase-memory-mcp = {
       url = "github:DeusData/codebase-memory-mcp/v0.11.0";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     community-templates = {
       url = "github:noctalia-dev/community-templates";
@@ -55,7 +54,6 @@
     };
     flake-parts = {
       follows = "nix-fleet/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs";
     };
     fsel = {
       url = "github:Mjoyufull/fsel";
@@ -63,7 +61,6 @@
     };
     hermes-agent = {
       url = "github:NousResearch/hermes-agent";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
       url = "github:nix-community/home-manager/master";
@@ -112,11 +109,9 @@
     };
     treefmt-nix = {
       follows = "nix-fleet/treefmt-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     vicinae = {
       url = "github:vicinaehq/vicinae";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     wrappers = {
       url = "github:nix-community/nix-wrapper-modules";

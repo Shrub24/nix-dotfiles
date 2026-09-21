@@ -59,10 +59,14 @@ nix flake check --no-build --no-write-lock-file    # includes the in-sync check
 
 [`Shrub24/nix-fleet`](https://github.com/Shrub24/nix-fleet) is the fleet's
 platform repository and owns the pins both repositories share: `nixpkgs`,
-`flake-parts`, `import-tree` and `treefmt-nix` are *follows* onto it, so a single
+`flake-parts`, `import-tree` and `treefmt-nix` are _follows_ onto it, so a single
 nix-fleet update moves them together. Everything else here — home-manager,
 system-manager, Noctalia, agent and desktop tooling — is this repository's own
 input and updates independently.
+
+Nested `nixpkgs` follows are automatic, with per-input opt-outs where an
+upstream builds against its own pin and churn costs more than the extra store
+copy: `vicinae`, `codebase-memory-mcp` and `hermes-agent` keep their own.
 
 To test against a coordinated nix-fleet change, point the input at a local
 checkout without touching the committed URL:

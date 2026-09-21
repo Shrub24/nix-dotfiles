@@ -1,5 +1,9 @@
 { inputs, ... }: {
-  flake-file.inputs.vicinae.url = "github:vicinaehq/vicinae";
+  flake-file.inputs.vicinae = {
+    url = "github:vicinaehq/vicinae";
+    # Keeps its own nixpkgs: the shell's numen/soulver-cpp deps break on churn.
+    inputs.nixpkgs.autoFollow = false;
+  };
 
   flake.modules.homeManager.vicinae =
     { ... }:

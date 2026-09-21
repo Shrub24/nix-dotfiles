@@ -7,7 +7,11 @@ let
   omniroute = config.topology.services.omniroute.host;
 in
 {
-  flake-file.inputs.hermes-agent.url = "github:NousResearch/hermes-agent";
+  flake-file.inputs.hermes-agent = {
+    url = "github:NousResearch/hermes-agent";
+    # Keeps its own nixpkgs: its uv2nix/python closure is built against it.
+    inputs.nixpkgs.autoFollow = false;
+  };
 
   flake.modules.homeManager.hermes =
     {

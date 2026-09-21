@@ -1,28 +1,23 @@
-{ lib, ... }:
-{
+_: {
   # nix-fleet is the fleet's platform repository and the authority for the pins
   # both repositories share: one nix-fleet bump moves them together instead of
-  # letting each repository drift on its own copy.
+  # letting each repository drift on its own copy. The remaining inputs are this
+  # repository's own and are declared by the feature module that consumes them.
   flake-file.inputs = {
     flake-file.url = "github:denful/flake-file";
     nix-fleet.url = "github:Shrub24/nix-fleet";
 
-    # Shares these pins with nix-fleet. The url defaults that flake-file's
-    # presets carry are emptied so the generated flake.nix declares the follow
-    # alone instead of a url that would never be used.
-    nixpkgs = {
-      url = lib.mkForce "";
-      follows = "nix-fleet/nixpkgs";
-    };
+    nixpkgs.follows = "nix-fleet/nixpkgs";
     flake-parts = {
-      url = lib.mkForce "";
       follows = "nix-fleet/flake-parts";
+      # nix-fleet's own lock already points its flake-parts at its nixpkgs.
+      inputs.nixpkgs-lib.autoFollow = false;
     };
-    import-tree = {
-      url = lib.mkForce "";
-      follows = "nix-fleet/import-tree";
+    import-tree.follows = "nix-fleet/import-tree";
+    treefmt-nix = {
+      follows = "nix-fleet/treefmt-nix";
+      inputs.nixpkgs.autoFollow = false;
     };
-    treefmt-nix.follows = "nix-fleet/treefmt-nix";
 
     home-manager.url = "github:nix-community/home-manager/master";
     system-manager.url = "github:numtide/system-manager";
