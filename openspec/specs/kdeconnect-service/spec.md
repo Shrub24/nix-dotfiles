@@ -1,6 +1,7 @@
 # kdeconnect-service Specification
 
 ## Purpose
+
 This capability makes KDE Connect function end to end on the desktop: the package and the user daemon are owned by the Home Manager configuration, while the NixOS target owns only the firewall ports it needs without installing a duplicate system package.
 
 ## Requirements

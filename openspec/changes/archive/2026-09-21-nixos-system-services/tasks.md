@@ -102,8 +102,8 @@
 ## Deferred (explicit non-goals)
 
 - [ ] `D1.` Ollama adoption (`services.ollama` with CUDA) — user deferred
-- [ ] `D3.` Snapper btrfs snapshot configs — needs `.snapshots` subvolume
-  setup (install-day concern); `services.btrfs.autoScrub` covers integrity
+  `D3.` Snapper btrfs snapshot configs — superseded by the `snapper-snapshots`
+  change, which owns the `@snapshots` subvolume layout on both NixOS hosts.
 - [ ] `D4.` `services.firewalld` — user chose `networking.firewall` (nftables)
 - [ ] `D5.` `programs.noctalia.recommendedServices` bundle — user chose
   explicit per-feature declarations

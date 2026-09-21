@@ -1,6 +1,7 @@
 # qt-platform-theme Specification
 
 ## Purpose
+
 This capability gives Qt applications a consistent GTK3 platform theme using the native Home Manager Qt module, which emits `QT_QPA_PLATFORMTHEME = "gtk3"` and propagates it through the systemd user environment, while keeping the Wayland backend as an explicit session policy and removing the previously unselected QT tools.
 
 ## Requirements
