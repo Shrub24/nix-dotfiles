@@ -73,6 +73,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-fleet.url = "github:Shrub24/nix-fleet";
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixpkgs.follows = "nix-fleet/nixpkgs";
     noctalia = {
       url = "github:noctalia-dev/noctalia";

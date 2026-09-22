@@ -43,6 +43,11 @@ let
   };
 in
 {
+  flake-file.inputs.nix-index-database = {
+    url = "github:nix-community/nix-index-database";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
   flake.modules.homeManager.nix =
     {
       lib,
@@ -51,6 +56,11 @@ in
       ...
     }:
     {
+      # Prebuilt database as a hash-pinned store path, so nix-locate and
+      # command-not-found never read a locally built index. The import also
+      # supplies `comma-with-db`, which is why plain `comma` is not installed.
+      imports = [ inputs.nix-index-database.homeModules.nix-index ];
+
       sops.templates."nix-access-tokens" = {
         path = "${config.home.homeDirectory}/.config/nix/access-tokens.conf";
         content = "access-tokens = github.com=${config.sops.placeholder.GITHUB_PAT}\n";
@@ -64,7 +74,6 @@ in
         deadnix
         nixfmt
         nix-output-monitor
-        nix-index
         nix-tree
         manix
         envfs
@@ -72,7 +81,6 @@ in
         nix-fast-build
         nix-update
         niks3
-        comma
         nix-your-shell
         tokei
         nix-search-tv-fzf
@@ -89,6 +97,8 @@ in
         nix-index = {
           enable = true;
         };
+
+        nix-index-database.comma.enable = true;
 
         nix-search-tv = {
           enable = true;
