@@ -46,16 +46,16 @@ in
 
         # Registrations this aspect owns are the units present on every host
         # that selects it. Host-specific units register from the host module.
-        # nix-daemon and tailscaled are absent deliberately: both units ship in
-        # systemd.packages (pkgs.nix, pkgs.tailscale), so their option-level
-        # serviceConfig carries no ExecStart and the shared aspect's fail-closed
-        # validation rejects the registration. Covering them needs an upstream
-        # relaxation for package-provided units.
+        # nix-daemon and tailscaled are package-provided (systemd.packages:
+        # pkgs.nix, pkgs.tailscale), so their option-level serviceConfig carries
+        # no ExecStart and their registrations need fromPackage.
         events = {
           sshd.failure.severity = "critical";
           greetd.failure.severity = "critical";
           firewall.failure.severity = "critical";
           "podman-prune".failure = { };
+          "nix-daemon".fromPackage = true;
+          tailscaled.fromPackage = true;
         };
       };
 

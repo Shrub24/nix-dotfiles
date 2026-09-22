@@ -213,7 +213,11 @@ nixpkgs defines the `podman-prune` unit unconditionally, so the two cannot
 coexist. Systemd failure notifications come from the fleet's `notify`
 capability, dispatched to ntfy — services opt in by writing
 `services.notify.events.<unit>.failure` from the module that owns the unit, or
-from the host module for units only that host runs.
+from the host module for units only that host runs; package-provided units
+(`nix-daemon`, `tailscaled`) register with `fromPackage`. Machine metrics go to
+the fleet's `beszel-agent` capability (hub on the la-admin-1 host of
+nix-homelab), enrolled behind the same two-step sops gate as the other
+system-scoped secrets.
 LLM traffic goes to the OmniRoute gateway on the builder host, an endpoint the
 fleet topology carries (`topology.services.omniroute.host`).
 Service ports and display metadata are owned by `lib/web-services.nix`

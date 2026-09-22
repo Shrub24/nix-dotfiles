@@ -92,6 +92,7 @@ let
     "greeter"
     "nix"
     "notify"
+    "beszel-agent"
     "audio"
     "bluetooth"
     "power"
@@ -103,7 +104,10 @@ let
 
   # NixOS mirror of the Home Manager phase gate: notify registers a system
   # secret, so phase 1 omits it until the host's age key is a recipient.
-  nixosAspectsPhase1 = lib.subtractLists [ "notify" ] nixosAspects;
+  nixosAspectsPhase1 = lib.subtractLists [
+    "notify"
+    "beszel-agent"
+  ] nixosAspects;
 
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
     modules = [

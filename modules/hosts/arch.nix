@@ -175,6 +175,7 @@ let
     "greeter"
     "nix"
     "notify"
+    "beszel-agent"
     "builders"
     "nixbuild"
     "audio"
