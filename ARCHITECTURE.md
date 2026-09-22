@@ -217,7 +217,10 @@ from the host module for units only that host runs; package-provided units
 (`nix-daemon`, `tailscaled`) register with `fromPackage`. Machine metrics go to
 the fleet's `beszel-agent` capability (hub on the la-admin-1 host of
 nix-homelab), enrolled behind the same two-step sops gate as the other
-system-scoped secrets.
+system-scoped secrets: the fleet-wide agent key in `secrets/beszel.yaml`, the
+per-host enrollment token in `secrets/hosts/<id>/beszel.yaml`. The contributor
+aspects inject host policy — secret paths and tailnet exposure — while the
+fleet aspect owns the unit, its template, and its notify registration.
 LLM traffic goes to the OmniRoute gateway on the builder host, an endpoint the
 fleet topology carries (`topology.services.omniroute.host`).
 Service ports and display metadata are owned by `lib/web-services.nix`
