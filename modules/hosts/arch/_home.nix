@@ -64,7 +64,7 @@
     devTools.enable = true;
     webCatalog.enable = true;
 
-    hermes-agent.enable = true;
+    hermes-agent.enable = false;
 
     zsh.initContent = lib.mkAfter ''
       if [[ -z "$TMUX" ]] && { [[ -n "$SSH_CONNECTION" ]] || [[ -n "$MOSH_SERVER" ]]; }; then

@@ -76,6 +76,9 @@ require("config.options")
 require("config.keymaps-core") -- LazyVim defaults; own maps override
 require("config.keymaps")
 require("config.autocmds")
+-- LazyVim's LSP behaviour: diagnostics, inlay hints, folds and the buffer-local
+-- maps every attached server gets.
+require("config.lsp")
 -- Opt-in capture; see lua/config/errorlog.lua. No-op without $NVIM_ERRORLOG.
 require("config.errorlog")
 
@@ -132,7 +135,26 @@ local inline_specs = {
   { "blink-cmp-git", auto_enable = true, on_require = "blink-cmp-git", after = function() end },
   { "blink-ripgrep.nvim", auto_enable = true, on_require = "blink-ripgrep", after = function() end },
   -- blink-copilot drives copilot.lua, likewise only required on use.
-  { "copilot.lua", auto_enable = true, on_require = "copilot", after = function() end },
+  -- copilot.lua still needs its own setup: it owns the auth token and the
+  -- suggestion engine, while blink-copilot does the rendering. Leaving its
+  -- own suggestion UI on would double-draw, so it is disabled here.
+  {
+    "copilot.lua",
+    auto_enable = true,
+    on_require = "copilot",
+    after = function()
+      require("copilot").setup({
+        suggestion = {
+          enabled = false, -- blink-copilot renders instead
+          auto_trigger = true,
+          hide_during_completion = true,
+          keymap = { accept = false },
+        },
+        panel = { enabled = false },
+        filetypes = { markdown = true, help = true },
+      })
+    end,
+  },
   -- Menu/icon providers pulled in by module name from blink and lualine.
   { "nvim-web-devicons", auto_enable = true, on_require = "nvim-web-devicons", after = function() end },
   { "colorful-menu.nvim", auto_enable = true, on_require = "colorful-menu", after = function() end },

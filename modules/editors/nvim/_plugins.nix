@@ -214,7 +214,7 @@ with pkgs'.vimPlugins;
     lazy = true;
     data = [
       oil-nvim
-      yazi-nvim
+      # yazi-nvim removed; the user disabled it and oil is the file manager.
     ];
   };
   # mini.nvim is a monorepo: ai, bracketed, hipatterns, icons, move, pairs,
@@ -235,8 +235,8 @@ with pkgs'.vimPlugins;
     lazy = true;
     data = [
       rainbow-delimiters-nvim
-      vim-illuminate
-      unimpaired-nvim
+      # vim-illuminate removed; superseded by snacks.words.
+      # unimpaired-nvim removed; superseded by mini.bracketed.
     ];
   };
   custom-plugins = {
@@ -266,7 +266,7 @@ with pkgs'.vimPlugins;
     lazy = true;
     data = [
       nvim-dap-view
-      nvim-dap-ui
+      # nvim-dap-ui removed; superseded by nvim-dap-view.
     ];
   };
 
@@ -344,8 +344,7 @@ with pkgs'.vimPlugins;
 #   rasulomaroff/reactive.nvim
 #   sphamba/smear-cursor.nvim
 #   folke/persistence.nvim    — superseded by resession
-#   rcarriga/nvim-dap-ui      — superseded by nvim-dap-view; still present as a
-#                               dependency of nvim-dap-view
+#   rcarriga/nvim-dap-ui      — superseded by nvim-dap-view
 #   mikavilpas/yazi.nvim      — oil is the file manager
 # Never in the closure, from LazyVim extras rather than this config:
 #   nvim-telescope/telescope.nvim, karb94/neoscroll.nvim, lewis6991/satellite.nvim,

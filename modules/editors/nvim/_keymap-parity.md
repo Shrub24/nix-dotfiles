@@ -116,13 +116,13 @@ map exists in the new config.
  gs                        Git Status
  gS                        Search (Octo)
  gY                        Git Browse (copy)  <!-- DONE: <leader>gY -->
-  h                        
+  h
  H                         Harpoon File
  h                         Harpoon Quick Menu
-  j                        
-  k                        
+  j
+  k
  K                         Keywordprg
-  l                        
+  l
  L                         Clear Highlights
  l                         Lazy
  n                         Notification History
@@ -138,7 +138,7 @@ map exists in the new config.
  ri                        Inline Variable
  rP                        Debug Print Location
  rp                        Debug Print Variable
- rr                        
+ rr
  r                         +refactor
  R                         +Rest
  Rr                        Replay the last request

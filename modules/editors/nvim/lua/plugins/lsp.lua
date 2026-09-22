@@ -1,7 +1,9 @@
 -- Ported from lua/plugins/lsp.lua. LazyVim resolved LSP servers from PATH and
 -- started those listed under opts.servers; without LazyVim, `vim.lsp.enable`
 -- does that job. basedpyright and ruff were enabled in the source; lua_ls and
--- bashls were enabled implicitly by LazyVim's core.
+-- bashls were enabled implicitly by LazyVim's core. The servers below them were
+-- enabled by LazyVim's lang.*/linting extras and are back after a
+-- `vim.fn.executable()` check on each lspconfig `cmd`.
 --
 -- refactoring.nvim was dropped here: it was declared but never used (the config
 -- maps no `:Refactor` keys, and LazyVim's editor.refactoring extra supplied
@@ -18,6 +20,24 @@ return {
       vim.lsp.enable "ruff"
       vim.lsp.enable "lua_ls"
       vim.lsp.enable "bashls"
+      -- lang.json / lang.yaml / lang.markdown / lang.tex / lang.go / lang.helm
+      -- / linting.eslint, plus the servers mason had installed.
+      vim.lsp.enable "jsonls"
+      vim.lsp.enable "yamlls"
+      vim.lsp.enable "marksman"
+      vim.lsp.enable "texlab"
+      vim.lsp.enable "gopls"
+      vim.lsp.enable "helm_ls"
+      vim.lsp.enable "eslint"
+      vim.lsp.enable "ast_grep"
+      vim.lsp.enable "vtsls"
+      vim.lsp.enable "typos_lsp"
+      -- NOT enabled: lspconfig's `just` server starts `just-lsp`, which is not
+      -- on PATH (`vim.fn.executable("just-lsp") == 0`). Add the package and
+      -- `vim.lsp.enable "just"` here once it is.
+      -- sidekick's next-edit-suggestions run on the copilot LSP server,
+      -- not on copilot.lua (which only does completions).
+      vim.lsp.enable "copilot"
     end,
   },
   {

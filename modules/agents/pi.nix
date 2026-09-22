@@ -55,6 +55,7 @@ in
         "npm:pi-typesafe"
         # Package dir, not entry files — a file path fails with "package source not found".
         "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-jev"
+        "npm:pi-tool-repair"
         # "npm:@howaboua/pi-codex-conversion"
         # "npm:@vanillagreen/pi-hooks"
         # "@spences10/pi-context"
@@ -238,7 +239,7 @@ in
           };
           cache_ttl = {
             default = "30m";
-            "codex/*" = "15m";
+            "codex/*" = "10m";
           };
           toast_duration_ms = 500;
           execute_threshold_tokens.default = 200000;
@@ -340,6 +341,21 @@ in
           inlineToolDisplay = "rich";
           missions.enabled = false;
           scheduledRuns.enabled = false;
+        };
+
+        ".pi/agent/extensions/pi-tool-repair.json".source = json.generate "pi-tool-repair.json" {
+
+          grammarRepair = {
+            enabled = true;
+            mode = "recover";
+            requireKnownTool = true;
+            grammars = [
+              "dsml"
+              "invoke"
+              "glm"
+            ];
+          };
+
         };
         #
         ".pi/agent/pi-starship.toml".source = ./pi/pi-starship.toml;
