@@ -349,21 +349,6 @@
         "type": "github"
       }
     },
-    "flake-file_2": {
-      "locked": {
-        "lastModified": 1789150028,
-        "narHash": "sha256-o/o3n8+HAzFOFH83SuGW/w5J6glHtV+r8v+gJbMeoXM=",
-        "owner": "denful",
-        "repo": "flake-file",
-        "rev": "eccac77d2c2567efb6f368330930f3d55af8668a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "denful",
-        "repo": "flake-file",
-        "type": "github"
-      }
-    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -832,7 +817,7 @@
     },
     "nix-fleet": {
       "inputs": {
-        "flake-file": "flake-file_2",
+        "flake-file": "flake-file",
         "flake-parts": "flake-parts_4",
         "import-tree": "import-tree",
         "niks3": "niks3_2",
@@ -1142,7 +1127,10 @@
         "fish-done": "fish-done",
         "fish-replay": "fish-replay",
         "fish-sponge": "fish-sponge",
-        "flake-file": "flake-file",
+        "flake-file": [
+          "nix-fleet",
+          "flake-file"
+        ],
         "flake-parts": [
           "nix-fleet",
           "flake-parts"

@@ -4,8 +4,9 @@ _: {
   # letting each repository drift on its own copy. The remaining inputs are this
   # repository's own and are declared by the feature module that consumes them.
   flake-file.inputs = {
-    flake-file.url = "github:denful/flake-file";
     nix-fleet.url = "github:Shrub24/nix-fleet";
+
+    flake-file.follows = "nix-fleet/flake-file";
 
     nixpkgs.follows = "nix-fleet/nixpkgs";
     flake-parts = {

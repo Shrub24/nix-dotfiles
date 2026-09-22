@@ -50,7 +50,7 @@
       flake = false;
     };
     flake-file = {
-      url = "github:denful/flake-file";
+      follows = "nix-fleet/flake-file";
     };
     flake-parts = {
       follows = "nix-fleet/flake-parts";
