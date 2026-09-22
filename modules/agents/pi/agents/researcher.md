@@ -29,7 +29,6 @@ tools:
   - get_search_content
   - source_check
   - mcp:docs-mcp-server
-  - mcp:sourcegraph
   - mcp:grep.app
 subagentOnlyExtensions:
   - ../npm/node_modules/pi-web-access/index.ts

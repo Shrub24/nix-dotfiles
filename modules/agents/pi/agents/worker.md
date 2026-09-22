@@ -5,7 +5,7 @@ advertise: true
 aliases: developer, coder, implementer, develop
 skills: codebase-explore, ast-grep, codebase-memory
 model: omniroute/coder-high
-thinking: xhigh
+thinking: high
 async: true
 systemPromptMode: replace
 inheritProjectContext: true
@@ -42,7 +42,6 @@ tools:
   - mcp:semble
   - mcp:docs-mcp-server
   - mcp:nixos
-  - mcp:sourcegraph
   - mcp:grep.app
 subagentOnlyExtensions:
   - ../npm/node_modules/@ff-labs/pi-fff/src/index.ts
@@ -83,6 +82,8 @@ When running in a chain, expect instructions about:
 - which files to read first
 - where to maintain progress tracking
 - where to write output if a file target is provided
+
+If such instructions are not provided please request clarification via contact_supervisor before proceeding.
 
 Your final response should follow this shape:
 

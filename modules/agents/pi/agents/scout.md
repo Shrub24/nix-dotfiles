@@ -40,7 +40,6 @@ tools:
   - mcp:semble
   - mcp:docs-mcp-server
   - mcp:nixos
-  - mcp:sourcegraph
   - mcp:grep.app
 subagentOnlyExtensions:
   - ../npm/node_modules/@ff-labs/pi-fff/src/index.ts
