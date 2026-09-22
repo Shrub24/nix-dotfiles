@@ -71,9 +71,9 @@ _: {
 
             export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=30
             export ZSH_AUTOSUGGEST_USE_ASYNC=1
-            if [ -f "$HOME/.config/sops-nix/secrets/rendered/zsh-secrets.env" ]; then
+            if [ -f "$HOME/.config/sops-nix/secrets/rendered/agent-env.env" ]; then
               set -a
-              source "$HOME/.config/sops-nix/secrets/rendered/zsh-secrets.env"
+              source "$HOME/.config/sops-nix/secrets/rendered/agent-env.env"
               set +a
             fi
           '';

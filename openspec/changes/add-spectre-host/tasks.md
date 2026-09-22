@@ -129,8 +129,8 @@
       re-encrypt every secret file with `sops updatekeys`.
 
   - refs: design D7; spec secrets-ownership-model "Secrets are host-scoped"
-  - verify: `sops -d secrets/agents.yaml >/dev/null` succeeds with the owner key
-    after re-encryption, and the file lists the new recipient
+  - verify: every file under `secrets/` decrypts with the owner key after
+    re-encryption, and each lists the new recipient
 
 - [ ] 4.4 Land phase 2: add the secret-consuming aspects to the laptop's
       composition and switch again; confirm each rendered template decrypts.

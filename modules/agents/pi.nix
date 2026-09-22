@@ -16,6 +16,27 @@ in
       # Pi agent dir; referenced by rendered settings and out-of-store symlinks.
       piAgentDir = "${config.home.homeDirectory}/.pi/agent";
 
+      # Credentials reach pi by path, not by environment. The wiring is emitted
+      # only where the credentials aspect is selected: the laptop's phase-1
+      # evaluation selects no sops at all, and the extensions then report a
+      # missing credential exactly as they did before the keys were configured
+      # here.
+      sopsSecrets = (config.sops or { }).secrets or { };
+
+      webSearchKeyConfig = lib.mapAttrs (_field: secret: "!cat ${sopsSecrets.${secret}.path}") (
+        lib.filterAttrs (_field: secret: sopsSecrets ? ${secret}) {
+          braveApiKey = "BRAVE_API_KEY";
+          tavilyApiKey = "TAVILY_API_KEY";
+          jinaApiKey = "JINA_TOKEN";
+          parallelApiKey = "PARALLEL_API_KEY";
+          tinyfishApiKey = "TINYFISH_API_KEY";
+          serpdiveApiKey = "SERPDIVE_API_KEY";
+          firecrawlApiKey = "FIRECRAWL_API_KEY";
+          geminiApiKey = "GEMINI_API_KEY";
+          datalabApiKey = "DATALAB_API_KEY";
+        }
+      );
+
       # Pi materialises a missing or stale source here on next start.
       packages = [
         "npm:pi-web-access"
@@ -161,12 +182,11 @@ in
             maxLineWidth = 400;
           };
 
-          # pi-jev: shadow mode, nudges off. Flip mode to "live" only when the
-          # shadow log agrees with human decisions.
+          # pi-jev: advisory mode steers instead of gating; only material harm refuses.
           kendex.extensionManager.config."@vanillagreen/pi-jev" = {
-            mode = "shadow";
-            deliverNudges = false;
-            deliverIntentNudges = false;
+            mode = "advisory";
+            deliverNudges = true;
+            deliverIntentNudges = true;
             deliverSubagentNudges = false;
             orchestratorCheckInMs = 0;
           };
@@ -274,7 +294,11 @@ in
             };
             sourcegraph = {
               url = "https://sourcegraph.com/.api/mcp";
-              headers.Authorization = "token $env:SOURCEGRAPH_TOKEN";
+            }
+            # `!command` is the adapter's value form; the token never leaves the
+            # decrypted secret file.
+            // lib.optionalAttrs (sopsSecrets ? SOURCEGRAPH_TOKEN) {
+              headers.Authorization = "!printf 'token %s' \"$(cat ${sopsSecrets.SOURCEGRAPH_TOKEN.path})\"";
             };
           }
           // lib.optionalAttrs (config.programs.memex.enable or false) {
@@ -298,42 +322,48 @@ in
           mode = "override";
         };
 
-        # pi-web-access routing. Provider keys auto-detect from the session env
-        # (rendered by modules/security/credentials/agents.nix) — no key config
-        # here. Parallel first while its 60-day credit lasts, then free tiers;
+        # pi-web-access routing. Each provider key below reads its decrypted
+        # sops secret, which takes precedence over the environment fallback.
+        # Parallel first while its 60-day credit lasts, then free tiers;
         # useCurrentModel uses the Codex subscription for hosted search when on
         # GPT models, which costs nothing extra.
-        ".pi/agent/web-search.json".source = json.generate "pi-web-search.json" {
-          searchRouting = {
-            providers = [
-              "parallel"
-              "brave"
-              "tavily"
+        ".pi/agent/web-search.json".source = json.generate "pi-web-search.json" (
+          {
+            searchRouting = {
+              providers = [
+                "parallel"
+                "brave"
+                "tavily"
+                "jina"
+                "serpdive"
+                "tinyfish"
+                "gemini"
+              ];
+              useCurrentModel = true;
+              fallbackOn = [
+                "unsupported"
+                "transient"
+                "quota"
+                "network"
+                "invalid-response"
+              ];
+            };
+            # Keys resolve from the decrypted sops secret paths, so no search
+            # credential is exported to the environment. pi-web-access prefers a
+            # configured value over its environment fallback.
+            fetchRouting.providers = [
+              "http"
+              "firecrawl"
               "jina"
-              "serpdive"
+              "parallel"
               "tinyfish"
               "gemini"
             ];
-            useCurrentModel = true;
-            fallbackOn = [
-              "unsupported"
-              "transient"
-              "quota"
-              "network"
-              "invalid-response"
-            ];
-          };
-          fetchRouting.providers = [
-            "http"
-            "firecrawl"
-            "jina"
-            "parallel"
-            "tinyfish"
-            "gemini"
-          ];
-          workflow = "none";
-          summaryModel = "omniroute/budget";
-        };
+            workflow = "none";
+            summaryModel = "omniroute/budget";
+          }
+          // webSearchKeyConfig
+        );
 
         ".pi/agent/extensions/subagent/config.json".source = json.generate "pi-subagents-config.json" {
           fleetView = true;

@@ -182,15 +182,19 @@ niks3 uploader aspect (`embeddedHmAspects`).
 **User scope.** All other secrets are user-scoped sops, owned in three
 places: a SOPS foundation aspect (`modules/security/sops.nix`, module import +
 age key + tooling), a shared credentials aspect
-(`modules/security/credentials/agents.nix`, the ~20 cross-feature LLM/provider
-API keys from `secrets/agents.yaml` plus the shell-wide `zsh-secrets.env`),
-and each service's own feature module (its service-specific secrets and
-rendered env templates — `aichat.env`, `grist.env`,
-`docs-mcp.env`, `hermes.env`, `niks3-auth-token`, `nix-access-tokens`).
-Secrets decrypt once by the merged sops config and templates render into the
-Home Manager generation, so ownership is relocated without changing the
-rendered outputs. No user secret is exposed to the root daemon, and no system
-secret is rendered into user state. Canonical contract:
+(`modules/security/credentials.nix`, the cross-feature provider and tool keys in
+one encrypted file per consumer group — `llm-providers.yaml`, `web-search.yaml`,
+`github.yaml`, `sourcegraph.yaml`), and each service's own feature module (its
+service-specific secrets and rendered env templates — `aichat.env`,
+`grist.env`, `docs-mcp.env`, `hermes.env`, `niks3-auth-token`,
+`nix-access-tokens`). A consumer that can resolve a key itself reads the
+decrypted secret path — pi providers and pi-web-access via `!cat`, MCP headers
+via `!command` — and only keys whose consumer can read nothing but the
+environment reach the shared `agent-env.env` template. Secrets decrypt once by
+the merged sops config and templates render into the Home Manager generation,
+so ownership is relocated without changing the rendered outputs. No user secret
+is exposed to the root daemon, and no system secret is rendered into user
+state. Canonical contract:
 [secrets-ownership-model](openspec/specs/secrets-ownership-model/spec.md).
 
 ## Service Lifecycle

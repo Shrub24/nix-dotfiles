@@ -170,8 +170,8 @@
 
             set -g -x fish_autosuggestion_enabled 1
 
-            if test -f "$HOME/.config/sops-nix/secrets/rendered/zsh-secrets.env"
-              replay "set -a; source $HOME/.config/sops-nix/secrets/rendered/zsh-secrets.env; set +a"
+            if test -f "$HOME/.config/sops-nix/secrets/rendered/agent-env.env"
+              replay "set -a; source $HOME/.config/sops-nix/secrets/rendered/agent-env.env; set +a"
             end
 
             # fancy ctrl z + sudo
@@ -182,13 +182,27 @@
             set fzf_preview_file_cmd bat --color=always --style=numbers
             set fzf_diff_highlighter delta --paging=never --width=20
 
-            # Noctalia's fzf palette is rendered as a POSIX file. Read it in a
-            # subshell instead of sourcing the fish variant: that variant writes
-            # FZF_DEFAULT_OPTS through `set -Ux`, so each session would append
-            # the palette again and the variable would grow without bound.
-            if test -f "$XDG_CONFIG_HOME/fzf/themes/noctalia.sh"
+            # Noctalia's fzf palette is rendered as a POSIX file. Two traps
+            # here, both hit in practice:
+            #
+            # 1. Sourcing the fish variant instead would write FZF_DEFAULT_OPTS
+            #    through `set -Ux`, so every session re-appends the palette and
+            #    the variable grows without bound.
+            #
+            # 2. Even via the POSIX file, the palette renders as MULTILINE
+            #    text. Command substitution turns each line into a fish list
+            #    element, and an exported list var in that shape makes every
+            #    later exec in the shell fail with fish's "argument or exported
+            #    variable exceeds the OS argument length limit" — the snacks
+            #    terminal, zoxide, mise, everything. Flattening to one line
+            #    (tr) is what makes it safe.
+            #
+            # The guard stops re-appends in nested shells (kitty windows,
+            # herdr panes, snacks terminals all inherit and re-run this), which
+            # is how the variable accumulated 15 palette copies before.
+            if test -f "$XDG_CONFIG_HOME/fzf/themes/noctalia.sh"; and not string match -q -- '*bg+:*' -- $FZF_DEFAULT_OPTS
               set -gx FZF_DEFAULT_OPTS "$FZF_DEFAULT_OPTS "(
-                sh -c 'FZF_DEFAULT_OPTS=; . "$XDG_CONFIG_HOME/fzf/themes/noctalia.sh"; printf %s "$FZF_DEFAULT_OPTS"'
+                sh -c 'FZF_DEFAULT_OPTS=; . "$XDG_CONFIG_HOME/fzf/themes/noctalia.sh"; printf %s "$FZF_DEFAULT_OPTS"' | tr '\n' ' '
               )
             end
 

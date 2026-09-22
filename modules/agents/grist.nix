@@ -65,8 +65,7 @@ _: {
 
         sops = {
           secrets."GRIST_SESSION_SECRET" = {
-            sopsFile = ../../secrets/agents.yaml;
-            format = "yaml";
+            sopsFile = ../../secrets/grist.yaml;
             key = "grist_session_secret";
           };
 
