@@ -32,6 +32,16 @@ let
   dispatchSpecs = map (spec: spec // { sshKeyPath = "/root/.ssh/nix-remote"; }) (
     dispatch.resolveBuildProfile config.fleet "workstations"
   );
+  # Which fleet hosts this machine trusts and talks to. nix-fleet owns the
+  # records — hostnames, host keys, reach account; the selection is host policy.
+  # Trust is its own door, so naming a host here never makes it schedulable.
+  sshTrust = dispatch.resolveHosts config.fleet {
+    home-forge = { };
+    la-admin-1 = { };
+    oci-melb-1 = { };
+    spectre = { };
+  };
+  sshTrustModule = { inherit sshTrust; };
   overlay = import ../../pkgs { inherit inputs system; };
   # Applied to both the standalone HM pkgs and the NixOS global pkgs.
   unfreePredicate =
@@ -200,6 +210,7 @@ let
     inherit pkgs;
     modules = [
       currentHostModule
+      sshTrustModule
       (import ./legion/_home.nix { inherit omniroute primaryUser; })
       # Standalone-only: the embedded NixOS eval must not see these.
       {
@@ -217,6 +228,7 @@ let
   systemConfiguration = inputs.system-manager.lib.makeSystemConfig {
     modules = [
       currentHostModule
+      sshTrustModule
       # systemManager has no nix.buildMachines (#466), so the resolved dispatch
       # specs render into /etc/nix/machines directly.
       {
@@ -233,6 +245,7 @@ let
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       currentHostModule
+      sshTrustModule
       (import ./legion/_nixos.nix { inherit primaryUser; })
       { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration
       { nixpkgs.config.allowUnfreePredicate = unfreePredicate; }
@@ -257,6 +270,7 @@ let
           users.${primaryUser.name} = {
             imports = [
               currentHostModule
+              sshTrustModule
               (import ./legion/_home.nix { inherit omniroute primaryUser; })
               { targets.genericLinux.enable = false; }
             ]

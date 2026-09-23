@@ -282,6 +282,12 @@ describes only machines that are always on.
   projection or the native option, never a registry key and never a hardcoded
   hostname, so one aspect value is correct for every host and nothing travels
   through an argument bus.
+- **Trust is its own door** — which machines this one talks to is a separate
+  selection from which may build for it, resolved through the contract's
+  `resolveHosts` rather than a build profile. Trust never implies use and use
+  never implies trust, so naming a host for one cannot silently grant the other.
+  Host keys land in the system known-hosts file rather than the user's, because
+  ssh appends to the latter.
 - **System secrets stay out of user scope** — owned end to end by
   system-manager on Arch and by the sops-nix OS module on NixOS; a root
   credential is never rendered through user-scoped Home Manager state.

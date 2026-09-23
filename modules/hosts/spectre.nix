@@ -20,6 +20,16 @@ let
     peers = lib.removeAttrs config.topology.hosts [ hostId ];
   };
   currentHostModule = { inherit currentHost; };
+  dispatch = inputs.nix-fleet.lib.buildProfile;
+  # Which fleet hosts the laptop trusts and talks to — the same canonical
+  # records the desktop reads, minus itself.
+  sshTrust = dispatch.resolveHosts config.fleet {
+    legion = { };
+    home-forge = { };
+    la-admin-1 = { };
+    oci-melb-1 = { };
+  };
+  sshTrustModule = { inherit sshTrust; };
   overlay = import ../../pkgs { inherit inputs system; };
   pkgsUnfree = import inputs.nixpkgs {
     inherit system;
@@ -112,6 +122,7 @@ let
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       currentHostModule
+      sshTrustModule
       (import ./spectre/_nixos.nix { inherit primaryUser; })
       { nixpkgs.overlays = [ overlay ]; }
       {
@@ -135,6 +146,7 @@ let
           users.${primaryUser.name} = {
             imports = [
               currentHostModule
+              sshTrustModule
               (import ./spectre/_home.nix { inherit primaryUser; })
             ]
             ++ map hmAspect (if secretsEnrolled then hmAspects else hmAspectsPhase1);
@@ -180,6 +192,7 @@ in
         nodes.spectre = {
           imports = map nixosAspect nixosAspectsPhase1 ++ [
             currentHostModule
+            sshTrustModule
             inputs.home-manager.nixosModules.home-manager
           ];
           fileSystems."/" = {
@@ -205,6 +218,7 @@ in
             users.${primaryUser.name} = {
               imports = [
                 currentHostModule
+                sshTrustModule
                 (import ./spectre/_home.nix { inherit primaryUser; })
               ]
               ++ map hmAspect (if secretsEnrolled then hmAspects else hmAspectsPhase1);
