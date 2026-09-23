@@ -45,16 +45,16 @@ HM evaluates the same on NixOS.
 
 A new `flake.checks.${system}.vm-skeleton-boot` entry uses
 `pkgs.testers.runNixOSTest` (the modern `nixosTest`). It boots a QEMU VM
-that imports the same aspects as `nixosConfigurations.arch` (foundation +
+that imports the same aspects as `nixosConfigurations.legion` (foundation +
 nix) plus minimal VM hardware.
 
 ```nix
-# modules/hosts/arch.nix (excerpt)
+# modules/hosts/legion.nix (excerpt)
 flake.checks.${system}.vm-skeleton-boot =
   pkgs.testers.runNixOSTest {
     name = "vm-skeleton-boot";
     nodes.arch = { ... }: {
-      # Same aspects as nixosConfigurations.arch - this is the test's whole point.
+      # Same aspects as nixosConfigurations.legion - this is the test's whole point.
       imports = map nixosAspect nixosAspects;
       # Host-local literals that _nixos.nix would have set:
       system.stateVersion = "26.11";
@@ -122,10 +122,10 @@ to be evaluable and runnable locally).
 
 - **No `specialArgs`/`hostFacts` bus** - the test node uses lexical
   closure (it captures `nixosAspect`, `nixosAspects`, `primaryUser`,
-  `system` from the outer scope, exactly as `nixosConfigurations.arch`
+  `system` from the outer scope, exactly as `nixosConfigurations.legion`
   does).
 - **No duplicate literals** - `primaryUser`, `system`, `nixosAspects` are
-  the same values used by `nixosConfigurations.arch`; the test
+  the same values used by `nixosConfigurations.legion`; the test
   reuses them via closure, not re-declares.
 - **No new dendritic aspect for hardware** - the test's hardware config
   is local to the test node; it's not a `flake.modules.nixos.*` value.

@@ -124,7 +124,7 @@ The host composition SHALL set the native `targets.genericLinux.enable` option e
 
 ### Requirement: Unfree policy is host-owned
 
-The host composition SHALL define one unfree predicate lexically in `modules/hosts/arch.nix` and apply it to both the standalone Home Manager pkgs and the NixOS global pkgs; feature-owned Home Manager `nixpkgs.config` SHALL be removed so `useGlobalPkgs` is valid.
+The host composition SHALL define one unfree predicate lexically in `modules/hosts/legion.nix` and apply it to both the standalone Home Manager pkgs and the NixOS global pkgs; feature-owned Home Manager `nixpkgs.config` SHALL be removed so `useGlobalPkgs` is valid.
 
 #### Scenario: One predicate covers both scopes
 

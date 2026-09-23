@@ -8,7 +8,7 @@ Performs the install-day work deferred by `nixos-bare-metal-readiness`: permanen
 
 ### Requirement: Destructive tasks are gated on bare-metal readiness
 
-No destructive disk task SHALL execute until `nixos-bare-metal-readiness` strict validation passes and a full build of the `nixosConfigurations.shrub` toplevel succeeds; no install-day step SHALL substitute for that gate.
+No destructive disk task SHALL execute until `nixos-bare-metal-readiness` strict validation passes and a full build of the `nixosConfigurations.legion` toplevel succeeds; no install-day step SHALL substitute for that gate.
 
 #### Scenario: Gate holds before any destructive step
 
@@ -76,7 +76,7 @@ The install SHALL create a 2 GiB FAT32 NixOS ESP with the EFI System Partition t
 
 ### Requirement: Subvolume and mount layout is fixed and user-derived
 
-The install SHALL create `@root`→`/`, `@home`→`/home`, `@nix`→`/nix`, `@log`→`/var/log`, `@snapshots`→`/.snapshots`, `@home-cache`→`/home/${primaryUser.name}/.cache`, and `@containers`→`/home/${primaryUser.name}/.local/share/containers`. User-dependent paths SHALL be topology-derived, not hardcoded usernames. `topology.hosts.arch` SHALL remain unchanged during dual boot — Arch stays an active host — with its rename deferred to the Arch-retirement scope, while `nixosConfigurations.shrub` and `networking.hostName = "shrub"` are unchanged.
+The install SHALL create `@root`→`/`, `@home`→`/home`, `@nix`→`/nix`, `@log`→`/var/log`, `@snapshots`→`/.snapshots`, `@home-cache`→`/home/${primaryUser.name}/.cache`, and `@containers`→`/home/${primaryUser.name}/.local/share/containers`. User-dependent paths SHALL be topology-derived, not hardcoded usernames. `topology.hosts.legion` SHALL remain unchanged during dual boot — Arch stays an active host — with its rename deferred to the Arch-retirement scope, while `nixosConfigurations.legion` and `networking.hostName = "shrub"` are unchanged.
 
 #### Scenario: Subvolumes mount at their declared paths
 

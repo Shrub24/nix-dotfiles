@@ -4,7 +4,7 @@
 
 - [ ] Reserve `@snapshots` in the install-time btrfs layout and mount it at
       `/.snapshots` (`nixos-dual-boot-install` owns that install).
-- [ ] Confirm `services.snapper.configs` in `modules/hosts/arch/_nixos.nix`
+- [ ] Confirm `services.snapper.configs` in `modules/hosts/legion/_nixos.nix`
       names subvolumes that actually exist on the installed disk.
 - [ ] `snapper list` shows a snapshot after a switch, and one rollback is
       performed deliberately rather than discovered in an emergency.

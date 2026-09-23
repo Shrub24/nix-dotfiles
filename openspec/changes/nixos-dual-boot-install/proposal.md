@@ -1,6 +1,6 @@
 ## Why
 
-`nixos-bare-metal-readiness` must first make `nixosConfigurations.shrub` a
+`nixos-bare-metal-readiness` must first make `nixosConfigurations.legion` a
 switchable, hardware-enabled NixOS host. This change then performs the
 install-day work it defers: partition editing on the 2 TB disk, new ESP/LUKS/Btrfs
 provisioning, install-day state migration, `nixos-install`, boot verification,
@@ -59,9 +59,9 @@ left untouched for a future change.
   `@containers` → `/home/${primaryUser.name}/.local/share/containers`.
 - Compression `zstd:3`, `noatime`. Periodic fstrim is already config-owned.
 - The final configuration uses topology identity for the user — no hardcoded
-  username literals. `topology.hosts.arch` stays during dual boot because Arch
+  username literals. `topology.hosts.legion` stays during dual boot because Arch
   remains active; renaming it is deferred to the Arch-retirement scope, while
-  `nixosConfigurations.shrub` and `networking.hostName = "shrub"` are unchanged.
+  `nixosConfigurations.legion` and `networking.hostName = "shrub"` are unchanged.
 
 ### Install-day state provisioning
 

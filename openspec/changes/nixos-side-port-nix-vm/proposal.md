@@ -4,7 +4,7 @@
 
 Side-ports the `nix` system-manager aspect to a native NixOS aspect
 (`flake.modules.nixos.nix`) and adds a minimal QEMU VM test harness in CI that
-boots `nixosConfigurations.arch`'s aspect composition and asserts the
+boots `nixosConfigurations.legion`'s aspect composition and asserts the
 `nix-daemon` reaches `multi-user.target`. Together these prove the
 side-port pattern and provide a CI gate that catches regressions before
 bare-metal install day.
@@ -12,7 +12,7 @@ bare-metal install day.
 ## Motivation
 
 The `nixos-boilerplate` skeleton (active change) introduces
-`nixosConfigurations.arch` with a single smoke-test aspect (`foundation`).
+`nixosConfigurations.legion` with a single smoke-test aspect (`foundation`).
 Two concrete next steps unlock real migration work:
 
 1. **Prove the side-port pattern end-to-end** with the most direct aspect
@@ -37,11 +37,11 @@ Two concrete next steps unlock real migration work:
   equivalent of the `systemManager.nix` aspect. `nix.settings` translates
   verbatim; `environment.etc."profile.d/nix-path.sh"` becomes `nix.nixPath`;
   `nix.enable` is dropped (NixOS enables nix by default).
-- Register `"nix"` in `nixosAspects` in `modules/hosts/arch.nix` (list grows
+- Register `"nix"` in `nixosAspects` in `modules/hosts/legion.nix` (list grows
   from `[ "foundation" ]` to `[ "foundation" "nix" ]`).
-- Add `flake.checks.${system}.vm-skeleton-boot` in `modules/hosts/arch.nix`
+- Add `flake.checks.${system}.vm-skeleton-boot` in `modules/hosts/legion.nix`
   using `pkgs.testers.runNixOSTest`. Boots a VM that imports the same aspects
-  as `nixosConfigurations.arch` (foundation + nix) plus minimal VM hardware
+  as `nixosConfigurations.legion` (foundation + nix) plus minimal VM hardware
   (no `_hardware.nix` - VM uses QEMU disk + grub). Asserts `nix-daemon`
   reaches active state and `nix-store --version` runs.
 
@@ -73,6 +73,6 @@ Two concrete next steps unlock real migration work:
 
 - `nix flake check` (no `--no-build` here) builds and runs the new VM test
   gate from end to end - this is the whole point of the harness.
-- `nix eval .#nixosConfigurations.arch.config.system.build.toplevel.drvPath`
+- `nix eval .#nixosConfigurations.legion.config.system.build.toplevel.drvPath`
   still passes.
 - `openspec validate --strict` passes.

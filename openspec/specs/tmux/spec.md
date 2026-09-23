@@ -28,5 +28,5 @@ The module SHALL be published as `flake.modules.homeManager.tmux` from `modules/
 
 #### Scenario: Module is imported from default.nix
 
-- **WHEN** the host composition module (`modules/hosts/arch.nix`) is evaluated
+- **WHEN** the host composition module (`modules/hosts/legion.nix`) is evaluated
 - **THEN** the `tmux` aspect SHALL be in the homeManager selection list (replacing the former `modules/default.nix` import chain)

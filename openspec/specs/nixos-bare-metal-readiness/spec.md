@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Makes `nixosConfigurations.shrub` a switchable bare-metal host: the full Home Manager composition embedded in NixOS target mode, hardware and firmware enabled, the live host's identity and service topology preserved, and validation kept to the existing scoped checks. A prerequisite for `nixos-dual-boot-install`, which owns all install-day work.
+Makes `nixosConfigurations.legion` a switchable bare-metal host: the full Home Manager composition embedded in NixOS target mode, hardware and firmware enabled, the live host's identity and service topology preserved, and validation kept to the existing scoped checks. A prerequisite for `nixos-dual-boot-install`, which owns all install-day work.
 
 ## Requirements
 
 ### Requirement: The NixOS toplevel is fully buildable
 
-A full build of the `nixosConfigurations.shrub` toplevel SHALL transitively build the embedded Home Manager configuration and every selected unfree and service package; evaluation-only checks SHALL NOT be treated as sufficient.
+A full build of the `nixosConfigurations.legion` toplevel SHALL transitively build the embedded Home Manager configuration and every selected unfree and service package; evaluation-only checks SHALL NOT be treated as sufficient.
 
 #### Scenario: Full toplevel build
 

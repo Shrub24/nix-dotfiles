@@ -75,7 +75,7 @@ SHALL be introduced for Pi.
 
 #### Scenario: Host composition enables Pi
 
-- **WHEN** `hmAspects` in `modules/hosts/arch.nix` and `_home.nix` in the host directory are inspected
+- **WHEN** `hmAspects` in `modules/hosts/legion.nix` and `_home.nix` in the host directory are inspected
 - **THEN** the `pi` aspect is selected and `programs.pi-coding-agent.enable = true` is set
 - **AND** no Pi configuration appears in the system-manager or NixOS aspect lists
 

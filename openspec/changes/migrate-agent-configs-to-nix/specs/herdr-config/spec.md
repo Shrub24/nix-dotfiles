@@ -16,7 +16,7 @@ system-manager or NixOS aspect SHALL be introduced for Herdr.
 
 #### Scenario: Host composition enables Herdr
 
-- **WHEN** `hmAspects` in `modules/hosts/arch.nix` and `_home.nix` in the host directory are inspected
+- **WHEN** `hmAspects` in `modules/hosts/legion.nix` and `_home.nix` in the host directory are inspected
 - **THEN** the `herdr` aspect is selected and `programs.herdr.enable = true` is set
 - **AND** the Herdr package resolves from `inputs.llm-agents`
 

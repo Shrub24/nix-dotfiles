@@ -66,7 +66,7 @@ a second host can select them.
 
 - New: `modules/hosts/spectre.nix`, `modules/hosts/spectre/_nixos.nix`,
   `modules/hosts/spectre/_home.nix`, `modules/hosts/spectre/_hardware.nix`.
-- Modified: `modules/hosts/arch.nix` (registry entry, checks),
+- Modified: `modules/hosts/legion.nix` (registry entry, checks),
   `modules/policy/topology.nix` (the laptop entry), `modules/nix.nix` (builder
   aspect split), `.sops.yaml` (recipient), the four encrypted secret files
   (re-encrypted in place), `README.md`, `ARCHITECTURE.md`.

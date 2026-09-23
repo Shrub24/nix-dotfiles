@@ -52,7 +52,7 @@ through `specialArgs` or `extraSpecialArgs`.
 - **WHEN** a reusable feature aspect requires the current machine's identity
 - **THEN** it SHALL read `config.currentHost`
 - **AND** it SHALL NOT read a hardcoded topology key such as
-  `topology.hosts.arch`
+  `topology.hosts.legion`
 
 #### Scenario: No argument bus is introduced
 

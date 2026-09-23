@@ -25,7 +25,7 @@
   - done: raw modules are `modules/hosts/spectre/_nixos.nix`, `_home.nix`, `_hardware.nix` (`_` prefix keeps them out of discovery)
 
 - [x] 1.3 Register the laptop in the fleet registry: `topology.hosts.spectre = { system; sshUser = "saurabhj"; primaryUser = { name = "saurabhj"; uid = 1000; gid = 1000; }; }`,
-      and give `topology.hosts.shrub` its `sshUser = "saurabhj"` so peer aliases
+      and give `topology.hosts.legion` its `sshUser = "saurabhj"` so peer aliases
       carry the right login.
 
   - refs: design D8; spec current-host-facts "The fleet registry stays the single source of truth"
@@ -59,7 +59,7 @@
     `homeForgeBuilder` or `/root/.ssh/nix-remote`
   - done: `flake.modules.nixos.builders` holds `nix.distributedBuilds` and `nix.buildMachines`; the `nix` NixOS aspect no longer references the builder
 
-- [x] 2.2 Select the builder aspect in `modules/hosts/arch.nix` and omit it from
+- [x] 2.2 Select the builder aspect in `modules/hosts/legion.nix` and omit it from
       `modules/hosts/spectre.nix`.
 
   - refs: design D3
@@ -227,7 +227,7 @@
   - verify: command exit status 0
   - done: `nix flake check --no-build --no-write-lock-file` → exit 0, `all checks passed!` with `nixos-spectre` and `vm-spectre-boot` in the checks set
 
-- [x] 7.3 Confirm the desktop is unaffected: `.#arch` system-manager and
+- [x] 7.3 Confirm the desktop is unaffected: `.#legion` system-manager and
       `.#saurabhj` Home Manager outputs still evaluate and the VM checks still boot.
 
   - refs: spec current-host-facts

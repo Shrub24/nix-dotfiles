@@ -17,7 +17,7 @@ own tracking item.
   desktop's bare-metal install and the laptop's first install.
 - Declare `services.snapper.configs` over the subvolumes that exist on each host.
   The desktop's NixOS module already carries them
-  (`modules/hosts/arch/_nixos.nix`); the laptop has none.
+  (`modules/hosts/legion/_nixos.nix`); the laptop has none.
 - Verify `snapper list` and one deliberate rollback per host.
 
 The install-day layout stays owned by the install changes

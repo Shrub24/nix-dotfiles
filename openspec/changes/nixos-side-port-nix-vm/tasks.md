@@ -7,15 +7,15 @@
       Translation: `nix.settings` verbatim; `environment.etc."profile.d/nix-path.sh"`
       -> `nix.nixPath`; drop `nix.enable` (NixOS enables nix by default). Keep
       the `niks3UploadHook` post-build-hook as-is.
-- [x] `A2.` Register `"nix"` in `nixosAspects` in `modules/hosts/arch.nix`
+- [x] `A2.` Register `"nix"` in `nixosAspects` in `modules/hosts/legion.nix`
       (list grows from `[ "foundation" ]` to `[ "foundation" "nix" ]`).
-- [x] `A3.` Verify `nix eval .#nixosConfigurations.arch.config.system.build.toplevel.drvPath`
+- [x] `A3.` Verify `nix eval .#nixosConfigurations.legion.config.system.build.toplevel.drvPath`
       still passes - the new aspect must evaluate cleanly under `nixosSystem`.
 
 ## Group B - VM test harness
 
 - [x] `B1.` Add `flake.checks.${system}.vm-skeleton-boot` entry in
-      `modules/hosts/arch.nix` using `pkgs.testers.runNixOSTest`. The node
+      `modules/hosts/legion.nix` using `pkgs.testers.runNixOSTest`. The node
       config imports `map nixosAspect nixosAspects` (foundation + nix) plus
       minimal VM hardware (QEMU disk + grub, virtio_blk, headless). Asserts
       `multi-user.target` reached, `nix-daemon.service` active, `nix-store --version` succeeds.

@@ -2,7 +2,7 @@
 
 ## Context
 
-`nixos-bare-metal-readiness` must first make `nixosConfigurations.shrub` a switchable, hardware-enabled NixOS host; this change then performs the install-day work it defers. The machine triple-boots Windows, Arch (Limine on a 512 GB Samsung), and — after this install — NixOS on a 2 TB SK hynix. The 2 TB disk holds Windows 500 GiB, Shared 150 GiB, and LinuxData 650 GiB around two retired Fedora partitions that, with existing gaps, form ~535.7 GiB of contiguous free space. The install must touch nothing owned by Windows or Arch, must identify every target by stable physical identity, and must stay reversible per step.
+`nixos-bare-metal-readiness` must first make `nixosConfigurations.legion` a switchable, hardware-enabled NixOS host; this change then performs the install-day work it defers. The machine triple-boots Windows, Arch (Limine on a 512 GB Samsung), and — after this install — NixOS on a 2 TB SK hynix. The 2 TB disk holds Windows 500 GiB, Shared 150 GiB, and LinuxData 650 GiB around two retired Fedora partitions that, with existing gaps, form ~535.7 GiB of contiguous free space. The install must touch nothing owned by Windows or Arch, must identify every target by stable physical identity, and must stay reversible per step.
 
 Two constraints shape everything below. First, **stable identity only**: disks are addressed by serial/WWN and partitions by PARTUUID/filesystem UUID, never `/dev/nvmeX`, which reorders across boots. Second, **hard gate**: no destructive task runs until `nixos-bare-metal-readiness` strict validation and a full toplevel build pass, because the switchable host must exist before install-day work can consume it.
 
@@ -28,7 +28,7 @@ Two constraints shape everything below. First, **stable identity only**: disks a
 
 ### D1. Hard gate on bare-metal readiness
 
-The first install-day step is the gate, not a disk command: `nixos-bare-metal-readiness` strict validation must pass and a full `nixosConfigurations.shrub` toplevel build must succeed. Only then may the first destructive task run. No install-day step substitutes for the gate — it is the guarantee that the switchable host the install consumes actually exists.
+The first install-day step is the gate, not a disk command: `nixos-bare-metal-readiness` strict validation must pass and a full `nixosConfigurations.legion` toplevel build must succeed. Only then may the first destructive task run. No install-day step substitutes for the gate — it is the guarantee that the switchable host the install consumes actually exists.
 
 ### D2. Stable identity discipline
 
@@ -62,7 +62,7 @@ LUKS2 with a passphrase only — no TPM enrollment in this install, so boot prom
 
 ### D7. Subvolume and mount layout
 
-One Btrfs with the standard layout: `@root`→`/`, `@home`→`/home`, `@nix`→`/nix`, `@log`→`/var/log`, `@snapshots`→`/.snapshots`, plus `@home-cache`→`/home/${primaryUser.name}/.cache` and `@containers`→`/home/${primaryUser.name}/.local/share/containers`. The two user-dependent targets are topology-derived — no hardcoded username literals, consistent with the composition invariants the readiness change inherits. `topology.hosts.arch` stays during dual boot — Arch remains an active host — and its rename is deferred to the Arch-retirement scope; `nixosConfigurations.shrub` and `networking.hostName = "shrub"` are unchanged.
+One Btrfs with the standard layout: `@root`→`/`, `@home`→`/home`, `@nix`→`/nix`, `@log`→`/var/log`, `@snapshots`→`/.snapshots`, plus `@home-cache`→`/home/${primaryUser.name}/.cache` and `@containers`→`/home/${primaryUser.name}/.local/share/containers`. The two user-dependent targets are topology-derived — no hardcoded username literals, consistent with the composition invariants the readiness change inherits. `topology.hosts.legion` stays during dual boot — Arch remains an active host — and its rename is deferred to the Arch-retirement scope; `nixosConfigurations.legion` and `networking.hostName = "shrub"` are unchanged.
 
 ### D8. Snapshot and data mounts
 
@@ -82,11 +82,11 @@ Every destructive task carries the same four gates: precondition (identity + sta
 
 ### D12. Install, verification, rollback
 
-The full toplevel build never runs in installer tmpfs: after the generated metadata replaces the old Arch declarations in `_hardware.nix`, the change is committed and pushed, and strict validation plus a full `nixosConfigurations.shrub` build run from the Arch checkout. The NixOS media pass then mounts the new layout, clones and checks out the recorded pushed SHA at `/mnt/etc/nixos` in detached state — verifying `git rev-parse HEAD` equals it and `git status --porcelain` is empty before install; `nixos-generate-config` never runs over the curated repo — and installs with the pinned `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub`, building into the target store. The login password is set via `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'` and never recorded. Verification is sequential and explicit: firmware boot through the new entry, LUKS decryption, all mounts, network, NixOS and Home Manager generation, the desktop, secrets, and core services — then rollback to Arch is itself verified as the escape hatch during the temporary soak.
+The full toplevel build never runs in installer tmpfs: after the generated metadata replaces the old Arch declarations in `_hardware.nix`, the change is committed and pushed, and strict validation plus a full `nixosConfigurations.legion` build run from the Arch checkout. The NixOS media pass then mounts the new layout, clones and checks out the recorded pushed SHA at `/mnt/etc/nixos` in detached state — verifying `git rev-parse HEAD` equals it and `git status --porcelain` is empty before install; `nixos-generate-config` never runs over the curated repo — and installs with the pinned `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub`, building into the target store. The login password is set via `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'` and never recorded. Verification is sequential and explicit: firmware boot through the new entry, LUKS decryption, all mounts, network, NixOS and Home Manager generation, the desktop, secrets, and core services — then rollback to Arch is itself verified as the escape hatch during the temporary soak.
 
 ### D13. Future scope: Arch retirement
 
-Arch retirement — converting its 310 GiB root into an encrypted Btrfs backup receiver — is a deliberate future change. The NixOS install itself is permanent; only the dual-boot coexistence is a temporary soak. This change leaves the Arch root byte-for-byte untouched so Arch remains a working rollback path throughout the soak, and `topology.hosts.arch` is renamed only in that retirement scope.
+Arch retirement — converting its 310 GiB root into an encrypted Btrfs backup receiver — is a deliberate future change. The NixOS install itself is permanent; only the dual-boot coexistence is a temporary soak. This change leaves the Arch root byte-for-byte untouched so Arch remains a working rollback path throughout the soak, and `topology.hosts.legion` is renamed only in that retirement scope.
 
 ## Risks / Trade-offs
 
@@ -103,7 +103,7 @@ Arch retirement — converting its 310 GiB root into an encrypted Btrfs backup r
 
 ## Migration Plan
 
-1. **Gate:** run `nixos-bare-metal-readiness` strict validation and a full `nixosConfigurations.shrub` toplevel build; nothing destructive starts before both pass.
+1. **Gate:** run `nixos-bare-metal-readiness` strict validation and a full `nixosConfigurations.legion` toplevel build; nothing destructive starts before both pass.
 1. **Baseline:** record serial/WWN/PARTUUID for both disks; back up both GPTs and all three existing ESPs (Windows, Arch, and Fedora).
 1. **Samsung cleanup:** re-inventory and back up every UKI, then move only UKIs that do not match the then-current kernel off the Arch ESP; keep the matching rescue UKI and Limine history.
 1. **Fedora removal:** back up the GPT and Fedora ESP, re-verify identities, remove the two retired partitions, confirm the ~535.7 GiB contiguous extent and untouched neighbors.

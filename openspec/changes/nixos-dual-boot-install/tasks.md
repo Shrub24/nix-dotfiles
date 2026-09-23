@@ -15,7 +15,7 @@
   - verify: readiness `tasks.md` fully checked; gate result captured in this file's Execution Record
 
 - [ ] 1.2 Run strict OpenSpec validation (`openspec validate --all --strict`) and a full
-      `nixosConfigurations.shrub` toplevel build (not `--no-build`) for the switchable host.
+      `nixosConfigurations.legion` toplevel build (not `--no-build`) for the switchable host.
 
   - criteria: both green; no install-day step substitutes for this hard gate
   - verify: exit codes; toplevel out path recorded
@@ -206,7 +206,7 @@
       build runs here — after the generated metadata is committed/pushed, before the final
       ISO install pass — so the 34 GiB standalone build never lands in installer tmpfs.
 
-  - verify: commit pushed; `nix build .#nixosConfigurations.shrub.config.system.build.toplevel`,
+  - verify: commit pushed; `nix build .#nixosConfigurations.legion.config.system.build.toplevel`,
     `nix flake check --no-build --no-write-lock-file`, and
     `openspec validate --all --strict` all green
   - depends: 5.1

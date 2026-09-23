@@ -30,7 +30,7 @@ The module SHALL NOT manage `known_hosts`, `authorized_keys`, or private key mat
 #### Scenario: Module leaves host-specific blocks to host config
 
 - **WHEN** no host entries are defined in the module
-- **THEN** the host config (`modules/hosts/arch/_home.nix`) MAY define Host blocks that appear in `~/.ssh/config`
+- **THEN** the host config (`modules/hosts/legion/_home.nix`) MAY define Host blocks that appear in `~/.ssh/config`
 
 ### Requirement: Host aliases carry each machine's registered login user
 
