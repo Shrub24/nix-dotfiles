@@ -13,7 +13,7 @@ let
     gid = 1000;
   };
   system = "x86_64-linux";
-  hostId = "shrub";
+  hostId = "legion";
   # Evaluation-local projection: features read config.currentHost, so one aspect
   # value serves every host and only the composition names "self".
   currentHost = {
@@ -154,7 +154,7 @@ let
       "libcamera"
     ];
   # Arch boot configuration is machine-specific (dracut drop-in, Limine conf) and
-  # lives in the host's own raw module (modules/hosts/arch/_system.nix), so there
+  # lives in the host's own raw module (modules/hosts/legion/_system.nix), so there
   # is no shared systemManager boot aspect.
   systemAspects = [
     "current-host"
@@ -192,7 +192,7 @@ let
     inherit pkgs;
     modules = [
       currentHostModule
-      (import ./arch/_home.nix { inherit omniroute primaryUser; })
+      (import ./legion/_home.nix { inherit omniroute primaryUser; })
       # Standalone-only: the embedded NixOS eval must not see these.
       {
         targets.genericLinux.gpu.nvidia = {
@@ -209,7 +209,7 @@ let
   systemConfiguration = inputs.system-manager.lib.makeSystemConfig {
     modules = [
       currentHostModule
-      ./arch/_system.nix
+      ./legion/_system.nix
     ]
     ++ map systemAspect systemAspects;
     overlays = [ overlay ];
@@ -217,7 +217,7 @@ let
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       currentHostModule
-      (import ./arch/_nixos.nix { inherit primaryUser; })
+      (import ./legion/_nixos.nix { inherit primaryUser; })
       { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration
       { nixpkgs.config.allowUnfreePredicate = unfreePredicate; }
       inputs.home-manager.nixosModules.home-manager
@@ -235,7 +235,7 @@ let
           users.${primaryUser.name} = {
             imports = [
               currentHostModule
-              (import ./arch/_home.nix { inherit omniroute primaryUser; })
+              (import ./legion/_home.nix { inherit omniroute primaryUser; })
               { targets.genericLinux.enable = false; }
             ]
             ++ map hmAspect embeddedHmAspects;
@@ -258,8 +258,8 @@ in
 
     flake.homeConfigurations.${primaryUser.name} = homeConfiguration;
 
-    flake.systemConfigs.arch = systemConfiguration;
-    flake.nixosConfigurations.shrub = nixosConfiguration;
+    flake.systemConfigs.legion = systemConfiguration;
+    flake.nixosConfigurations.legion = nixosConfiguration;
 
     flake.checks.${system} = {
       home-manager-activation = homeConfiguration.activationPackage;
@@ -330,7 +330,7 @@ in
       # VM boot gate: catches module-system conflicts that eval-only misses.
       vm-desktop = pkgsUnfree.testers.runNixOSTest {
         name = "vm-desktop";
-        nodes.arch =
+        nodes.legion =
           { pkgs, ... }:
           {
             imports = map nixosAspect nixosAspects ++ [
@@ -354,7 +354,7 @@ in
             # No age key inside the VM: keep the registration, drop the secret.
             services.notify.secretFiles.hostSystem = pkgs.lib.mkForce null;
             system.stateVersion = "26.11";
-            networking.hostName = "shrub";
+            networking.hostName = "legion";
             users.users.${primaryUser.name}.initialPassword = "nixos";
             environment.pathsToLink = [
               "/share/applications"
@@ -405,28 +405,28 @@ in
             };
           };
         testScript = ''
-          arch.start()
-          arch.wait_for_unit("multi-user.target")
-          arch.wait_for_unit("home-manager-${primaryUser.name}.service")
-          arch.wait_for_unit("greetd.service")
+          legion.start()
+          legion.wait_for_unit("multi-user.target")
+          legion.wait_for_unit("home-manager-${primaryUser.name}.service")
+          legion.wait_for_unit("greetd.service")
           # greetd.active != greeter ready: cage + greeter need seconds more to
           # map the first frame, and keys sent before that are dropped.
-          arch.wait_until_succeeds("journalctl -b --no-pager | grep -q 'greeter initialized'", timeout=120)
-          arch.sleep(2)
-          arch.screenshot("greeter")
-          arch.send_chars("nixos")
-          arch.send_key("ret")
-          arch.wait_until_succeeds("pgrep -x niri")
-          arch.screenshot("desktop")
+          legion.wait_until_succeeds("journalctl -b --no-pager | grep -q 'greeter initialized'", timeout=120)
+          legion.sleep(2)
+          legion.screenshot("greeter")
+          legion.send_chars("nixos")
+          legion.send_key("ret")
+          legion.wait_until_succeeds("pgrep -x niri")
+          legion.screenshot("desktop")
         '';
       };
 
       vm-skeleton-boot = pkgs.testers.runNixOSTest {
         name = "vm-skeleton-boot";
-        nodes.arch = {
+        nodes.legion = {
           imports = map nixosAspect nixosAspects ++ [ currentHostModule ];
           system.stateVersion = "26.11";
-          networking.hostName = "shrub";
+          networking.hostName = "legion";
           fileSystems."/" = {
             device = "/dev/vda";
             fsType = "ext4";
@@ -440,24 +440,24 @@ in
           services.niks3-auto-upload.enable = pkgs.lib.mkForce false;
         };
         testScript = ''
-          arch.start()
-          arch.wait_for_unit("multi-user.target")
-          arch.succeed("nix-store --version")
+          legion.start()
+          legion.wait_for_unit("multi-user.target")
+          legion.succeed("nix-store --version")
           # nix-daemon is socket-activated and idle until a client connects, and
           # root talks to the local store without touching it — force a real
           # daemon round-trip so the unit actually starts.
-          arch.succeed("nix --store daemon store ping")
-          arch.wait_for_unit("nix-daemon.service")
+          legion.succeed("nix --store daemon store ping")
+          legion.wait_for_unit("nix-daemon.service")
 
-          arch.wait_for_unit("tailscaled.service")
-          arch.wait_for_unit("systemd-resolved.service")
-          arch.wait_for_unit("NetworkManager.service")
-          arch.wait_for_unit("avahi-daemon.service")
-          arch.wait_for_unit("sshd.service")
-          arch.wait_for_unit("acpid.service")
+          legion.wait_for_unit("tailscaled.service")
+          legion.wait_for_unit("systemd-resolved.service")
+          legion.wait_for_unit("NetworkManager.service")
+          legion.wait_for_unit("avahi-daemon.service")
+          legion.wait_for_unit("sshd.service")
+          legion.wait_for_unit("acpid.service")
           # DBus-activated; no disks in a headless VM, so assert the unit exists
           # rather than waiting for it to run.
-          arch.succeed("systemctl cat udisks2.service")
+          legion.succeed("systemctl cat udisks2.service")
         '';
       };
     };
