@@ -8,7 +8,10 @@ let
   wrapper = inputs.wrappers.lib.evalModule (import ./_wrapper.nix);
 in
 {
-  flake-file.inputs.wrappers.url = "github:nix-community/nix-wrapper-modules";
+  flake-file.inputs.wrappers = {
+    url = "github:nix-community/nix-wrapper-modules";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
   # Aspect `nvim`: the nix-wrapped editor, on PATH as nvim-nix until the port
   # replaces the pacman nvim. Enable by adding "nvim" to hmAspects in

@@ -7,10 +7,14 @@ let
   omniroute = config.topology.services.omniroute.host;
 in
 {
+  # Its uv2nix/python closure is built against its own nixpkgs, so this one
+  # keeps it rather than following the root pin. Its home-manager does follow:
+  # the module is evaluated inside this repository's Home Manager, so matching
+  # the version it runs against is the stricter arrangement.
   flake-file.inputs.hermes-agent = {
     url = "github:NousResearch/hermes-agent";
-    # Keeps its own nixpkgs: its uv2nix/python closure is built against it.
-    inputs.nixpkgs.autoFollow = false;
+    inputs.home-manager.follows = "home-manager";
+    inputs.flake-parts.follows = "flake-parts";
   };
 
   flake.modules.homeManager.hermes =
@@ -36,7 +40,7 @@ in
       services.hermes-agent = {
         enable = lib.mkDefault false;
 
-        package = lib.mkDefault inputs.hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.default;
+        package = lib.mkDefault inputs.hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.minimal;
 
         environmentFiles = [
           config.sops.templates."hermes.env".path

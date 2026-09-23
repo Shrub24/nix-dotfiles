@@ -1,6 +1,9 @@
 { inputs, ... }:
 {
-  flake-file.inputs.monique.url = "github:ToRvaLDz/monique";
+  flake-file.inputs.monique = {
+    url = "github:ToRvaLDz/monique";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
   flake.modules.nixos.monique = _: {
     imports = [ inputs.monique.nixosModules.default ];

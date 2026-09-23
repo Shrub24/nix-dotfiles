@@ -3,7 +3,12 @@
   # Shrub24/memex@deploy/live: upstream's derivation needs manual
   # ORT_LIB_PATH/ORT_PREFER_DYNAMIC_LINK overrides to build; this branch wraps
   # the binary with ORT_DYLIB_PATH and carries the Home Manager module used here.
-  flake-file.inputs.memex.url = "github:Shrub24/memex/deploy/live";
+  flake-file.inputs.memex = {
+    url = "github:Shrub24/memex/deploy/live";
+    inputs.nixpkgs.follows = "nixpkgs";
+    # rust-overlay carries a whole second nixpkgs; only its lib is used here.
+    inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
+  };
 
   # Indexes local agent history (Claude Code, Codex, OpenCode, Pi) for search,
   # transcript reads and session resume.

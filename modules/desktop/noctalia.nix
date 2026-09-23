@@ -4,7 +4,10 @@
 }:
 {
   flake-file.inputs = {
-    noctalia.url = "github:noctalia-dev/noctalia";
+    noctalia = {
+      url = "github:noctalia-dev/noctalia";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Noctalia fetches community templates from api.noctalia.dev at runtime;
     # pinning the source repo keeps the template inputs declarative.

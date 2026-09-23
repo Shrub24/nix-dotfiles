@@ -137,10 +137,13 @@ implementation), `nix-homelab` (the servers) and this one (the workstations).
 tree — the flake entry point is plumbing, and inputs are owned where they are
 used: a feature declares its own input in its own file, the flake plumbing and
 the package layer declare theirs in `modules/flake/inputs.nix`. The generated
-file carries a do-not-edit header, `modules/flake/` imports the dendritic preset
-(flake-parts + import-tree wiring) and automatic follows keep nested `follows`
-aligned with the root inputs; `checks.check-flake-file` fails when the checked-in
-file and the declarations disagree.
+file carries a do-not-edit header, `modules/flake/` imports flake-file's core
+module rather than its dendritic preset, and nested `follows` sit beside the
+input they redirect rather than behind flake-file's auto-follow module. That
+module rewrites follows through flake-edit and discards whatever a module
+declares, which would leave the generated file holding state the tree cannot
+reproduce. With declared follows, `checks.check-flake-file` is a real derivation
+check: it fails whenever the checked-in file and the declarations disagree.
 
 Dependency authority is explicit. `nix-fleet` owns the pins both repositories
 share — `nixpkgs`, `flake-parts`, `import-tree`, `treefmt-nix` — and this flake

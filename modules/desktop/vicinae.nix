@@ -1,18 +1,20 @@
 { inputs, ... }: {
   flake-file.inputs.vicinae = {
     url = "github:vicinaehq/vicinae";
-    # Keeps its own nixpkgs: the shell's numen/soulver-cpp deps break on churn.
-    inputs.nixpkgs.autoFollow = false;
+    inputs.nixpkgs.follows = "nixpkgs";
   };
 
   flake.modules.homeManager.vicinae =
-    { ... }:
+    { pkgs, ... }:
     {
       imports = [ inputs.vicinae.homeManagerModules.default ];
 
       programs.vicinae = {
         enable = true;
         systemd.enable = true;
+        # nixpkgs' recipe; the module default would build the input's own copy
+        # against the input's own nixpkgs.
+        package = pkgs.vicinae;
         settings = {
           close_on_focus_loss = true;
           font = {
