@@ -23,6 +23,15 @@ let
   };
   currentHostModule = { inherit currentHost; };
   omniroute = config.topology.services.omniroute.host;
+  # Build dispatch: nix-fleet's pure resolver turns the canonical inventory and
+  # this repository's profile into normalized specs, and nixpkgs renders them
+  # into /etc/nix/machines. The private key is a credential reference the
+  # resolver deliberately leaves null — the coordinator's dispatch key is
+  # root-owned — so the composition fills it in.
+  dispatch = inputs.nix-fleet.lib.buildProfile;
+  dispatchSpecs = map (spec: spec // { sshKeyPath = "/root/.ssh/nix-remote"; }) (
+    dispatch.resolveBuildProfile config.fleet "workstations"
+  );
   overlay = import ../../pkgs { inherit inputs system; };
   # Applied to both the standalone HM pkgs and the NixOS global pkgs.
   unfreePredicate =
@@ -176,7 +185,6 @@ let
     "nix"
     "notify"
     "beszel-agent"
-    "builders"
     "nixbuild"
     "audio"
     "bluetooth"
@@ -209,6 +217,14 @@ let
   systemConfiguration = inputs.system-manager.lib.makeSystemConfig {
     modules = [
       currentHostModule
+      # systemManager has no nix.buildMachines (#466), so the resolved dispatch
+      # specs render into /etc/nix/machines directly.
+      {
+        environment.etc."nix/machines" = {
+          text = dispatch.machinesFile dispatchSpecs;
+          mode = "0644";
+        };
+      }
       ./legion/_system.nix
     ]
     ++ map systemAspect systemAspects;
@@ -220,6 +236,12 @@ let
       (import ./legion/_nixos.nix { inherit primaryUser; })
       { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration
       { nixpkgs.config.allowUnfreePredicate = unfreePredicate; }
+      # Which builders this host schedules is composition policy, resolved from
+      # the canonical inventory rather than restated here.
+      {
+        nix.distributedBuilds = true;
+        nix.buildMachines = dispatch.buildMachines dispatchSpecs;
+      }
       inputs.home-manager.nixosModules.home-manager
       {
         # Home Manager via useUserPackages + xdg.portal needs this (home-manager assertion).
@@ -251,7 +273,6 @@ in
     # This machine's own registry entry. Fleet entries and service endpoints
     # live beside the schema in modules/policy/topology.nix.
     topology.hosts.${hostId} = {
-      inherit system;
       inherit primaryUser;
       sshUser = primaryUser.name;
     };

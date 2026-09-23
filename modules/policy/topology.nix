@@ -26,10 +26,6 @@ let
 
   machineType = lib.types.submodule {
     options = {
-      system = lib.mkOption {
-        type = lib.types.str;
-        description = "Nix system double for the machine (e.g. x86_64-linux).";
-      };
       sshUser = lib.mkOption {
         type = lib.types.str;
         description = "Login user used to reach the machine over ssh.";
@@ -80,8 +76,10 @@ in
     type = lib.types.attrsOf machineType;
     default = { };
     description = ''
-      Fleet machines: system, login user, and — where this repository owns the
-      account — the primary user.
+      Fleet machines: login user, and — where this repository owns the account
+      — the primary user. Identity and target system are canonical facts owned
+      by nix-fleet (`config.fleet.hosts.<id>`); only what is ours to decide
+      lives here.
     '';
   };
 
@@ -101,18 +99,9 @@ in
   # Machines this repository reaches but does not configure.
   config = {
     topology.hosts = {
-      oci-melb-1 = {
-        system = "x86_64-linux";
-        sshUser = "dev";
-      };
-      home-forge = {
-        system = "x86_64-linux";
-        sshUser = "dev";
-      };
-      la-admin-1 = {
-        system = "x86_64-linux";
-        sshUser = "dev";
-      };
+      oci-melb-1.sshUser = "dev";
+      home-forge.sshUser = "dev";
+      la-admin-1.sshUser = "dev";
     };
 
     topology.services = {

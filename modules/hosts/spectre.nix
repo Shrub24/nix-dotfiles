@@ -162,7 +162,6 @@ in
     # This machine's own registry entry. Fleet entries and service endpoints
     # live beside the schema in modules/policy/topology.nix.
     topology.hosts.${hostId} = {
-      inherit system;
       inherit primaryUser;
       sshUser = primaryUser.name;
     };

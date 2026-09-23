@@ -2,7 +2,7 @@
 
 Dendritic flake: home-manager for the user environment, system-manager for
 daemon/root concerns on the non-NixOS host, and a native NixOS configuration
-for the bare-metal target (`nixosConfigurations.shrub`).
+for the bare-metal target (`nixosConfigurations.legion`).
 
 ## Requirements
 
@@ -24,10 +24,10 @@ nix develop          # or: direnv allow (uses .envrc — `use flake . --impure`)
 nh home switch -c saurabhj
 
 # Switch system configuration (system-manager, non-NixOS host)
-system-manager switch --flake .#arch
+system-manager switch --flake .#legion
 
 # Switch the NixOS configuration (bare-metal desktop host)
-nh os switch .#shrub
+nh os switch .#legion
 
 # Switch the NixOS configuration (portable laptop host)
 nh os switch .#spectre
@@ -58,15 +58,19 @@ nix flake check --no-build --no-write-lock-file    # includes the in-sync check
 ```
 
 [`Shrub24/nix-fleet`](https://github.com/Shrub24/nix-fleet) is the fleet's
-platform repository and owns the pins both repositories share: `nixpkgs`,
-`flake-parts`, `import-tree` and `treefmt-nix` are _follows_ onto it, so a single
-nix-fleet update moves them together. Everything else here — home-manager,
-system-manager, Noctalia, agent and desktop tooling — is this repository's own
-input and updates independently.
+platform repository. It owns the pins both repositories share — `nixpkgs`,
+`flake-parts`, `import-tree`, `treefmt-nix` and `flake-file` are _follows_ onto
+it, so a single nix-fleet update moves them together — and it owns the canonical
+inventory: what each fleet machine _is_ (target system, tailnet hostname, SSH
+host key). `modules/policy/fleet.nix` imports its contract, so this repository
+declares only what it decides — the login user, the account it configures, which
+builders it schedules. Everything else here — home-manager, system-manager,
+Noctalia, agent and desktop tooling — is this repository's own input and updates
+independently.
 
-Nested `nixpkgs` follows are automatic, with per-input opt-outs where an
-upstream builds against its own pin and churn costs more than the extra store
-copy: `vicinae`, `codebase-memory-mcp` and `hermes-agent` keep their own.
+Nested `nixpkgs` follows are declared next to the input they redirect; nothing
+infers them. An upstream that builds against its own pin declares none:
+`hermes-agent` keeps its own.
 
 To test against a coordinated nix-fleet change, point the input at a local
 checkout without touching the committed URL:

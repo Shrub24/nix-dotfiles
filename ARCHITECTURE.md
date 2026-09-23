@@ -1,13 +1,13 @@
 # Architecture
 
 This repository is a single-user Nix configuration for two hosts: an Arch desktop
-(`shrub`) and a portable NixOS laptop (`spectre`, HP Spectre x360
+(`legion`) and a portable NixOS laptop (`spectre`, HP Spectre x360
 13-aw0039TU).
 It composes three privilege-scoped layers from feature modules that are
 discovered by directory scan but activated only by explicit host selection:
 a user-scoped Home Manager configuration, a root-scoped system-manager
 configuration (transitional, for the non-NixOS host), and a NixOS
-configuration for the bare-metal hosts (`nixosConfigurations.shrub` on the
+configuration for the bare-metal hosts (`nixosConfigurations.legion` on the
 desktop, `nixosConfigurations.spectre` on the laptop; the aspect side-port has
 landed, the desktop's bare-metal install remains follow-up work).
 
@@ -23,13 +23,13 @@ The split is along a privilege boundary, not a feature boundary:
 - **User scope** — Home Manager (`homeConfigurations.saurabhj`) owns
   user-level programs, services, and secrets. Canonical contract:
   [system-manager-foundation](openspec/specs/system-manager-foundation/spec.md).
-- **System scope (transitional)** — system-manager (`systemConfigs.arch`)
+- **System scope (transitional)** — system-manager (`systemConfigs.legion`)
   owns daemons, root-owned state, and machine-wide configuration on the
   non-NixOS host. Same canonical contract, mirrored: daemon and root-owned
   concerns never live in Home Manager modules. Each system-manager aspect
   has a native NixOS counterpart activated on the NixOS target (side-port
   landed via `openspec/changes/nixos-boilerplate/`).
-- **NixOS target** — `nixosConfigurations.shrub` evaluates under
+- **NixOS target** — `nixosConfigurations.legion` evaluates under
   `nix flake check` as a third host output, composing native NixOS aspects
   plus the full Home Manager composition embedded via
   `home-manager.nixosModules.home-manager` (`useGlobalPkgs`/`useUserPackages`
@@ -37,7 +37,7 @@ The split is along a privilege boundary, not a feature boundary:
   tailscale/syncthing/mosh/niks3 aspects, plus the NixOS-only
   cuda/libcamera aspects; `specialArgs` stays empty).
   Hardware configuration follows the `nixos-generate-config` convention at
-  `modules/hosts/arch/_hardware.nix`: redistributable firmware, i2c,
+  `modules/hosts/legion/_hardware.nix`: redistributable firmware, i2c,
   fwupd (desktop-services aspect), stable + open NVIDIA with Prime offload,
   `nvme_core.default_ps_max_latency_us=0`, the `en_AU.UTF-8` locale, snapper
   configs over the btrfs volumes, and the Windows-shared NTFS volume
@@ -71,22 +71,22 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ apps/browser/*.nix   firefox, chromium, thunderbird, brave-origin — lazy HM enable
   ├─ desktop/*.nix        compositor + shell env (niri, noctalia, monique, vicinae, portals, greeter)
   ├─ foundation/*.nix    network → systemManager aspect; boot + nixos.nix (base-OS aspects)
-  ├─ policy/*.nix        typed topology schema, fleet registry, service endpoints, currentHost
+  ├─ policy/*.nix        fleet contract + typed topology schema, endpoints, currentHost
   ├─ shell/*.nix         per-shell homeManager aspects + terminals (wezterm, ghostty, tmux)
   ├─ security/*.nix      sops-foundation + shared credentials aspects
   ├─ *.nix               nixbuild (systemManager), niks3/mosh/mutagen/syncthing
   │                      (homeManager); all but mutagen also publish a nixos aspect
   ├─ nix.nix ssh.nix tailscale.nix   homeManager AND systemManager AND nixos
-  ├─ hosts/arch.nix      selects explicit aspect lists → host outputs (HM, system, NixOS)
+  ├─ hosts/legion.nix      selects explicit aspect lists → host outputs (HM, system, NixOS)
   ├─ hosts/spectre.nix   selects the lean NixOS laptop set → nixosConfigurations.spectre
-  ├─ hosts/arch/_*.nix   raw host files (_home, _system, _nixos, _hardware) — ignored
+  ├─ hosts/legion/_*.nix   raw host files (_home, _system, _nixos, _hardware) — ignored
   └─ hosts/spectre/_*.nix  raw host files (_home, _nixos, _hardware) — ignored
 
-Host composition lives in modules/hosts/arch.nix and modules/hosts/spectre.nix,
+Host composition lives in modules/hosts/legion.nix and modules/hosts/spectre.nix,
 not flake.nix:
   ├─ 59 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
-  ├─ 7 systemManager aspects + _system.nix → systemConfigs.arch
-  └─ 19 nixos aspects + _nixos.nix + embedded HM → nixosConfigurations.shrub
+  ├─ 7 systemManager aspects + _system.nix → systemConfigs.legion
+  └─ 19 nixos aspects + _nixos.nix + embedded HM → nixosConfigurations.legion
 
 modules/hosts/spectre.nix composes the laptop as a NixOS-only host —
 no standalone HM output and no system-manager counterpart (the embedded
@@ -94,15 +94,17 @@ Home Manager is its only configuration path):
   └─ 37 lean HM aspects (phase-gated) + _home.nix, 15 nixos aspects +
      _nixos.nix + _hardware.nix + embedded HM → nixosConfigurations.spectre
 
-The NixOS builder declaration (`nix.distributedBuilds`, `nix.buildMachines`) is
-its own `builders` aspect rather than part of the shared `nix` aspect, because it
-requires root to hold a builder's private key: the desktop selects it, the laptop
-does not. The builder is scoped with `mandatoryFeatures = [ "nixos-test" ]`,
-because a build hook (which is what `nix.buildMachines` produces here) ranks only
-the configured machines against each other — a free remote slot wins over local
-capacity, and no speed factor expresses "prefer local". Mandatory features are
-the lever that decides which derivations the builder accepts, so VM tests are
-offloaded and everything else stays local.
+Build dispatch is resolved, not restated. `nix-fleet` owns the canonical
+inventory — target system, tailnet hostname, SSH host key — and this repository
+declares only its own scheduling policy over it: a build profile naming
+`home-forge`, and the dispatch account that builder currently authorizes. The
+host composition resolves that policy into normalized specs and hands them to
+the contract's pure projectors, which render `nix.buildMachines` on NixOS and
+`/etc/nix/machines` on the non-NixOS host, where system-manager has no such
+option. Nothing about the builder is hand-written, so the two renderers cannot
+disagree about who gets dialed. Membership is the whole policy: a build hook
+ranks only the configured machines against each other, so a scheduled builder
+accepts everything and no weight or predicate expresses "prefer local".
 ```
 
 The fleet registry and the service endpoint map are typed options
@@ -113,6 +115,12 @@ configures contributes its own registry entry from its own host file, and the
 machines it only reaches are declared with the schema. Consumers read them via
 the normal module system — there is no `specialArgs`/`extraSpecialArgs` argument
 bus and no ambient facts record.
+
+Machine identity is not ours to own. `modules/policy/fleet.nix` imports
+`nix-fleet`'s contract, so target system, tailnet hostname and SSH host key come
+from the canonical inventory rather than from a second copy here, and
+`topology.hosts` keeps only what this repository decides: the login user and the
+account it configures. A machine's identity has one author.
 
 A reusable feature never reads a registry key, because that would make one aspect
 value serve only the machine whose key it names. Each host composition projects
@@ -265,12 +273,15 @@ describes only machines that are always on.
 - **Discovery is scoped to the single `modules/` tree** — `import-tree` scans
   only `modules/`; raw class modules live at `_`-prefixed paths, which
   `import-tree` ignores, so dormant files cannot alter a host accidentally.
-- **Hosts and services own their topology** — the fleet registry and service
-  endpoints are typed options declared in `modules/policy/topology.nix`, and each
-  host composition projects its own entry into `currentHost` for the class
-  evaluations it builds. Features read the projection or the native option, never
-  a registry key and never a hardcoded hostname, so one aspect value is correct
-  for every host and nothing travels through an argument bus.
+- **Machine identity is canonical, policy is local** — nix-fleet's contract owns
+  what a machine _is_ (target system, tailnet hostname, SSH host key); this
+  repository owns what it _does_ (the login user, the account it configures,
+  which builders it schedules). Service endpoints are typed options declared in
+  `modules/policy/topology.nix`, and each host composition projects its own entry
+  into `currentHost` for the class evaluations it builds. Features read the
+  projection or the native option, never a registry key and never a hardcoded
+  hostname, so one aspect value is correct for every host and nothing travels
+  through an argument bus.
 - **System secrets stay out of user scope** — owned end to end by
   system-manager on Arch and by the sops-nix OS module on NixOS; a root
   credential is never rendered through user-scoped Home Manager state.

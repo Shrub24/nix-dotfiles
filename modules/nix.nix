@@ -1,34 +1,5 @@
 { inputs, ... }:
 let
-  # systemManager lacks nix.buildMachines (#466); renders into /etc/nix/machines instead.
-  # The builder's architecture comes from its fleet registry entry — the local
-  # machine's arch is never assumed to be the builder's.
-  homeForgeBuilder = system: {
-    hostName = "home-forge";
-    sshUser = "dev";
-    sshKey = "/root/.ssh/nix-remote";
-    protocol = "ssh-ng";
-    inherit system;
-    maxJobs = 2;
-    # The build hook ranks remote machines against each other only — any free
-    # remote slot beats local capacity — so `mandatoryFeatures`, not
-    # `speedFactor`, decides which derivations are sent here.
-    mandatoryFeatures = [ "nixos-test" ];
-    speedFactor = 2;
-    supportedFeatures = [
-      "big-parallel"
-      "kvm"
-      "nixos-test"
-    ];
-  };
-  homeForgeMachinesLine =
-    system:
-    let
-      builder = homeForgeBuilder system;
-      optionalField = values: if values == [ ] then "-" else builtins.concatStringsSep "," values;
-    in
-    "${builder.protocol}://${builder.sshUser}@${builder.hostName} ${builder.system} ${builder.sshKey} ${toString builder.maxJobs} ${toString builder.speedFactor} ${optionalField builder.supportedFeatures} ${optionalField builder.mandatoryFeatures}";
-
   # Substitution policy for the non-NixOS host, which nix-fleet's `nix-baseline`
   # aspect does not cover (it is NixOS-only). The NixOS side takes the fleet's
   # catalog instead — see flake.modules.nixos.nix.
@@ -110,7 +81,7 @@ in
         };
       };
 
-      nix.package = lib.mkDefault pkgs.nix;
+      nix.package = lib.mkDefault pkgs.nixVersions.latest;
 
       nix.extraOptions = ''
         !include ${config.sops.templates."nix-access-tokens".path}
@@ -150,11 +121,6 @@ in
     in
     {
       nix.enable = true;
-
-      environment.etc."nix/machines" = {
-        text = homeForgeMachinesLine config.currentHost.peers.home-forge.system + "\n";
-        mode = "0644";
-      };
 
       nix.settings = substitutionSettings // {
         # "root" is already the module default and this list concatenates.
@@ -196,15 +162,6 @@ in
     }
 
   ;
-
-  flake.modules.nixos.builders =
-    { config, ... }:
-    {
-      # Selected by hosts that hand builds to the fleet builder; a host that
-      # does not select it needs no root ssh key. GC stays in the nix aspect.
-      nix.distributedBuilds = true;
-      nix.buildMachines = [ (homeForgeBuilder config.currentHost.peers.home-forge.system) ];
-    };
 
   flake.modules.nixos.nix =
     { config, ... }:
