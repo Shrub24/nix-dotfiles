@@ -29,9 +29,9 @@ let
     in
     "${builder.protocol}://${builder.sshUser}@${builder.hostName} ${builder.system} ${builder.sshKey} ${toString builder.maxJobs} ${toString builder.speedFactor} ${optionalField builder.supportedFeatures} ${optionalField builder.mandatoryFeatures}";
 
-  # Substitution policy, owned by the system-scoped classes because the daemon
-  # is what substitutes: an unresponsive substituter must cost seconds, not
-  # minutes per path, and a cold cache must not be stampeded by the fan-out.
+  # Substitution policy for the non-NixOS host, which nix-fleet's `nix-baseline`
+  # aspect does not cover (it is NixOS-only). The NixOS side takes the fleet's
+  # catalog instead — see flake.modules.nixos.nix.
   substitutionSettings = {
     "connect-timeout" = 5;
     "stalled-download-timeout" = 30;
@@ -157,10 +157,8 @@ in
       };
 
       nix.settings = substitutionSettings // {
-        "trusted-users" = [
-          "root"
-          primaryUser.name
-        ];
+        # "root" is already the module default and this list concatenates.
+        "trusted-users" = [ primaryUser.name ];
         "extra-substituters" = [
           "https://nix-community.cachix.org"
           "https://cache.numtide.com"
@@ -211,52 +209,34 @@ in
   flake.modules.nixos.nix =
     { config, ... }:
     {
-      # System-scoped GC: `nh clean all` as root is the only thing that can
-      # collect the system profile, and it covers user generations as well, so
-      # this is the NixOS host's single GC owner (the Home Manager timer is off
-      # there — see flake.modules.homeManager.nix above). nix-fleet owns the
-      # unit, its timer and its failure registration; this aspect selects it and
-      # binds the retention policy.
-      imports = [ inputs.nix-fleet.modules.nixos.nh-gc ];
+      # nix-fleet owns the daemon baseline (substitution catalog + tuning) and
+      # the GC unit; this aspect selects them and binds what is host-specific.
+      # The Home Manager timer is off on NixOS — the root unit below is the
+      # host's single GC owner (see flake.modules.homeManager.nix above).
+      imports = [
+        inputs.nix-fleet.modules.nixos.nix-baseline
+        inputs.nix-fleet.modules.nixos.nix-gc
+      ];
 
-      services.nh-gc = {
+      services.nix-baseline.enable = true;
+
+      services.nix-gc = {
         enable = true;
         dates = "weekly";
         extraArgs = "--keep-since 7d";
       };
 
-      nix.settings = substitutionSettings // {
-        "trusted-users" = [
-          "root"
-          config.currentHost.primaryUser.name
-        ];
-        "extra-substituters" = [
-          "https://nix-community.cachix.org"
-          "https://cache.numtide.com"
-          "https://cache.shrublab.xyz"
-        ];
-        "trusted-substituters" = [
-          "ssh-ng://eu.nixbuild.net"
-        ];
-        "extra-trusted-public-keys" = [
-          "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
-          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-          "nix-cache-1:FW0bJll9BP5ch0mHI+bXOImcD0RKLrH117WfQC+CU4A="
-          "nixbuild.net/HWWKWC-1:dnSfpPDHQN/U9wexkK6r3GTaYrwqNwKS70SNGXistKg="
-        ];
-        "experimental-features" = [
-          "nix-command"
-          "flakes"
-        ];
-        "auto-optimise-store" = true;
-        "always-allow-substitutes" = true;
-        "builders-use-substitutes" = true;
+      # Only what the fleet baseline does not own: identity, scheduling and
+      # evaluation knobs specific to these workstations.
+      nix.settings = {
+        # nixpkgs already lists "root" and this list concatenates, so naming it
+        # again renders a duplicate.
+        "trusted-users" = [ config.currentHost.primaryUser.name ];
         "max-jobs" = "auto";
         "nix-path" = "nixpkgs=flake:nixpkgs";
         "keep-derivations" = true;
         "warn-dirty" = false;
         "accept-flake-config" = true;
-        "download-buffer-size" = 268435456;
       };
       nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
     }

@@ -1,4 +1,5 @@
-_: {
+{ inputs, ... }:
+{
   flake.modules.homeManager.ssh =
     {
       config,
@@ -90,10 +91,14 @@ _: {
       ...
     }:
     {
-      services.openssh = {
+      # nix-fleet owns the server hardening. Client tuning stays off: Home
+      # Manager owns the client config, and the fleet fragment's ControlPath
+      # would duplicate the one set there.
+      imports = [ inputs.nix-fleet.modules.nixos.ssh ];
+
+      services.ssh-baseline = {
         enable = true;
-        openFirewall = true;
-        settings.PasswordAuthentication = false;
+        clientTuning = false;
       };
 
       # Client-side host list; the server is services.openssh above, user-side

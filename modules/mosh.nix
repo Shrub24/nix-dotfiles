@@ -1,4 +1,5 @@
-_: {
+{ inputs, ... }:
+{
   flake.modules.homeManager.mosh =
     { pkgs, ... }:
 
@@ -9,9 +10,10 @@ _: {
   ;
 
   flake.modules.nixos.mosh = _: {
-    programs.mosh = {
-      enable = true;
-      openFirewall = false; # UDP range is tailnet-scoped in the network aspect
-    };
+    imports = [ inputs.nix-fleet.modules.nixos.mosh ];
+
+    # Explicit because it is a firewall stance, not a default: the UDP range is
+    # tailnet-scoped in the network aspect.
+    programs.mosh.openFirewall = false;
   };
 }
