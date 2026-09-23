@@ -1,13 +1,4 @@
-{ inputs, ... }:
-{
-  flake-file.inputs = {
-    codebase-memory-mcp = {
-      url = "github:DeusData/codebase-memory-mcp/v0.11.0";
-      # Keeps its own nixpkgs: a version-pinned Rust tool, not a churn follower.
-      inputs.nixpkgs.autoFollow = false;
-    };
-  };
-
+_: {
   flake.modules.homeManager.tools =
     {
       config,
@@ -18,30 +9,17 @@
 
     let
       cfg = config.programs.agentTools;
-      system = pkgs.stdenv.hostPlatform.system;
     in
     {
       options.programs.agentTools = {
-        enable = lib.mkEnableOption "AI agent CLI tools (codebase-memory-mcp, xberg-cli, cass)";
-
-        cass.skill = {
-          enable = lib.mkEnableOption "cass SKILL.md into the skills directory";
-          dir = lib.mkOption {
-            type = lib.types.str;
-            default = ".agents/skills";
-            description = "Home-relative directory to symlink the cass skill into";
-          };
-        };
+        enable = lib.mkEnableOption "AI agent CLI tools (codebase-memory-mcp, xberg-cli)";
       };
 
       config = lib.mkIf cfg.enable {
         home.packages = with pkgs; [
           brave-search-cli
-          inputs.codebase-memory-mcp.packages.${system}.default
+          codebase-memory-mcp
           xberg-cli
-          # cass disabled 2026-09-20: superseded by memex for session recall
-          # (modules/agents/memex.nix); derivation + nvfetcher source kept for
-          # quick re-enable.
         ];
 
         # A package bump must retire running instances: clients spawn the MCP
@@ -51,7 +29,7 @@
         # respawns the fresh binary. Stamped so ordinary switches stay silent.
         home.activation.codebaseMemoryRefresh = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           stamp="${config.xdg.stateHome}/codebase-memory-mcp/store-path"
-          current="${inputs.codebase-memory-mcp.packages.${system}.default}"
+          current="${pkgs.codebase-memory-mcp}"
           if [ "$(cat "$stamp" 2>/dev/null || true)" != "$current" ]; then
             ${pkgs.procps}/bin/pkill -f '(^|/)codebase-memory-mcp( |$)' 2>/dev/null || true
             mkdir -p "$(dirname "$stamp")"

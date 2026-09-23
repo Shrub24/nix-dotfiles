@@ -218,7 +218,7 @@ let
     modules = [
       currentHostModule
       (import ./arch/_nixos.nix { inherit primaryUser; })
-      { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration; aspects see pkgs.niks3-hook
+      { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration
       { nixpkgs.config.allowUnfreePredicate = unfreePredicate; }
       inputs.home-manager.nixosModules.home-manager
       {

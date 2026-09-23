@@ -14,21 +14,6 @@
         },
         "version": "3.16.1"
     },
-    "cass": {
-        "cargoLock": null,
-        "date": null,
-        "extract": null,
-        "name": "cass",
-        "passthru": null,
-        "pinned": false,
-        "src": {
-            "name": null,
-            "sha256": "sha256-idRfqeiM2BuSHC9T4ThD2dNjYXKCpqQ2DTacH2D7OWI=",
-            "type": "url",
-            "url": "https://github.com/Dicklesworthstone/coding_agent_session_search/archive/refs/tags/v0.7.1.tar.gz"
-        },
-        "version": "v0.7.1"
-    },
     "codexbar": {
         "cargoLock": null,
         "date": null,
@@ -43,21 +28,6 @@
             "url": "https://github.com/steipete/CodeXBar/releases/download/v0.57.0/CodexBarCLI-v0.57.0-linux-x86_64.tar.gz"
         },
         "version": "v0.57.0"
-    },
-    "nirius": {
-        "cargoLock": null,
-        "date": null,
-        "extract": null,
-        "name": "nirius",
-        "passthru": null,
-        "pinned": false,
-        "src": {
-            "name": null,
-            "sha256": "sha256-D9AdM7BMzzti4GnxhyQaPdfolFz50BUuAhTOnZ1093o=",
-            "type": "url",
-            "url": "https://git.sr.ht/~tsdh/nirius/archive/nirius-0.9.0.tar.gz"
-        },
-        "version": "0.9.0"
     },
     "xberg-cli": {
         "cargoLock": null,

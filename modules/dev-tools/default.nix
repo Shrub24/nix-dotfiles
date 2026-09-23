@@ -1,11 +1,4 @@
-{ inputs, ... }:
-{
-  flake-file.inputs.fsel = {
-    url = "github:Mjoyufull/fsel";
-    # fsel's nixpkgs pin is shared; its own naersk is not this repository's.
-    inputs.naersk.autoFollow = false;
-  };
-
+_: {
   flake.modules.homeManager.dev-tools =
     { pkgs, ... }:
     {
@@ -15,7 +8,7 @@
         isd
         crun
         skopeo
-        inputs.fsel.packages.${pkgs.stdenv.hostPlatform.system}.default
+        fsel
       ];
     };
 }

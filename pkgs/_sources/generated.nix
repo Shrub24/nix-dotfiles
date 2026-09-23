@@ -14,28 +14,12 @@
       sha256 = "sha256-V3EVPa6XGqFFJ5FtI486lwtbAKULVHwZw1Tz+oRbRu4=";
     };
   };
-  cass = {
-    pname = "cass";
-    version = "v0.7.1";
-    src = fetchurl {
-      url = "https://github.com/Dicklesworthstone/coding_agent_session_search/archive/refs/tags/v0.7.1.tar.gz";
-      sha256 = "sha256-idRfqeiM2BuSHC9T4ThD2dNjYXKCpqQ2DTacH2D7OWI=";
-    };
-  };
   codexbar = {
     pname = "codexbar";
     version = "v0.57.0";
     src = fetchurl {
       url = "https://github.com/steipete/CodeXBar/releases/download/v0.57.0/CodexBarCLI-v0.57.0-linux-x86_64.tar.gz";
       sha256 = "sha256-vef2RGTWCPb/fBVE+DFx7UlCCmRlLyCiNBV21omBi1I=";
-    };
-  };
-  nirius = {
-    pname = "nirius";
-    version = "0.9.0";
-    src = fetchurl {
-      url = "https://git.sr.ht/~tsdh/nirius/archive/nirius-0.9.0.tar.gz";
-      sha256 = "sha256-D9AdM7BMzzti4GnxhyQaPdfolFz50BUuAhTOnZ1093o=";
     };
   };
   xberg-cli = {

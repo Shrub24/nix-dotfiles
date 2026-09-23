@@ -71,7 +71,7 @@ in
         nix-ld
         nix-fast-build
         nix-update
-        niks3-hook
+        niks3
         comma
         nix-your-shell
         tokei
@@ -135,7 +135,7 @@ in
       inherit (primaryUser) uid;
 
       niks3UploadHook = pkgs.writeShellScriptBin "niks3-upload-hook" ''
-        exec ${lib.getExe' pkgs.niks3-hook "niks3-hook"} send --socket /run/user/${toString uid}/niks3-upload-to-cache.sock
+        exec ${lib.getExe' pkgs.niks3 "niks3-hook"} send --socket /run/user/${toString uid}/niks3-upload-to-cache.sock
       '';
     in
     {

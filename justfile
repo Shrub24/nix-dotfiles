@@ -18,15 +18,6 @@ nvfetcher:
 nvfetcher-one pkg:
     nix run .#nvfetcher-update -- --filter '^{{pkg}}$'
 
-# Refresh the pinned models.dev registry hash (pkgs/models-dev/default.nix).
-models-dev:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    hash=$(nix-prefetch-url --type sha256 https://models.dev/models.json)
-    sri=$(nix hash convert --hash-algo sha256 --to sri "$hash")
-    sed -i -E "s|hash = \"sha256-[^\"]*\";|hash = \"$sri\";|" pkgs/models-dev/default.nix
-    echo "models-dev pinned to $sri"
-
 # Point the nix-fleet input at a local checkout (default ../nix-fleet) so a
 # dotfiles change can be tested against a coordinated nix-fleet change.
 fleet-check fleet_dir=env("NIX_FLEET_DIR", "../nix-fleet"):

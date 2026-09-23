@@ -4,20 +4,8 @@
       url = "github:Gazorby/fish-abbreviation-tips";
       flake = false;
     };
-    fish-autopair = {
-      url = "github:jorgebucaran/autopair.fish";
-      flake = false;
-    };
-    fish-done = {
-      url = "github:franciscolourenco/done";
-      flake = false;
-    };
     fish-replay = {
       url = "github:jorgebucaran/replay.fish";
-      flake = false;
-    };
-    fish-sponge = {
-      url = "github:meaningful-ooo/sponge";
       flake = false;
     };
   };
@@ -137,15 +125,15 @@
             }
             {
               name = "autopair";
-              src = inputs.fish-autopair;
+              inherit (autopair) src;
             }
             {
               name = "done";
-              src = inputs.fish-done;
+              inherit (done) src;
             }
             {
               name = "sponge";
-              src = inputs.fish-sponge;
+              inherit (sponge) src;
             }
             {
               name = "replay-fish";
