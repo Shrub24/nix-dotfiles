@@ -33,13 +33,18 @@ let
     dispatch.resolveBuildProfile config.fleet "workstations"
   );
   # Which fleet hosts this machine trusts and talks to. nix-fleet owns the
-  # records — hostnames, host keys, reach account; the selection is host policy.
-  # Trust is its own door, so naming a host here never makes it schedulable.
+  # records — hostnames, host keys, management account; the selection is host
+  # policy. Trust is its own door, so naming a host here never makes it
+  # schedulable. Multiplexing is a property of the connections this machine
+  # actually makes, so it rides the selection rather than the global block.
+  sshOptions = {
+    ControlMaster = "auto";
+  };
   sshTrust = dispatch.resolveHosts config.fleet {
-    home-forge = { };
-    la-admin-1 = { };
-    oci-melb-1 = { };
-    spectre = { };
+    home-forge = { inherit sshOptions; };
+    la-admin-1 = { inherit sshOptions; };
+    oci-melb-1 = { inherit sshOptions; };
+    spectre = { inherit sshOptions; };
   };
   sshTrustModule = { inherit sshTrust; };
   overlay = import ../../pkgs { inherit inputs system; };

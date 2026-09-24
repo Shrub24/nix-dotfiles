@@ -35,8 +35,8 @@ The module SHALL NOT manage the user's `~/.ssh/known_hosts`, `authorized_keys`, 
 ### Requirement: Host aliases come from the fleet trust projection
 
 The SSH client module SHALL render its host aliases from the fleet contract's
-trust projection, reading each machine's reach account from the canonical
-inventory (`fleet.hosts.<id>.ssh.user`) rather than restating it. The selection
+trust projection, reading each machine's management account from the canonical
+inventory (`fleet.hosts.<id>.managementUser`) rather than restating it. The selection
 of which hosts the machine talks to SHALL be made at the composition boundary,
 because a class aspect cannot read the flake's `config.fleet`.
 
@@ -44,8 +44,8 @@ because a class aspect cannot read the flake's `config.fleet`.
 
 - **WHEN** the Home Manager ssh aspect is evaluated
 - **THEN** each selected fleet host SHALL appear as its own `Host` block carrying
-  that host's `ssh.user`
-- **AND** a host with no `ssh.user` SHALL render without a `User` line rather
+  that host's `managementUser`
+- **AND** a host with no `managementUser` SHALL render without a `User` line rather
   than inheriting a build-server dispatch account
 
 #### Scenario: The current machine is not its own alias

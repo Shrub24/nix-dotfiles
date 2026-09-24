@@ -1,24 +1,24 @@
 # Observability agent contributor. The fleet aspect owns the mechanism end to
-# end — two-step sops gate, KEY/TOKEN environment template, agent service, and
-# the failure registration shared with the notify capability. This contributor
-# is host policy only: which secret files carry the fleet-wide key and the
-# host-scoped enrollment token, and where the agent port is reachable. No
-# secret file, no agent: the gate keeps the first unsecrets install evaluating.
-{ inputs, lib, ... }:
+# end: the agent service, the notify registration, and the public key it
+# verifies the hub with. This contributor is host policy only — where the
+# agent's listener is reachable, and the hub key itself.
+#
+# The agent holds no secret. The KEY is the PUBLIC half of the hub's SSH
+# keypair, so it is policy data rather than a sops secret, and there is no
+# enrollment gate left to satisfy.
+{ inputs, ... }:
 {
   flake.modules.nixos.beszel-agent =
-    { config, ... }:
-    let
-      hostId = config.currentHost.id;
-      hostSecret = ../secrets/hosts + "/${hostId}/beszel.yaml";
-      hasHostSecret = builtins.pathExists hostSecret;
-    in
+    { ... }:
     {
       imports = [ inputs.nix-fleet.modules.nixos.beszel-agent ];
 
-      services.beszel-agent.secretFiles = {
-        common = ../secrets/beszel.yaml;
-        host = lib.mkIf hasHostSecret hostSecret;
+      # Off until the hub's public key is bound: the hub runs on la-admin-1 and
+      # has not published it. With the gate gone, enabling the agent without
+      # the key would register a hub it cannot authenticate.
+      services.beszel-agent = {
+        enable = false;
+        key = "";
       };
 
       # Metric egress stays tailnet-scoped: the hub lives behind the tailnet,

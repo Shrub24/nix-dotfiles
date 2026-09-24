@@ -3,8 +3,8 @@ let
   # Fleet hosts this machine trusts and talks to. Which ones is host policy, so
   # the selection is resolved from the canonical inventory at the composition
   # boundary and injected per class — an aspect cannot see the flake's
-  # `config.fleet`. The contract owns the login user (`ssh.user`), so no aspect
-  # restates it.
+  # `config.fleet`. The contract owns the management account
+  # (`managementUser`), so no aspect restates it.
   sshTrustAspect = {
     options.sshTrust = lib.mkOption {
       type = lib.types.listOf lib.types.attrs;
@@ -14,18 +14,6 @@ let
   };
 
   resolve = inputs.nix-fleet.lib.buildProfile;
-
-  # The contract publishes host keys in option form (NixOS'
-  # `programs.ssh.knownHosts`); system-manager has no such option, so the
-  # system file is rendered here — the same gap `machinesFile` fills for build
-  # machines, still open for host keys.
-  knownHostsFile =
-    specs:
-    lib.concatLines (
-      lib.mapAttrsToList (_: entry: "${lib.concatStringsSep "," entry.hostNames} ${entry.publicKey}") (
-        resolve.knownHosts specs
-      )
-    );
 in
 {
   flake.modules.homeManager.ssh =
@@ -56,7 +44,6 @@ in
             StrictHostKeyChecking = "accept-new";
             VisualHostKey = "yes";
 
-            ControlMaster = "auto";
             ControlPath = "~/.ssh/ctl/%r@%h:%p";
             ControlPersist = "600";
           };
@@ -86,7 +73,7 @@ in
       imports = [ sshTrustAspect ];
 
       environment.etc."ssh/ssh_known_hosts" = {
-        text = knownHostsFile config.sshTrust;
+        text = resolve.knownHostsText config.sshTrust;
         mode = "0644";
       };
 

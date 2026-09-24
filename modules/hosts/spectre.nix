@@ -22,12 +22,16 @@ let
   currentHostModule = { inherit currentHost; };
   dispatch = inputs.nix-fleet.lib.buildProfile;
   # Which fleet hosts the laptop trusts and talks to — the same canonical
-  # records the desktop reads, minus itself.
+  # records the desktop reads, minus itself. Multiplexing rides the selection
+  # rather than the global block.
+  sshOptions = {
+    ControlMaster = "auto";
+  };
   sshTrust = dispatch.resolveHosts config.fleet {
-    legion = { };
-    home-forge = { };
-    la-admin-1 = { };
-    oci-melb-1 = { };
+    legion = { inherit sshOptions; };
+    home-forge = { inherit sshOptions; };
+    la-admin-1 = { inherit sshOptions; };
+    oci-melb-1 = { inherit sshOptions; };
   };
   sshTrustModule = { inherit sshTrust; };
   overlay = import ../../pkgs { inherit inputs system; };
