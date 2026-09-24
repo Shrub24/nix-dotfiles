@@ -9,32 +9,22 @@ let
   niks3ServerUrl = config.topology.services.niks3.host;
 in
 {
-  flake.modules.nixos.niks3 =
-    { config, lib, ... }:
-    {
-      # Closure upload to a remote cache. nix-fleet owns the mechanism — the
-      # upstream post-build-hook module, the sops secret, the socket path; this
-      # binds the server URL and where the token lives.
-      imports = [
-        inputs.nix-fleet.modules.nixos.niks3-publisher
-        inputs.sops-nix.nixosModules.sops
-      ];
+  flake.modules.nixos.niks3 = _: {
+    # Closure upload to a remote cache. nix-fleet owns the mechanism — the
+    # upstream post-build-hook module, the sops secret and its rotation
+    # restart, the socket path; this binds the server URL and where the token
+    # lives. sops-nix is a documented consumer requirement, not a choice.
+    imports = [
+      inputs.nix-fleet.modules.nixos.niks3-publisher
+      inputs.sops-nix.nixosModules.sops
+    ];
 
-      services.niks3-publisher = {
-        serverUrl = niks3ServerUrl;
-        secretFiles.apiToken = ../secrets/niks3-secrets.yaml;
-        secretKeys.apiToken = "niks3_auth_token";
-      };
-
-      # Completes nix-fleet's declaration: a rotated token must not keep being
-      # served by an already-running uploader. Guarded on the same gate the
-      # fleet uses, so this never declares the secret on its own.
-      sops.secrets.niks3_api_token =
-        lib.mkIf (config.services.niks3-publisher.secretFiles.apiToken != null)
-          {
-            restartUnits = [ "niks3-auto-upload.service" ];
-          };
+    services.niks3-publisher = {
+      serverUrl = niks3ServerUrl;
+      secretFiles.apiToken = ../secrets/niks3-secrets.yaml;
+      secretKeys.apiToken = "niks3_auth_token";
     };
+  };
 
   flake.modules.homeManager.niks3 =
     {

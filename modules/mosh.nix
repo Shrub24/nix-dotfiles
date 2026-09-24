@@ -12,8 +12,9 @@
   flake.modules.nixos.mosh = _: {
     imports = [ inputs.nix-fleet.modules.nixos.mosh ];
 
-    # Explicit because it is a firewall stance, not a default: the UDP range is
-    # tailnet-scoped in the network aspect.
+    # Load-bearing, not a default: nixpkgs defaults `openFirewall` to true and
+    # the fleet aspect leaves it alone, so without this the UDP range is opened
+    # globally rather than on the tailnet.
     programs.mosh.openFirewall = false;
   };
 }
