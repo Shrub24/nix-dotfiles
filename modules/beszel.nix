@@ -1,11 +1,13 @@
 # Observability agent contributor. The fleet aspect owns the mechanism end to
-# end: the agent service, the notify registration, and the public key it
-# verifies the hub with. This contributor is host policy only — where the
-# agent's listener is reachable, and the hub key itself.
+# end: the agent service, the notify registration, and the key the agent
+# verifies the hub with. This contributor is host policy only — the hub's
+# public key, and where the agent's listener is reachable.
 #
 # The agent holds no secret. The KEY is the PUBLIC half of the hub's SSH
 # keypair, so it is policy data rather than a sops secret, and there is no
-# enrollment gate left to satisfy.
+# enrollment gate to satisfy. TOKEN is deliberately not wired upstream: the
+# WebSocket registration path needs plain-HTTP reachability of the hub, and
+# the hub sits behind Cloudflare Access while agents reach it over tailnet SSH.
 { inputs, ... }:
 {
   flake.modules.nixos.beszel-agent =
@@ -13,12 +15,10 @@
     {
       imports = [ inputs.nix-fleet.modules.nixos.beszel-agent ];
 
-      # Off until the hub's public key is bound: the hub runs on la-admin-1 and
-      # has not published it. With the gate gone, enabling the agent without
-      # the key would register a hub it cannot authenticate.
+      # The hub runs on la-admin-1; this is its public half.
       services.beszel-agent = {
-        enable = false;
-        key = "";
+        enable = true;
+        key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILETioYsZkau/yIH2LocWZP3d7z0nZAKIMb2POQNEhst";
       };
 
       # Metric egress stays tailnet-scoped: the hub lives behind the tailnet,

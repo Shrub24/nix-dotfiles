@@ -117,10 +117,10 @@ let
   ];
 
   # NixOS mirror of the Home Manager phase gate: notify registers a system
-  # secret, so phase 1 omits it until the host's age key is a recipient.
+  # secret, so phase 1 omits it until the host's age key is a recipient. The
+  # beszel agent is not gated — it holds only the hub's public key.
   nixosAspectsPhase1 = lib.subtractLists [
     "notify"
-    "beszel-agent"
   ] nixosAspects;
 
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
