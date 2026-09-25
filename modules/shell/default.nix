@@ -58,6 +58,10 @@ in
           # cache and the projects share one filesystem. The default hardlink
           # silently falls back to a full copy for every venv.
           UV_LINK_MODE = "clone";
+          # Aube's Linux default prefers hardlinks; those cross-subvolume
+          # installs fall back to copies. Explicit clone uses Btrfs reflinks,
+          # matching uv's strategy for project dependencies.
+          AUBE_PACKAGE_IMPORT_METHOD = "clone";
           QMD_EMBED_MODEL = "hf://Qwen/Qwen3-Embedding-0.6B-GGUF/Qwen3-Embedding-0.6B-f16.gguf";
           PNPM_HOME = "${config.home.homeDirectory}/.local/share/pnpm";
           BUN_INSTALL = "${config.home.homeDirectory}/.bun";
