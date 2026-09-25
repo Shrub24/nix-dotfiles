@@ -2,13 +2,13 @@
 
 ## 1. Declaration
 
-- [ ] Add `modules/hosts/legion/_storage.nix`: `storage.dataDisk` with
+- [x] Add `modules/hosts/legion/_storage.nix`: `storage.dataDisk` with
       device UUID, `homeSubvol = "@home"`, `dataSubvol = "@data"`,
       `mountpoint = "/data"`, `homeChurn` list, `nodatacow` list.
 - [x] Keep `@data` as a plain storage subvolume without a `.snapshots`
       contract; its rescue images and package/cache residue do not need
       Snapper coverage.
-- [ ] Cross-check the churn set against the live recon (six indices,
+- [x] Cross-check the churn set against the live recon (six indices,
       `~/.cache`, `~/.local/{share,state}`, container storage, the seven
       package stores, `~/.mozilla`) — no known-churn path left on a
       snapshot path.
@@ -26,7 +26,7 @@
 
 ## 3. NixOS projection (prewired, superset of the live host)
 
-- [ ] `fileSystems."/home"` and `."/data"` in
+- [x] `fileSystems."/home"` and `."/data"` in
       `modules/hosts/legion/_hardware.nix` from the declaration; switch
       `/mnt/LinuxData` to `/data`.
 - [ ] Declarative `services.snapper` timers + root/home retention on the
@@ -48,13 +48,13 @@
 
 ## 5. Operator migration + verification
 
-- [ ] Run `docs/runbooks/migrate-home-to-data-disk.md` Phases 1–3
+- [x] Run `docs/runbooks/migrate-home-to-data-disk.md` Phases 1–3
       (operator-run; runbook already written).
-- [ ] Post-boot: `findmnt /home /data` shows both mounts on
+- [x] Post-boot: `findmnt /home /data` shows both mounts on
       `47fa5ee2-…`; `btrfs subvolume list` matches the declaration;
       `snapper -c home list` lists snapshots of the new subvol.
 - [ ] Confirm uv reflinks: a fresh `uv sync` in one research workspace
       shares extents with the global cache (`filefrag` or a du drop).
 - [ ] Rollback path intact: root disk's `@home` unmounted but present.
-- [ ] `nix flake check --no-build --no-write-lock-file` green; openspec
+- [x] `nix flake check --no-build --no-write-lock-file` green; openspec
       validates.

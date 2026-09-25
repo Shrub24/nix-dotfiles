@@ -5,7 +5,7 @@ _: {
   # up with no nvim-side change, and mason's own copies keep winning for as long
   # as it stays enabled.
   #
-  # Enable by adding "lsp" to hmAspects in modules/hosts/arch.nix.
+  # Enable by adding "lsp" to hmAspects in modules/hosts/legion.nix.
   #
   # Already supplied elsewhere, so deliberately absent below:
   #   nil, taplo, yamlfmt   -> modules/flake/tooling.nix

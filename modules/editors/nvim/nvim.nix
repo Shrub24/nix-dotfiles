@@ -15,7 +15,7 @@ in
 
   # Aspect `nvim`: the nix-wrapped editor, on PATH as nvim-nix until the port
   # replaces the pacman nvim. Enable by adding "nvim" to hmAspects in
-  # modules/hosts/arch.nix.
+  # modules/hosts/legion.nix.
   flake.modules.homeManager.nvim =
     { pkgs, ... }:
     {
