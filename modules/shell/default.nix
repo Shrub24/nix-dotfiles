@@ -53,6 +53,11 @@ in
         sessionVariables = {
           NIX_PATH = "nixpkgs=flake:nixpkgs";
           UV_TOOL_PYTHON_PREFERENCE = "only-managed";
+          # uv materialises venvs by linking out of its cache. clone is reflink,
+          # the only mode that survives a btrfs subvolume boundary — and the
+          # cache and the projects share one filesystem. The default hardlink
+          # silently falls back to a full copy for every venv.
+          UV_LINK_MODE = "clone";
           QMD_EMBED_MODEL = "hf://Qwen/Qwen3-Embedding-0.6B-GGUF/Qwen3-Embedding-0.6B-f16.gguf";
           PNPM_HOME = "${config.home.homeDirectory}/.local/share/pnpm";
           BUN_INSTALL = "${config.home.homeDirectory}/.bun";
