@@ -45,6 +45,11 @@ let
 
   # Lean portable profile: no local service tier; memory is the binding
   # constraint on 8 GB of soldered RAM.
+  # Omitted deliberately, not by drift. The service tier — docs-mcp, grist,
+  # qmd, memex, niks3, surge, syncthing, web-catalog, mutagen — because the
+  # laptop reaches those over the tailnet rather than running them. And
+  # ghostty, vscode, opencode, media, zsh, hermes, modal, tools, chromium,
+  # brave-origin: the desktop is where those are used.
   hmAspects = [
     "current-host"
     "pi"
@@ -58,6 +63,7 @@ let
     "lazyjournal"
     "mise"
     "direnv"
+    "monique"
     "niri"
     "nix"
     "noctalia"
@@ -68,6 +74,7 @@ let
     "audio"
     "pavucontrol"
     "kde-apps"
+    "libreoffice"
     "util-apps"
     "defaults"
     "shell"
