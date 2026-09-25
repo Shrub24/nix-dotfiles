@@ -14,10 +14,12 @@
   };
 
   # Snapper configs name this machine's subvolumes; the shared NixOS boot aspect
-  # only enables plymouth and btrfs scrub.
+  # only enables plymouth and btrfs scrub. The data config follows the
+  # migration's /data mount — its SUBVOLUME must be the @data subvolume, not
+  # the disk top level, or snapshots would recurse into @home.
   services.snapper.configs = {
     root.SUBVOLUME = "/";
     home.SUBVOLUME = "/home/${primaryUser.name}";
-    data.SUBVOLUME = "/mnt/LinuxData";
+    data.SUBVOLUME = "/data";
   };
 }

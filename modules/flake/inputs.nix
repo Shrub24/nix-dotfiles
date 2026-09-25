@@ -28,6 +28,13 @@ _: {
     };
 
     # Package layer: consumed by pkgs/ recipes rather than by one feature.
+
+    # Disk layout capture for install day (written but unimported until the
+    # bare-metal install; see modules/hosts/legion/_disko.nix).
+    disko = {
+      url = "github:nix-community/disko/latest";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # crane declares no inputs of its own, so it has no nested nixpkgs to redirect.
     crane.url = "github:ipetkov/crane";
     fenix = {

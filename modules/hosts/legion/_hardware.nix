@@ -3,6 +3,26 @@
 # because partlabels contain spaces ("EFI system partition").
 { primaryUser }:
 { config, ... }:
+let
+  # The data disk's topology, stated once. /home currently has no NixOS
+  # declaration (the Arch host mounts it via fstab), and the data mount
+  # still names its pre-migration subvolume; both are prewired here for the
+  # bare-metal install and realized post-migration.
+  storage = import ./_storage.nix { inherit primaryUser; };
+  dataDisk = storage.storage.dataDisk;
+  btrfsOf = subvol: uuid: opts: {
+    device = "/dev/disk/by-uuid/${uuid}";
+    fsType = "btrfs";
+    options = opts ++ [ "subvol=${subvol}" ];
+  };
+  rootOpts = [
+    "noatime"
+    "compress=zstd:3"
+    "ssd"
+    "discard=async"
+    "space_cache=v2"
+  ];
+in
 {
   # UEFI + systemd-boot (existing 2G vfat /boot partition on nvme1n1p6).
   boot.loader.systemd-boot = {
@@ -37,31 +57,16 @@
 
   # File systems (from /proc/mounts on Arch).
   # / and /nix are the same btrfs partition with different subvolumes.
-  fileSystems."/" = {
-    device = "/dev/disk/by-uuid/35eb40c3-6466-4e66-ad20-9b7da9140992";
-    fsType = "btrfs";
-    options = [
-      "noatime"
-      "compress=zstd:3"
-      "ssd"
-      "discard=async"
-      "space_cache=v2"
-      "subvol=@"
-    ];
-  };
+  fileSystems."/" = btrfsOf "@" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
 
-  fileSystems."/nix" = {
-    device = "/dev/disk/by-uuid/35eb40c3-6466-4e66-ad20-9b7da9140992";
-    fsType = "btrfs";
-    options = [
-      "noatime"
-      "compress=zstd:3"
-      "ssd"
-      "discard=async"
-      "space_cache=v2"
-      "subvol=@nix"
-    ];
-  };
+  fileSystems."/nix" = btrfsOf "@nix" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
+
+  # Home lives on the data disk (see _storage.nix), not on the root
+  # partition's own @home subvolume — the Arch host migrated there first.
+  fileSystems."/home" = btrfsOf dataDisk.homeSubvol dataDisk.uuid dataDisk.commonOptions;
+
+  # Bulk subvolume replacing a top-level /mnt/LinuxData mount.
+  fileSystems."/data" = btrfsOf dataDisk.dataSubvol dataDisk.uuid dataDisk.commonOptions;
 
   fileSystems."/boot" = {
     device = "/dev/disk/by-uuid/7EA9-D01C";
@@ -83,18 +88,6 @@
       "gid=${toString primaryUser.gid}"
       "dmask=022"
       "fmask=022"
-    ];
-  };
-
-  # Secondary btrfs data partition.
-  fileSystems."/mnt/LinuxData" = {
-    device = "/dev/disk/by-uuid/47fa5ee2-addd-466b-b7fc-4e7d92968234";
-    fsType = "btrfs";
-    options = [
-      "noatime"
-      "compress=zstd:3"
-      "ssd"
-      "discard=async"
     ];
   };
 
