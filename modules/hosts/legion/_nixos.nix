@@ -13,13 +13,12 @@
     syncthing.failure.severity = "warning";
   };
 
-  # Snapper configs name this machine's subvolumes; the shared NixOS boot aspect
-  # only enables plymouth and btrfs scrub. The data config follows the
-  # migration's /data mount — its SUBVOLUME must be the @data subvolume, not
-  # the disk top level, or snapshots would recurse into @home.
+  # Snapper covers the root and home subvolumes. /data only holds rescue
+  # images and package/cache residue, so it deliberately has no snapshot
+  # config: opaque rescue images gain nothing from CoW snapshots, and the
+  # mount remains available for future bulk storage.
   services.snapper.configs = {
     root.SUBVOLUME = "/";
     home.SUBVOLUME = "/home/${primaryUser.name}";
-    data.SUBVOLUME = "/data";
   };
 }

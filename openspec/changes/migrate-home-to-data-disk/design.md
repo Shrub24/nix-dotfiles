@@ -93,13 +93,15 @@ live system), but it must evaluate and render the same subvolume set the
 declaration names — checked by an eval assertion. Install-day changes
 (`nixos-dual-boot-install`, `add-spectre-host`) consume it.
 
-### D5 — Snapper ownership splits by class
+### D5 — Snapper covers root and home, not the residual data mount
 
 NixOS: `services.snapper.configs` + `services.snapper.timers` (native
-module) declaratively from the runbook-captured configs — retention values
-ported verbatim as the imperative truth. Arch: configs via
-`environment.etc."snapper/configs/..."`; timers stay with the pacman
-package. The `data` config's `SUBVOLUME` follows the new mountpoint.
+module) declaratively from the runbook-captured root/home configs — retention
+values ported verbatim as the imperative truth. Arch: those two configs are
+projected via `environment.etc."snapper/configs/..."`; timers stay with the
+pacman package. `/data` remains mounted but has no Snapper config: it holds
+opaque rescue images plus package/cache residue, not user data whose
+snapshots provide value.
 
 ## Migration / Compatibility
 

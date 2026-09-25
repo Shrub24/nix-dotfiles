@@ -91,23 +91,24 @@ findmnt /home /data; df -h / /data        # verify both mounts
 sudo mkdir -p /mnt/top
 sudo mount -o subvolid=5 /dev/nvme1n1p7 /mnt/top
 
-# swap symlinks for real dirs (cross-subvol = reflink copy: fast, no extra space)
-for d in Documents Downloads Projects Music Pictures Videos Desktop Templates
-    sudo rm /home/saurabhj/$d
-    sudo mv /mnt/top/$d /home/saurabhj/$d
-end
+# Target state: these are real directories under @home. Do not run a
+# blanket move here without checking first. A cross-subvolume `mv` is not a
+# reflink operation; GNU mv may fall back to a full recursive copy.
+# If any path is still a symlink, inspect it and convert that one path only
+# after verifying source and destination. Projects and Music stay as real
+# dirs for now while their churn is being investigated.
 
-# point the data snapper config at its subvol
-sudo snapper -c data set-config SUBVOLUME=/data
-sudo snapper -c home list                  # shows the new subvol's snapshot dir
+# data has no Snapper config: it contains rescue images and package/cache
+# residue, not user data worth snapshotting. Verify home snapshots only.
+sudo snapper -c home list                  # shows the new home subvol's snapshots
 
 sudo btrfs subvolume list /mnt/top         # final topology check — paste output
 ```
 
-Also capture the snapper configs for the declarative port:
+Also capture the two remaining Snapper configs for the declarative port:
 
 ```fish
-sudo cat /etc/snapper/configs/{root,home,data}
+sudo cat /etc/snapper/configs/{root,home}
 ```
 
 ## Aftermath
