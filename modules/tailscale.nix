@@ -36,12 +36,17 @@
       inputs.sops-nix.nixosModules.sops
     ];
 
-    # Tailscale SSH intercepts port 22 from the tailnet and serves a host key
-    # derived from the node key, not from /etc/ssh/ssh_host_*. Peers that pin
-    # us in ssh_known_hosts would see a changed key, so this host's trust model
-    # — pinned host keys, projected from the fleet inventory — needs it off.
-    # Turning it on moves tailnet SSH auth to the ACLs and invalidates every
-    # peer's pin of this host.
-    services.tailscale.sshServe = false;
+    # Tailscale SSH claims port 22 for the tailnet IP only: tailscaled generates
+    # its own host key pair, publishes the public half through the control
+    # plane, and rewrites the client's known_hosts just-in-time, so rotation is
+    # invisible. sshd and authorized_keys are untouched, which keeps
+    # non-tailnet connections — the LAN, and the nix builder paths — on keys.
+    # What moves is the tailnet answer to "who can log in": the ACL replaces
+    # authorized_keys there, and SSH auth is `none`, so no key is presented.
+    #
+    # The flag is applied by nixpkgs' tailscaled-set oneshot, which exists only
+    # while extraSetFlags is non-empty. Turning this off therefore removes the
+    # unit without running `tailscale set --ssh=false` — that part is manual.
+    services.tailscale.sshServe = true;
   };
 }
