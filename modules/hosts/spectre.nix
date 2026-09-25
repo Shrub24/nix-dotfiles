@@ -128,6 +128,10 @@ let
       currentHostModule
       sshTrustModule
       (import ./spectre/_nixos.nix { inherit primaryUser; })
+      # disko owns the mounts, the LUKS initrd device and swap on this host:
+      # _hardware.nix declares policy, _disko.nix declares the disk.
+      inputs.disko.nixosModules.disko
+      (import ./spectre/_disko.nix { })
       { nixpkgs.overlays = [ overlay ]; }
       {
         # The one unfree package the lean set pulls in (unrar, via the cli
