@@ -61,6 +61,7 @@ let
     "niri"
     "nix"
     "noctalia"
+    "vicinae"
     "portals"
     "fonts"
     "libinput"
@@ -99,6 +100,7 @@ let
   nixosAspects = [
     "current-host"
     "foundation"
+    "fish"
     "network"
     "boot"
     "ssh"

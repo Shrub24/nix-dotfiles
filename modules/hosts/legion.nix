@@ -192,6 +192,7 @@ let
   nixosAspects = [
     "current-host"
     "foundation"
+    "fish"
     "network"
     "boot"
     "ssh"
@@ -221,8 +222,8 @@ let
       {
         targets.genericLinux.gpu.nvidia = {
           enable = true;
-          version = "610.57.04";
-          sha256 = "sha256-suk1xmuDuwDAyFe8jg7g/VLekoa0DJzB7sKafOfrEW0=";
+          version = "615.71.09";
+          sha256 = "sha256-zc7tIrvrYSSNGm3qvCWWZz46ZQFpjucayNL9wo87cP4=";
         };
         targets.genericLinux.enable = true;
         programs.niks3.enableAutoUploadService = true;

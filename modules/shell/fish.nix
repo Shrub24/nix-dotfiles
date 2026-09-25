@@ -10,6 +10,18 @@
     };
   };
 
+  # NixOS owns the login shell and the /etc/shells entry; the Home Manager
+  # value below owns the shell's configuration. Both halves are needed, and
+  # only the pair makes fish the interactive shell rather than a program that
+  # happens to be on PATH. The desktop never showed the gap because Arch owns
+  # /etc/passwd there.
+  flake.modules.nixos.fish =
+    { config, pkgs, ... }:
+    {
+      programs.fish.enable = true;
+      users.users.${config.currentHost.primaryUser.name}.shell = pkgs.fish;
+    };
+
   flake.modules.homeManager.fish =
     {
       lib,
