@@ -6,16 +6,15 @@
 
 Each host SHALL declare its storage topology — device UUID, subvolume
 names, mountpoints, and the churn/nodatacow path sets — in one typed
-declaration, and every class-level projection (mount units, `fileSystems`,
-disko, snapper) SHALL derive from it. A class-level module SHALL NOT
-restate a device UUID or subvolume name the declaration already carries.
+declaration, and every projection that consumes it (`fileSystems`, disko,
+snapper) SHALL derive from it. A class-level module SHALL NOT restate a
+device UUID or subvolume name the declaration already carries.
 
-#### Scenario: One fact, two projections
+#### Scenario: One fact, several projections
 
 - **WHEN** the data disk's UUID or a subvolume name is changed in the
   declaration
-- **THEN** both the system-manager and NixOS projections render the new
-  value without a second edit
+- **THEN** every projection renders the new value without a second edit
 
 #### Scenario: The desktop NixOS output declares the home mount
 
@@ -67,41 +66,8 @@ from compression (caches) SHALL NOT be in the set.
 
 #### Scenario: Attribute present at creation
 
-- **WHEN** the skeleton realizes a nodatacow path
-- **THEN** the subvolume is created empty and the `+C` attribute is set
-  before any data lands in it
-
-### Requirement: The skeleton is idempotent and additive
-
-The class that can create subvolumes SHALL do so through an idempotent,
-guarded mechanism that creates a declared subvolume only when absent, and
-SHALL NOT delete, move, or rewrite any existing path. An already-created
-subvolume SHALL survive re-runs unchanged.
-
-#### Scenario: Re-run after full realization
-
-- **WHEN** the skeleton runs again on a host where every declared subvol
-  exists
-- **THEN** nothing is created, moved, or deleted
-
-#### Scenario: Partial realization converges
-
-- **WHEN** a declared subvolume is absent but its parent directory exists
-- **THEN** the skeleton creates it and leaves any contents already at that
-  path untouched
-
-### Requirement: system-manager realizes mounts declaratively
-
-On the non-NixOS host, the data disk's home and data mounts SHALL be
-realized as systemd mount units generated from the declaration — not as
-hand-edited fstab lines — so the mount topology is evaluation-visible.
-Boot-critical mounts (root, `/nix`, `/boot`) remain outside this contract.
-
-#### Scenario: Mount unit renders from the declaration
-
-- **WHEN** the system-manager configuration is evaluated
-- **THEN** the home and data mount units exist with the declared
-  device-UUID and subvolume options
+- **WHEN** a path in the `nodatacow` set is first created
+- **THEN** it carries the `+C` attribute before any data lands in it
 
 ### Requirement: NixOS-side timers and disk layout are prewired
 

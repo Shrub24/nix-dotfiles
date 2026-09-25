@@ -25,11 +25,11 @@ duplicate venvs collapse).
   `~/.local/{share,state}`, `~/.local/share/containers`, `~/.npm`,
   `~/.bun`, `~/go`, `~/.cargo`, `~/.rustup`, `~/.nuget`, `~/.gradle`,
   `~/.mozilla`; `chattr +C` on containers and browser profiles.
-- A typed storage-topology SSOT (`storage.dataDisk`) projected into both
-  classes: system-manager gets mount units + an idempotent skeleton oneshot
-  - snapper configs via `environment.etc`; NixOS gets `fileSystems` from
-    the same SSOT (closing the gap where `/home` is undeclared in
-    `_hardware.nix`).
+- A typed storage-topology SSOT (`storage.dataDisk`) projected into its
+  consumers: NixOS gets `fileSystems` from the SSOT (closing the gap where
+  `/home` is undeclared in `_hardware.nix`), plus the disko layout and
+  snapper retention. The Arch host keeps its hand-written fstab lines and
+  imperative snapper configs — it is being replaced by NixOS.
 - **NixOS prewiring, stated now even where Arch cannot realize it**: a
   `_disko.nix` capturing both disks' target partition/subvolume layout as a
   disko config (written but unimported until install day), and declarative
@@ -43,9 +43,8 @@ duplicate venvs collapse).
 ### New Capabilities
 
 - `storage-topology` — the host's disk/subvolume/mount SSOT: one typed
-  declaration projected into both privilege classes; churn-path subvolume
-  set; nodatacow set; system-manager mount units and skeleton oneshot;
-  NixOS `fileSystems` and disko capture.
+  declaration projected into every consumer; churn-path subvolume set;
+  nodatacow set; NixOS `fileSystems`, disko capture and snapper retention.
 
 ### Modified Capabilities
 

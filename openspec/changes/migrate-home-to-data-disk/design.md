@@ -27,17 +27,16 @@ mount anything.
 **Goals:**
 
 - One typed declaration (`storage.dataDisk`) owns the data disk's facts;
-  both classes project it.
-- `/home` and `/data` are declaratively mounted on Arch (systemd mount
-  units) and declaratively declared on NixOS (`fileSystems`), from the same
-  declaration.
+  every consumer projects it.
+- `/home` and `/data` are declared on the NixOS target (`fileSystems`,
+disko, snapper) from the same declaration.
 - The churn subvolume set is explicit and extendable — new tools' state
   paths join the set instead of silently landing in snapshot paths.
 - NixOS target state is prewired: disko config for both disks, declarative
   snapper timers/retention, `fileSystems` including the currently-undeclared
   `/home`.
-- The operator migration (runbook) and the declarative skeleton converge on
-  the same subvolume set, so either can run first.
+- The operator migration (runbook) and the install-day disko layout
+  converge on the same subvolume set, so either can run first.
 
 **Non-Goals:**
 
@@ -50,36 +49,35 @@ mount anything.
 
 ## Decisions
 
-### D1 — Mount units, not fstab, for the data disk (system-manager)
+### D1 — the Arch mount projection is deferred, not built
 
-systemd's fstab generator defers to an existing unit file, so declaring
-`.mount` units for `/home` and `/data` and removing those two fstab lines
-is equivalent at boot and evaluation-visible. fstab keeps only
-initramfs-coupled mounts. The declaration renders the units' `What=` (UUID
+The non-NixOS host is being replaced by NixOS (`nixos-dual-boot-install`),
+so its two data-disk mounts keep their hand-written fstab lines instead of
+gaining systemd mount units generated from the declaration. The
+declaration still owns the facts; only the Arch projection is deferred to
+a host with a known end-of-life. Arch's snapper configs stay imperative for
+the same reason.
 
-- subvol option), `Where=`, `Type=btrfs`, and mount options.
+_Rejected_: `.mount` units plus `environment.etc."fstab"` — both were
+evaluation-visible ways to own two lines on a host that is leaving.
 
-_Rejected_: `environment.etc."fstab"` — it would make the whole file a
-store symlink (including the lines dracut consumes at image build time)
-for the benefit of two lines the generator does not need.
+### D2 — `nodatacow` is realized where the path is created
 
-### D2 — Idempotent skeleton as a oneshot with Conditions
+`chattr +C` has no declarative owner on either class: the nodatacow paths
+are nested subvolumes inside the home mount, so `nodatacow` is not
+available as a per-subvolume mount option, and disko cannot set an
+attribute. The Arch host already carries the attribute from the imperative
+migration; the requirement survives in the declaration, and install day
+realizes it alongside the subvolume it applies to.
 
-`storage-skeleton.service` (systemd system unit, `Type=oneshot`,
-`ConditionPathExists=!@home`) creates `@home`/`@data` and each churn
-subvolume only when absent (`btrfs subvolume create` fails on an existing
-path — acceptable: the unit is guarded per-path, and re-runs converge).
-`chattr +C` is applied at creation on an empty subvolume. The unit runs
-`Before=home.mount` so first-boot ordering is correct; on the already-
-migrated host it is a no-op that keeps the declaration honest.
-
-_Rejected_: relying on the runbook alone — the declaration would name
-subvols nothing creates on a fresh host.
+_Rejected_: a per-path creation oneshot — the only mechanism the format
+offers, and it would have to run `Before=home.mount` on a host whose
+subvolumes install day creates anyway.
 
 ### D3 — Churn set is data, not mechanism
 
 `homeChurn` is a list of home-relative paths in the declaration; the
-skeleton iterates it and the snapshot contract reads it. Coarse
+snapshot contract reads it. Coarse
 subvolumes over per-tool splits: `~/.local/share` as one subvol loses
 snapshot coverage for `fonts`/`wallpapers`/`nvim` state (regenerable or
 Nix-owned) but keeps working when a new index tool appears — the two
@@ -97,20 +95,18 @@ declaration names — checked by an eval assertion. Install-day changes
 
 NixOS: `services.snapper.configs` + `services.snapper.timers` (native
 module) declaratively from the runbook-captured root/home configs — retention
-values ported verbatim as the imperative truth. Arch: those two configs are
-projected via `environment.etc."snapper/configs/..."`; timers stay with the
-pacman package. `/data` remains mounted but has no Snapper config: it holds
+values ported verbatim as the imperative truth. Arch: those two configs stay
+imperative (D1). `/data` remains mounted but has no Snapper config: it holds
 opaque rescue images plus package/cache residue, not user data whose
 snapshots provide value.
 
 ## Migration / Compatibility
 
 Runbook: `docs/runbooks/migrate-home-to-data-disk.md` (operator-run, fish).
-Ordering between runbook and code is flexible — the runbook's Phase 1 and
-the skeleton create the same subvols — but the fstab→mount-unit swap and
-`pi.nix`'s path rewrites must follow the cutover, not precede it.
-Rollback is reverting two fstab lines; the root disk's `@home` is
-untouched by everything here.
+Ordering between runbook and code is flexible — the runbook's Phase 1 and the
+disko layout create the same subvols — but `pi.nix`'s path rewrites must
+follow the cutover, not precede it. Rollback is reverting two fstab lines;
+the root disk's `@home` is untouched by everything here.
 
 `modules/agents/pi.nix` moves its eleven `/mnt/LinuxData/Projects` paths
 to `home.homeDirectory`-derived ones only after `~/Projects` is a real
@@ -119,9 +115,8 @@ directory (Phase 3).
 ## Verification
 
 - `nix flake check --no-build` covers evaluation of all three host outputs.
-- Eval assertions: home/data mount units render with the declared UUID;
-  `fileSystems."/home"` exists on the NixOS side; the disko config renders
-  the declaration's subvol set; skeleton unit iterates exactly the churn
-  set.
+- Eval assertions: `fileSystems."/home"` exists on the NixOS side and
+derives from the declaration; the disko config renders exactly the
+declaration's subvol set and churn paths.
 - Live checks land in the runbook's Phase 3 (`findmnt`, `btrfs subvolume
 list`, `snapper -c home list`).

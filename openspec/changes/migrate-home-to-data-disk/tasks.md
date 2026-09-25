@@ -13,18 +13,7 @@
       package stores, `~/.mozilla`) — no known-churn path left on a
       snapshot path.
 
-## 2. system-manager projection (Arch)
-
-- [ ] Mount units for `/home` and `/data` from the declaration; remove the
-      two fstab lines at cutover (runbook Phase 2, step 3).
-- [ ] `storage-skeleton.service` oneshot: per-path guarded creation of
-      `@home`, `@data`, `@home/.snapshots` and every `homeChurn` path;
-      `chattr +C` on the `nodatacow` set at creation; `Before=home.mount`.
-- [ ] Snapper configs (`root`, `home`) via
-      `environment.etc."snapper/configs/…"` with retention ported from the
-      captured imperative configs; do not create a `data` config.
-
-## 3. NixOS projection (prewired, superset of the live host)
+## 2. NixOS projection (prewired, superset of the live host)
 
 - [x] `fileSystems."/home"` and `."/data"` in
       `modules/hosts/legion/_hardware.nix` from the declaration; switch
@@ -34,10 +23,12 @@
       for the snapper timer units per the fleet's `notify` contract.
 - [ ] `modules/hosts/legion/_disko.nix` capturing both disks' target
       partition/subvolume layout; unimported but evaluated.
+- [ ] Realize the `nodatacow` set at install day alongside the subvolumes
+      disko creates — the attribute has no declarative owner (D2).
 - [ ] Eval assertion: disko renders exactly the declaration's subvol set;
       `fileSystems."/home"` present.
 
-## 4. Consumers
+## 3. Consumers
 
 - [x] `modules/agents/pi.nix`: eleven `/mnt/LinuxData/Projects` paths →
       `piExtensions`/`piOmniroute` helpers deriving from
@@ -46,7 +37,7 @@
 - [x] Grep gate: no module outside `_storage.nix` and `_disko.nix` names
       `/mnt/LinuxData`, `/data`, or the data-disk UUID.
 
-## 5. Operator migration + verification
+## 4. Operator migration + verification
 
 - [x] Run `docs/runbooks/migrate-home-to-data-disk.md` Phases 1–3
       (operator-run; runbook already written).
