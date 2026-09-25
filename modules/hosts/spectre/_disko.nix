@@ -89,6 +89,14 @@ in
                     mountpoint = "/.snapshots";
                     mountOptions = opts;
                   };
+                  # Reserved, empty: the mountpoint impermanence/preservation
+                  # would bind durable state into. Declaring it now costs
+                  # nothing and avoids a subvolume create plus a live-data move
+                  # later. Nothing writes here until that change lands.
+                  "@persist" = {
+                    mountpoint = "/persist";
+                    mountOptions = opts;
+                  };
                   "@swap" = {
                     mountpoint = "/swap";
                     # `path` defaults to the subvolume name, which would put
