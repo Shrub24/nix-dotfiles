@@ -198,6 +198,11 @@ in
             deliverIntentNudges = true;
             deliverSubagentNudges = false;
             orchestratorCheckInMs = 0;
+            # Spike guards, not budgets: a past-window request is skipped, not spent.
+            rateLimitPerMinute = 60;
+            rateLimitPerHour = 1000;
+            # Spend guard on pi-typesafe's persisted ledger; ~cents at our state sizes.
+            maxRequestsPerDay = 5000;
           };
 
           # Replacement list, not additive; absolute paths (runner children
@@ -315,12 +320,12 @@ in
               # "search" keeps the six memex tools inactive, reachable only
               # through the mcp proxy — which also stays visible.
               directTools = "search";
-              command = "memex";
-              args = [
-                "mcp"
-                "--transport"
-                "stdio"
-              ];
+              # The daemon serves the same rmcp server over HTTP that
+              # `memex mcp --transport stdio` serves in-process, so tools and
+              # schemas are identical; dialing it keeps one embedding model
+              # resident instead of one per session. The address comes from the
+              # memex module's own setting so the two cannot disagree.
+              url = "http://${config.programs.memex.settings.mcp.listen}/mcp";
             };
           };
         };
