@@ -135,6 +135,13 @@ The declared `crypttabExtraOpts = [ "tpm2-device=auto" ]` is already in
 place; enrolment is the only missing half. Keep the passphrase as the
 fallback — a firmware update changes PCR 7 and drops back to the prompt.
 
+That fallback is the recovery path for the whole disk, so it has to be
+retrievable after the machine is gone. Store it out of band — a password
+manager or a physical copy. Deliberately **not** in this repository, and not
+under sops: the age key that would decrypt it lives on the same encrypted
+volume, so a committed ciphertext is unreadable in exactly the disaster it
+would be needed for, while remaining an offline target in every other case.
+
 ## Phase 4 — secrets
 
 The laptop ships `secretsEnrolled = false`: the phase-1 aspect set omits
