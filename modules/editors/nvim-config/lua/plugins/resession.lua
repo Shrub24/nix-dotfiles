@@ -69,7 +69,7 @@ return {
 						end
 
 						local formatted = path:gsub(" __", ""):gsub("_", "/")
-						local breadcrumb = formatted:gsub(vim.env.HOME, ""):gsub("mnt/LinuxData/", ""):gsub("^/", "")
+						local breadcrumb = formatted:gsub(vim.env.HOME, ""):gsub("^/", "")
 						-- :gsub("^%s*(.-)%s*$", "%1")
 						-- -- Replace slashes with Nerd Font Arrow
 						breadcrumb = breadcrumb:gsub("/", "")
@@ -124,44 +124,6 @@ return {
 		-- 2. Picker Configuration (UI, Layout, Icons)
 		opts = {
 			layout = "ivy", -- "default", "dropdown", "ivy", "select", "vscode"
-			-- default_icon = {
-			-- 	icon = " ",
-			-- 	highlight = "directory",
-			-- },
-			-- Logic to handle your Shared Data Drive and Symlinks
-			-- The plugin scans these in order; first match wins.
-			-- path_icons = {
-			-- 	-- Priority 1: Your Shared Data Projects (Symlinked)
-			-- 	-- Even if the path is /mnt/LinuxData/Projects, this icon will appear
-			-- 	{
-			-- 		match = "/mnt/LinuxData/Projects",
-			-- 		icon = " ", -- Github/Project Icon
-			-- 		highlight = "projects",
-			-- 	},
-			-- 	{
-			-- 		match = "/home/saurabhj/Projects",
-			-- 		icon = " ",
-			-- 		highlight = "projects",
-			-- 	},
-			-- 	-- Priority 2: Config
-			-- 	{
-			-- 		match = "/home/saurabhj/.config",
-			-- 		icon = " ",
-			-- 		highlight = "config",
-			-- 	},
-			-- 	-- Priority 3: Documents (Shared Drive)
-			-- 	{
-			-- 		match = "/mnt/LinuxData/Documents",
-			-- 		icon = "󱔘", -- Doc icon
-			-- 		highlight = "documents",
-			-- 	},
-			-- 	-- Priority 4: Home
-			-- 	{
-			-- 		match = "/home/saurabhj",
-			-- 		icon = " ",
-			-- 		highlight = "home",
-			-- 	},
-			-- },
 		},
 	},
 }

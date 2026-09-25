@@ -24,7 +24,7 @@ let
   ];
 in
 {
-  # UEFI + systemd-boot (existing 2G vfat /boot partition on nvme1n1p6).
+  # UEFI + systemd-boot (existing 600M vfat /boot partition on nvme1n1p4).
   boot.loader.systemd-boot = {
     enable = true;
     configurationLimit = 20; # match snapper retention
@@ -60,12 +60,19 @@ in
   fileSystems."/" = btrfsOf "@" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
 
   fileSystems."/nix" = btrfsOf "@nix" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
+  fileSystems."/var/cache" = btrfsOf "@cache" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
+  fileSystems."/var/log" = btrfsOf "@log" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
+  fileSystems."/var/tmp" = btrfsOf "@tmp" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
+  fileSystems."/var/lib/libvirt/images" =
+    btrfsOf "@images" "35eb40c3-6466-4e66-ad20-9b7da9140992"
+      rootOpts;
+  fileSystems."/.snapshots" = btrfsOf "@snapshots" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
 
   # Home lives on the data disk (see _storage.nix), not on the root
   # partition's own @home subvolume — the Arch host migrated there first.
   fileSystems."/home" = btrfsOf dataDisk.homeSubvol dataDisk.uuid dataDisk.commonOptions;
 
-  # Bulk subvolume replacing a top-level /mnt/LinuxData mount.
+  # Bulk subvolume for user data; see _storage.nix.
   fileSystems."/data" = btrfsOf dataDisk.dataSubvol dataDisk.uuid dataDisk.commonOptions;
 
   fileSystems."/boot" = {

@@ -13,7 +13,7 @@
 # Partition tables mirror the live disks (blkid, 2026-09): nvme0n1p5 is the
 # root btrfs with @, @nix, @cache, @log, @tmp, @images, @home (legacy),
 # @snapshots; nvme1n1p7 is the data btrfs. Windows keeps p1–p4/p6 on the
-# root disk and p2–p4 on the data disk; /boot is nvme1n1p6's vfat, /boot is
+# root disk and p2–p4 on the data disk; /boot is nvme1n1p4's vfat, /boot is
 # where the EFI system partition lives on install day — see
 # nixos-dual-boot-install for the ESP/limine decision.
 { primaryUser }:

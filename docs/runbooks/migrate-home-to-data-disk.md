@@ -111,13 +111,38 @@ Also capture the two remaining Snapper configs for the declarative port:
 sudo cat /etc/snapper/configs/{root,home}
 ```
 
+## Runtime state sweep
+
+Moving `/home` leaves every application that _recorded_ an absolute path
+pointing at a dead location. Directory contents migrate with the tree;
+recorded paths do not. Sweep these after the first boot.
+
+| Surface                                                           | What to fix                                                                                                                             |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `~/.pi/agent/sessions`                                            | group directories encoded as `--mnt-LinuxData-…--`; the `"cwd"` field in each `.jsonl` header; `projectRoot` in `missions/index/*.json` |
+| `~/.pi/agent/trust.json`                                          | trusted-directory entries                                                                                                               |
+| `~/.local/share/nvim`                                             | `session_auto/`, `session/`, `session_projects/`, `dirsession/` filenames and contents; `harpoon/*.json` keys; `scratch/*.meta`         |
+| `~/.local/share/nvim/snacks/picker-frecency.sqlite3`              | frecency keys — checkpoint the WAL and update with nvim closed                                                                          |
+| `~/.local/share/opencode/opencode.db`                             | `project.worktree`, `project_directory.directory`, `session.directory`, `session.path`                                                  |
+| `~/.local/share/zoxide/db.zo`, `~/.local/share/fish/fish_history` | recorded paths                                                                                                                          |
+| `~/.cache/codebase-memory-mcp/logs`, `~/.cursor/projects`         | path-derived names; regenerable                                                                                                         |
+
+`~/.config/opencode/context/project-intelligence/technical-domain.md` is a
+repo file — fix its prefixes in the checkout, not in the home tree.
+
+Message bodies, logs, and session transcripts are historical record: leave
+their stale paths alone. Rewrite only structured fields an application
+resolves at read time.
+
 ## Aftermath
 
 - `UV_LINK_MODE=clone` (already in `modules/shell/default.nix`) becomes
   effective: cache and projects share a filesystem, so uv reflinks venvs
   out of its cache instead of copying them (~59G of duplicates collapse).
-- `modules/agents/pi.nix` still references `/mnt/LinuxData/Projects` —
-  updated by the change's tasks once `~/Projects` is live.
+- `modules/agents/pi.nix` derives its extension and agent paths from
+  `home.homeDirectory`, so the move cannot break it.
+- `/mnt/LinuxData` survives as an empty root-owned directory. Remove it
+  once nothing references the old mountpoint.
 - The NixOS side (`modules/hosts/legion/_hardware.nix`,
   `_disko.nix`, snapper timers) is prewired by the change for install day.
 
