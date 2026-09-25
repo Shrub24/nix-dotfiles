@@ -44,6 +44,13 @@ _: {
       services.resolved.enable = true;
       services.resolved.settings.Resolve.MulticastDNS = "no";
 
+      # nixos-facter's detected-DHCP module sets networking.useDHCP on every
+      # physical interface it finds on a host with a report, which fights
+      # NetworkManager for the same links. The aspect owns physical
+      # networking; detected hardware facts stay wired. Plain priority beats
+      # facter's own mkDefault.
+      hardware.facter.detected.dhcp.enable = false;
+
       networking.networkmanager = {
         enable = true;
         plugins = [

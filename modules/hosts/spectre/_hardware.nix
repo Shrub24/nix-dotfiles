@@ -3,8 +3,18 @@
 # disko's NixOS module renders all three from `_disko.nix` and two sources for
 # one option is a conflict, not a merge.
 _:
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
+  # Measured facts from the machine itself (kernel modules, hostPlatform,
+  # graphics, bluetooth, fingerprint) instead of the guesses this file used to
+  # carry. Everything facter sets is `mkDefault`, so the policy below still
+  # wins with plain assignments — refreshing the report cannot clobber it.
+  #
+  # Inert until a report exists, so evaluation converges without the file.
+  # Generate it from the live media before installing:
+  #   nix run nixpkgs#nixos-facter > modules/hosts/spectre/facter.json
+  hardware.facter.reportPath = lib.mkIf (builtins.pathExists ./facter.json) ./facter.json;
+
   # UEFI + systemd-boot, single boot: adding Windows later is a resize, not a
   # reinstall. Disko creates the ESP; which bootloader manages it stays policy.
   boot.loader.systemd-boot = {
