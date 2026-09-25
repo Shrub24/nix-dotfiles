@@ -16,6 +16,13 @@ in
       # Pi agent dir; referenced by rendered settings and out-of-store symlinks.
       piAgentDir = "${config.home.homeDirectory}/.pi/agent";
 
+      # Local extension checkouts live under ~/Projects, not at a mountpoint:
+      # the home tree moved to the data disk and the mountpoint is a storage
+      # fact (see modules/hosts/legion/_storage.nix), not something consumers
+      # name. Paths through here survive a mountpoint rename unchanged.
+      piExtensions = name: "${config.home.homeDirectory}/Projects/dev/custom/pi-extensions/${name}";
+      piOmniroute = "${config.home.homeDirectory}/Projects/dev/custom/OmniRoute/@omniroute/pi-agent";
+
       # Credentials reach pi by path, not by environment. The wiring is emitted
       # only where the credentials aspect is selected: the laptop's phase-1
       # evaluation selects no sops at all, and the extensions then report a
@@ -63,19 +70,21 @@ in
         "extensions/omniroute"
         "npm:@ff-labs/pi-fff"
         "npm:pi-draft-history"
-        "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-subagents"
-        "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-cbmem"
+        "${piExtensions "pi-subagents"}"
+        "${piExtensions "pi-cbmem"}"
         "npm:@juicesharp/rpiv-ask-user-question"
         "npm:pi-boomerang"
         "npm:pi-cache-optimizer"
-        "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-bash-processes"
-        "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-tool-renderer"
+        "${piExtensions "pi-bash-processes"}"
+        "${piExtensions "pi-tool-renderer"}"
         "npm:@vanillagreen/pi-extension-manager"
-        "npm:@vanillagreen/pi-output-policy"
+        "${piExtensions "pi-output-policy"}"
         "npm:@gotgenes/pi-permission-system"
         "npm:pi-typesafe"
+        "npm:pi-intercom"
+        "npm:pi-loop-police"
         # Package dir, not entry files — a file path fails with "package source not found".
-        "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-jev"
+        "${piExtensions "pi-jev"}"
         "npm:pi-tool-repair"
         # "npm:@howaboua/pi-codex-conversion"
         # "npm:@vanillagreen/pi-hooks"
@@ -198,7 +207,7 @@ in
             defaultExtensions = [
               "${piAgentDir}/extensions/omniroute/src/index.ts"
               # codebase-memory over MCP stdio (pi-cbmem workspace member).
-              "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-cbmem/extensions/cbmem.ts"
+              "${piExtensions "pi-cbmem"}/extensions/cbmem.ts"
               "${piAgentDir}/npm/node_modules/pi-mcp-adapter/index.ts"
               "${piAgentDir}/npm/node_modules/@ff-labs/pi-fff/src/index.ts"
               # Spec-hash install dir; stable across content updates.
@@ -206,8 +215,8 @@ in
               # Tool-result truncation + bash backgrounding for children:
               # children run the heaviest greps/reads and would otherwise
               # pull 80K-token tool results into their own context.
-              "${piAgentDir}/npm/node_modules/@vanillagreen/pi-output-policy/extensions/output-policy.ts"
-              "/mnt/LinuxData/Projects/dev/custom/pi-extensions/pi-bash-processes/extensions/background-tasks.ts"
+              "${piExtensions "pi-output-policy"}/extensions/output-policy.ts"
+              "${piExtensions "pi-bash-processes"}/extensions/background-tasks.ts"
               # Child entry of magic-context (NOT dist/index.js, which is the
               # parent session manager): registers ctx_search + todowrite and
               # deliberately omits session-scoped tools.
@@ -398,8 +407,7 @@ in
         ".pi/agent/skills".source = ./pi/skills;
 
         # Out-of-store symlink so the fork is edited in place, no rebuild needed.
-        ".pi/agent/extensions/omniroute".source =
-          config.lib.file.mkOutOfStoreSymlink "/mnt/LinuxData/Projects/dev/custom/OmniRoute/@omniroute/pi-agent";
+        ".pi/agent/extensions/omniroute".source = config.lib.file.mkOutOfStoreSymlink piOmniroute;
       };
     };
 }

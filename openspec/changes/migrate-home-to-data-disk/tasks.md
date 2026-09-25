@@ -38,10 +38,11 @@
 
 ## 4. Consumers
 
-- [ ] `modules/agents/pi.nix`: eleven `/mnt/LinuxData/Projects` paths →
-      `home.homeDirectory`-derived paths (only after `~/Projects` is real —
-      runbook Phase 3).
-- [ ] Grep gate: no module outside `_storage.nix` names
+- [x] `modules/agents/pi.nix`: eleven `/mnt/LinuxData/Projects` paths →
+      `piExtensions`/`piOmniroute` helpers deriving from
+      `home.homeDirectory` (eval-verified: same path shapes, rendered from
+      `~/Projects`). Active after Phase 3 makes `~/Projects` real.
+- [x] Grep gate: no module outside `_storage.nix` and `_disko.nix` names
       `/mnt/LinuxData`, `/data`, or the data-disk UUID.
 
 ## 5. Operator migration + verification
