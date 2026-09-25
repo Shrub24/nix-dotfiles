@@ -97,6 +97,23 @@ in
                     mountpoint = "/persist";
                     mountOptions = opts;
                   };
+                  # The desktop's root-disk set, minus @images: the laptop hosts
+                  # no VMs (libvirtd is off), and rootless podman keeps its 4.2G
+                  # store under ~/.local/share/containers, not /var/lib. Keeping
+                  # these out of @ is what stops journal and package-cache churn
+                  # landing in every root snapshot.
+                  "@log" = {
+                    mountpoint = "/var/log";
+                    mountOptions = opts;
+                  };
+                  "@cache" = {
+                    mountpoint = "/var/cache";
+                    mountOptions = opts;
+                  };
+                  "@tmp" = {
+                    mountpoint = "/var/tmp";
+                    mountOptions = opts;
+                  };
                   "@swap" = {
                     mountpoint = "/swap";
                     # `path` defaults to the subvolume name, which would put

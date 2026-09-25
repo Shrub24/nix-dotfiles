@@ -17,7 +17,7 @@ this table is a rendering of it.
 | `ESP`       | 2 GiB     | `EF00`   | FAT32, mounted `/boot`, `fmask=0077,dmask=0077` |
 | `cryptroot` | remainder | `8300`   | LUKS2 named `cryptroot`, `--allow-discards`     |
 
-Inside the container, one btrfs filesystem with five subvolumes:
+Inside the container, one btrfs filesystem with nine subvolumes:
 
 | Subvolume    | Mountpoint    | Notes                                         |
 | ------------ | ------------- | --------------------------------------------- |
@@ -26,14 +26,23 @@ Inside the container, one btrfs filesystem with five subvolumes:
 | `@home`      | `/home`       |                                               |
 | `@snapshots` | `/.snapshots` |                                               |
 | `@persist`   | `/persist`    | empty; reserved for impermanence/preservation |
+| `@log`       | `/var/log`    | journal churn, outside root snapshots         |
+| `@cache`     | `/var/cache`  |                                               |
+| `@tmp`       | `/var/tmp`    |                                               |
 | `@swap`      | `/swap`       | holds a 12 GiB `swapfile`                     |
+
+No `@images`: the laptop runs no VMs (`virtualisation.libvirtd` is off). No
+containers subvolume either — rootless podman keeps its store under
+`~/.local/share/containers`, and `/var/lib/containers` holds 120K on the
+desktop, so the rootful path is unused.
 
 Every subvolume carries `noatime,compress=zstd:3,ssd,discard=async,space_cache=v2`.
 
 Three things follow from that device tree and are _not_ restated anywhere
 else, because disko renders them at normal priority:
 
-- `fileSystems` for `/`, `/.snapshots`, `/boot`, `/home`, `/nix`, `/persist`, `/swap`
+- `fileSystems` for `/`, `/.snapshots`, `/boot`, `/home`, `/nix`, `/persist`,
+  `/var/cache`, `/var/log`, `/var/tmp`, `/swap`
 - `boot.initrd.luks.devices.cryptroot.device = /dev/disk/by-partlabel/disk-main-cryptroot`
   — partlabel, not UUID, which is why nothing here captures a filesystem UUID
 - `swapDevices = [ "/swap/swapfile" ]`
@@ -42,12 +51,13 @@ else, because disko renders them at normal priority:
 overrides facter's `mkDefault` assignments.
 
 **Divergence from the desktop's root disk:** the desktop also carries
-`@cache` → `/var/cache`, `@log` → `/var/log`, `@tmp` → `/var/tmp` and
-`@images` → `/var/lib/libvirt/images`, so those churn paths fall outside its
-root snapshots. The laptop has none of them, so `/var/log` and `/var/cache`
-live inside `@`. Adding them later needs no repartition — `btrfs subvolume
-create`, mount, and a `fileSystems` entry — but moving a live journal is
-fiddlier than declaring it now.
+`@images` → `/var/lib/libvirt/images` for its NixOS VM tests. The laptop runs
+no VMs, so that one is deliberately absent; everything else matches.
+
+**Not covered by either host yet:** `@home` here is a single subvolume, so
+`~/.cache` and `~/.local/share` still fall inside home snapshots. The desktop
+splits those out as nested subvolumes under `@home`; the laptop can follow
+once snapper covers `/home` there.
 
 ## Preflight
 
@@ -93,14 +103,15 @@ The machine boots to a passphrase prompt, then NixOS. Verify the topology
 before anything else:
 
 ```fish
-findmnt / /nix /home /swap /.snapshots /boot
+findmnt / /nix /home /persist /var/log /var/cache /var/tmp /swap /.snapshots /boot
 btrfs subvolume list /
 sudo btrfs filesystem usage /
 ```
 
 Expected: `/` on `subvol=@`, `/nix` on `subvol=@nix`, `/home` on
-`subvol=@home`, `/persist` on `subvol=@persist`, and `/boot` on
-`/dev/nvme0n1p1`. `/persist` is empty until an impermanence change claims it.
+`subvol=@home`, `/persist` on `subvol=@persist`, each `/var` path on its own
+subvolume, and `/boot` on `/dev/nvme0n1p1`. `/persist` is empty until an
+impermanence change claims it.
 
 ## Phase 3 — the one captured value
 
