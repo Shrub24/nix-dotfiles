@@ -33,7 +33,11 @@ in
         type = "gpt";
         partitions = {
           ESP = {
-            size = "1G";
+            # 2 GiB, matching the desktop's install: ~60-70 MB per NixOS
+            # generation (Ice Lake kernel + systemd initrd) against a
+            # configurationLimit of 20 is 1.2-1.4 GB, which a 1 GiB ESP
+            # cannot hold.
+            size = "2G";
             type = "EF00";
             content = {
               type = "filesystem";
