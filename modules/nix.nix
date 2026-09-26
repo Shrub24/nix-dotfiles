@@ -175,10 +175,9 @@ in
         inputs.nix-fleet.modules.nixos.nix-gc
       ];
 
-      services.nix-baseline.enable = true;
-
+      # Selection is enablement: the fleet aspects declare no `enable`, so
+      # importing them is what turns them on.
       services.nix-gc = {
-        enable = true;
         dates = "weekly";
         extraArgs = "--keep-since 7d";
       };

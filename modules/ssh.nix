@@ -112,10 +112,7 @@ in
         sshTrustAspect
       ];
 
-      services.ssh-baseline = {
-        enable = true;
-        clientTuning = false;
-      };
+      services.ssh-baseline.clientTuning = false;
 
       # Host keys from the canonical inventory. This is the system file
       # (/etc/ssh/ssh_known_hosts), not client tuning — that stays off because

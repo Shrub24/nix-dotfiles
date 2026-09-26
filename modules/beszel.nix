@@ -16,10 +16,7 @@
       imports = [ inputs.nix-fleet.modules.nixos.beszel-agent ];
 
       # The hub runs on la-admin-1; this is its public half.
-      services.beszel-agent = {
-        enable = true;
-        key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILETioYsZkau/yIH2LocWZP3d7z0nZAKIMb2POQNEhst";
-      };
+      services.beszel-agent.key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILETioYsZkau/yIH2LocWZP3d7z0nZAKIMb2POQNEhst";
 
       # Metric egress stays tailnet-scoped: the hub lives behind the tailnet,
       # so the agent's listener follows the same closed-firewall convention as
