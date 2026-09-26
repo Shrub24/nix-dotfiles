@@ -14,6 +14,10 @@
     {
       treefmt.settings.global.excludes = [
         "pkgs/_sources/**"
+        # nixos-facter output: a machine-generated capture like nvfetcher's,
+        # so prettier would reformat it here and churn it again on every
+        # regeneration.
+        "modules/hosts/*/facter.json"
         # Pi subagent definitions are verbatim prompt text with YAML
         # frontmatter; the formatter renumbers their ordered lists and would
         # defeat byte-level comparison against upstream's bundled agents.
