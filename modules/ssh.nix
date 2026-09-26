@@ -72,26 +72,41 @@ in
     {
       imports = [ sshTrustAspect ];
 
-      environment.etc."ssh/ssh_known_hosts" = {
-        text = resolve.knownHostsText config.sshTrust;
-        mode = "0644";
+      # Compatibility: sops-nix's host-key change (d855d669, 2026-09-24) reads
+      # services.openssh.generateHostKeys whenever services.openssh.enable is
+      # false. system-manager's openssh port declares hostKeys but not that
+      # one option, so the attribute is missing exactly on our path — sshd
+      # isn't system-manager's to run, so enable is false here. False is the
+      # honest value and inert besides: sops.age.keyFile is the age key we
+      # actually use.
+      options.services.openssh.generateHostKeys = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Whether OpenSSH should generate missing host keys. Declared here because system-manager's openssh port omits it and sops-nix reads it.";
       };
 
-      environment.etc."ssh/ssh_config.d/30-remote-hosts.conf" = {
-        text = ''
-          # Remote build/managed hosts — ControlMaster enabled for multiplexing
-          Host ${lib.concatStringsSep " " (builtins.attrNames config.currentHost.peers)}
-            ControlMaster auto
-            ControlPersist 600
-            ControlPath /run/ssh-%r@%h:%p
-            ServerAliveInterval 60
-            ServerAliveCountMax 3
-            StrictHostKeyChecking accept-new
-            TCPKeepAlive no
-            Compression no
-            
-        '';
-        mode = "0644";
+      config = {
+        environment.etc."ssh/ssh_known_hosts" = {
+          text = resolve.knownHostsText config.sshTrust;
+          mode = "0644";
+        };
+
+        environment.etc."ssh/ssh_config.d/30-remote-hosts.conf" = {
+          text = ''
+            # Remote build/managed hosts — ControlMaster enabled for multiplexing
+            Host ${lib.concatStringsSep " " (builtins.attrNames config.currentHost.peers)}
+              ControlMaster auto
+              ControlPersist 600
+              ControlPath /run/ssh-%r@%h:%p
+              ServerAliveInterval 60
+              ServerAliveCountMax 3
+              StrictHostKeyChecking accept-new
+              TCPKeepAlive no
+              Compression no
+              
+          '';
+          mode = "0644";
+        };
       };
     }
 
