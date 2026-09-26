@@ -53,11 +53,11 @@
     "community-templates": {
       "flake": false,
       "locked": {
-        "lastModified": 1789910886,
-        "narHash": "sha256-ybXEAZCl8eIw7MuLoI/xR1HSLJkOYnT2sgvnsfEqFvA=",
+        "lastModified": 1790412928,
+        "narHash": "sha256-91AirnEFWUU4VSlhkIoaWLup7QTb8fhJ5fbZXBsiXEs=",
         "owner": "noctalia-dev",
         "repo": "community-templates",
-        "rev": "849e65f052a42c36f8939fe9bf58e4e45f1bfca1",
+        "rev": "538048e6c3fc97c87112e476d959886f4df17b19",
         "type": "github"
       },
       "original": {
@@ -94,11 +94,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789628710,
-        "narHash": "sha256-9JsFHbFkt692sp3qpJ+mLqC+RaiGrmaC2d/XDB8YcEU=",
+        "lastModified": 1790233545,
+        "narHash": "sha256-e0N2xeZmgk8Kb++amcDVpWuObhTJdP3AV0QOKTy25G8=",
         "owner": "Mic92",
         "repo": "direnv-instant",
-        "rev": "2c4de8696023fb792b869cf1c7708289ac17a647",
+        "rev": "862d73ecdd61092c982e95249983b398da79f8a4",
         "type": "github"
       },
       "original": {
@@ -385,11 +385,11 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1790144682,
-        "narHash": "sha256-sZTFmJpslNsDzzJNBqMQW1L+NSh4w/uRc8uOMklWsGc=",
+        "lastModified": 1790394715,
+        "narHash": "sha256-6guR2TYEkqw04Qt+8Ek7ciOxdAtoTO9S9vBeQzv/hFc=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "5f47c35d37a40fb651e4a00571d03e12b23d11f9",
+        "rev": "d0288be5b3330d2442e3907185b8e9d0958297bb",
         "type": "github"
       },
       "original": {
@@ -405,11 +405,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790128814,
-        "narHash": "sha256-6Gm9q+wW3E4Ey4F6wEbJAwaMsEK6hvCYfTW7yY64ZfA=",
+        "lastModified": 1790365885,
+        "narHash": "sha256-iQ0ebhiVo64NktTnwft9hNxlFu4j5cvljVxyJaEVIP4=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "0b2f1129177f70c5f0f5d88bb53c49ca47d0bfc0",
+        "rev": "7b4c5ec4bedaf1e062bbc1bcaeddbc6bd242aa1b",
         "type": "github"
       },
       "original": {
@@ -479,11 +479,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790136910,
-        "narHash": "sha256-Ho5xXKbluCp1lmvUkVwrN76fUW1NC3RARdNaFMGpEcY=",
+        "lastModified": 1790416022,
+        "narHash": "sha256-DjGLaiqnHlHQ9d8EfKhklMlCRoEC97FkI9XRgznopL8=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "3a78485c5ec8c10ec53915410c724a4492cea4bb",
+        "rev": "03aa73a454d7468e0a3d44faee511fa6ae7c7ded",
         "type": "github"
       },
       "original": {
@@ -501,11 +501,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1790007944,
-        "narHash": "sha256-Z43hCo/hp66FQdQ9RTR/r35hnRKv35TjgcPhSa3cy0o=",
+        "lastModified": 1790424307,
+        "narHash": "sha256-1czuUhI1bda+gNIqb84HcON/hNn3sQstmw4Mk6xFDGI=",
         "owner": "Shrub24",
         "repo": "memex",
-        "rev": "2a8d66d6e31af7356d5a9d5711b9f349dc7bf607",
+        "rev": "4b1dc9234107bd538ab064895b38f9f7faef9c06",
         "type": "github"
       },
       "original": {
@@ -522,11 +522,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789981568,
-        "narHash": "sha256-NYaSdTAnHmg/QeGaSIaeTAx5R83XjKtyJULm05DT6IU=",
+        "lastModified": 1790356230,
+        "narHash": "sha256-XZDCkexe4ML5kAW+LmCGfkQ2+nqucHxXxt0q267+9Ds=",
         "owner": "ToRvaLDz",
         "repo": "monique",
-        "rev": "b67882b59abaacc597e2d25bc30cf9c7d2b72ce2",
+        "rev": "2f3250a6014d3667208a6b7986e5e42f9a446a36",
         "type": "github"
       },
       "original": {
@@ -594,11 +594,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1790302853,
-        "narHash": "sha256-rYmJ4MMkVO6RVpn7cTqucCM7klZeK1Ds+2Q1+bEqCq8=",
+        "lastModified": 1790425253,
+        "narHash": "sha256-0n6te6btF5Wws7ZGQ/bt8pNKRVjGPxjr5a0T00nQF+s=",
         "owner": "Shrub24",
         "repo": "nix-fleet",
-        "rev": "25bcd3ba743086037357988b1ae9283980e9bc13",
+        "rev": "21caae5a937ea0be198706879ec25a4c657e69dc",
         "type": "github"
       },
       "original": {
@@ -682,11 +682,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790104132,
-        "narHash": "sha256-yvcudrhnWvWSFS2ujWxAJ7CVdgdiZs2BDGbgn38p1l0=",
+        "lastModified": 1790412940,
+        "narHash": "sha256-gfqQVe9f9vSdCaof+t4f+ucV82Eg0lfLa0W39hwgwgQ=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "61aa22730c434500fd3f2048eba47658b1f20aad",
+        "rev": "0433e3f8517ffc615906f6a17ac824724353aefb",
         "type": "github"
       },
       "original": {
@@ -1189,11 +1189,11 @@
         "systems": "systems_5"
       },
       "locked": {
-        "lastModified": 1790080493,
-        "narHash": "sha256-au8LILK+GzBEkE7cGNlnL8Ifb/MJL0/cCFOUpiVNVvg=",
+        "lastModified": 1790422090,
+        "narHash": "sha256-TPl9ay7vQ+MfIElfY6fHv9EdaKm/n5lfeT+4w7P881E=",
         "owner": "vicinaehq",
         "repo": "vicinae",
-        "rev": "a317d173cdfd5cc8ce4ec9f5c0c4082b98342f23",
+        "rev": "092e83aec0d5fb1b52857d6334fbe003b0e76d1b",
         "type": "github"
       },
       "original": {
