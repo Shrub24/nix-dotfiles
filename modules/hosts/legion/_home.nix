@@ -58,6 +58,9 @@
     lazyjournal = {
       enable = true;
     };
+    lazyslurm = {
+      enable = true;
+    };
     docsMcp.enable = true;
     qmd.enable = true;
     agentTools.enable = true;

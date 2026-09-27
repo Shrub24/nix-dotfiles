@@ -464,6 +464,26 @@
         "type": "github"
       }
     },
+    "lazyslurm": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786310737,
+        "narHash": "sha256-2YCImvdWmwHmOqHi10MhTRKwUfbwONCzDBiktBQWXZE=",
+        "owner": "hill",
+        "repo": "lazyslurm",
+        "rev": "0206b9e69dc1f62ff5a1ca7a0a57a7147be226c3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hill",
+        "repo": "lazyslurm",
+        "type": "github"
+      }
+    },
     "llm-agents": {
       "inputs": {
         "bun2nix": "bun2nix",
@@ -863,6 +883,7 @@
           "import-tree"
         ],
         "keypeek": "keypeek",
+        "lazyslurm": "lazyslurm",
         "llm-agents": "llm-agents",
         "memex": "memex",
         "monique": "monique",

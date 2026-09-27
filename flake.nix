@@ -57,6 +57,10 @@
         nixpkgs.follows = "nixpkgs";
       };
     };
+    lazyslurm = {
+      url = "github:hill/lazyslurm";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
       inputs = {

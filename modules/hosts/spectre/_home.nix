@@ -13,6 +13,10 @@
   # Journal picker over ssh; the aspect is option-gated, so the host turns it on.
   programs.lazyjournal.enable = true;
 
+  # Cluster job browser. Inert without the Slurm client commands (sinfo, sacct)
+  # on PATH — it reads them, it does not talk to a cluster itself.
+  programs.lazyslurm.enable = true;
+
   # Same dev stack as the desktop, minus services. The other aspects are
   # unconditional; `miseTools` is what turns on the mise aspect.
   programs.miseTools = {
