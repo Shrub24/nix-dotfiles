@@ -194,6 +194,7 @@ let
     "foundation"
     "fish"
     "network"
+    "globalprotect"
     "boot"
     "ssh"
     "tailscale"
