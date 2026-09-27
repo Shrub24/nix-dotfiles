@@ -147,7 +147,11 @@ in
         "always-allow-substitutes" = true;
         "builders-use-substitutes" = true;
         "builders" = "@/etc/nix/machines";
-        "max-jobs" = "auto";
+        # `auto` resolves to nproc — 20 here — which oversubscribes against the
+        # four slots home-forge offers. Nix balances builders by load/speedFactor,
+        # so home-forge already carries the bulk of a build queue; this caps what
+        # legion adds on top without starving it when the builder is unreachable.
+        "max-jobs" = 8;
         "nix-path" = "nixpkgs=flake:nixpkgs";
         "keep-derivations" = true;
         "warn-dirty" = false;
@@ -188,7 +192,9 @@ in
         # nixpkgs already lists "root" and this list concatenates, so naming it
         # again renders a duplicate.
         "trusted-users" = [ config.currentHost.primaryUser.name ];
-        "max-jobs" = "auto";
+        # Same reasoning as the systemManager aspect: a cap on local concurrency,
+        # not `auto`.
+        "max-jobs" = 8;
         "nix-path" = "nixpkgs=flake:nixpkgs";
         "keep-derivations" = true;
         "warn-dirty" = false;
