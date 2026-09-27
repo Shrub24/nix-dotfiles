@@ -181,8 +181,8 @@
           out = "$XDG_CONFIG_HOME/opencode/themes/matugen.json";
         }
         {
-          id = "pywalfox-beta4";
-          dir = "pywalfox-beta4";
+          id = "pywalfox";
+          dir = "pywalfox";
           file = "pywalfox.json";
           out = "$XDG_CACHE_HOME/wal/colors.json";
           action = "firefox-theme";
@@ -344,7 +344,6 @@
           {
             text = ''
               spawn-at-startup "noctalia"
-              spawn-at-startup "noctalia-hide-action-bar"
 
               layer-rule {
                 match namespace="^noctalia-backdrop"
@@ -368,8 +367,8 @@
             text = ''
               binds {
                 // === Shell (Noctalia) ===
-                Mod+A hotkey-overlay-title="Swap Action Bar" {
-                  spawn "noctalia-bar-swap";
+                Mod+A hotkey-overlay-title="Toggle Action Bar" {
+                  spawn "noctalia" "msg" "bar-toggle" "action";
                 }
                 Mod+Comma hotkey-overlay-title="Settings" {
                   spawn "noctalia" "msg" "settings-toggle";
@@ -588,9 +587,17 @@
           };
 
           bar.action = {
-            position = "top";
+            position = "bottom";
             layer = "overlay";
-            reserve_space = true;
+            # No layout reservation: the bar draws over windows instead of
+            # pushing them, so showing it never reflows the workspace.
+            reserve_space = false;
+            # New monitors build their own bar instance from the config, and
+            # `bar-hide` only reaches instances that already exist — which is
+            # why a hotplugged display showed both bars unbidden. `auto_hide` is
+            # the one key read at instance creation, so every bar starts hidden
+            # and slides in on hover or Mod+A.
+            auto_hide = true;
             background_opacity = 0.58;
             capsule_fill = "surface";
             capsule_foreground = "on_surface";
@@ -882,45 +889,6 @@
         pkgs.zip
         (pkgs.python3.withPackages (p: [ p.pillow ]))
         noctaliaGreeterPackage
-        (pkgs.writeShellApplication {
-          name = "noctalia-bar-swap";
-          runtimeInputs = [
-            pkgs.coreutils
-            pkgs.noctalia
-          ];
-          text = ''
-            state_file="''${XDG_RUNTIME_DIR:-/tmp}/noctalia-action-bar"
-            if [ -f "$state_file" ]; then
-              rm -f "$state_file"
-              noctalia msg bar-hide action
-              noctalia msg bar-show default
-            else
-              touch "$state_file"
-              noctalia msg bar-hide default
-              noctalia msg bar-show action
-            fi
-          '';
-        })
-        (pkgs.writeShellApplication {
-          name = "noctalia-hide-action-bar";
-          runtimeInputs = [
-            pkgs.coreutils
-            pkgs.noctalia
-          ];
-          text = ''
-            rm -f "''${XDG_RUNTIME_DIR:-/tmp}/noctalia-action-bar"
-            for _ in {1..50}; do
-              if noctalia msg bar-hide action >/dev/null 2>&1; then
-                noctalia msg bar-show default >/dev/null
-                sleep 1
-                noctalia msg bar-hide action >/dev/null
-                exit 0
-              fi
-              sleep 0.2
-            done
-            exit 1
-          '';
-        })
       ];
     }
 
