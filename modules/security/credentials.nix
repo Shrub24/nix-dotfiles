@@ -40,6 +40,7 @@ _: {
             CURSOR_API_KEY = "cursor_api_key";
             VOLCENGINE_API_KEY = "volcengine_api_key";
             TOKENROUTER_API_KEY = "tokenrouter_api_key";
+            VOYAGE_API_KEY = "voyage_api_key";
           }
           // mkSecrets (secretsDir + "/web-search.yaml") {
             BRAVE_API_KEY = "brave_api_key";
@@ -71,6 +72,8 @@ _: {
           GITHUB_TOKEN=${config.sops.placeholder.GITHUB_TOKEN}
           BRAVE_API_KEY=${config.sops.placeholder.BRAVE_API_KEY}
           DATALAB_API_KEY=${config.sops.placeholder.DATALAB_API_KEY}
+          VOYAGE_API_KEY=${config.sops.placeholder.VOYAGE_API_KEY}
+          TYPESAFE_API_KEY=${config.sops.placeholder.TYPESAFE_API_KEY}
         '';
       };
     };

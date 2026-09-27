@@ -1,8 +1,4 @@
-{ config, ... }:
-let
-  omniroute = config.topology.services.omniroute.host;
-in
-{
+_: {
   flake.modules.homeManager.docs-mcp =
     {
       config,
@@ -34,7 +30,7 @@ in
 
       config = lib.mkIf cfg.enable {
         sops.templates."docs-mcp.env".content = ''
-          OPENAI_API_KEY=${config.sops.placeholder.OMNIROUTE_API_KEY}
+          OPENAI_API_KEY=${config.sops.placeholder.VOYAGE_API_KEY}
         '';
 
         systemd.user.services.docs-mcp = {
@@ -55,10 +51,16 @@ in
             ExecStart = "${pkgs.bun}/bin/bunx ${cfg.package} --protocol http --port ${toString cfg.port}";
             Restart = "on-failure";
             RestartSec = "10s";
+            # Voyage directly rather than through OmniRoute — the gateway is
+            # not embeddings-focused. The server uses this base for embeddings
+            # only (it documents no chat/LLM variable), and Voyage is
+            # OpenAI-shaped, so the swap is endpoint + model + key. The
+            # dimension drops from 4096 to voyage-4's native 1024, which
+            # invalidates the stored vectors: the index must be rebuilt once.
             Environment = [
-              "OPENAI_API_BASE=${omniroute}/v1"
-              "DOCS_MCP_EMBEDDING_MODEL=embedding"
-              "DOCS_MCP_EMBEDDINGS_VECTOR_DIMENSION=4096"
+              "OPENAI_API_BASE=https://api.voyageai.com/v1"
+              "DOCS_MCP_EMBEDDING_MODEL=voyage-4"
+              "DOCS_MCP_EMBEDDINGS_VECTOR_DIMENSION=1024"
             ];
             EnvironmentFile = [ config.sops.templates."docs-mcp.env".path ];
             StandardOutput = "journal";

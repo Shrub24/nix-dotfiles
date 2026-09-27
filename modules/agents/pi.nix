@@ -1,7 +1,4 @@
-{ config, inputs, ... }:
-let
-  omniroute = config.topology.services.omniroute.host;
-in
+{ inputs, ... }:
 {
   flake.modules.homeManager.pi =
     {
@@ -267,9 +264,13 @@ in
           memory.enabled = true;
           embedding = {
             provider = "openai-compatible";
-            model = "embedding";
-            endpoint = "${omniroute}/v1";
-            api_key = "{env:OMNIROUTE_API_KEY}";
+            # Voyage directly rather than through the OmniRoute gateway:
+            # the gateway is not embeddings-focused, so it adds latency and a
+            # failure mode to a call that is neither. The API is OpenAI-shaped,
+            # so the same openai-compatible provider applies.
+            model = "voyage-4";
+            endpoint = "https://api.voyageai.com/v1";
+            api_key = "{env:VOYAGE_API_KEY}";
           };
           cache_ttl = {
             default = "30m";
