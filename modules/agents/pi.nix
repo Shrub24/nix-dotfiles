@@ -271,6 +271,12 @@
             model = "voyage-4";
             endpoint = "https://api.voyageai.com/v1";
             api_key = "{env:VOYAGE_API_KEY}";
+            # Voyage distinguishes what is indexed from what is searched.
+            # Passages go out as `document`, queries as `query`; without it
+            # both are symmetric and retrieval quality drops. These are sent
+            # verbatim in the request body, so the strings are Voyage's own.
+            input_type = "document";
+            query_input_type = "query";
           };
           cache_ttl = {
             default = "30m";
