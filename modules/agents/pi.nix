@@ -52,11 +52,11 @@ in
         "npm:pi-web-access"
         "npm:pi-mcp-adapter"
         "npm:@cortexkit/pi-magic-context"
-        {
-          source = "git:github.com/tmustier/pi-extensions";
-          extensions = [ "session-recap/index.ts" ];
-          skills = [ ];
-        }
+        # {
+        #   source = "git:github.com/tmustier/pi-extensions";
+        #   extensions = [ "session-recap/index.ts" ];
+        #   skills = [ ];
+        # }
         "npm:pi-rewind-hook"
         # "npm:pi-interactive-shell"
         # "git:github.com/DietrichGebert/ponytail"
@@ -268,6 +268,11 @@ in
       home.sessionVariables = {
         HINDSIGHT_BASE_URL = hindsightUrl;
         PI_BLACKHOLE_MEMORY = "false";
+        # Fixed trigger, not a ratio: blackhole compacts a child once 200k
+        # tokens have accumulated since its last compaction. An explicit
+        # compactAfterTokens always wins over the preset curve, so this
+        # overrides the built-in 0.40-at-1M default rather than refining it.
+        PI_BLACKHOLE_COMPACT_AFTER_TOKENS = "200000";
       };
 
       # pi-tool.json, pi-stamp.json, and pi-herdr.json stay application-owned:
