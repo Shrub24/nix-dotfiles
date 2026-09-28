@@ -1,4 +1,10 @@
-{ inputs, ... }:
+{ config, inputs, ... }:
+let
+  # Read at the flake-parts level and closed over by the HM module — the
+  # same shape as omniroute/ntfy/niks3. The endpoint is fleet-facing policy,
+  # never a literal in the extension's config.
+  hindsightUrl = config.topology.services.hindsight.host;
+in
 {
   flake.modules.homeManager.pi =
     {
@@ -77,12 +83,24 @@
         "npm:@vanillagreen/pi-extension-manager"
         "${piExtensions "pi-output-policy"}"
         "npm:@gotgenes/pi-permission-system"
-        "npm:pi-typesafe"
         "npm:pi-intercom"
         "npm:pi-loop-police"
         # Package dir, not entry files — a file path fails with "package source not found".
         "${piExtensions "pi-jev"}"
         "npm:pi-tool-repair"
+        # Installed but not loaded by this session: `extensions = []`
+        # suppresses the package's own manifest entry, so the parent keeps
+        # pi's compaction disabled (compaction.enabled = false) and Magic
+        # Context as its only context manager. Children load the entry
+        # through subagents.defaultExtensions below — they have no Magic
+        # Context and would otherwise run unbounded.
+        {
+          source = "npm:pi-blackhole";
+          extensions = [ ];
+          skills = [ ];
+        }
+        # Hindsight: recall before model calls, retain after completed runs.
+        "npm:@luxusai/pi-hindsight"
         # "npm:@howaboua/pi-codex-conversion"
         # "npm:@vanillagreen/pi-hooks"
         # "@spences10/pi-context"
@@ -223,6 +241,15 @@
               # parent session manager): registers ctx_search + todowrite and
               # deliberately omits session-scoped tools.
               "${piAgentDir}/npm/node_modules/@cortexkit/pi-magic-context/dist/subagent-entry.js"
+              # Compaction for children only (see the packages entry): a
+              # deterministic algorithmic summary at blackhole's own
+              # threshold, independent of pi's compaction.enabled. Memory is
+              # off — the Observer/Reflector/Dropper workers are LLM calls
+              # whose ledger dies with a short-lived child run.
+              "${piAgentDir}/npm/node_modules/pi-blackhole/dist/index.js"
+              # Hindsight for children too: ambient discovery is deliberately
+              # off here, so an ambient package has to be listed explicitly.
+              "${piAgentDir}/npm/node_modules/@luxusai/pi-hindsight/extensions"
             ];
             defaultProvider = "omniroute";
           };
@@ -233,6 +260,14 @@
             pinLabeledEntries = true;
           };
         };
+      };
+
+      # Env wins over hindsight's own config file, which its TUI and the
+      # hindsight_config tool both write — so the endpoint stays the topology
+      # SSOT without Nix owning a file the application rewrites.
+      home.sessionVariables = {
+        HINDSIGHT_BASE_URL = hindsightUrl;
+        PI_BLACKHOLE_MEMORY = "false";
       };
 
       # pi-tool.json, pi-stamp.json, and pi-herdr.json stay application-owned:
@@ -248,33 +283,23 @@
           historian = {
             two_pass = true;
             opencode = {
-              model = "opencode-omniroute/budget";
+              model = "opencode-omniroute/coder-high";
               fallback_models = [
-                "opencode/mimo-v2.5-free"
-                "opencode/deepseek-v4-flash-free"
-                "opencode-go/mimo-v2.5"
+                "opencode-omniroute/budget"
               ];
             };
             pi = {
-              model = "omniroute/budget";
-              fallback_models = [ "omniroute/coder-high" ];
+              model = "omniroute/coder-high";
+              fallback_models = [ "omniroute/budget" ];
             };
           };
           dreamer.disable = true;
           memory.enabled = true;
           embedding = {
             provider = "openai-compatible";
-            # Voyage directly rather than through the OmniRoute gateway:
-            # the gateway is not embeddings-focused, so it adds latency and a
-            # failure mode to a call that is neither. The API is OpenAI-shaped,
-            # so the same openai-compatible provider applies.
             model = "voyage-4";
             endpoint = "https://api.voyageai.com/v1";
             api_key = "{env:VOYAGE_API_KEY}";
-            # Voyage distinguishes what is indexed from what is searched.
-            # Passages go out as `document`, queries as `query`; without it
-            # both are symmetric and retrieval quality drops. These are sent
-            # verbatim in the request body, so the strings are Voyage's own.
             input_type = "document";
             query_input_type = "query";
           };
@@ -286,7 +311,7 @@
           execute_threshold_tokens.default = 200000;
           smart_drops = true;
         };
-        ".pi/agent/mcp.json".source = json.generate "pi-mcp.json" {
+        ".config/mcp/mcp.json".source = json.generate "pi-mcp.json" {
           settings = {
             toolPrefix = "server";
             lifecycle = "keep-alive";
@@ -324,14 +349,7 @@
           }
           // lib.optionalAttrs (config.programs.memex.enable or false) {
             memex = {
-              # "search" keeps the six memex tools inactive, reachable only
-              # through the mcp proxy — which also stays visible.
               directTools = "search";
-              # The daemon serves the same rmcp server over HTTP that
-              # `memex mcp --transport stdio` serves in-process, so tools and
-              # schemas are identical; dialing it keeps one embedding model
-              # resident instead of one per session. The address comes from the
-              # memex module's own setting so the two cannot disagree.
               url = "http://${config.programs.memex.settings.mcp.listen}/mcp";
             };
           };

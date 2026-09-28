@@ -109,6 +109,7 @@ in
       database.host = "oci-melb-1";
       niks3.host = "http://oci-melb-1:5751";
       ntfy.host = "https://ntfy.shrublab.xyz";
+      hindsight.host = "http://home-forge:8888";
     };
 
     flake.modules.nixos.current-host = currentHostAspect;
