@@ -14,6 +14,12 @@ in
       ...
     }:
     let
+      # The Claude subscription path: claude-code is the executable
+      # pi-claude-bridge drives via the Agent SDK. Home Manager owns it like any
+      # other agent binary (see modules/agents/herdr.nix), and the bridge reads
+      # the path below rather than resolving `claude` on PATH.
+      claudeCode = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.claude-code;
+
       json = pkgs.formats.json { };
 
       # Pi agent dir; referenced by rendered settings and out-of-store symlinks.
@@ -62,8 +68,8 @@ in
           source = "git:github.com/ayghri/i-have-adhd";
           skills = [ ];
         }
-        "npm:@narumitw/pi-tool"
-        "npm:@narumitw/pi-btw"
+        # "npm:@narumitw/pi-tool"
+        # "npm:@narumitw/pi-btw"
         "npm:@narumitw/pi-herdr"
         "npm:pi-context-view"
         "npm:pi-vim"
@@ -74,7 +80,7 @@ in
         "${piExtensions "pi-subagents"}"
         "${piExtensions "pi-cbmem"}"
         "npm:@juicesharp/rpiv-ask-user-question"
-        "npm:pi-boomerang"
+        # "npm:pi-boomerang"
         "npm:pi-cache-optimizer"
         "${piExtensions "pi-bash-processes"}"
         "${piExtensions "pi-tool-renderer"}"
@@ -93,6 +99,7 @@ in
           skills = [ ];
         }
         "npm:@luxusai/pi-hindsight"
+        "npm:pi-claude-bridge"
         # "npm:@howaboua/pi-codex-conversion"
         # "npm:@vanillagreen/pi-hooks"
         # "@spences10/pi-context"
@@ -250,15 +257,25 @@ in
         };
       };
 
+      home.packages = [ claudeCode ];
+
       home.sessionVariables = {
         HINDSIGHT_BASE_URL = hindsightUrl;
         PI_BLACKHOLE_MEMORY = "false";
         PI_BLACKHOLE_COMPACT_AFTER_TOKENS = "200000";
       };
 
-      # pi-tool.json, pi-stamp.json, and pi-herdr.json stay application-owned:
-      # they save with a temporary file plus rename(), which replaces a store
-      # symlink with a real file instead of failing.
+      # pi-tool.json and pi-stamp.json stay application-owned: they save with a
+      # temporary file plus rename(), which replaces a store symlink with a real
+      # file instead of failing. pi-herdr.json is refused on read when it is not
+      # a regular file (its own lstat guard), so a store symlink breaks the
+      # plugin outright.
+      #
+      # pi-claude-bridge writes claude-bridge.json in place (writeFileSync, no
+      # rename), so a symlink survives — its own startup notice being the only
+      # write it ever makes. The notice key is declared here for that reason:
+      # the notice cannot fire, so the file is never written, and `/login` stays
+      # imperative — the credential it writes lands in ~/.claude.
       home.file = {
         # Shared CortexKit config (Pi + OpenCode read the same file).
         # Runtime only reads it; the doctor CLI writes it only when absent,
@@ -389,6 +406,11 @@ in
           }
           // webSearchKeyConfig
         );
+
+        ".pi/agent/claude-bridge.json".source = json.generate "claude-bridge.json" {
+          startupNoticeShown = "2026-09-28";
+          provider.pathToClaudeCodeExecutable = "${claudeCode}/bin/claude";
+        };
 
         ".pi/agent/extensions/subagent/config.json".source = json.generate "pi-subagents-config.json" {
           fleetView = true;
