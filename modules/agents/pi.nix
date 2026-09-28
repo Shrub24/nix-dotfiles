@@ -1,9 +1,13 @@
 { config, inputs, ... }:
 let
-  # Read at the flake-parts level and closed over by the HM module — the
-  # same shape as omniroute/ntfy/niks3. The endpoint is fleet-facing policy,
-  # never a literal in the extension's config.
-  hindsightUrl = config.topology.services.hindsight.host;
+  # Read at the flake-parts level and closed over by the HM module — the same
+  # shape as omniroute/ntfy/niks3. The endpoint resolves from the fleet's
+  # canonical inventory, never a literal in the extension's config.
+  hindsightUrl = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
+    service = "hindsight";
+    endpoint = "api";
+    via = "tailnet";
+  };
 in
 {
   flake.modules.homeManager.pi =

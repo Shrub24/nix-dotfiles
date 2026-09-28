@@ -1,10 +1,11 @@
-# Fleet topology: the machines that exist and the endpoints services live at,
-# read via `config` by consumers — never injected through argument buses.
+# Fleet topology: the machines that exist, read via `config` by consumers —
+# never injected through argument buses. Service endpoints are deliberately not
+# restated here: consumers resolve them from nix-fleet's canonical service
+# inventory (`lib.serviceEndpoints`), so the two can never disagree.
 #
 # Declaration ownership follows the fact. A machine this repository configures
 # contributes its own entry from its own host file (modules/hosts/<host>.nix);
-# the machines it only reaches, and the service endpoint map, are fleet facts and
-# live here beside the schema.
+# the machines it only reaches are fleet facts and live here beside the schema.
 { lib, ... }:
 let
   primaryUserType = lib.types.submodule {
@@ -83,33 +84,12 @@ in
     '';
   };
 
-  options.topology.services = lib.mkOption {
-    type = lib.types.attrsOf (
-      lib.types.submodule {
-        options.host = lib.mkOption {
-          type = lib.types.str;
-          description = "Service endpoint/host (hostname or URL) for the service.";
-        };
-      }
-    );
-    default = { };
-    description = "Service topology: the endpoint each service is reached at.";
-  };
-
   # Machines this repository reaches but does not configure.
   config = {
     topology.hosts = {
       oci-melb-1.sshUser = "dev";
       home-forge.sshUser = "dev";
       la-admin-1.sshUser = "dev";
-    };
-
-    topology.services = {
-      omniroute.host = "http://home-forge:20128";
-      database.host = "oci-melb-1";
-      niks3.host = "http://oci-melb-1:5751";
-      ntfy.host = "https://ntfy.shrublab.xyz";
-      hindsight.host = "http://home-forge:8888";
     };
 
     flake.modules.nixos.current-host = currentHostAspect;

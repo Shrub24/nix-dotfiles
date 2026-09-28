@@ -1,8 +1,13 @@
 { config, inputs, ... }:
 let
-  # Service topology read at the flake-parts level, closed over by the NixOS
-  # module.
-  ntfyUrl = config.topology.services.ntfy.host;
+  # Resolved at the flake-parts level from the fleet's canonical service
+  # inventory, closed over by the NixOS module. Tailnet-only: dispatch no
+  # longer rides the public ingress.
+  ntfyUrl = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
+    service = "ntfy";
+    endpoint = "api";
+    via = "tailnet";
+  };
 in
 {
   flake.modules.nixos.notify =

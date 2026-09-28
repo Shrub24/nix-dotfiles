@@ -22,7 +22,11 @@ let
     peers = lib.removeAttrs config.topology.hosts [ hostId ];
   };
   currentHostModule = { inherit currentHost; };
-  omniroute = config.topology.services.omniroute.host;
+  omniroute = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
+    service = "omniroute";
+    endpoint = "api";
+    via = "tailnet";
+  };
   # Build dispatch: nix-fleet's pure resolver turns the canonical inventory and
   # this repository's profile into normalized specs, and nixpkgs renders them
   # into /etc/nix/machines. The private key is a credential reference the

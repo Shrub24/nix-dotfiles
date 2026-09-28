@@ -107,14 +107,17 @@ ranks only the configured machines against each other, so a scheduled builder
 accepts everything and no weight or predicate expresses "prefer local".
 ```
 
-The fleet registry and the service endpoint map are typed options
-(`topology.hosts.<id>`, `topology.services.<name>.host`) declared in
-`modules/policy/topology.nix` — their declaration sits beside the schema because
-they describe machines and endpoints, not one host: a machine this repository
-configures contributes its own registry entry from its own host file, and the
-machines it only reaches are declared with the schema. Consumers read them via
-the normal module system — there is no `specialArgs`/`extraSpecialArgs` argument
-bus and no ambient facts record.
+The fleet registry is a typed option (`topology.hosts.<id>`) declared in
+`modules/policy/topology.nix` — its declaration sits beside the schema because it
+describes machines, not one host: a machine this repository configures
+contributes its own registry entry from its own host file, and the machines it
+only reaches are declared with the schema. Consumers read it through the normal
+module system — there is no `specialArgs`/`extraSpecialArgs` argument bus and no
+ambient facts record. Service endpoints are not declared here: consumers resolve
+them from nix-fleet's canonical service inventory
+(`lib.serviceEndpoints.url config.fleet { … }`), which is the same shaping —
+typed, declared once, read through the module system — with the declaration
+owned by the contract that validates it.
 
 Machine identity is not ours to own. `modules/policy/fleet.nix` imports
 `nix-fleet`'s contract, so target system, tailnet hostname and SSH host key come
@@ -237,7 +240,7 @@ than a sops secret, and there is no enrollment gate. The contributor aspects
 inject host policy — the hub key and tailnet exposure — while the fleet aspect
 owns the unit and its notify registration.
 LLM traffic goes to the OmniRoute gateway on the builder host, an endpoint the
-fleet topology carries (`topology.services.omniroute.host`).
+fleet service inventory carries (`lib.serviceEndpoints`).
 Service ports and display metadata are owned by `lib/web-services.nix`
 (grist 8484, docs-mcp 6280, qmd 8181, web-catalog 8123);
 canonical contract: [web-service-catalog](openspec/specs/web-service-catalog/spec.md).

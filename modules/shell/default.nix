@@ -1,6 +1,10 @@
-{ config, ... }:
+{ config, inputs, ... }:
 let
-  omniroute = config.topology.services.omniroute.host;
+  omniroute = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
+    service = "omniroute";
+    endpoint = "api";
+    via = "tailnet";
+  };
 in
 {
   flake.modules.homeManager.shell =

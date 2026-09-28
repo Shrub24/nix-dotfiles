@@ -10,13 +10,15 @@ flake-wide topology key.
 
 ### Requirement: The fleet registry stays the single source of truth
 
-Machine entries (`topology.hosts.<name>`) and service endpoints
-(`topology.services.<name>`) SHALL remain typed flake-parts options, each
-declared once: a machine this repository configures declares its own entry in its
-own host composition, while the machines it only reaches and the service
-endpoints are declared beside the schema in `modules/policy/topology.nix`. Each
-entry SHALL carry the login user used to reach that machine. Peer and alias lists
-SHALL be derived from the registry rather than maintained as parallel literals.
+Machine entries (`topology.hosts.<name>`) SHALL remain typed flake-parts
+options, declared once: a machine this repository configures declares its own
+entry in its own host composition, while the machines it only reaches are
+declared beside the schema in `modules/policy/topology.nix`. Service endpoints
+SHALL NOT be declared here: they resolve from nix-fleet's canonical service
+inventory (`lib.serviceEndpoints`), so a consumer names a service, an endpoint
+and an access route and never restates a host or port. Each machine entry SHALL
+carry the login user used to reach that machine. Peer and alias lists SHALL be
+derived from the registry rather than maintained as parallel literals.
 
 #### Scenario: A machine is registered once
 

@@ -4,7 +4,11 @@
   ...
 }:
 let
-  omniroute = config.topology.services.omniroute.host;
+  omniroute = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
+    service = "omniroute";
+    endpoint = "api";
+    via = "tailnet";
+  };
 in
 {
   # Its uv2nix/python closure is built against its own nixpkgs, so this one

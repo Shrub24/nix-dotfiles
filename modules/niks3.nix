@@ -4,9 +4,13 @@
   ...
 }:
 let
-  # Service topology read at the flake-parts level, closed over by the HM and
-  # NixOS modules.
-  niks3ServerUrl = config.topology.services.niks3.host;
+  # Resolved at the flake-parts level from the fleet's canonical service
+  # inventory, closed over by the HM and NixOS modules.
+  niks3ServerUrl = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
+    service = "niks3-write";
+    endpoint = "api";
+    via = "tailnet";
+  };
 in
 {
   flake.modules.nixos.niks3 = _: {
