@@ -16,18 +16,18 @@
   };
   codexbar = {
     pname = "codexbar";
-    version = "v0.57.0";
+    version = "v0.68.0";
     src = fetchurl {
-      url = "https://github.com/steipete/CodeXBar/releases/download/v0.57.0/CodexBarCLI-v0.57.0-linux-x86_64.tar.gz";
-      sha256 = "sha256-vef2RGTWCPb/fBVE+DFx7UlCCmRlLyCiNBV21omBi1I=";
+      url = "https://github.com/steipete/CodeXBar/releases/download/v0.68.0/CodexBarCLI-v0.68.0-linux-x86_64.tar.gz";
+      sha256 = "sha256-LZVyiqXrcX0SrApJIMUVN1uTqqWMM2N570612MIO7kk=";
     };
   };
   xberg-cli = {
     pname = "xberg-cli";
-    version = "v1.1.3";
+    version = "v1.2.9";
     src = fetchurl {
-      url = "https://github.com/xberg-io/xberg/releases/download/v1.1.3/xberg-cli-x86_64-unknown-linux-gnu.tar.gz";
-      sha256 = "sha256-SEGYPpTSBhz+4DV8ycsfEhKm3TQLr1uoVGakAJzp354=";
+      url = "https://github.com/xberg-io/xberg/releases/download/v1.2.9/xberg-cli-x86_64-unknown-linux-gnu.tar.gz";
+      sha256 = "sha256-S9wor/Xe1vF4puq3rtgbVjKsfk5E0eeEgRht1E1Znn4=";
     };
   };
 }

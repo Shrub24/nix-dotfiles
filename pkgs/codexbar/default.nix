@@ -15,6 +15,13 @@ stdenvNoCC.mkDerivation {
   installPhase = ''
     runHook preInstall
     install -Dm755 CodexBarCLI $out/bin/codexbar
+    # The provider plugins are JavaScript shipped as a SwiftPM resource bundle,
+    # and the binary resolves it next to itself (executableDirectory), so the
+    # bundle has to land in bin/ — without it every provider reports
+    # "CodexBarCore resource bundle is missing next to the executable".
+    cp -r CodexBar_CodexBarCore.bundle "$out/bin/"
+    # Sibling of the binary too; read for the version string.
+    install -Dm644 VERSION "$out/bin/VERSION"
     runHook postInstall
   '';
 
