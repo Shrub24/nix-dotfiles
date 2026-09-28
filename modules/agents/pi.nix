@@ -235,6 +235,9 @@ in
               "${piAgentDir}/npm/node_modules/@cortexkit/pi-magic-context/dist/subagent-entry.js"
               # Compaction for children only.
               "${piAgentDir}/npm/node_modules/pi-blackhole/dist/index.js"
+              "${piAgentDir}/npm/node_modules/pi-tool-repair/tool-repair.ts"
+              "${piAgentDir}/npm/node_modules/pi-intercom/index.ts"
+              "${piAgentDir}/npm/node_modules/pi-loop-police/extensions/index.ts"
             ];
             defaultProvider = "omniroute";
           };
