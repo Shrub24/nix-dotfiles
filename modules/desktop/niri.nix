@@ -323,7 +323,7 @@ _: {
             Mod+Shift+Slash { show-hotkey-overlay; }
 
             // === Application Launchers ===
-            Mod+T hotkey-overlay-title="Open Terminal" { spawn "wezterm"; }
+            Mod+T hotkey-overlay-title="Open Terminal" { spawn "kitty"; }
             Mod+Space hotkey-overlay-title="Application Launcher" {
               spawn "uwsm" "app" "--" "vicinae" "toggle";
             }
