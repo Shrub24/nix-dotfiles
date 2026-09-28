@@ -52,11 +52,8 @@ in
         "npm:pi-web-access"
         "npm:pi-mcp-adapter"
         "npm:@cortexkit/pi-magic-context"
-        # Replaces tmustier's session-recap: that one triggers on terminal
-        # blur (DECSET ?1004, 90s away) rather than on idleness, and cannot
-        # cancel a stale recap once a new message arrives. Its own
-        # extension-data config is written temp-file-plus-rename, so the
-        # model and pane-title settings stay a one-time `/recap-config` pass.
+        # pi-recap writes its own config (temp file + rename), so its model
+        # and multiplexer template stay a one-time `/recap-config` pass.
         "npm:@zhcsyncer/pi-recap"
         "npm:pi-rewind-hook"
         # "npm:pi-interactive-shell"
@@ -89,18 +86,12 @@ in
         # Package dir, not entry files — a file path fails with "package source not found".
         "${piExtensions "pi-jev"}"
         "npm:pi-tool-repair"
-        # Installed but not loaded by this session: `extensions = []`
-        # suppresses the package's own manifest entry, so the parent keeps
-        # pi's compaction disabled (compaction.enabled = false) and Magic
-        # Context as its only context manager. Children load the entry
-        # through subagents.defaultExtensions below — they have no Magic
-        # Context and would otherwise run unbounded.
+        # `extensions = []` suppresses the manifest entry: installed, not loaded.
         {
           source = "npm:pi-blackhole";
           extensions = [ ];
           skills = [ ];
         }
-        # Hindsight: recall before model calls, retain after completed runs.
         "npm:@luxusai/pi-hindsight"
         # "npm:@howaboua/pi-codex-conversion"
         # "npm:@vanillagreen/pi-hooks"
@@ -242,11 +233,8 @@ in
               # parent session manager): registers ctx_search + todowrite and
               # deliberately omits session-scoped tools.
               "${piAgentDir}/npm/node_modules/@cortexkit/pi-magic-context/dist/subagent-entry.js"
-              # Compaction for children only
+              # Compaction for children only.
               "${piAgentDir}/npm/node_modules/pi-blackhole/dist/index.js"
-              # Hindsight for children too: ambient discovery is deliberately
-              # off here, so an ambient package has to be listed explicitly.
-              "${piAgentDir}/npm/node_modules/@luxusai/pi-hindsight/extensions"
             ];
             defaultProvider = "omniroute";
           };
@@ -259,16 +247,9 @@ in
         };
       };
 
-      # Env wins over hindsight's own config file, which its TUI and the
-      # hindsight_config tool both write — so the endpoint stays the topology
-      # SSOT without Nix owning a file the application rewrites.
       home.sessionVariables = {
         HINDSIGHT_BASE_URL = hindsightUrl;
         PI_BLACKHOLE_MEMORY = "false";
-        # Fixed trigger, not a ratio: blackhole compacts a child once 200k
-        # tokens have accumulated since its last compaction. An explicit
-        # compactAfterTokens always wins over the preset curve, so this
-        # overrides the built-in 0.40-at-1M default rather than refining it.
         PI_BLACKHOLE_COMPACT_AFTER_TOKENS = "200000";
       };
 
