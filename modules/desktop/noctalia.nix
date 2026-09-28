@@ -344,6 +344,7 @@
           {
             text = ''
               spawn-at-startup "noctalia"
+              spawn-at-startup "noctalia-action-bar-init"
 
               layer-rule {
                 match namespace="^noctalia-backdrop"
@@ -596,9 +597,15 @@
             # `bar-hide` only reaches instances that already exist — which is
             # why a hotplugged display showed both bars unbidden. `auto_hide` is
             # the one key read at instance creation, so every bar starts hidden
-            # and slides in on hover or Mod+A.
+            # hidden on every monitor. Nothing else in config gives a
+            # toggle-only bar, though: the same key also arms a 3px
+            # bottom-edge hover reveal (`kAutoHideTriggerPx` is a hardcoded
+            # constant, not a setting) and fades the bar out when the pointer
+            # leaves. `noctalia-action-bar-init` takes auto-hide back off at
+            # runtime for the instances that exist, leaving the config value
+            # to do its job for instances built later.
             auto_hide = true;
-            background_opacity = 0.58;
+            background_opacity = 0.92;
             capsule_fill = "surface";
             capsule_foreground = "on_surface";
             capsule_opacity = 0.06;
@@ -608,12 +615,16 @@
             font_weight = 600;
             hover_highlight = false;
             icon_color = "tertiary";
-            margin_edge = 4;
+            # Kept clear of the bottom edge by more than the auto-hide trigger
+            # strip so a resting pointer never lands on it.
+            margin_edge = 20;
             margin_ends = 26;
             padding = 16;
             radius = 18;
+            # Twice the default bar: 76px tall, widget content at 2x.
+            scale = 2.0;
             shadow = true;
-            thickness = 38;
+            thickness = 76;
             widget_spacing = 8;
             start = [
               "kenn/keybind-cheatsheet:keybinds"
@@ -889,6 +900,31 @@
         pkgs.zip
         (pkgs.python3.withPackages (p: [ p.pillow ]))
         noctaliaGreeterPackage
+        # auto_hide is what makes an action-bar instance start hidden
+        # (bar.cpp:3350), but the same key arms the bottom-edge hover reveal
+        # and the hide-on-pointer-leave, so a config-only bar can never be
+        # toggle-only. This clears auto-hide on the instances that exist and
+        # puts them back under bar-toggle; the config value still applies to
+        # instances created later, so a hotplugged display still starts hidden.
+        (pkgs.writeShellApplication {
+          name = "noctalia-action-bar-init";
+          runtimeInputs = [
+            pkgs.coreutils
+            pkgs.noctalia
+          ];
+          text = ''
+            for _ in {1..50}; do
+              if noctalia msg bar-auto-hide-set off action >/dev/null 2>&1; then
+                # `off` reveals a hidden bar, so hide it again straight away;
+                # bar-hide cancels the reveal animation rather than waiting.
+                noctalia msg bar-hide action >/dev/null 2>&1
+                exit 0
+              fi
+              sleep 0.2
+            done
+            exit 1
+          '';
+        })
       ];
     }
 
