@@ -52,11 +52,12 @@ in
         "npm:pi-web-access"
         "npm:pi-mcp-adapter"
         "npm:@cortexkit/pi-magic-context"
-        # {
-        #   source = "git:github.com/tmustier/pi-extensions";
-        #   extensions = [ "session-recap/index.ts" ];
-        #   skills = [ ];
-        # }
+        # Replaces tmustier's session-recap: that one triggers on terminal
+        # blur (DECSET ?1004, 90s away) rather than on idleness, and cannot
+        # cancel a stale recap once a new message arrives. Its own
+        # extension-data config is written temp-file-plus-rename, so the
+        # model and pane-title settings stay a one-time `/recap-config` pass.
+        "npm:@zhcsyncer/pi-recap"
         "npm:pi-rewind-hook"
         # "npm:pi-interactive-shell"
         # "git:github.com/DietrichGebert/ponytail"
@@ -241,11 +242,7 @@ in
               # parent session manager): registers ctx_search + todowrite and
               # deliberately omits session-scoped tools.
               "${piAgentDir}/npm/node_modules/@cortexkit/pi-magic-context/dist/subagent-entry.js"
-              # Compaction for children only (see the packages entry): a
-              # deterministic algorithmic summary at blackhole's own
-              # threshold, independent of pi's compaction.enabled. Memory is
-              # off — the Observer/Reflector/Dropper workers are LLM calls
-              # whose ledger dies with a short-lived child run.
+              # Compaction for children only
               "${piAgentDir}/npm/node_modules/pi-blackhole/dist/index.js"
               # Hindsight for children too: ambient discovery is deliberately
               # off here, so an ambient package has to be listed explicitly.
