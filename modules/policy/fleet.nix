@@ -16,7 +16,15 @@
   # `ci` profile is not ours to use: it schedules the metered nixbuild.net
   # resource, and it leaves home-forge unscoped, so every derivation would go
   # remote. Membership is the policy; there is no weight or predicate axis.
-  fleet.buildProfiles.workstations.hosts.home-forge = { };
+  #
+  # The per-relationship job budget is the offload knob. nix's build hook
+  # prefers any scheduled builder with a free slot and falls back to the local
+  # machine only when none has one, so a small budget here is what pushes work
+  # back onto the workstation. home-forge carries the ambient capacity for long
+  # builds; the profile asks for more of it than the inventory's default.
+  fleet.buildProfiles.workstations.hosts.home-forge = {
+    maxJobs = 8;
+  };
 
   # Until nix-homelab selects the build-account aspect on home-forge, the
   # `nixbuild` dispatch account the contract defaults to does not exist there,

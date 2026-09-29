@@ -121,6 +121,8 @@ in
     in
     {
       nix.enable = true;
+      # The upstream remote-build module otherwise sets builders = null.
+      nix.distributedBuilds = true;
 
       nix.settings = substitutionSettings // {
         # "root" is already the module default and this list concatenates.
@@ -146,12 +148,14 @@ in
         "auto-optimise-store" = true;
         "always-allow-substitutes" = true;
         "builders-use-substitutes" = true;
-        "builders" = "@/etc/nix/machines";
-        # `auto` resolves to nproc — 20 here — which oversubscribes against the
-        # four slots home-forge offers. Nix balances builders by load/speedFactor,
-        # so home-forge already carries the bulk of a build queue; this caps what
-        # legion adds on top without starving it when the builder is unreachable.
-        "max-jobs" = 8;
+        # Local builds are the overflow path, not the default: the build hook
+        # prefers any scheduled builder with a free slot, so local work happens
+        # when home-forge's budget is spent. These caps keep that overflow from
+        # saturating an interactive desktop — `cores` bounds each build's own
+        # parallelism, which is what one long build would otherwise take from
+        # the whole machine.
+        "max-jobs" = 4;
+        "cores" = 4;
         "nix-path" = "nixpkgs=flake:nixpkgs";
         "keep-derivations" = true;
         "warn-dirty" = false;
@@ -163,6 +167,18 @@ in
       environment.etc."profile.d/nix-path.sh".text = ''
         export NIX_PATH=nixpkgs=flake:nixpkgs
       '';
+
+      # Builds are children of the daemon on this host (`build-users-group` is
+      # empty), so the unit's cgroup is what bounds them: batch CPU and idle I/O
+      # scheduling yield to interactive work, and the weight and memory bounds
+      # only bite under contention. system-manager has no `nix.daemon*Policy`
+      # options, so they are set on the unit directly.
+      systemd.services.nix-daemon.serviceConfig = {
+        CPUSchedulingPolicy = "batch";
+        IOSchedulingClass = "idle";
+        CPUWeight = 50;
+        MemoryHigh = "8G";
+      };
     }
 
   ;
@@ -192,15 +208,28 @@ in
         # nixpkgs already lists "root" and this list concatenates, so naming it
         # again renders a duplicate.
         "trusted-users" = [ config.currentHost.primaryUser.name ];
-        # Same reasoning as the systemManager aspect: a cap on local concurrency,
-        # not `auto`.
-        "max-jobs" = 8;
+        # Local builds are the overflow path, not the default: the build hook
+        # prefers any scheduled builder with a free slot, so this budget only
+        # bounds what the workstation adds when home-forge is busy. `cores`
+        # keeps one long build from taking the whole machine.
+        "max-jobs" = 4;
+        "cores" = 4;
         "nix-path" = "nixpkgs=flake:nixpkgs";
         "keep-derivations" = true;
         "warn-dirty" = false;
         "accept-flake-config" = true;
       };
       nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
+
+      # These are interactive machines: builds are children of the daemon, so
+      # batch CPU and idle I/O scheduling plus a CPU weight and memory bound
+      # let a session keep the machine responsive while a build runs.
+      nix.daemonCPUSchedPolicy = "batch";
+      nix.daemonIOSchedClass = "idle";
+      systemd.services.nix-daemon.serviceConfig = {
+        CPUWeight = 50;
+        MemoryHigh = "8G";
+      };
     }
 
   ;

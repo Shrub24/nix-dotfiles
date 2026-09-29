@@ -13,7 +13,51 @@ in
       pkgs,
       ...
     }:
+    let
+      # Image preview policy behind pistol's image/* association. The caller
+      # is an fzf preview window, so pane geometry comes from fzf's own
+      # variables and falls back to 80x40 for a bare pistol invocation.
+      #
+      # The rule inside fzf: the kitty graphics protocol is emitted only by
+      # icat's unicode placeholders, and only in a kitty-family terminal
+      # (kitty itself, or a herdr pane — herdr renders the protocol itself
+      # when terminal.kitty_graphics is on, the default). The placeholders
+      # are ordinary text cells, so fzf's repaint erases the image with the
+      # cells that carried it; chafa's kitty output is direct a=T transfer
+      # with no placeholders and no delete, so it would outlive the preview
+      # that created it. If icat is missing or refuses, symbols are rendered
+      # instead. Everywhere outside kitty, chafa's auto format picks what the
+      # terminal advertises — sixel where supported (fzf renders that in
+      # cells), symbols as the last resort.
+      previewImage = pkgs.writeShellScript "preview-image" ''
+        set -o pipefail
 
+        cols=''${FZF_PREVIEW_COLUMNS:-80}
+        rows=''${FZF_PREVIEW_LINES:-40}
+
+        if test -n "''${KITTY_WINDOW_ID:-}" ||
+          test -n "''${KITTY_PID:-}" ||
+          test -n "''${KITTY_LISTEN_ON:-}" ||
+          test -n "''${HERDR_PANE_ID:-}"; then
+          # --clear drops the previous placement. The trailing reset code
+          # arrives without a newline, which fzf reads as a scroll offset, so
+          # it is folded onto the previous line. Both tricks come from fzf's
+          # own bin/fzf-preview.sh.
+          if ! {
+            command -v kitten >/dev/null 2>&1 &&
+            kitten icat --clear --transfer-mode=memory --unicode-placeholder \
+              --stdin=no --place="''${cols}x''${rows}@0x0" "$1" \
+              | sed '$d' | sed $'$s/$/\e[m/'
+          }; then
+            chafa -f symbols --size="''${cols}x''${rows}" "$1"
+            echo
+          fi
+        else
+          chafa --size="''${cols}x''${rows}" "$1"
+          echo
+        fi
+      '';
+    in
     {
       home = {
         packages = with pkgs; [
@@ -78,6 +122,7 @@ in
           # pi-cache-optimizer: keep prompts/skill XML verbatim.
           PI_CACHE_OPTIMIZER_NO_PROMPT_REWRITE = "1";
           PI_CACHE_OPTIMIZER_NO_SKILL_COMPRESSION = "1";
+          PI_CACHE_RETENTION = "long";
         };
       };
 
@@ -124,7 +169,7 @@ in
             }
             {
               mime = "image/*";
-              command = "chafa -f symbols --size=80x40 %pistol-filename%";
+              command = ''"${previewImage}" "%pistol-filename%"'';
             }
             {
               mime = "application/pdf";

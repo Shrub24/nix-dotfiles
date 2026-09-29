@@ -58,8 +58,8 @@
     lazyjournal = {
       enable = true;
     };
-    docsMcp.enable = true;
     qmd.enable = true;
+    mcpNixos.enable = true;
     agentTools.enable = true;
     devTools.enable = true;
     webCatalog.enable = true;

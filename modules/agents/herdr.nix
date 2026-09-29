@@ -1,40 +1,81 @@
 { inputs, ... }:
 {
+  # The herdr-radar fork: `packages.default` is the plugin root Herdr registers,
+  # `packages.herdr-anchor` the pane wrapper, and `homeManagerModules.default`
+  # the module imported below. It is a local checkout for now — the fork carries
+  # uncommitted packaging work and has no remote of its own yet — so this input
+  # is not reproducible from a URL; replace it with the fork's git URL once it
+  # is pushed.
+  flake-file.inputs.herdr-radar = {
+    url = "git+file:///home/saurabhj/Projects/dev/custom/herdr-radar";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
   flake.modules.homeManager.herdr =
-    { pkgs, ... }:
     {
+      pkgs,
+      config,
+      lib,
+      ...
+    }:
+    {
+      imports = [ inputs.herdr-radar.homeManagerModules.default ];
+
       programs.herdr.package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr;
+
+      # The fork owns the plugin root, the anchor wrapper and the sidebar and
+      # tab-bar blocks, so its module is the one that links and versions them:
+      # `herdr plugin link` is the only way Herdr learns of a plugin and its
+      # registry is mutable state, so the link is refreshed every activation.
+      # nixpkgs carries no herdr, so the link target is the same package Herdr
+      # itself comes from. `herdrPlus` stays off: its workspace templates are
+      # layouts, and nothing here asks for them yet.
+      programs.herdr-radar = {
+        enable = true;
+        herdrPackage = config.programs.herdr.package;
+        settings.anchors = {
+          auto_create = true;
+          command = "${pkgs.runtimeShell} -c 'if jj root >/dev/null 2>&1; then exec jjui; else exec yazi; fi'";
+        };
+      };
 
       home.packages = [
         inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hunk
       ];
 
-      # Rendered to $XDG_CONFIG_HOME/herdr/config.toml; the rest of that directory
-      # is Herdr-owned runtime state and stays unmanaged.
+      # Rendered by Nix, then seeded into $XDG_CONFIG_HOME/herdr/config.toml as
+      # a real file at activation (see home.activation.herdrConfig); the rest of
+      # that directory is Herdr-owned runtime state and stays unmanaged.
       #
-      # Herdr rewrites this file when its UI changes a persisted setting, so a UI
-      # edit has to be ported back here.
+      # This file is the one place an application owns config here: Herdr writes
+      # it whenever its UI persists a setting, and herdr-radar writes a
+      # marker-fenced block into it. Both write through a temp file renamed over
+      # the real path, which a read-only store symlink cannot serve: the link
+      # resolves into /nix/store, the temp file lands beside the store path and
+      # the install dies with EACCES. Hence a seeded file rather than a link.
+      #
+      # Anything Herdr or a plugin writes here is machine-local state, and a
+      # switch re-seeds the published keys over it. One of the three blocks
+      # herdr-radar installs is declared here instead — its theme tokens — and a
+      # table in this file is a table it leaves alone, so it writes its sidebar
+      # and tab-bar blocks itself and leaves the theme ours.
       programs.herdr.settings = {
         onboarding = false;
         theme = {
           name = "terminal";
           auto_switch = false;
+          # Herdr's active-row fill. The plugin installs this token itself, but
+          # it rewrites `theme.name` in the same write — `terminal` is neither a
+          # light nor a dark built-in, so it substitutes catppuccin — and the
+          # theme is ours to choose. Declaring the table makes the plugin skip
+          # its theme block and leave both keys alone. The value is the plugin's
+          # own dark chrome token.
+          custom.active_row_bg = "#414868";
         };
         ui = {
           status_indicators = "symbols";
           show_agent_labels_on_pane_borders = true;
           toast.delivery = "system";
-          sidebar.agents.rows = [
-            [
-              "state_icon"
-              "workspace"
-              "tab"
-            ]
-            [
-              "agent"
-              "state_text"
-            ]
-          ];
         };
         # Prefix: herdr default (ctrl+b) for now — shift+space proved
         # non-capturable in practice; revisit with a plugin later.
@@ -174,7 +215,54 @@
             command = "nicosuave.memex.palette";
             description = "memex: session palette";
           }
+          # herdr-radar: the Agents panel's order, off -> active -> recent and
+          # round again. Herdr disables its own grouped/priority toggle while a
+          # sort override is active, so this key is both the way in and the way
+          # out. It leaves the panel's look alone, which is declared in Nix.
+          {
+            key = "prefix+v";
+            type = "plugin_action";
+            command = "hhdebb.herdr-radar.view-toggle";
+            description = "agents panel: cycle order (active / recent / off)";
+          }
         ];
       };
+
+      # Home Manager would link the settings above read-only; that is the one
+      # thing this file cannot be. Seeding it as a real file keeps the published
+      # keys authoritative without freezing the file against Herdr's own writes.
+      xdg.configFile."herdr/config.toml".enable = false;
+      # Ordered after the plugin link so the `configure` call below reaches the
+      # fork rather than whatever plugin of the same id is registered when the
+      # activation starts.
+      home.activation.herdrConfig =
+        lib.hm.dag.entryAfter
+          ([ "writeBoundary" ] ++ lib.optional config.programs.herdr-radar.enable "linkHerdrRadar")
+          ''
+            ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/herdr"
+            # Written beside the target and renamed over it: the path is a store
+            # symlink until this runs, and writing through one would land in the
+            # store.
+            ${pkgs.coreutils}/bin/install -m 0644 \
+              ${(pkgs.formats.toml { }).generate "herdr-config.toml" config.programs.herdr.settings} \
+              "$HOME/.config/herdr/config.toml.new"
+            ${pkgs.coreutils}/bin/mv -f "$HOME/.config/herdr/config.toml.new" "$HOME/.config/herdr/config.toml"
+
+            # The seed above replaces the whole file, so the blocks a plugin owns
+            # have to go back in; herdr-radar's `configure` action writes its sidebar
+            # and tab-bar blocks and reloads. Both calls are best-effort, and the
+            # fork writes nothing on startup, so a Herdr that is not running (or a
+            # plugin that is not linked yet) simply leaves the sidebar and tab-bar
+            # blocks out until one of these runs.
+            # Seeding those blocks from the fork's pure export instead is blocked
+            # on the export contract: `--print` picks its palette from `[theme]
+            # name` (`terminal` here has none, so it answers light) and a pinned
+            # `--variant` freezes the appearance and claims `[theme.custom]`.
+            # That reload is the server's half: sidebar layouts and themes are
+            # client-side presentation, and the UI's own reload config action
+            # (prefix+shift+r) is what also reloads the client's local settings.
+            ${lib.getExe config.programs.herdr.package} plugin action invoke hhdebb.herdr-radar.configure || true
+            ${lib.getExe config.programs.herdr.package} server reload-config || true
+          '';
     };
 }

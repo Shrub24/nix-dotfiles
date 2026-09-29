@@ -327,6 +327,12 @@
     {
       imports = [
         inputs.noctalia.homeModules.default
+
+        # Upstream disables the HM module by filename ("programs/noctalia.nix"),
+        # but home-manager turned it into a folder on 2026-09-30, so both copies
+        # load and declare programs.noctalia twice. Until noctalia PR #4656
+        # lands, disable the folder here too (the lists merge).
+        { disabledModules = [ "programs/noctalia" ]; }
       ];
 
       # Bootstrap the mutable wallpaper directory + seed on first activation.

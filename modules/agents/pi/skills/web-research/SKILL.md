@@ -53,9 +53,8 @@ extended source as a blocker.
 
 - **grep.app MCP** (`mcp.grep.app`, `searchGitHub`): literal code-pattern search
   across a million public repos. Best for "how do real projects use this API".
-- **sourcegraph** (CLI or web): repo semantic/structural search at scale —
-  think a heavier semble over unindexed repos; use when semble is absent or
-  the question spans many repos.
+- **sourcegraph** (CLI or web): repo semantic/structural search at scale — use
+  for unindexed repos or a question that spans many repos.
 - **docs-mcp-server**: versioned local semantic doc search for important
   libraries; ingest-on-first-contact (see codebase-explore). Prefer it over
   web fetching for library questions.

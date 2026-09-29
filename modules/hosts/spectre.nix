@@ -49,10 +49,13 @@ let
   # qmd, memex, niks3, surge, syncthing, web-catalog, mutagen — because the
   # laptop reaches those over the tailnet rather than running them. And
   # ghostty, vscode, opencode, media, zsh, hermes, modal, tools, chromium,
-  # brave-origin: the desktop is where those are used.
+  # brave-origin: the desktop is where those are used. mcp-nixos is selected
+  # for its client wiring only — its daemon stays off, so Pi spawns its own.
   hmAspects = [
     "current-host"
     "pi"
+    "magic-context"
+    "mcp-nixos"
     "herdr"
     "dev-tools"
     "lsp"
@@ -124,6 +127,7 @@ let
     "containers"
     "desktop-services"
     "kde-apps"
+    "wireshark"
     "mosh"
   ];
 

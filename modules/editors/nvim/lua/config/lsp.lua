@@ -1,17 +1,5 @@
--- LazyVim's LSP behaviour layer, ported from
--- lua/lazyvim/plugins/lsp/init.lua and lua/lazyvim/util/lsp.lua.
---
--- Every LazyVim.* call got a plain-vim replacement:
---   LazyVim.lsp.action[kind]           -> code_action(kind)
---   LazyVim.lsp.code_actions()         -> code_actions()
---   LazyVim.set_default()              -> set_default() (only while the option is at its default)
---   Snacks.util.lsp.on()               -> LspAttach autocmd + client:supports_method()
---   lazyvim.plugins.lsp.keymaps.set()  -> apply_keys(); Neovim has no handler for the
---                                         `keys` field of vim.lsp.config, so the maps are
---                                         set buffer-locally on attach with the same gating
---
--- Needs snacks (startup set): picker for <leader>cl, rename for <leader>cR, words for
--- the ]] / [[ and <a-n> / <a-p> reference jumps.
+-- LazyVim's LSP behaviour layer (maps, diagnostics, hints, folds) without LazyVim.
+-- Port notes + deviations: docs/lsp.md
 
 -- LazyVim.lsp.action[kind]: apply the first code action of that kind.
 local function code_action(kind)
@@ -47,11 +35,8 @@ local function code_actions(filter)
 	return ret
 end
 
--- LazyVim.set_default (lazyvim/util/init.lua): the option is only adopted while it still
--- matches its global value, or was last set by a script in $VIMRUNTIME — Neovim's own
--- ftplugins set 'foldexpr' for treesitter folds, and LazyVim overrides that for LSP folds.
--- A local value set by a plugin or the user wins. nvim-ufo is set up in
--- lua/plugins/general.lua but never sets fold options itself.
+-- set_default: adopt unless locally overridden; LSP folds intentionally win
+-- over the runtime ftplugins' treesitter foldexpr.
 local defaults_set = {}
 local function set_default(option, value)
 	local local_value = vim.api.nvim_get_option_value(option, { scope = "local" })

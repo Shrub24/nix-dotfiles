@@ -5,12 +5,12 @@ advertise: true
 aliases: developer, coder, implementer, develop
 skills: codebase-explore, ast-grep, codebase-memory
 model: omniroute/coder-high
-thinking: high
+thinking: medium
 async: true
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: true
-defaultContext: fork
+defaultContext: fresh
 defaultReads: context.md, plan.md
 defaultProgress: true
 tools:
@@ -39,10 +39,9 @@ tools:
   - search_code
   - search_graph
   - trace_path
-  - mcp:semble
-  - mcp:docs-mcp-server
+  - mcp:docs_mcp_server
   - mcp:nixos
-  - mcp:grep.app
+  - mcp:grep_app
 subagentOnlyExtensions:
   - ../npm/node_modules/@ff-labs/pi-fff/src/index.ts
 ---

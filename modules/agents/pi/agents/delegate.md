@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: Lightweight subagent that inherits the parent model; explores via codebase-explore when the task needs code discovery
+description: Lightweight subagent for well-scoped edits and lookups; explores via codebase-explore when the task needs code discovery
 advertise: true
 skills: codebase-explore
 model: omniroute/coder-high
@@ -36,10 +36,9 @@ tools:
   - search_code
   - search_graph
   - trace_path
-  - mcp:semble
-  - mcp:docs-mcp-server
+  - mcp:docs_mcp_server
   - mcp:nixos
-  - mcp:grep.app
+  - mcp:grep_app
 subagentOnlyExtensions:
   - ../npm/node_modules/@ff-labs/pi-fff/src/index.ts
 ---

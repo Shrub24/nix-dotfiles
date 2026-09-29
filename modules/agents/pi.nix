@@ -8,6 +8,13 @@ let
     endpoint = "api";
     via = "tailnet";
   };
+  # docs-mcp runs on home-forge, so its MCP endpoint comes from the fleet
+  # inventory rather than from the port this repository's own module declares.
+  docsMcpUrl = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
+    service = "docs-mcp";
+    endpoint = "mcp";
+    via = "tailnet";
+  };
 in
 {
   flake.modules.homeManager.pi =
@@ -57,10 +64,18 @@ in
         }
       );
 
+      # The models a delegated agent may run on. Each agent's frontmatter picks
+      # one of them; the list is the ceiling, not a preference order.
+      workhorseModels = [
+        "openai-codex/gpt-6-luna"
+        "omniroute/coder-high"
+        "omniroute/budget"
+        "omniroute/smart-budget"
+      ];
+
       # Pi materialises a missing or stale source here on next start.
       packages = [
         "npm:pi-web-access"
-        "npm:pi-mcp-adapter"
         "npm:@cortexkit/pi-magic-context"
         # pi-recap writes its own config (temp file + rename), so its model
         # and multiplexer template stay a one-time `/recap-config` pass.
@@ -72,7 +87,7 @@ in
           source = "git:github.com/ayghri/i-have-adhd";
           skills = [ ];
         }
-        # "npm:@narumitw/pi-tool"
+        "npm:@narumitw/pi-tool"
         # "npm:@narumitw/pi-btw"
         "npm:@narumitw/pi-herdr"
         "npm:pi-context-view"
@@ -81,6 +96,7 @@ in
         "extensions/omniroute"
         "npm:@ff-labs/pi-fff"
         "npm:pi-draft-history"
+        "npm:pi-context"
         "${piExtensions "pi-subagents"}"
         "${piExtensions "pi-cbmem"}"
         "npm:@juicesharp/rpiv-ask-user-question"
@@ -102,32 +118,38 @@ in
           extensions = [ ];
           skills = [ ];
         }
-        "npm:@luxusai/pi-hindsight"
-        "npm:pi-claude-bridge"
+        # "npm:@luxusai/pi-hindsight"
+        # "npm:pi-claude-bridge"
+        "npm:@gotgenes/pi-anthropic-auth"
         # "npm:@howaboua/pi-codex-conversion"
         # "npm:@vanillagreen/pi-hooks"
         # "@spences10/pi-context"
       ];
     in
     {
+      imports = [ ./_pi-mcp.nix ];
+
       programs.pi-coding-agent = {
         package =
           (inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi.override {
             useBun = true;
           }).overrideAttrs
             (old: {
+              preBuild = ''
+                mkdir -p src/extensions/codemode
+                echo 'import "../../../dist/extensions/codemode/worker.js";' > src/extensions/codemode/worker.ts
+              '';
               preInstall =
                 builtins.replaceStrings
-                  [ "bun build --compile ./dist/bun/cli.js" ]
                   [
-                    "bun build --compile --no-compile-autoload-bunfig --compile-autoload-package-json ./dist/bun/cli.js"
+                    "--compile ./dist/bun/cli.js"
+                    "./src/utils/image-resize-worker.ts --outfile"
+                  ]
+                  [
+                    "--compile --no-compile-autoload-bunfig --compile-autoload-package-json ./dist/bun/cli.js"
+                    "./src/utils/image-resize-worker.ts ./src/extensions/codemode/worker.ts --outfile"
                   ]
                   old.preInstall;
-              postInstall =
-                builtins.replaceStrings
-                  [ ''--set PI_PACKAGE_DIR "$pkgdir"'' ]
-                  [ ''--set PI_PACKAGE_DIR "$pkgdir" --set PI_SUBAGENT_PI_BINARY "$out/libexec/pi/pi"'' ]
-                  old.postInstall;
             });
 
         settings = {
@@ -139,7 +161,10 @@ in
           defaultModel = "coder-high";
 
           enabledModels = [
-            "openai-codex/gpt-5.6-sol"
+            "anthropic/claude-opus-5-5"
+            "anthropic/claude-sonnet-5-5"
+            "openai-codex/gpt-6-luna"
+            "openai-codex/gpt-6.1-sol"
             "omniroute/coder-high"
             "omniroute/explorer"
             "omniroute/budget"
@@ -149,6 +174,10 @@ in
 
           compaction.enabled = false;
           transport = "auto";
+
+          # Trial: MCP tools use codemode; ordinary tools stay directly available.
+          defaultTools = [ "+codemode" ];
+          codemode.mode = "on";
           showCacheMissNotices = true;
           collapseChangelog = false;
           quietStartup = false;
@@ -201,7 +230,7 @@ in
             shikiDiffs = true;
             styledCodeBlocks = true;
 
-            registerBatchTool = true;
+            registerBatchTool = false;
             batchMaxCalls = 8;
             compactUserMessages = true;
             compactSkillMessages = true;
@@ -212,8 +241,8 @@ in
           # pi-jev: advisory mode steers instead of gating; only material harm refuses.
           kendex.extensionManager.config."@vanillagreen/pi-jev" = {
             mode = "advisory";
-            deliverNudges = true;
-            deliverIntentNudges = true;
+            deliverNudges = false;
+            deliverIntentNudges = false;
             deliverSubagentNudges = false;
             orchestratorCheckInMs = 0;
             # Spike guards, not budgets: a past-window request is skipped, not spent.
@@ -227,11 +256,16 @@ in
           # resolve relative ones against cwd, not the agent dir).
           subagents = {
             disableBuiltins = true;
+            agentOverrides = {
+              reviewer.disabled = true;
+              evidence-auditor.disabled = true;
+            };
             defaultExtensions = [
               "${piAgentDir}/extensions/omniroute/src/index.ts"
               # codebase-memory over MCP stdio (pi-cbmem workspace member).
               "${piExtensions "pi-cbmem"}/extensions/cbmem.ts"
-              "${piAgentDir}/npm/node_modules/pi-mcp-adapter/index.ts"
+              # Children resolve mcp:<server> selectors against Pi's built-in
+              # MCP (Pi >= 0.99).
               "${piAgentDir}/npm/node_modules/@ff-labs/pi-fff/src/index.ts"
               # Spec-hash install dir; stable across content updates.
               "${piAgentDir}/tmp/extensions/git-github.com/363c5354/DietrichGebert/ponytail/pi-extension/index.js"
@@ -251,6 +285,36 @@ in
               "${piAgentDir}/npm/node_modules/pi-loop-police/extensions/index.ts"
             ];
             defaultProvider = "omniroute";
+
+            # Model pools per role: the outer `allow` is the fleet pool and each
+            # agent's own list narrows it, since both must match. `strict` is
+            # what makes the bound real — without it an out-of-scope frontmatter
+            # or parent-inherited model only warns, leaving a per-run
+            # `[model=…]` as the only thing actually bounded.
+            #
+            # sol sits in the outer pool solely for oracle, whose own list is the
+            # only place it appears; no working agent can resolve a sol, astra,
+            # terra or claude-opus model. Aliases need no entry: they resolve to
+            # the canonical agent before the scope is applied.
+            modelScope = {
+              enforce = true;
+              strict = true;
+              allow = workhorseModels ++ [
+                "omniroute/explorer"
+                "openai-codex/gpt-6.1-sol"
+              ];
+              agents = {
+                worker.allow = workhorseModels;
+                delegate.allow = workhorseModels;
+                researcher.allow = workhorseModels;
+                reviewer.allow = workhorseModels;
+                evidence-auditor.allow = workhorseModels;
+                scout.allow = [ "omniroute/explorer" ];
+                oracle.allow = [
+                  "openai-codex/gpt-6.1-sol"
+                ];
+              };
+            };
           };
 
           rewind.retention = {
@@ -266,6 +330,10 @@ in
       home.sessionVariables = {
         HINDSIGHT_BASE_URL = hindsightUrl;
         PI_BLACKHOLE_MEMORY = "false";
+        # Child context limits are NOT handled here: blackhole's mid-run path needs
+        # pi's JS module graph (AgentSession.prototype), which a compiled pi does
+        # not ship, so any in-run threshold set below is inert for children. The
+        # threshold is kept only because blackhole still compacts at run end.
         PI_BLACKHOLE_COMPACT_AFTER_TOKENS = "200000";
       };
 
@@ -281,85 +349,37 @@ in
       # the notice cannot fire, so the file is never written, and `/login` stays
       # imperative — the credential it writes lands in ~/.claude.
       home.file = {
-        # Shared CortexKit config (Pi + OpenCode read the same file).
-        # Runtime only reads it; the doctor CLI writes it only when absent,
-        # so a store symlink is safe here.
-        ".config/cortexkit/magic-context.jsonc".source = json.generate "magic-context.json" {
-          "$schema" =
-            "https://raw.githubusercontent.com/cortexkit/magic-context/master/assets/magic-context.schema.json";
-          historian = {
-            two_pass = true;
-            opencode = {
-              model = "opencode-omniroute/coder-high";
-              fallback_models = [
-                "opencode-omniroute/budget"
-              ];
-            };
-            pi = {
-              model = "omniroute/coder-high";
-              fallback_models = [ "omniroute/budget" ];
-            };
-          };
-          dreamer.disable = true;
-          memory.enabled = true;
-          embedding = {
-            provider = "openai-compatible";
-            model = "voyage-4";
-            endpoint = "https://api.voyageai.com/v1";
-            api_key = "{env:VOYAGE_API_KEY}";
-            input_type = "document";
-            query_input_type = "query";
-          };
-          cache_ttl = {
-            default = "30m";
-            "codex/*" = "10m";
-          };
-          toast_duration_ms = 500;
-          execute_threshold_tokens.default = 200000;
-          smart_drops = true;
-        };
-        ".config/mcp/mcp.json".source = json.generate "pi-mcp.json" {
-          settings = {
-            toolPrefix = "server";
-            lifecycle = "keep-alive";
-            scriptMode = false;
-            disableProxyTool = true;
-          };
+        # Pi's MCP servers. Underscore ids keep Pi's normalized namespaces and
+        # pi-subagents selectors identical.
+        ".pi/agent/mcp.json".source = json.generate "pi-native-mcp.json" {
           mcpServers = {
-            docs-mcp-server.url = "http://localhost:6280/mcp";
-            semble = {
-              directTools = true;
-              command = "uvx";
-              args = [
-                "--from"
-                "semble[mcp]"
-                "semble"
-              ];
+            docs_mcp_server = {
+              url = docsMcpUrl;
+              description = "Library documentation search, served by the fleet's index on the forge.";
             };
-            nixos = {
-              directTools = true;
-              command = "uvx";
-              args = [ "mcp-nixos" ];
-            };
-            "grep.app" = {
+            # One tool with a large schema, and the one server whose tools are
+            # worth declaring: GitHub code search is reached mid-investigation,
+            # where a codemode script would cost more than the declaration.
+            grep_app = {
               url = "https://mcp.grep.app";
-              directTools = true;
+              exposure = "direct";
             };
             sourcegraph = {
               url = "https://sourcegraph.com/.api/mcp";
+              description = "Sourcegraph public-code search: commit, diff, keyword and file lookups.";
             }
-            # `!command` is the adapter's value form; the token never leaves the
+            # `!command` is Pi's value form; the token never leaves the
             # decrypted secret file.
             // lib.optionalAttrs (sopsSecrets ? SOURCEGRAPH_TOKEN) {
               headers.Authorization = "!printf 'token %s' \"$(cat ${sopsSecrets.SOURCEGRAPH_TOKEN.path})\"";
             };
           }
-          // lib.optionalAttrs (config.programs.memex.enable or false) {
-            memex = {
-              directTools = "search";
-              url = "http://${config.programs.memex.settings.mcp.listen}/mcp";
-            };
-          };
+          # The servers this repository runs register themselves, from the
+          # aspect that owns each one (_pi-mcp.nix); what is left above is the
+          # endpoints Pi owns.
+          // lib.mapAttrs (
+            _: lib.filterAttrs (_: value: value != null && value != [ ] && value != { })
+          ) config.programs.pi-coding-agent.mcpServers;
         };
 
         ".pi/agent/pi-fff.json".source = json.generate "pi-fff.json" {
@@ -405,6 +425,9 @@ in
               "tinyfish"
               "gemini"
             ];
+            # Declare the web tools from the first request on every model: a
+            # session-wide list shape beats web_enable's per-model variance.
+            toolActivation = "eager";
             workflow = "none";
             summaryModel = "omniroute/budget";
           }

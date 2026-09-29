@@ -48,6 +48,16 @@ let
       ui.path = "/";
     };
 
+    mcp-nixos = {
+      name = "NixOS MCP";
+      port = 8000;
+      icon = "si-nixos";
+      description = "NixOS options, packages and channels (MCP HTTP)";
+      # MCP has no UI to open; the path below is the endpoint a client POSTs to,
+      # which the sidebar keeps out of the homepage block (see useUiPath).
+      mcp.path = "/mcp";
+    };
+
     web-catalog = {
       name = "Web Catalog";
       port = 8123;
@@ -71,6 +81,7 @@ let
       uiPath = svc.ui.path or null;
       healthPath = svc.health.path or null;
       openapiPath = svc.openapi.path or null;
+      mcpPath = svc.mcp.path or null;
     in
     {
       inherit id;
@@ -80,6 +91,10 @@ let
       uiUrl = if uiPath != null then "${baseUrl}${uiPath}" else null;
       healthUrl = if healthPath != null then "${baseUrl}${healthPath}" else null;
       openapiUrl = if openapiPath != null then "${baseUrl}${openapiPath}" else null;
+      # MCP is a protocol endpoint, not a page: a client POSTs to it, so it is
+      # kept out of uiUrl and with it out of the homepage block, which would
+      # otherwise render a link that only errors in a browser.
+      mcpUrl = if mcpPath != null then "${baseUrl}${mcpPath}" else null;
       icon = svc.icon or null;
       description = svc.description or null;
     };

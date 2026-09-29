@@ -37,6 +37,10 @@
     };
     flake-file.follows = "nix-fleet/flake-file";
     flake-parts.follows = "nix-fleet/flake-parts";
+    herdr-radar = {
+      url = "git+file:///home/saurabhj/Projects/dev/custom/herdr-radar";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     hermes-agent = {
       url = "github:NousResearch/hermes-agent";
       inputs = {

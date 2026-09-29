@@ -28,7 +28,14 @@ _: {
         notify_on_cmd_finish = "unfocused";
       };
 
-      extraConfig = "include themes/noctalia.conf";
+      extraConfig = ''
+        include themes/noctalia.conf
+
+        # herdr-radar's agent-icon font, mapped by codepoint rather than offered
+        # as a fallback, so the icons resolve whatever the primary font is.
+        symbol_map U+E1A0-U+E1B7 Herdr Agent Icons Max
+        symbol_map U+E1C0-U+E1C5 Herdr Agent Icons Max
+      '';
     };
   };
 }

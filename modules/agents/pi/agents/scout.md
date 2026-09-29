@@ -4,7 +4,7 @@ description: Fast codebase recon via codebase-explore + handoff-artifact skills;
 advertise: true
 skills: codebase-explore, handoff-artifact
 model: omniroute/explorer
-thinking: high
+thinking: medium
 completionGuard: false
 async: true
 systemPromptMode: replace
@@ -37,10 +37,9 @@ tools:
   - search_code
   - search_graph
   - trace_path
-  - mcp:semble
-  - mcp:docs-mcp-server
+  - mcp:docs_mcp_server
   - mcp:nixos
-  - mcp:grep.app
+  - mcp:grep_app
 subagentOnlyExtensions:
   - ../npm/node_modules/@ff-labs/pi-fff/src/index.ts
 ---

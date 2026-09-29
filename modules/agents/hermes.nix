@@ -9,6 +9,13 @@ let
     endpoint = "api";
     via = "tailnet";
   };
+  # docs-mcp is served from home-forge: the same inventory read pi uses, so the
+  # two clients cannot disagree about where the MCP endpoint lives.
+  docsMcpUrl = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
+    service = "docs-mcp";
+    endpoint = "mcp";
+    via = "tailnet";
+  };
 in
 {
   # Its uv2nix/python closure is built against its own nixpkgs, so this one
@@ -51,11 +58,11 @@ in
         ];
 
         mcpServers = lib.mkMerge [
-          (lib.mkIf (config.programs.docsMcp.enable or false) {
+          {
             docs = {
-              url = "http://localhost:${toString config.programs.docsMcp.port}/mcp";
+              url = docsMcpUrl;
             };
-          })
+          }
           (lib.mkIf (config.programs.qmd.enable or false) {
             qmd = {
               url = "http://localhost:${toString config.programs.qmd.port}/mcp";

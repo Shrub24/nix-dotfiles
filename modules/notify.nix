@@ -24,6 +24,13 @@ in
         ntfy = {
           enable = true;
           serverUrl = ntfyUrl;
+
+          # Routing is declared by use case, never derived from severity, and
+          # fails closed at eval without both halves. `system` is the one
+          # use case this fleet routes today (host/unit health), matching the
+          # topic the old implicit fallback targeted.
+          topics.system = "system";
+          defaultTopic = "system";
         };
 
         # ntfy-only dispatch. Telegram is off, not merely unconfigured: the

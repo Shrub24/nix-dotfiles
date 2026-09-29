@@ -24,7 +24,7 @@ function M.relpath(root, filepath)
 end
 
 function M.run(args, stdin)
-	local root = require("lazyvim.util").root.get()
+	local root = vim.b.root or vim.fs.root(vim.fn.expand "%:p:h", { ".git", ".sops.yaml" }) or vim.fn.getcwd()
 	local cmd = ("cd %s && sops %s"):format(
 		vim.fn.shellescape(root),
 		table.concat(vim.tbl_map(vim.fn.shellescape, args), " ")
@@ -74,7 +74,7 @@ function M.setup()
 				group = group,
 				buffer = 0,
 				callback = function()
-					local root = require("lazyvim.util").root.get()
+					local root = vim.b.root or vim.fs.root(vim.fn.expand "%:p:h", { ".git", ".sops.yaml" }) or vim.fn.getcwd()
 					local relpath = M.relpath(root, filename)
 					local content = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
 					local result = M.run({ "-e", "--filename-override", relpath, "/dev/stdin" }, content)

@@ -1,20 +1,4 @@
---- Optional error/notification capture, off unless asked for.
----
----   NVIM_ERRORLOG=/tmp/nvim.log nvim-nix
----
---- Nothing is written when the variable is unset, so normal startup pays no
---- file I/O. Two streams are captured:
----
----   vim.notify  every notification, whatever renders it (noice, snacks)
----   :messages   the full message history, dumped on exit and on focus loss
----
---- Lua errors raised in autocmds/commands are written to stderr by neovim
---- itself and never reach Lua, so redirect the process to catch those:
----
----   nvim-nix 2>>/tmp/nvim.err
----
---- LSP traffic is separate again and always on:
----   :lua vim.print(vim.lsp.log.get_filename())
+--- Error/notification capture to $NVIM_ERRORLOG when set. Usage: docs/errorlog.md
 local path = vim.env.NVIM_ERRORLOG
 if not path or path == "" then
   return

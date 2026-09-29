@@ -3,8 +3,8 @@ name: reviewer
 description: Review specialist for diffs, plans, solutions, codebase health, and PR/issue validation; explores via codebase-explore, reports via review-policy
 advertise: true
 skills: codebase-explore, review-policy
-model: omniroute/coder-high
-thinking: xhigh
+model: openai-codex/gpt-6.1-sol
+thinking: medium
 completionGuard: false
 async: true
 systemPromptMode: replace
@@ -35,10 +35,9 @@ tools:
   - search_code
   - search_graph
   - trace_path
-  - mcp:semble
-  - mcp:docs-mcp-server
+  - mcp:docs_mcp_server
   - mcp:nixos
-  - mcp:grep.app
+  - mcp:grep_app
 subagentOnlyExtensions:
   - ../npm/node_modules/@ff-labs/pi-fff/src/index.ts
 ---

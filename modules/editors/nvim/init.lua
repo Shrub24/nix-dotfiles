@@ -124,11 +124,8 @@ local inline_specs = {
       },
     },
   },
-  -- blink.cmp requires these at completion time, not at setup time, so each is
-  -- registered with lze's on_require: the plugin loads the moment blink calls
-  -- require("<module>"). Without it, lze reports "no plugin registered to load
-  -- on require of X" the first time the source is triggered.
-  -- noice requires nui.<submodule> at runtime, so nui needs the same treatment.
+  -- on_require: blink sources and nui are require()d by other plugins at
+  -- runtime; without this lze fails with "no plugin registered to load".
   { "nui.nvim", auto_enable = true, on_require = "nui", after = function() end },
   { "blink-copilot", auto_enable = true, on_require = "blink-copilot", after = function() end },
   { "blink-nerdfont.nvim", auto_enable = true, on_require = "blink-nerdfont", after = function() end },

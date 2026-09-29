@@ -76,6 +76,7 @@ filter for homepage inclusion.
 | `grist`       | 8484 | `/` | `/status` | —       |
 | `docs-mcp`    | 6280 | `/` | —         | —       |
 | `qmd`         | 8181 | `/` | —         | —       |
+| `mcp-nixos`   | 8000 | —   | —         | —       |
 | `web-catalog` | 8123 | `/` | `/`       | —       |
 
 ## URL derivation
@@ -117,10 +118,17 @@ Each entry in `.#webServiceCatalog` has:
   baseUrl = "http://localhost:8484";
   uiUrl = "http://localhost:8484/";
   healthUrl = "http://localhost:8484/status";
+  openapiUrl = null;
+  mcpUrl = null;
   icon = "grist";
   description = "Spreadsheet database";
 }
 ```
+
+`openapiUrl` and `mcpUrl` derive from `openapi.path` and `mcp.path`, and are
+`null` for services that declare neither. They are separate from `uiUrl`
+because neither is a page: a client POSTs to an MCP endpoint, so listing one as
+`ui.path` would put a link in the homepage block that only errors in a browser.
 
 Fields with no corresponding endpoint path are `null` (e.g., `healthUrl = null`
 for docs-mcp).
@@ -193,7 +201,7 @@ in
 }
 ```
 
-Wired modules: `grist`, `docs-mcp`, `qmd`, `web-catalog`.
+Wired modules: `grist`, `docs-mcp`, `qmd`, `mcp-nixos`, `web-catalog`.
 
 ## Adding a new service
 

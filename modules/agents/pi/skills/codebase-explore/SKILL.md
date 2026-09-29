@@ -1,20 +1,21 @@
 ---
 name: codebase-explore
-description: Grounded codebase investigation for agents — semble first for semantic "where is this concept" discovery, codebase-memory graph tools to narrow structure (flows, callers, impact), search_code/grep for exact literals, qmd for repo docs. Use whenever a task requires locating, reading, or tracing code.
+description: Grounded codebase investigation for agents — codebase-memory graph search for "where is this concept" discovery and to narrow structure (flows, callers, impact), search_code/grep for exact literals, qmd for repo docs. Use whenever a task requires locating, reading, or tracing code.
 ---
 
 # Codebase Exploration
 
-Two indexed layers, two jobs: **semble finds where a concept lives** (semantic,
-no index prerequisite, cross-repo); **codebase-memory narrows how it connects**
-(callers, flows, impact, exact symbols). Filesystem tools fill gaps only.
+One indexed layer does the discovery: **codebase-memory finds where a concept
+lives and how it connects** (symbols, callers, flows, impact). Filesystem tools
+fill gaps only. A project must be indexed — check `index_status` first.
 
 ## Discovery order
 
-1. **Semble — semantic entry point.** For the first question ("where is
+1. **Concept search — the entry point.** For the first question ("where is
    authentication handled?", "what implements this interface?"), describe the
-   behavior or name the symbol. One focused search, navigate to the returned
-   file:line, do not repeat the search.
+   behavior or name the symbol: `search_graph` with `query` (BM25) or
+   `semantic_query`. One focused search, navigate to the returned file:line, do
+   not repeat the search. Pass `project` to search a sibling repo.
 1. **Graph tools — structural narrowing.** Once you hold real symbol names,
    switch to codebase-memory: trace flows, callers/callees, impact, dead code,
    and read exact snippets (see routing below). This is where "narrow down the
@@ -23,41 +24,6 @@ no index prerequisite, cross-repo); **codebase-memory narrows how it connects**
    comments) → `search_code` or `grep`, never the graph — the graph indexes
    symbols, not strings.
 1. **qmd** for repository documentation (see below).
-
-## Semble usage (semantic search + related-code)
-
-```bash
-semble search "authentication flow" ./my-project --max-snippet-lines 10  # concise
-semble search "save_pretrained" ./my-project                          # full chunk
-semble search "save model to disk" ./my-project --top-k 10            # more results
-```
-
-The index builds on first run, is cached, and invalidates automatically when
-files change. In pi sessions the same capability is exposed as MCP tools
-(`semble_search`, `semble_find_related`) — prefer those when loaded; the CLI
-works everywhere.
-
-- `--content docs` searches documentation and prose, `--content config`
-  covers yaml/toml config, `--content all` spans code + docs + config:
-  ```bash
-  semble search "deployment guide" ./my-project --content docs
-  semble search "database host port" ./my-project --content config
-  semble search "authentication" ./my-project --content all
-  ```
-- `find-related` discovers code similar to a known location (pass
-  `file_path` + `line` from a prior result) — all implementations of an
-  interface, all callers, sibling tests:
-  ```bash
-  semble find-related src/auth.py 42 ./my-project
-  ```
-- `path` defaults to cwd; git URLs are accepted. Pass several paths/URLs to
-  search related repos together (e.g. this repo calls a service defined in a
-  sibling repo) — results get repo-name prefixes plus a `repos` map:
-  ```bash
-  semble search "invoice endpoint" ./service-a ../service-b
-  ```
-- Write queries as function/class names or behavior descriptions, never
-  error-message text.
 
 ## Graph tool routing (codebase-memory)
 
@@ -78,7 +44,7 @@ works everywhere.
   never claim absence, exhaustiveness, or complete impact from them. Before
   delegating or making material claims, run `check_index_coverage` once with
   every evidence path; read/grep any reported missed ranges before relying on
-  the graph. Negative or exhaustive claims require Verify/Auditor-tier
+  the graph. Negative or exhaustive claims require verification-tier
   discipline (task-directed searches, exact snippets, both trace directions).
 
 ## Reading discipline

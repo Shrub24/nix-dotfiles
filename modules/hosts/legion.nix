@@ -110,6 +110,7 @@ let
   hmAspects = [
     "current-host"
     "pi"
+    "magic-context"
     "herdr"
     "hermes"
     "tools"
@@ -157,8 +158,8 @@ let
     "vscode"
     "sops-foundation"
     "grist"
-    "docs-mcp"
     "modal"
+    "mcp-nixos"
     "qmd"
     "web-catalog"
     "shell"
@@ -243,13 +244,11 @@ let
     modules = [
       currentHostModule
       sshTrustModule
-      # systemManager has no nix.buildMachines (#466), so the resolved dispatch
-      # specs render into /etc/nix/machines directly.
+      # Use system-manager's native remote-build options, like the NixOS host
+      # below; it imports the upstream option definitions as well.
       {
-        environment.etc."nix/machines" = {
-          text = dispatch.machinesFile dispatchSpecs;
-          mode = "0644";
-        };
+        nix.distributedBuilds = true;
+        nix.buildMachines = dispatch.buildMachines dispatchSpecs;
       }
       ./legion/_system.nix
     ]

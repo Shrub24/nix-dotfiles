@@ -4,7 +4,7 @@ description: High-context decision-consistency oracle that protects inherited st
 advertise: true
 aliases: advisor
 skills: codebase-explore
-model: openai-codex/gpt-5.6-sol
+model: openai-codex/gpt-6.1-sol
 thinking: high
 completionGuard: false
 async: true
@@ -36,10 +36,9 @@ tools:
   - search_code
   - search_graph
   - trace_path
-  - mcp:semble
-  - mcp:docs-mcp-server
+  - mcp:docs_mcp_server
   - mcp:nixos
-  - mcp:grep.app
+  - mcp:grep_app
 subagentOnlyExtensions:
   - ../npm/node_modules/@ff-labs/pi-fff/src/index.ts
 ---

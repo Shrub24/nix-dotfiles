@@ -1,4 +1,5 @@
-{ inputs, ... }: {
+{ inputs, ... }:
+{
   flake-file.inputs = {
     fish-abbreviation-tips = {
       url = "github:Gazorby/fish-abbreviation-tips";
@@ -179,7 +180,11 @@
             bind \cs 'commandline -i "sudo "; commandline -f execute'
 
             set fzf_preview_dir_cmd eza --all --color=always
-            set fzf_preview_file_cmd bat --color=always --style=numbers
+            # Route file previews through pistol so both fzf surfaces (this
+            # one and the ctrl-space lookahead router) share one association
+            # table — images would otherwise reach bat here and render
+            # nothing.
+            set fzf_preview_file_cmd pistol
             set fzf_diff_highlighter delta --paging=never --width=20
 
             # Noctalia's fzf palette is rendered as a POSIX file. Two traps

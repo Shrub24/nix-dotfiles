@@ -12,6 +12,14 @@ _: {
         font-family = "MapleMono";
         font-feature = "+calt";
 
+        # herdr-radar's agent-icon font, mapped by codepoint rather than offered
+        # as a fallback, so the icons resolve whatever the primary font is. The
+        # family name stays unquoted: Ghostty reads it literally.
+        font-codepoint-map = [
+          "U+E1A0-U+E1B7=Herdr Agent Icons Max"
+          "U+E1C0-U+E1C5=Herdr Agent Icons Max"
+        ];
+
         window-decoration = false;
         window-padding-x = 12;
         window-padding-y = 12;

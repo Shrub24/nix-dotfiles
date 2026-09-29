@@ -4,7 +4,7 @@ description: Autonomous web researcher; runs web-research + evidence-discipline 
 advertise: true
 skills: web-research, evidence-discipline, handoff-artifact
 model: omniroute/coder-high
-thinking: high
+thinking: medium
 completionGuard: false
 async: true
 systemPromptMode: replace
@@ -28,8 +28,8 @@ tools:
   - fetch_content
   - get_search_content
   - source_check
-  - mcp:docs-mcp-server
-  - mcp:grep.app
+  - mcp:docs_mcp_server
+  - mcp:grep_app
 subagentOnlyExtensions:
   - ../npm/node_modules/pi-web-access/index.ts
 ---

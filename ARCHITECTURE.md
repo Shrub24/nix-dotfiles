@@ -84,14 +84,14 @@ modules/                 ← import-tree scan (the only discovery root)
 
 Host composition lives in modules/hosts/legion.nix and modules/hosts/spectre.nix,
 not flake.nix:
-  ├─ 59 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
+  ├─ 61 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
   ├─ 7 systemManager aspects + _system.nix → systemConfigs.legion
   └─ 19 nixos aspects + _nixos.nix + embedded HM → nixosConfigurations.legion
 
 modules/hosts/spectre.nix composes the laptop as a NixOS-only host —
 no standalone HM output and no system-manager counterpart (the embedded
 Home Manager is its only configuration path):
-  └─ 37 lean HM aspects (phase-gated) + _home.nix, 15 nixos aspects +
+  └─ 43 lean HM aspects (phase-gated) + _home.nix, 15 nixos aspects +
      _nixos.nix + _hardware.nix + embedded HM → nixosConfigurations.spectre
 
 Build dispatch is resolved, not restated. `nix-fleet` owns the canonical
@@ -99,12 +99,19 @@ inventory — target system, tailnet hostname, SSH host key — and this reposit
 declares only its own scheduling policy over it: a build profile naming
 `home-forge`, and the dispatch account that builder currently authorizes. The
 host composition resolves that policy into normalized specs and hands them to
-the contract's pure projectors, which render `nix.buildMachines` on NixOS and
-`/etc/nix/machines` on the non-NixOS host, where system-manager has no such
-option. Nothing about the builder is hand-written, so the two renderers cannot
-disagree about who gets dialed. Membership is the whole policy: a build hook
+the contract's pure projector, which renders native `nix.buildMachines` on
+both NixOS and the non-NixOS system-manager host. System-manager imports the
+upstream remote-build options, so no separate machines file or hand-written
+builder definition is needed. Membership is the whole policy: a build hook
 ranks only the configured machines against each other, so a scheduled builder
-accepts everything and no weight or predicate expresses "prefer local".
+accepts everything and no weight or predicate expresses "prefer local". Slot
+budget is the offload knob instead — the hook takes any scheduled builder with
+a free slot and falls back to the local machine only when none has one, which
+makes a workstation's own concurrency an overflow budget. `home-forge` is asked
+for eight jobs, while local builds are capped at four jobs with four cores each
+and the daemon runs under `batch` CPU and `idle` I/O scheduling with a CPU
+weight and `MemoryHigh` bound, so a build cannot saturate an interactive
+session.
 ```
 
 The fleet registry is a typed option (`topology.hosts.<id>`) declared in
@@ -219,7 +226,7 @@ generated config and decrypted secret paths, so a config or secret change
 restarts the service declaratively. Activation hooks remain only where the
 service manager cannot model the work.
 
-Active user services: docs-mcp, grist, qmd, web-catalog, moniqued, memex's
+Active user services: docs-mcp, grist, qmd, mcp-nixos, web-catalog, moniqued, memex's
 hourly index timer, surge (the
 headless download daemon on port 1700), niks3-auto-upload (a socket-activated
 cache upload queue), and the weekly nh-clean timer — which is a user timer only on the non-NixOS host: on
@@ -232,7 +239,12 @@ coexist. Systemd failure notifications come from the fleet's `notify`
 capability, dispatched to ntfy — services opt in by writing
 `services.notify.events.<unit>.failure` from the module that owns the unit, or
 from the host module for units only that host runs; package-provided units
-(`nix-daemon`, `tailscaled`) register with `fromPackage`. Machine metrics go to
+(`nix-daemon`, `tailscaled`) register with `fromPackage`. MCP servers reach Pi
+the same way: the aspect that owns one writes its
+`programs.pi-coding-agent.mcpServers` entry
+and the pi aspect renders the register into `~/.pi/agent/mcp.json`, so the only
+servers Pi names itself are the endpoints this repository does not serve
+(grep.app, sourcegraph, and the fleet's docs-mcp). Machine metrics go to
 the fleet's `beszel-agent` capability (hub on the la-admin-1 host of
 nix-homelab). The agent holds no secret: the key it verifies the hub with is the
 hub's own _public_ half, so it is policy data bound by the contributor rather
@@ -242,7 +254,7 @@ owns the unit and its notify registration.
 LLM traffic goes to the OmniRoute gateway on the builder host, an endpoint the
 fleet service inventory carries (`lib.serviceEndpoints`).
 Service ports and display metadata are owned by `lib/web-services.nix`
-(grist 8484, docs-mcp 6280, qmd 8181, web-catalog 8123);
+(grist 8484, docs-mcp 6280, qmd 8181, mcp-nixos 8000, web-catalog 8123);
 canonical contract: [web-service-catalog](openspec/specs/web-service-catalog/spec.md).
 Grist binds loopback only (`127.0.0.1:8484`) and is not reverse-proxied;
 its bundled SQLite state persists at `~/.local/share/grist`.
@@ -297,15 +309,33 @@ describes only machines that are always on.
 - **One durable document** — `ARCHITECTURE.md` records boundaries and
   rationale; the filesystem inventory duplicate was deleted because it
   diverged from implementation.
-- **A file an application rewrites is never Nix-owned** — the Herdr and Pi
-  configuration surfaces are rendered by the `programs.herdr` and
-  `programs.pi-coding-agent` Home Manager modules, but the test is the write
-  path, not whether the file holds settings. Pi's `settings.json` is declared
+- **A file an application rewrites is never Nix-owned** — the Pi
+  configuration surface is rendered by the `programs.pi-coding-agent` Home
+  Manager module, but the test is the write path, not whether the file holds
+  settings. Pi's `settings.json` is declared
   because its failed write is a caught `EACCES` that reports loudly; the three
   extension settings files — `pi-tool.json`, `pi-stamp.json`, and
   `pi-herdr.json` — are not, because they save through a
   temporary file plus `rename()`, which replaces a store symlink with a real
   file instead of failing, and diverges silently.
+- **Plugin-owned config tables are declared, not merged** — Herdr and its
+  plugins rewrite `config.toml` by renaming a temporary file over the real
+  path, so a store symlink breaks them with `EACCES` in `/nix/store`. The file
+  is therefore rendered from `programs.herdr.settings` but written as a real
+  file at activation, and the blocks herdr-radar owns are re-applied in the same
+  step, so a switch re-seeds the published keys and the plugin reinstalls its
+  own layout rather than leaving a stale copy behind.
+
+  TOML allows a table once, which makes declaring one the way to keep it.
+  `[theme.custom]` is declared so Herdr's theme name stays this repository's
+  choice rather than the panel-fill value the plugin installs along with it; the
+  plugin finds a foreign table and skips its theme block. Its sidebar panel is
+  deliberately not declared: the plugin rebuilds that block per appearance and
+  its daemon re-probes the desktop's, so a Nix-declared copy pins one appearance
+  — and while the table is ours the plugin reads the panel as someone else's and
+  disables its own ordering, which is how a declared panel quietly costs the
+  activity sort.
+
 - **Pi agent definitions live under the Pi agent directory** — the seven
   subagent definitions are repository files mounted at `~/.pi/agent/agents`.
   `~/.agents` is the cross-tool agent directory that `opencode.nix` also

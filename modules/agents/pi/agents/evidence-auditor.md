@@ -26,8 +26,8 @@ tools:
   - fetch_content
   - get_search_content
   - source_check
-  - mcp:docs-mcp-server
-  - mcp:grep.app
+  - mcp:docs_mcp_server
+  - mcp:grep_app
 subagentOnlyExtensions:
   - ../npm/node_modules/pi-web-access/index.ts
 ---
