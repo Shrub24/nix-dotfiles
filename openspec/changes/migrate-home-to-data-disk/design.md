@@ -29,7 +29,7 @@ mount anything.
 - One typed declaration (`storage.dataDisk`) owns the data disk's facts;
   every consumer projects it.
 - `/home` and `/data` are declared on the NixOS target (`fileSystems`,
-disko, snapper) from the same declaration.
+  disko, snapper) from the same declaration.
 - The churn subvolume set is explicit and extendable — new tools' state
   paths join the set instead of silently landing in snapshot paths.
 - NixOS target state is prewired: disko config for both disks, declarative
@@ -116,7 +116,7 @@ directory (Phase 3).
 
 - `nix flake check --no-build` covers evaluation of all three host outputs.
 - Eval assertions: `fileSystems."/home"` exists on the NixOS side and
-derives from the declaration; the disko config renders exactly the
-declaration's subvol set and churn paths.
+  derives from the declaration; the disko config renders exactly the
+  declaration's subvol set and churn paths.
 - Live checks land in the runbook's Phase 3 (`findmnt`, `btrfs subvolume
 list`, `snapper -c home list`).

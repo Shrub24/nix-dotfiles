@@ -80,6 +80,36 @@ nix eval .#nixosConfigurations.spectre.config.hardware.facter.enable
 `facter.json` must be committed — a report generated on the live media
 describes _that_ machine once, and nothing regenerates it.
 
+## Recovery: locked out
+
+If a fresh install comes up with no usable login, the account exists but has
+no password. `nixos-anywhere` cannot help — sshd runs with
+`PasswordAuthentication = false` and no keys are authorized yet, so there is
+no remote path in. Boot the live media and enter the installed system.
+
+```fish
+cryptsetup open /dev/nvme0n1p2 cryptroot
+
+mkdir -p /mnt
+mount -o subvol=@ /dev/mapper/cryptroot /mnt
+mkdir -p /mnt/nix /mnt/home /mnt/boot
+mount -o subvol=@nix /dev/mapper/cryptroot /mnt/nix
+mount -o subvol=@home /dev/mapper/cryptroot /mnt/home
+mount /dev/nvme0n1p1 /mnt/boot
+
+nixos-enter --root /mnt
+passwd saurabhj
+```
+
+`users.mutableUsers` stays at its default `true`, so the password survives
+every rebuild — nothing needs declaring, and `passwd` keeps working.
+
+Alternatively, declare `initialHashedPassword` before installing: the
+activation script sets it during `nixos-install`, before the first reboot,
+so a fresh machine comes up with a working login. Use a `$y$` (yescrypt)
+hash rather than `$6$` — the hash is world-readable in the store and in git
+history, and yescrypt is what makes that acceptable.
+
 ## Phase 1 — install
 
 Runs from the desktop. `nixos-anywhere` kexecs the laptop into a clean
