@@ -63,7 +63,7 @@ in
           })
         ];
 
-        settings = lib.mkDefault {
+        settings = {
           model = {
             provider = "custom";
             base_url = "${omniroute}/v1";
