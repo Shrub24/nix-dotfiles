@@ -54,13 +54,18 @@ left untouched for a future change.
 
 ### Subvolumes and mount options
 
-- `@root` → `/`, `@home` → `/home`, `@nix` → `/nix`, `@log` → `/var/log`,
-  `@snapshots` → `/.snapshots`, `@home-cache` → `/home/${primaryUser.name}/.cache`,
-  `@containers` → `/home/${primaryUser.name}/.local/share/containers`.
+- `@root` → `/`, `@nix` → `/nix`, `@cache` → `/var/cache`, `@log` → `/var/log`,
+  `@tmp` → `/var/tmp`, `@images` → `/var/lib/libvirt/images`,
+  `@snapshots` → `/.snapshots` — all on the LUKS container.
+- `/home` and `/data` stay on LinuxData. `/home` is LinuxData's `@home`, declared
+  once as `storage.dataDisk` in `modules/hosts/legion/_storage.nix` and shared with
+  Arch; its churn paths are nested subvolumes under it and are not this change's to
+  create.
 - Compression `zstd:3`, `noatime`. Periodic fstrim is already config-owned.
-- The final configuration uses topology identity for the user — no hardcoded
-  username literals. `topology.hosts.legion` stays during dual boot because Arch
-  remains active; renaming it is deferred to the Arch-retirement scope, while
+- No user-dependent subvolume is created on the LUKS, so no username literal appears.
+- The final configuration still uses topology identity for the user.
+  `topology.hosts.legion` stays during dual boot because Arch remains active;
+  renaming it is deferred to the Arch-retirement scope, while
   `nixosConfigurations.legion` and `networking.hostName = "shrub"` are unchanged.
 
 ### Install-day state provisioning

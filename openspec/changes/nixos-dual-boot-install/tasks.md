@@ -169,12 +169,13 @@
   - delegate: OpenDevopsSpecialist
   - notes: explicit user approval required immediately before execution
 
-- [ ] 4.4 Create the subvolume layout on the Btrfs at `/dev/mapper/cryptroot`: `@root`,
-      `@home`, `@nix`, `@log`, `@snapshots`, `@home-cache`, `@containers`; user-dependent
-      targets derived from topology, no hardcoded usernames.
+- [ ] 4.4 Create the LUKS subvolume layout on the Btrfs at `/dev/mapper/cryptroot`: `@root`,
+      `@nix`, `@cache`, `@log`, `@tmp`, `@images`, `@snapshots`. `/home` and `/data` stay on
+      LinuxData — mount its existing `@home` and `@data` at `/mnt/home` and `/mnt/data` and
+      create nothing on the LUKS for them.
 
-  - criteria: all seven subvolumes exist
-  - verify: `btrfs subvolume list` shows the full layout
+  - criteria: all seven LUKS subvolumes exist; no home subvolume is created on the LUKS
+  - verify: `btrfs subvolume list /mnt` shows the full layout and no `@home`
   - depends: 4.3
 
 - [ ] 4.5 Mount the `/dev/mapper/cryptroot` layout with `zstd:3`/`noatime`; record actual
@@ -189,10 +190,10 @@
       with the actual generated metadata: the new NixOS ESP UUID mounted at `/boot`, the
       actual LUKS-header UUID (from `cryptsetup luksUUID`, not PARTUUID/Btrfs UUID) in
       `boot.initrd.luks.devices.cryptroot.device = "/dev/disk/by-uuid/<actual-LUKS-UUID>"`,
-      the Btrfs UUID, and all seven mounts — `@root`, `@home`, `@nix`, `@log`, `@snapshots`,
-      `@home-cache` → `/home/${primaryUser.name}/.cache`,
-      `@containers` → `/home/${primaryUser.name}/.local/share/containers`; preserve the
-      Shared/LinuxData declarations. No `/dev/nvmeX`, no invented UUIDs, no username literals.
+      the Btrfs UUID, and every LUKS-backed mount — `@root`, `@nix`, `@cache`, `@log`,
+      `@tmp`, `@images`, `@snapshots`; preserve the Shared/LinuxData declarations —
+      LinuxData's `/home` and `/data` already derive from `_storage.nix`. No `/dev/nvmeX`,
+      no invented UUIDs, no username literals.
 
   - criteria: file references only real UUIDs/by-id identities and topology values; LUKS
     initrd mapping present; Shared/LinuxData untouched

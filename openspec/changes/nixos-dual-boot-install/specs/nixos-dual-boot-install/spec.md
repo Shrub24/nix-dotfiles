@@ -71,18 +71,18 @@ The install SHALL create a 2 GiB FAT32 NixOS ESP with the EFI System Partition t
 #### Scenario: Generated metadata replaces the old Arch declarations
 
 - **WHEN** the curated `_hardware.nix` is updated
-- **THEN** it declares the new ESP UUID at `/boot`, the actual LUKS-header UUID (from `cryptsetup luksUUID`) under `boot.initrd.luks.devices.cryptroot`, and the Btrfs UUID with all seven mounts
+- **THEN** it declares the new ESP UUID at `/boot`, the actual LUKS-header UUID (from `cryptsetup luksUUID`) under `boot.initrd.luks.devices.cryptroot`, and the Btrfs UUID with every LUKS-backed mount
 - **AND** the Shared and LinuxData declarations are preserved and no `/dev/nvmeX` or invented UUID appears
 
 ### Requirement: Subvolume and mount layout is fixed and user-derived
 
-The install SHALL create `@root`→`/`, `@home`→`/home`, `@nix`→`/nix`, `@log`→`/var/log`, `@snapshots`→`/.snapshots`, `@home-cache`→`/home/${primaryUser.name}/.cache`, and `@containers`→`/home/${primaryUser.name}/.local/share/containers`. User-dependent paths SHALL be topology-derived, not hardcoded usernames. `topology.hosts.legion` SHALL remain unchanged during dual boot — Arch stays an active host — with its rename deferred to the Arch-retirement scope, while `nixosConfigurations.legion` and `networking.hostName = "shrub"` are unchanged.
+The install SHALL create `@root`→`/`, `@nix`→`/nix`, `@cache`→`/var/cache`, `@log`→`/var/log`, `@tmp`→`/var/tmp`, `@images`→`/var/lib/libvirt/images`, and `@snapshots`→`/.snapshots` on the LUKS container. `/home` SHALL NOT be created on that container: it comes from LinuxData's `@home`, declared once as `storage.dataDisk` and shared with Arch. `topology.hosts.legion` SHALL remain unchanged during dual boot — Arch stays an active host — with its rename deferred to the Arch-retirement scope, while `nixosConfigurations.legion` and `networking.hostName = "shrub"` are unchanged.
 
 #### Scenario: Subvolumes mount at their declared paths
 
 - **WHEN** the NixOS host mounts the new root
 - **THEN** each listed subvolume is mounted at its declared path
-- **AND** the home cache and container store paths resolve to the topology-derived `/home/${primaryUser.name}/.cache` and `/home/${primaryUser.name}/.local/share/containers`
+- **AND** `/home` and `/data` resolve to LinuxData, not to the LUKS container
 
 ### Requirement: NixOS uses its own ESP and preserves firmware boot entries
 
