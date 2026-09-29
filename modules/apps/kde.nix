@@ -37,6 +37,9 @@ _: {
     };
 
   flake.modules.nixos.kde-apps = _: {
+    # The one deliberate exception to the tailnet-only exposure policy: KDE
+    # Connect needs LAN peers, so programs.kdeconnect opens 1714-1764 tcp/udp.
+    # The package itself comes from Home Manager (services.kdeconnect).
     programs.kdeconnect = {
       enable = true;
       package = null;

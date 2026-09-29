@@ -1,30 +1,22 @@
-# Regenerate on NixOS install day with `nixos-generate-config --root /mnt`, then
-# hand-edit down to this minimal form. by-uuid is preferred over by-partlabel
-# because partlabels contain spaces ("EFI system partition").
+# Hardware policy for the desktop. Disko owns the install target — the ESP, the
+# LUKS container and the root subvolumes declared in _disko.nix — and renders
+# their `fileSystems` and `boot.initrd.luks.devices`, so this file must not
+# declare a root-disk mount. What it declares instead is what no layer
+# provisions: the data disk's own mounts, derived from _storage.nix, and the
+# Windows-shared NTFS volume.
 { primaryUser }:
 { config, ... }:
 let
-  # The data disk's topology, stated once. /home currently has no NixOS
-  # declaration (the Arch host mounts it via fstab), and the data mount
-  # still names its pre-migration subvolume; both are prewired here for the
-  # bare-metal install and realized post-migration.
-  storage = import ./_storage.nix { inherit primaryUser; };
-  dataDisk = storage.storage.dataDisk;
+  dataDisk = (import ./_storage.nix { inherit primaryUser; }).storage.dataDisk;
   btrfsOf = subvol: uuid: opts: {
     device = "/dev/disk/by-uuid/${uuid}";
     fsType = "btrfs";
     options = opts ++ [ "subvol=${subvol}" ];
   };
-  rootOpts = [
-    "noatime"
-    "compress=zstd:3"
-    "ssd"
-    "discard=async"
-    "space_cache=v2"
-  ];
 in
 {
-  # UEFI + systemd-boot (existing 600M vfat /boot partition on nvme1n1p4).
+  # UEFI + systemd-boot. Disko creates the ESP at the head of the Samsung disk
+  # and declares its mount; which bootloader manages it is still host policy.
   boot.loader.systemd-boot = {
     enable = true;
     configurationLimit = 20; # match snapper retention
@@ -55,36 +47,13 @@ in
   hardware.enableRedistributableFirmware = true;
   hardware.i2c.enable = true;
 
-  # File systems (from /proc/mounts on Arch).
-  # / and /nix are the same btrfs partition with different subvolumes.
-  fileSystems."/" = btrfsOf "@" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
-
-  fileSystems."/nix" = btrfsOf "@nix" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
-  fileSystems."/var/cache" = btrfsOf "@cache" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
-  fileSystems."/var/log" = btrfsOf "@log" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
-  fileSystems."/var/tmp" = btrfsOf "@tmp" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
-  fileSystems."/var/lib/libvirt/images" =
-    btrfsOf "@images" "35eb40c3-6466-4e66-ad20-9b7da9140992"
-      rootOpts;
-  fileSystems."/.snapshots" = btrfsOf "@snapshots" "35eb40c3-6466-4e66-ad20-9b7da9140992" rootOpts;
-
-  # Home lives on the data disk (see _storage.nix), not on the root
-  # partition's own @home subvolume — the Arch host migrated there first.
+  # Home and bulk data live on the data disk, whose UUID and subvolume names
+  # _storage.nix owns; the root install changes nothing about that disk.
   fileSystems."/home" = btrfsOf dataDisk.homeSubvol dataDisk.uuid dataDisk.commonOptions;
 
-  # Bulk subvolume for user data; see _storage.nix.
   fileSystems."/data" = btrfsOf dataDisk.dataSubvol dataDisk.uuid dataDisk.commonOptions;
 
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/7EA9-D01C";
-    fsType = "vfat";
-    options = [
-      "fmask=0022"
-      "dmask=0022"
-    ];
-  };
-
-  # Secondary NTFS shared with Windows dual-boot.
+  # Secondary NTFS shared with Windows; a missing partition must not block boot.
   fileSystems."/mnt/Shared" = {
     device = "/dev/disk/by-uuid/2EBA15A2BA15681B";
     fsType = "ntfs3";
@@ -129,7 +98,4 @@ in
       # Reverse PRIME not needed - iGPU is the default.
     };
   };
-
-  # Timezone (matches current Arch: Australia/Melbourne, AEST +1000).
-  time.timeZone = "Australia/Melbourne";
 }

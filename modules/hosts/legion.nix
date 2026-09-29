@@ -181,6 +181,7 @@ let
     ++ [
       "cuda"
       "libcamera"
+      "codex"
     ];
   # Arch boot configuration is machine-specific (dracut drop-in, Limine conf) and
   # lives in the host's own raw module (modules/hosts/legion/_system.nix), so there
@@ -211,6 +212,7 @@ let
     "audio"
     "bluetooth"
     "power"
+    "toggle-kbd"
     "containers"
     "desktop-services"
     "kde-apps"
@@ -259,6 +261,10 @@ let
       currentHostModule
       sshTrustModule
       (import ./legion/_nixos.nix { inherit primaryUser; })
+      # disko owns the install target's root mounts and LUKS initrd device on
+      # this host: _hardware.nix declares policy, _disko.nix declares the disk.
+      inputs.disko.nixosModules.disko
+      (import ./legion/_disko.nix { })
       { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration
       { nixpkgs.config.allowUnfreePredicate = unfreePredicate; }
       # Which builders this host schedules is composition policy, resolved from
@@ -279,6 +285,9 @@ let
         home-manager = {
           useGlobalPkgs = true;
           useUserPackages = true;
+          # Without this, a pre-existing unmanaged file at an HM target aborts
+          # the first activation instead of being moved aside.
+          backupFileExtension = "backup";
           users.${primaryUser.name} = {
             imports = [
               currentHostModule

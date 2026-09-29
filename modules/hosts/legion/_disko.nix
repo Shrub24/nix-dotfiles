@@ -1,94 +1,101 @@
-# Install-day disk layout, captured as a disko configuration. NOT imported
-# into any host composition: disko would try to manage the live system. The
-# dual-boot changes (nixos-dual-boot-install for this host, add-spectre-host
-# for the laptop) import it during partitioning and never again.
+# The install target's disk layout, and the source of the installed system's
+# root mounts: imported through disko's NixOS module, which renders
+# `fileSystems` and `boot.initrd.luks.devices` from this declaration — so
+# _hardware.nix declares no root-disk mount.
 #
-# Facts derive from _storage.nix where they overlap (data-disk UUID,
-# subvolume names) so the capture and the fileSystems cannot drift. The
-# root disk's UUID is stated here only — it is boot-critical and the
-# fileSystems block in _hardware.nix already owns it for the consuming
-# configuration; regenerating the disk layout and reading it are different
-# acts.
+# Only the disk the install provisions appears here. The data disk does not:
+# this install never partitions it, and its mounts derive by UUID from
+# _storage.nix instead of from a disko-rendered by-partlabel device.
 #
-# Partition tables mirror the live disks (blkid, 2026-09): nvme0n1p5 is the
-# root btrfs with @, @nix, @cache, @log, @tmp, @images, @home (legacy),
-# @snapshots; nvme1n1p7 is the data btrfs. Windows keeps p1–p4/p6 on the
-# root disk and p2–p4 on the data disk. Arch keeps Limine on its own ESP;
-# the NixOS install creates a separate 2 GiB ESP in the retired Fedora
-# extent and boots systemd-boot from it — never a shared ESP. See
-# nixos-dual-boot-install for the procedure.
-{ primaryUser }:
+# Never run disko against this host. The Samsung keeps partitions this
+# declaration does not describe — Arch through the soak, and the Windows
+# remnants until it ends — so `disko --mode disko` would wipe them. The
+# declaration is the settled layout (2 GiB ESP, then the rest of the disk as
+# LUKS); the soak's shorter LUKS extent is an intermediate that the partlabels
+# and the mapper name below do not depend on.
+_:
 let
-  storage = import ./_storage.nix { inherit primaryUser; };
-  d = storage.storage.dataDisk;
+  opts = [
+    "noatime"
+    "compress=zstd:3"
+    "ssd"
+    "discard=async"
+    "space_cache=v2"
+  ];
 in
 {
-  # asserted by the change's verification task: this renders exactly the
-  # subvolume set _storage.nix names for the data disk.
   disko.devices = {
-    disk.nvme0n1 = {
+    disk.samsung = {
       type = "disk";
-      device = "/dev/nvme0n1";
+      # by-id, so a reordered NVMe cannot point this at the data disk. The
+      # partlabels derive from the `samsung` name — disk-samsung-ESP and
+      # disk-samsung-cryptroot — and the install sets exactly those when it
+      # creates the partitions; nothing in the system names a filesystem UUID.
+      device = "/dev/disk/by-id/nvme-SAMSUNG_MZVL2512HDJD-00BL2_S6Z5NE0W500203";
       content = {
         type = "gpt";
         partitions = {
-          # p1–p4, p6: Windows + ESP (kept, never formatted by disko).
-          root = {
-            # p5
-            type = "8300";
-            start = "…"; # resolved at install time from the existing table
+          ESP = {
+            # 2 GiB: ~50-70 MB per generation against a configurationLimit of
+            # 20 overflows a 1 GiB ESP.
+            size = "2G";
+            type = "EF00";
             content = {
-              type = "btrfs";
-              # The existing filesystem is kept, not created: disko formats
-              # only with --dangerous mode, and install day uses the
-              # existing subvolume set — @ moves to the head of this list.
-              subvolumes = {
-                "@" = {
-                  mountpoint = "/";
-                  mountOptions = [
-                    "noatime"
-                    "compress=zstd:3"
-                    "ssd"
-                    "discard=async"
-                    "space_cache=v2"
-                  ];
-                };
-                "@nix" = {
-                  mountpoint = "/nix";
-                  mountOptions = [
-                    "noatime"
-                    "compress=zstd:3"
-                    "ssd"
-                    "discard=async"
-                    "space_cache=v2"
-                    "x-initrd.mount"
-                  ];
-                };
-              };
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/boot";
+              mountOptions = [
+                "fmask=0077"
+                "dmask=0077"
+              ];
             };
           };
-        };
-      };
-    };
-    disk.nvme1n1 = {
-      type = "disk";
-      device = "/dev/nvme1n1";
-      content = {
-        type = "gpt";
-        partitions = {
-          data = {
-            # p7
-            type = "8300";
+          cryptroot = {
+            size = "100%";
             content = {
-              type = "btrfs";
-              subvolumes = {
-                "@home" = {
-                  mountpoint = "/home";
-                  mountOptions = d.commonOptions;
-                };
-                "@data" = {
-                  inherit (d) mountpoint;
-                  mountOptions = d.commonOptions;
+              type = "luks";
+              name = "cryptroot";
+              # `settings` is spread into boot.initrd.luks.devices.cryptroot.
+              # Discards pass through so the btrfs `discard=async` mount option
+              # reaches the SSD. No TPM enrolment: the passphrase is the only
+              # key, and it is set at format time, never declared here.
+              settings = {
+                allowDiscards = true;
+              };
+              content = {
+                type = "btrfs";
+                extraArgs = [ "-f" ];
+                subvolumes = {
+                  "@" = {
+                    mountpoint = "/";
+                    mountOptions = opts;
+                  };
+                  "@nix" = {
+                    mountpoint = "/nix";
+                    mountOptions = opts;
+                  };
+                  # The churn paths keep their own subvolumes so they stay out
+                  # of the root snapshots.
+                  "@cache" = {
+                    mountpoint = "/var/cache";
+                    mountOptions = opts;
+                  };
+                  "@log" = {
+                    mountpoint = "/var/log";
+                    mountOptions = opts;
+                  };
+                  "@tmp" = {
+                    mountpoint = "/var/tmp";
+                    mountOptions = opts;
+                  };
+                  "@images" = {
+                    mountpoint = "/var/lib/libvirt/images";
+                    mountOptions = opts;
+                  };
+                  "@snapshots" = {
+                    mountpoint = "/.snapshots";
+                    mountOptions = opts;
+                  };
                 };
               };
             };

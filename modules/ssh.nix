@@ -41,11 +41,19 @@ in
             Compression = "yes";
             HashKnownHosts = "yes";
             TCPKeepAlive = "no";
-            StrictHostKeyChecking = "accept-new";
             VisualHostKey = "yes";
 
             ControlPath = "~/.ssh/ctl/%r@%h:%p";
             ControlPersist = "600";
+          };
+
+          "Host ${lib.concatStringsSep " " (builtins.attrNames config.currentHost.peers)}" = {
+            ControlMaster = "auto";
+            ControlPersist = "600";
+            ServerAliveInterval = 60;
+            ServerAliveCountMax = 3;
+            TCPKeepAlive = "no";
+            Compression = "no";
           };
 
           "Host github.com gitlab.com" = {
@@ -100,7 +108,6 @@ in
               ControlPath /run/ssh-%r@%h:%p
               ServerAliveInterval 60
               ServerAliveCountMax 3
-              StrictHostKeyChecking accept-new
               TCPKeepAlive no
               Compression no
               
@@ -145,7 +152,6 @@ in
             ControlPath /run/ssh-%r@%h:%p
             ServerAliveInterval 60
             ServerAliveCountMax 3
-            StrictHostKeyChecking accept-new
             TCPKeepAlive no
             Compression no
             

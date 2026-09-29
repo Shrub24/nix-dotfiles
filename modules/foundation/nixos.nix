@@ -1,11 +1,38 @@
 _: {
-  # Host and state version are host-owned; this aspect owns only the account.
+  # Host and state version are host-owned; this aspect owns the account and the
+  # base-OS surface both NixOS hosts share.
   flake.modules.nixos.foundation =
-    { config, ... }:
+    { config, pkgs, ... }:
     let
       primaryUser = config.currentHost.primaryUser;
     in
     {
+      # Arch supplied /usr/bin/git; nothing on NixOS did. No config: the user's
+      # git config is unmanaged and lives in the carried /home.
+      programs.git.enable = true;
+
+      # uv's python-build-standalone CPython and the prebuilt rust/go binaries
+      # in ~/.local/bin, ~/.cargo/bin and ~/go/bin (plus mise's node/bun) run
+      # against Nix's glibc only through nix-ld. These append to the module's
+      # systemd/nix default set.
+      programs.nix-ld = {
+        enable = true;
+        libraries = with pkgs; [
+          libffi
+          ncurses
+          readline
+          sqlite
+          gdbm
+          tk
+          libxcb
+        ];
+      };
+
+      programs.appimage = {
+        enable = true;
+        binfmt = true;
+      };
+
       # NixOS owns the account; Home Manager owns its home configuration.
       users.users.${primaryUser.name} = {
         isNormalUser = true;

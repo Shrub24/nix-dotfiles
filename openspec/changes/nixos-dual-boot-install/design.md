@@ -2,114 +2,151 @@
 
 ## Context
 
-`nixos-bare-metal-readiness` must first make `nixosConfigurations.legion` a switchable, hardware-enabled NixOS host; this change then performs the install-day work it defers. The machine triple-boots Windows, Arch (Limine on a 512 GB Samsung), and — after this install — NixOS on a 2 TB SK hynix. The 2 TB disk holds Windows 500 GiB, Shared 150 GiB, and LinuxData 650 GiB around two retired Fedora partitions that, with existing gaps, form ~535.7 GiB of contiguous free space. The install must touch nothing owned by Windows or Arch, must identify every target by stable physical identity, and must stay reversible per step.
+`nixos-bare-metal-readiness` must first make `nixosConfigurations.legion` a switchable, hardware-enabled NixOS host; this change then performs the install-day work it defers. The machine currently triple-boots Windows and Arch (Limine, on a 512 GB Samsung NVMe). NixOS replaces Windows at the head of that Samsung disk, and the retired Fedora partitions on the 2 TB SK hynix are removed so the space is free for an eventual Windows reinstall. Arch stays bootable through a soak, then its partitions and the surviving Windows remnant are deleted and the NixOS root grows to the rest of the disk.
 
-Two constraints shape everything below. First, **stable identity only**: disks are addressed by serial/WWN and partitions by PARTUUID/filesystem UUID, never `/dev/nvmeX`, which reorders across boots. Second, **hard gate**: no destructive task runs until `nixos-bare-metal-readiness` strict validation and a full toplevel build pass, because the switchable host must exist before install-day work can consume it.
+Two constraints shape everything below. First, **stable identity only**: disks are addressed by serial/WWN and partitions by PARTUUID or partlabel, never `/dev/nvmeX`, which reorders across boots. Second, **hard gate**: no destructive task runs until `nixos-bare-metal-readiness` strict validation and a full toplevel build pass, because the switchable host must exist before install-day work can consume it.
+
+Measured on 2026-09-29 (512 B sectors). Samsung `MZVL2512HDJD-00BL2`, serial `S6Z5NE0W500203`, WWN `eui.002538b531027bf1`, 1,000,215,216 sectors (476.94 GiB): p1 vfat Windows ESP 100 MiB `2193a654-…` at 2048–206847, p2 MSR 16 MiB `031ea351-…`, p3 NTFS Windows C: `9ce9fe67-…` to sector 343046143, p5 btrfs Arch root 310.5 GiB `e33cb524-…`, p6 vfat Arch/Limine ESP 2 GiB `1a2c5601-…`, p4 NTFS WinRE `b5c0d8da-…` at the tail. SK hynix `SHGP31-2000GM`, serial `ADC5N475011305I3I`: p1 MSR, p2 NTFS 500 GiB and p3 NTFS `Shared` 150 GiB (both kept), p4 retired Fedora ESP 600 MiB `9aae0356-…`, p5 retired Fedora ext4 1 GiB `16921d6b-…`, p7 btrfs LinuxData 650 GiB `47fa5ee2-…` with `@home` and `@data` (kept).
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Install NixOS permanently as a third, independently bootable OS: own 2 GiB ESP plus ~533.7 GiB LUKS2-encrypted Btrfs in the exact freed extent, with the agreed subvolume layout; only the dual-boot coexistence with Arch is a temporary soak.
-- Keep Windows, Shared, LinuxData, and the Samsung disk's partition identities and bounds unchanged. Existing filesystem contents change only in dedicated cross-disk backup directories and through the reversible stale-UKI cleanup.
-- Execute every destructive step with a precondition, backup, verification, and rollback checkpoint, re-checking serial/WWN/PARTUUID immediately before each command; back up both GPTs and every existing ESP first.
-- Migrate durable state before activation: sops age keys, NetworkManager profiles, Tailscale/Bluetooth/SSH host key state, and the inventoried user data — with secrets never exposed. Set the login password after installation and before first boot.
-- Verify boot through the new firmware entry, decryption, mounts, network, generation, desktop, secrets, and core services, and verify rollback to Arch as the escape hatch during the temporary soak.
+- Install NixOS permanently as the head of the Samsung disk: a 2 GiB ESP plus a LUKS2-encrypted btrfs root, with the agreed subvolume layout; only the coexistence with Arch is a temporary soak.
+- Keep the data disk untouched: `/home` and `/data` stay on LinuxData exactly as `_storage.nix` states, through the install and after it.
+- Carry the root state that identifies the machine, so the tailnet node, the fleet's pinned SSH host key and the sops key survive the new root.
+- Derive every root-disk mount from one declaration, so no install-day UUID is hand-edited into the configuration and the validated configuration is the installed one.
+- Execute every destructive step with a precondition, backup, verification, and rollback checkpoint, re-checking serial/WWN/PARTUUID immediately before each command.
+- Close the loop after a soak: delete Arch and the Windows remnant, grow the root to the whole disk.
 
 **Non-Goals:**
 
-- Arch retirement and reformatting its 310 GiB root into an encrypted Btrfs backup receiver (future change).
-- TPM enrollment — LUKS2 passphrase only initially.
+- TPM enrolment — LUKS2 passphrase only initially.
 - Disk swap or hibernation — zram only.
-- Growing LinuxData into the trailing ~27.3 GiB.
-- Sharing the Arch ESP or changing application/service behavior — this change consumes existing capabilities and changes only install-time hardware metadata.
+- Growing LinuxData into its trailing ~27.3 GiB.
+- Reinstalling Windows — the freed SK hynix extent is left for it, and that install is a separate operator job.
+- Changing application or service behavior: this change consumes existing capabilities and changes only the host's disk layout and hardware metadata.
 
 ## Decisions
 
 ### D1. Hard gate on bare-metal readiness
 
-The first install-day step is the gate, not a disk command: `nixos-bare-metal-readiness` strict validation must pass and a full `nixosConfigurations.legion` toplevel build must succeed. Only then may the first destructive task run. No install-day step substitutes for the gate — it is the guarantee that the switchable host the install consumes actually exists.
+The first install-day step is the gate, not a disk command: `nixos-bare-metal-readiness` strict validation must pass and a full `nixosConfigurations.legion` toplevel build must succeed, from the Arch checkout. No install-day step substitutes for the gate. Because the disk layout now derives from the disko declaration (D8), the build that passes this gate is the configuration that gets installed — there is no metadata step between them, and the gate therefore gates the exact artifact.
 
-### D2. Stable identity discipline
+### D2. The install target is the head of the Samsung disk
 
-Every disk command resolves targets through `/dev/disk/by-id` (serial-based) and every partition through PARTUUID, re-checked immediately before the command executes:
+NixOS takes the extents Windows occupies: p1, p2 and p3 (sectors 2048–343046143) are deleted and replaced by a 2 GiB ESP (sectors 2048–4196351, GPT type EF00) and a LUKS partition (sectors 4196352–343046143, 161.58 GiB during the soak). The LUKS partition is last, so growing it post-soak is one `sgdisk --move-end` plus `cryptsetup resize` plus `btrfs filesystem resize max`. The alternative — the retired Fedora extent on the SK hynix, which the original draft used — was rejected because it splits the machine's OSes across two disks and spends the only contiguous free extent Windows could be reinstalled into.
+
+### D3. Stable identity discipline
+
+Every disk command resolves targets through `/dev/disk/by-id` (serial-based) and every partition through PARTUUID or partlabel, re-checked immediately before the command executes:
 
 ```sh
 # resolve once by serial, re-verify before each destructive command
-disk=$(readlink -f /dev/disk/by-id/nvme-SK_hynix_SHGP31-2000GM_ADC5N475011305I3I)
-fedora_esp=$(readlink -f /dev/disk/by-partuuid/9aae0356-4274-46c0-8593-bbcd9769b22f)
-[ "$(lsblk -dno WWN "$disk")" = "nvme.1c5c-414443354e343735303131333035493349-5348475033312d32303030474d-00000001" ] || exit 1
-[ "$(lsblk -no PKNAME "$fedora_esp")" = "$(basename "$disk")" ] || exit 1
+disk=$(readlink -f /dev/disk/by-id/nvme-SAMSUNG_MZVL2512HDJD-00BL2_S6Z5NE0W500203)
+windows_c=$(readlink -f /dev/disk/by-partuuid/9ce9fe67-debb-43d8-9dc5-2017ef5b2175)
+[ "$(lsblk -no PKNAME "$windows_c")" = "$(basename "$disk")" ] || exit 1
 ```
 
-The pattern — assert the expected serial/WWN/PARTUUID, abort otherwise — is applied before every destructive command, so a reordered NVMe or a mismatched layout stops the install before it can harm anything. No `/dev/nvmeX` reference ever reaches `_hardware.nix`.
+Firmware entries get the same treatment: they are resolved by the label recorded in the baseline (`Windows Boot Manager`, `Fedora`, `Limine`) and their `BootNNNN` ids re-read from `efibootmgr` immediately before deletion, because the ids are assigned by the firmware rather than owned by this repository.
 
-### D3. Samsung disk: cleanup only
+### D4. Windows' backup is confirmed before the first delete
 
-The 512 GB Samsung (MZVL2512HDJD-00BL2, serial `S6Z5NE0W500203`, WWN `eui.002538b531027bf1`) is read-only this change except one reversible cleanup. Arch Limine uses a separate current kernel/initramfs, so the 7.1.3 and 7.1.5 UKIs found by this audit are stale and unowned. At execution time the Samsung serial/WWN and the baseline-recorded Arch ESP PARTUUID are re-asserted, every UKI is backed up, and only UKIs that do not match the then-current kernel are moved off the ESP; `limine.conf` and the current kernel are re-checked immediately before cleanup. The matching UKI stays as an independent Arch rescue and the deduplicated Limine snapshot history is kept until Arch retirement.
+Deleting p1–p3 is not reversible on this machine. The GPT backup restores the partition entries and the Windows ESP image restores the boot files, but once the LUKS header and the btrfs are written, the extents held by Windows C: are gone; only the operator's own Windows backup can bring them back. The first destructive task therefore stops and requires explicit confirmation of where that backup is and that it has been verified, before any delete command runs. The same reasoning names the Windows ESP in the cross-disk backup set: with it, a restored GPT plus a future Windows install still boots.
 
-### D4. Retired Fedora partition removal
+### D5. The install runs from the running Arch system
 
-On the 2 TB disk the retired Fedora 600 MiB ESP (PARTUUID `9aae0356-4274-46c0-8593-bbcd9769b22f`) and the retired Fedora 1 GiB ext4 (PARTUUID `16921d6b-a8b7-4f04-8fdf-44ebc6d36acc`) are removed — Fedora is confirmed retired. Before deletion both GPTs and the Windows, Arch, and Fedora ESPs are backed up cross-disk: the 2 TB GPT and Fedora ESP have a verified copy on the 512 GB Arch filesystem, while the 512 GB GPT and Windows/Arch ESPs have a verified copy on LinuxData. Serial/WWN/PARTUUID are then re-verified under the D2 pattern. After deletion the partition table is re-read to confirm the ~535.7 GiB contiguous freed extent and that the identities and bounds of Windows 500 GiB, Shared 150 GiB, and LinuxData 650 GiB are unchanged.
+**Verdict: adopt.** `nixos-install` from nixpkgs, run on the running Arch host into a mounted target root, is the primary path; NixOS media is the documented fallback. nix is already installed on Arch, `nixos-install-tools` evaluates and builds there (`nixpkgs#nixos-install-tools` builds from cache), and the install is a chroot install either way — `nixos-install` runs the target's `switch-to-configuration boot` inside `nixos-enter`.
 
-### D5. Provisioning the freed extent
+Reasons it holds:
 
-The freed extent receives exactly two partitions: a 2 GiB FAT32 NixOS ESP (GPT type EF00, `C12A7328-F81F-11D2-BA4B-00A0C93EC93B`) and a ~533.7 GiB Linux LUKS volume, aligned to the extent boundaries so no adjacent partition shifts. Formatting happens only with **new** filesystem UUIDs — none are invented in advance; the generated UUIDs and filesystem declarations are written into the curated `_hardware.nix` from the actual format output, replacing its existing Arch root/ESP declarations (which carry no LUKS initrd mapping). The ESP is formatted FAT32, mounted at `/mnt/boot` during the install, and is NixOS-owned; the Arch ESP is never shared.
+- **No installer tmpfs.** nixos-install builds into the target store with the running system's store as an extra substituter (`sub="auto?trusted=1"` with `--store "$mountPoint"`), so a toplevel already present in the local store is _copied_, not rebuilt. The original draft's worst constraint — a ~34 GiB toplevel build inside the installer's overlay — disappears. The constraint that replaces it is free space on the Arch root (55 GiB available, 82% used), checked before the build.
+- **The gate can run before anything is destroyed.** The build, and therefore the validation of the exact configuration that gets installed, happens on the machine as it is now, with no media round trip.
+- **Root state copies directly.** `/etc/ssh/ssh_host_*`, `/var/lib/sops-nix/key.txt`, `/var/lib/tailscale`, `/var/lib/bluetooth` and the NetworkManager profiles live on the running root; copying them into the mount is a local `cp`, introducing no SSH or rsync path and no secret over the wire.
+- **Nothing being rewritten is in use.** p1–p3 hold Windows, p2 is an MSR, and none is mounted; Arch's root and ESP (p5, p6) are untouched, so the disk being repartitioned is not the disk being booted from in any part that changes.
+
+Risks it carries, and how the plan answers them:
+
+- **Repartitioning the disk that holds the running root.** The GPT edit itself is a write to the table area; the kernel is made to re-read it with `partx -u` (per-partition BLKPG deltas), not `partprobe`/`BLKRRPART`, which fails with `EBUSY` when any partition of that disk is open — and p5 is the running root. If the re-read still refuses, the new nodes appear after a reboot into Arch; the plan resumes there, because no later step depends on the re-read having happened in the same boot.
+- **The EFI variable write from the chroot.** `nixos-enter` does `mount --rbind /sys "$mountPoint/sys"`, which carries the `efivarfs` mount into the chroot, so `boot.loader.efi.canTouchEfiVariables = true` and systemd-boot's `bootctl install` write the new `BootNNNN` entry. The plan asserts `/sys/firmware/efi/efivars` exists and is writable before starting, so a legacy-mode boot is caught before the install rather than after it.
+- **A flake path root cannot read.** The install runs as root from a scratch checkout of the recorded SHA, not from the operator's working tree — which also keeps the uncommitted changes in that tree out of the installed system.
+- **Arch changes under the install.** The skeptical case for media is a running system that cannot be trusted; that risk is real but smaller than the tmpfs-build and state-copy costs, and the fallback is one ISO boot away.
+
+The fallback differs only in where the closure comes from: media must build it inside the installer's store, so the same recorded SHA is cloned to `/mnt/etc/nixos` and installed with `nixos-install --root /mnt --flake /mnt/etc/nixos#legion`.
 
 ### D6. Encryption, filesystem, and memory
 
-LUKS2 with a passphrase only — no TPM enrollment in this install, so boot prompts for the passphrase and nothing depends on firmware attestation. The LUKS-header UUID is recorded via `cryptsetup luksUUID`, the container is opened as `cryptroot`, and Btrfs is formatted on `/dev/mapper/cryptroot`; later mount and configuration steps use that mapping, and `boot.initrd.luks.devices.cryptroot.device` gets the LUKS-header UUID — never the PARTUUID or Btrfs UUID. Inside LUKS, Btrfs with `zstd:3` and `noatime`. Swap is zram only; no swap partition/file and no hibernation, matching the identity the readiness change already established.
+LUKS2 with a passphrase only — no TPM enrolment, so boot prompts and nothing depends on firmware attestation. Discards pass through (`allowDiscards`) so the btrfs `discard=async` mount option reaches the SSD, matching the laptop's LUKS settings. Inside the container, btrfs with `zstd:3` and `noatime`, `ssd`, `discard=async`, `space_cache=v2`. Swap is zram only, as the readiness change established: no swap partition, no hibernation, no resume device.
 
 ### D7. Subvolume and mount layout
 
-One Btrfs on the LUKS container carries the system tree: `@root`→`/`, `@nix`→`/nix`, `@cache`→`/var/cache`, `@log`→`/var/log`, `@tmp`→`/var/tmp`, `@images`→`/var/lib/libvirt/images`, and `@snapshots`→`/.snapshots` — the churn paths keep their own subvolumes exactly as the host separates them today, so they stay out of the root snapshots. `/home` is deliberately **not** on this volume: it belongs to LinuxData, declared once as `storage.dataDisk` in `modules/hosts/legion/_storage.nix` and already rendered by `_hardware.nix`, so this change rewrites only that file's root-disk half. Home's own churn paths (`.cache`, `.local/share`, `.local/state`, and the rest of the declared set) are nested subvolumes under `@home` for the same reason, and are the migration's to own — no user-dependent path is named here, so no username literal appears. `topology.hosts.legion` stays during dual boot — Arch remains an active host — and its rename is deferred to the Arch-retirement scope; `nixosConfigurations.legion` and `networking.hostName = "shrub"` are unchanged.
+One btrfs on the LUKS container carries the system tree: `@`→`/`, `@nix`→`/nix`, `@cache`→`/var/cache`, `@log`→`/var/log`, `@tmp`→`/var/tmp`, `@images`→`/var/lib/libvirt/images`, `@snapshots`→`/.snapshots`. The filesystem is fresh, so this is the moment to settle the naming the draft left inconsistent: `@` is what the live Arch root, `_hardware.nix` and the laptop's disk all use, and `@root` was the outlier — the set above uses `@` everywhere, in the declaration, the install steps and the prose.
 
-### D8. Snapshot and data mounts
+`/home` is deliberately **not** on this volume. It belongs to LinuxData, declared once as `storage.dataDisk` in `modules/hosts/legion/_storage.nix`; the install neither creates nor moves it, so home's churn subvolumes are not this change's to touch. No user-dependent path is named here, so no username literal appears. Identity is unchanged: `nixosConfigurations.legion`, `networking.hostName = "legion"` and `topology.hosts.legion` are correct as declared and stay so; the draft's "rename is deferred" note referred to a hostname that no longer exists anywhere in the tree.
 
-Snapper manages the root volume on the LUKS container and the home volume on LinuxData; both configs are already declared in `_nixos.nix` from the captured live values. `/data` carries no snapper config — it holds rescue images, a package store, and trash, none of which benefit from snapshots. LinuxData keeps its current native-data mount and is not resized; its trailing ~27.3 GiB growth is explicitly out of scope. The Windows Shared NTFS mount keeps its existing `nofail` so a missing partition never blocks boot.
+### D8. Root-disk mounts come from the disko declaration; the data disk does not
 
-### D9. Firmware boot entries
+`_hardware.nix` declares no root-disk mount. `_disko.nix` is imported through `inputs.disko.nixosModules.disko`, exactly as `modules/hosts/spectre.nix` does, so `fileSystems` for `/`, `/nix`, `/var/cache`, `/var/log`, `/var/tmp`, `/var/lib/libvirt/images`, `/.snapshots` and `/boot`, plus `boot.initrd.luks.devices.cryptroot`, are rendered from one declaration. The devices are a partlabel (`/dev/disk/by-partlabel/disk-samsung-ESP`, `disk-samsung-cryptroot`) and a mapper name (`/dev/mapper/cryptroot`), so the install writes no UUID into the configuration and the gate builds the exact layout it installs.
 
-The install registers a new NixOS firmware entry on the 2 TB disk; Windows and Arch entries remain untouched and selectable. The retired Fedora NVRAM entry is removed only after backup and provision verification — never speculatively, and never before NixOS boot is proven.
+The data disk is _not_ in the declaration, deliberately diverging from the earlier draft that captured both disks. Its mounts stay derived from `_storage.nix` by UUID in `_hardware.nix`: that UUID is already known rather than install-day, the disk is never partitioned by this change, and a disko-rendered device would be a partlabel (`disk-<name>-data`) the live partition does not carry — an installed system that cannot mount `/home`. `_storage.nix` keeps its `@home`/`@data` names, its UUID and its mount options as the single source for those two mounts. With that, the draft's promised eval assertion ("disko renders exactly the declaration's subvolume set") has nothing to assert over and is dropped rather than reimplemented; the equality it was protecting is now structural, because the mounts have one owner each.
 
-### D10. Install-day state migration
+### D9. Retired Fedora removal, and what the freed space is for
 
-Before activation, the install provisions the root and primary-user sops age keys and NetworkManager profiles, and copies Tailscale state, Bluetooth pairing, and SSH host keys. Selected durable user state — browser profile, SSH, Syncthing, Grist, QMD/docs/projects, and anything else in the explicit inventory — is copied preserving ACLs, xattrs, and numeric IDs so ownership survives. Excluded: `~/.cache`, legacy standalone Home Manager/Nix profiles, and rootless container images (image activation reloads those after install). Secrets are copied in place and referenced by path; they never appear in any artifact. The login password is set after installation and before first boot via `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'`, and never recorded.
+On the SK hynix, the retired Fedora ESP (600 MiB, `9aae0356-…`) and the retired Fedora ext4 (1 GiB, `16921d6b-…`) are removed after the GPT backup, with Windows 500 GiB, Shared 150 GiB and LinuxData 650 GiB asserted unchanged. Nothing is created in their place: the freed extent plus the existing gaps around them is left unpartitioned, because it is where the eventual Windows reinstall goes. Nothing this change does writes into it, so the Fedora ext4's contents remain physically intact and a restored GPT would make them visible again until that reinstall happens.
 
-### D11. Checkpoint discipline
+### D10. Firmware boot entries
 
-Every destructive task carries the same four gates: precondition (identity + state assertions), backup (GPT, ESP, or prior state), verification of the result, and a rollback checkpoint. Rollback returns to the last checkpoint, so any failure strands the machine at a known-good state rather than mid-operation.
+The install registers a new NixOS entry on the new ESP. The entries pointing at what this change deletes are removed at install time: `Windows Boot Manager` (its ESP is gone) and `Fedora`. `Limine` stays for the soak, because Arch must stay bootable as the rollback path, and is removed in the post-soak step, after Arch's ESP is deleted.
 
-### D12. Install, verification, rollback
+### D11. Root state is carried; user state is not migrated
 
-The full toplevel build never runs in installer tmpfs: after the generated metadata replaces the old Arch declarations in `_hardware.nix`, the change is committed and pushed, and strict validation plus a full `nixosConfigurations.legion` build run from the Arch checkout. The NixOS media pass then mounts the new layout, clones and checks out the recorded pushed SHA at `/mnt/etc/nixos` in detached state — verifying `git rev-parse HEAD` equals it and `git status --porcelain` is empty before install; `nixos-generate-config` never runs over the curated repo — and installs with the pinned `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub`, building into the target store. The login password is set via `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'` and never recorded. Verification is sequential and explicit: firmware boot through the new entry, LUKS decryption, all mounts, network, NixOS and Home Manager generation, the desktop, secrets, and core services — then rollback to Arch is itself verified as the escape hatch during the temporary soak.
+"Install-day state provisioning" in the draft migrated browser profiles, service data and project trees. None of that is needed now: `/home` never moves, so all of it is already in place on LinuxData. What must be carried is the root state that makes the machine _itself_, because losing it breaks the fleet rather than one login:
 
-### D13. Future scope: Arch retirement
+- `/etc/ssh/ssh_host_*` — nix-fleet pins legion's ed25519 host key, and sops renders through `sshKeyPaths`;
+- `/var/lib/sops-nix/key.txt` — the age key the system's secrets decrypt with;
+- `/var/lib/tailscale` — the tailnet node identity;
+- `/var/lib/bluetooth` — pairing keys;
+- a subset of `/etc/NetworkManager/system-connections/*.nmconnection`, kept as an explicit list the operator fills in before the copy runs. The requirement is that the list is explicit, not that it is exhaustive: a profile that carries a network the machine cannot rejoin without user input belongs on it, and the other twenty-odd do not.
 
-Arch retirement — converting its 310 GiB root into an encrypted Btrfs backup receiver — is a deliberate future change. The NixOS install itself is permanent; only the dual-boot coexistence is a temporary soak. This change leaves the Arch root byte-for-byte untouched so Arch remains a working rollback path throughout the soak, and `topology.hosts.legion` is renamed only in that retirement scope.
+Not carried: ollama, docker and flatpak state. Those services re-create and re-fetch what they hold, and carrying them would add tens of gigabytes to the install for no identity gain. The login password is set after installation and before the first boot, and is never recorded.
+
+### D12. Checkpoint discipline, and what each rollback actually restores
+
+Every destructive task carries four gates: precondition (identity and state assertions), backup, verification of the result, and a rollback checkpoint. Rollback returns to the last checkpoint, and the plan states per step what that checkpoint is worth:
+
+- Fedora removal: reversible from the GPT backup alone, because nothing writes into the freed extent.
+- Windows removal: reversible only as a partition table and an ESP image; the C: contents are the operator's backup (D4).
+- Root provisioning: reversible by re-creating the ESP and LUKS partition — nothing before the install's store copy is worth keeping.
+- The install: reversible by booting Arch, which is untouched until the soak ends.
+- The post-soak grow: **not** reversible. It overwrites Arch's partitions and the Windows remnant with the grown root, so it runs only when the soak has been ended deliberately, and the Arch root is never backed up (310 GiB of retired OS).
+
+### D13. Soak, then consolidation
+
+The soak is a period of ordinary use with three things true: NixOS boots and is the daily system, Arch still boots through Limine, and the freed SK hynix extent stays free. It ends when the operator says so — verified rollback to Arch is the escape hatch throughout, not an exit from the plan. Consolidation then deletes p5 (Arch root), p6 (Arch ESP) and p4 (WinRE), grows the LUKS partition from 4196352 to the last sector of the disk (474.94 GiB), and runs `cryptsetup resize cryptroot` with `btrfs filesystem resize max /`. The final layout is a 2 GiB ESP and a root that owns the rest of the disk, with a single NixOS firmware entry.
 
 ## Risks / Trade-offs
 
-- [NVMe reordering or a mismatched layout points a destructive command at the wrong disk] → the D2 pattern asserts serial/WWN/PARTUUID immediately before every destructive command and aborts on mismatch; no `/dev/nvmeX` is ever encoded.
-- [Data loss on Windows/Shared/LinuxData if the freed-extent calculation drifts] → GPT backed up, partition table re-read after Fedora removal, and new partitions created only within the verified ~535.7 GiB extent; adjacent partition sizes asserted unchanged.
-- [State migration gaps leave the new host half-configured] → the durable-state inventory is explicit, migration preserves ACLs/xattrs/numeric IDs, and each class is verified before activation; excluded classes are named so nothing is silently dropped.
-- [Secret exposure in artifacts] → keys are copied in place and referenced by path; no secret value is ever written to an artifact.
-- [Boot failure strands the machine without a fallback] → the new NixOS entry is verified first, then rollback to Arch is verified as the escape hatch; the Fedora NVRAM entry is removed only after both.
-- \[Generated UUIDs diverge from what `_hardware.nix` declares\] → UUIDs come from actual format output and replace the old Arch root/ESP declarations, never invented before formatting and never hand-edited to match an assumption.
-- [A 34 GiB standalone toplevel build exhausts installer tmpfs] → the full build runs from the Arch checkout after the metadata commit is pushed; the media pass only runs `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub`, building into the target store.
-- [The installed system drifts from the validated configuration] → the exact validated/pushed SHA is checked out detached and verified clean at `/mnt/etc/nixos` and installed by the pinned command; `nixos-generate-config` never runs over the curated repo.
-- [UKI cleanup removes a path Arch still needs] → every UKI is backed up, the UKI matching the then-current kernel and Limine history are kept, and `limine.conf`/current kernel are re-checked immediately before cleanup.
-- [TPM-less passphrase is less convenient at every boot] → accepted trade for a simpler, firmware-independent trust model in this install; TPM enrollment can be added later without re-provisioning.
+- [NVMe reordering or a mismatched layout points a destructive command at the wrong disk] → D3 asserts serial/WWN/PARTUUID/partlabel immediately before every destructive command and aborts on mismatch; `_disko.nix` addresses the disk by-id.
+- [Windows C: is lost with no backup] → D4's stop, before the first delete: the plan requires explicit confirmation that the Windows backup exists and is verified.
+- [A kernel re-read failure during the repartition looks like a failure of the whole plan] → `partx -u` per-partition deltas, never `partprobe`; the documented fallback is a reboot into Arch and resume, since no later step depends on the re-read happening in that boot.
+- [The EFI variable write fails inside the chroot] → `nixos-enter` bind-mounts `/sys` recursively, carrying `efivarfs`; the plan asserts `/sys/firmware/efi/efivars` is present and writable before starting.
+- [The toplevel cannot be built or copied for lack of space] → the free-space check runs before the build (55 GiB free on a 82%-full Arch root), and the target's 161.58 GiB soak extent holds the ~34 GiB closure with room for the install.
+- [The installed system drifts from the validated configuration] → the export is a clean checkout of the recorded SHA, verified with `git rev-parse HEAD` and `git status --porcelain`; `nixos-generate-config` never runs over the curated repo; the flake is not edited between the gate and the install.
+- [State migration gaps leave the new host half-configured] → the carried set is enumerated in D11 and verified item by item, including the operator's NetworkManager keep-list, before the first boot.
+- [Secret exposure in artifacts] → keys are copied in place and referenced by path; no secret value is written to an artifact or the Execution Record.
+- [Boot failure strands the machine without a fallback] → NixOS boot is verified before the Fedora and Windows entries are removed, and Arch is verified bootable afterwards; the post-soak grow runs only after the soak.
+- [TPM-less passphrase is less convenient at every boot] → accepted trade for a firmware-independent trust model; TPM enrolment can be added later without re-provisioning.
 
 ## Migration Plan
 
-1. **Gate:** run `nixos-bare-metal-readiness` strict validation and a full `nixosConfigurations.legion` toplevel build; nothing destructive starts before both pass.
-1. **Baseline:** record serial/WWN/PARTUUID for both disks; back up both GPTs and all three existing ESPs (Windows, Arch, and Fedora).
-1. **Samsung cleanup:** re-inventory and back up every UKI, then move only UKIs that do not match the then-current kernel off the Arch ESP; keep the matching rescue UKI and Limine history.
-1. **Fedora removal:** back up the GPT and Fedora ESP, re-verify identities, remove the two retired partitions, confirm the ~535.7 GiB contiguous extent and untouched neighbors.
-1. **Provision:** create the 2 GiB NixOS ESP (type EF00) and ~533.7 GiB LUKS2 in the extent; format the ESP FAT32 and LUKS2 (passphrase), record the LUKS-header UUID via `cryptsetup luksUUID`, open it as `cryptroot`, format Btrfs on `/dev/mapper/cryptroot`; create the LUKS subvolume layout, mount it with `zstd:3`/`noatime`, mount the ESP at `/mnt/boot` and LinuxData's existing `@home` and `@data` at `/mnt/home` and `/mnt/data`, and capture the new filesystem UUIDs.
-1. **Merge:** replace the old Arch root/ESP declarations in the curated `_hardware.nix` with the generated UUID and filesystem declarations — new ESP UUID at `/boot`, actual LUKS-header UUID in `boot.initrd.luks.devices.cryptroot`, Btrfs UUID with every LUKS-backed mount, and the LinuxData `/home` and `/data` declarations preserved untouched; no `/dev/nvmeX`.
-1. **Validate:** commit and push the metadata change, then from the Arch checkout re-run strict validation and the full toplevel build — never in installer tmpfs.
-1. **Stage:** boot NixOS media, mount the new layout, provision root/user age keys and NetworkManager profiles, and copy Tailscale/Bluetooth/SSH host keys plus selected user state with ACLs/xattrs/numeric IDs (excluding `~/.cache`, standalone profiles, and rootless container images); clone and check out the recorded pushed SHA detached at `/mnt/etc/nixos`, verified clean.
-1. **Install:** run `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub` (builds into the target store), set the login password via `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'` before reboot, and verify firmware boot, decryption, mounts, network, NixOS and Home Manager generation, desktop, secrets, and core services; verify rollback to Arch; remove the Fedora NVRAM entry only after verification.
-1. **Defer:** leave Arch retirement and its 310 GiB root conversion to a future change.
+1. **Gate:** Windows backup confirmed; strict validation and a full `nixosConfigurations.legion` toplevel build from the Arch checkout; free space and efivars asserted.
+1. **Baseline and backups:** serial/WWN/PARTUUID/partlabel for both disks, both GPTs, all three ESPs (Windows, Arch, Fedora) and the current kernel and `limine.conf`, backed up cross-disk with checksums.
+1. **Samsung:** delete p1–p3, create the 2 GiB EF00 ESP (partlabel `disk-samsung-ESP`) and the LUKS partition to sector 343046143 (partlabel `disk-samsung-cryptroot`), re-read with `partx -u`, assert p5/p6 unchanged.
+1. **Provision:** format the ESP, `luksFormat` LUKS2 with a passphrase, open as `cryptroot`, `mkfs.btrfs`, create the seven subvolumes, mount the layout at `/mnt` with the declared options plus the data disk's `@home` and `@data` at `/mnt/home` and `/mnt/data` and the ESP at `/mnt/boot`.
+1. **SK hynix:** delete the two retired Fedora partitions, assert the kept partitions unchanged, then copy that disk's GPT and ESP backup into the new root so it outlives Arch.
+1. **State:** copy the D11 root state into `/mnt`, including the operator's NetworkManager keep-list, and verify each item.
+1. **Install:** `nixos-install --root /mnt --flake <clean checkout of the recorded SHA>#legion --no-root-passwd`, set the login password with `nixos-enter`, remove the Windows and Fedora firmware entries.
+1. **Verify:** boot NixOS through the new entry (LUKS prompt, mounts, network, Home Manager generation, desktop, secrets, services), then boot Arch and confirm the rollback path.
+1. **Soak:** NixOS daily, Arch still bootable, freed extent untouched.
+1. **Consolidate:** delete p5, p6 and p4, grow the LUKS partition to the disk end, `cryptsetup resize`, `btrfs filesystem resize max`, remove the Limine entry, verify the final layout.
+1. **Defer:** the Windows reinstall into the SK hynix's freed extent, and LinuxData's trailing ~27.3 GiB.

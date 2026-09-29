@@ -49,9 +49,7 @@ _: {
         micro
         lsof
 
-        # Calendar / sync / DB
-        khal
-        vdirsyncer
+        # DB
         sqlcipher
 
         # Monitoring

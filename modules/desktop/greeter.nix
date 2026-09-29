@@ -176,6 +176,10 @@ _: {
       # on NixOS; the polkit rule authorizing it is environment.etc below.
       security.polkit.enablePkexecWrapper = true;
 
+      # greetd is the login session, so its PAM stack must unlock gnome-keyring;
+      # otherwise the desktop session starts with the login keyring locked.
+      security.pam.services.greetd.enableGnomeKeyring = true;
+
       systemd.tmpfiles.rules = [
         "d /usr/share/wayland-sessions 0755 root root -"
         "L+ /usr/share/wayland-sessions/niri.desktop 0644 root root - ${niriSession}"

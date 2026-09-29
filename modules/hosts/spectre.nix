@@ -162,6 +162,9 @@ let
         home-manager = {
           useGlobalPkgs = true;
           useUserPackages = true;
+          # Without this, a pre-existing unmanaged file at an HM target aborts
+          # the first activation instead of being moved aside.
+          backupFileExtension = "backup";
           users.${primaryUser.name} = {
             imports = [
               currentHostModule

@@ -1,329 +1,328 @@
 # Tasks — Dual-Boot NixOS Install
 
-> Standing rule: every destructive task below is approval-gated (`notes: explicit user approval required immediately before execution`). If the DevOps specialist endpoint is
-> unavailable, the parent stops before any destructive work — never substitute another
-> automation. All disk targets resolve by serial/WWN and PARTUUID, never `/dev/nvmeX`.
-> Execution evidence is appended to the Execution Record in this file; no ad-hoc task-state
-> files are canonical.
+> Standing rule: every destructive task below is approval-gated (`notes: explicit user approval required immediately before execution`), and every disk target resolves by serial/WWN, PARTUUID or partlabel — never `/dev/nvmeX`. All disk work runs from the running Arch system unless a task says otherwise; execution evidence is appended to the Execution Record in this file, and no ad-hoc task-state file is canonical.
 
-## Group 1 — Readiness gate and immutable baseline (5)
+## Group 1 — Gate, Windows backup, baseline (5)
 
-- [ ] 1.1 Confirm every task in `nixos-bare-metal-readiness` is complete (all checkboxes
-      `[x]`) and its final gate result is recorded.
+- [ ] 1.1 Confirm every task in `nixos-bare-metal-readiness` is complete and its
+      strict validation plus full `nixosConfigurations.legion` toplevel build
+      pass from the Arch checkout (not `--no-build`), with at least 40 GiB free
+      on the Arch root before the build starts.
 
-  - criteria: no destructive install step proceeds before this holds
-  - verify: readiness `tasks.md` fully checked; gate result captured in this file's Execution Record
+  - criteria: both green; no destructive install step proceeds before this holds
+  - verify: exit codes; `df -h /nix`; toplevel out path recorded in the Execution Record
+  - refs: design D1, D5
 
-- [ ] 1.2 Run strict OpenSpec validation (`openspec validate --all --strict`) and a full
-      `nixosConfigurations.legion` toplevel build (not `--no-build`) for the switchable host.
+- [ ] 1.2 **Stop here and confirm the Windows backup.** The operator states where
+      the Windows C: backup is, when it was taken, and that it has been verified.
+      No delete, format, or partition-table write runs before this is recorded.
 
-  - criteria: both green; no install-day step substitutes for this hard gate
-  - verify: exit codes; toplevel out path recorded
-  - depends: 1.1
-  - delegate: BuildAgent
+  - criteria: the Windows backup is confirmed and recorded before the first destructive command
+  - verify: Execution Record holds the confirmation; no GPT write has occurred
+  - refs: design D4
+  - notes: this is the only irreversible data loss in the change — the Windows
+    extents become the LUKS root, and no backup taken from this machine can restore them
 
-- [ ] 1.3 Capture the immutable baseline from live hardware: serial/WWN for both disks
-      (Samsung `S6Z5NE0W500203`, SK hynix `ADC5N475011305I3I`), every PARTUUID, partition
-      bounds, the then-current kernel (`uname -r`), and `limine.conf`; append it to the
-      Execution Record with checksums.
+- [ ] 1.3 Capture the immutable baseline from live hardware: serial/WWN for both
+      disks (Samsung `S6Z5NE0W500203`, SK hynix `ADC5N475011305I3I`), every
+      PARTUUID and partlabel, every partition's start/end sector, the filesystem
+      UUIDs of LinuxData and the Shared NTFS volume, `uname -r`, `limine.conf`,
+      and the `efibootmgr` listing with each entry's label and id.
 
-  - verify: Execution Record lists both serials, both Fedora PARTUUIDs, and current kernel
+  - criteria: identifiers and bounds recorded before any change, with a checksum of the capture
+  - verify: Execution Record lists both serials plus the Windows, Fedora, Arch and LinuxData identities
 
-- [ ] 1.4 Calculate the free extent from the live partition table (never assumed): confirm
-      ~535.7 GiB contiguous once the two Fedora partitions are removed; record exact start/end
-      sectors and the neighboring partition identities.
+- [ ] 1.4 Produce durable cross-disk backups of both GPTs and all three existing
+      ESPs (Windows, Arch and Fedora) with sha256 checksums: the Samsung GPT and
+      its Windows and Arch ESP images into `/data/install-backups/`, and the SK
+      hynix GPT and Fedora ESP image into the Arch filesystem's
+      `/root/install-backups/`. Verify every image before relying on it.
 
-  - verify: computed extent matches ~535.7 GiB within alignment; neighbors are
-    Windows/Shared/LinuxData
+  - criteria: each disk's partition-table backup has a verified copy on the other physical disk
+  - verify: `sgdisk --backup` files and three ESP images present cross-disk with matching sums
+  - refs: design D4, D12
+
+- [ ] 1.5 Assert the machine is booted in UEFI mode with writable
+      `/sys/firmware/efi/efivars`, that no partition of the Samsung is mounted or
+      held open by a process, and that the partitions this change rewrites
+      (p1–p3) are the Windows ones by reading their PARTUUIDs.
+
+  - criteria: efivars writable; nothing in the target extent is in use
+  - verify: `mountpoint`/`lsblk` checks and partlabel resolution recorded
   - depends: 1.3
+  - refs: design D2, D5
 
-- [ ] 1.5 Produce durable backups of both GPTs and all three existing ESPs (Windows, Arch,
-      and Fedora) with checksums, stored cross-disk: 2 TB GPT/Fedora ESP on the 512 GB Arch
-      filesystem, and 512 GB GPT/Windows+Arch ESPs on LinuxData; record paths and checksums in
-      the Execution Record.
+## Group 2 — Samsung: Windows removed, root provisioned (5)
 
-  - criteria: every disk's partition-table backup has a verified copy on the other physical disk
-  - verify: `sgdisk --backup` files + three ESP images present cross-disk with matching sha256 sums
-  - depends: 1.3, 1.4
+- [ ] 2.1 Re-assert the Samsung serial/WWN and the Windows ESP, MSR and C:
+      PARTUUIDs (`2193a654-…`, `031ea351-…`, `9ce9fe67-…`, full values from the
+      baseline), then delete those three partitions. Create in their place a
+      2 GiB ESP at sectors 2048–4196351 with the EFI System Partition type GUID
+      (`C12A7328-F81F-11D2-BA4B-00A0C93EC93B`) and partlabel `disk-samsung-ESP`,
+      and a Linux partition at sectors 4196352–343046143 with partlabel
+      `disk-samsung-cryptroot`. Re-read the table with `partx -u` (never
+      `partprobe`: `BLKRRPART` refuses while the running root is open).
 
-## Group 2 — Reversible Arch ESP cleanup (4)
-
-- [ ] 2.1 Re-inventory every UKI on the Arch/Limine ESP and match each against the
-      then-current kernel; flag the stale 7.1.3/7.1.5-era UKIs as unowned.
-
-  - criteria: current-kernel UKI and Limine snapshot history identified for retention
-  - verify: Execution Record lists each UKI with kernel match/mismatch
-  - depends: 1.3
-
-- [ ] 2.2 Verify the Arch ESP backup created in 1.5 contains every inventoried UKI and has
-      matching checksums in the LinuxData cross-disk backup directory.
-
-  - verify: every UKI present in backup; sha256 verified
-  - depends: 1.5, 2.1
-
-- [ ] 2.3 Re-assert the Samsung disk serial/WWN (`S6Z5NE0W500203`) and the baseline-recorded
-      Arch ESP PARTUUID immediately before the move, then move only the UKIs that do not match
-      the then-current kernel from the Arch ESP into the LinuxData cross-disk backup directory;
-      keep the matching UKI as the independent Arch rescue and keep the deduplicated Limine
-      snapshot history; re-check `limine.conf` and the current kernel immediately before the
-      move.
-
-  - criteria: fresh identity assertion passes immediately before the move; only non-current
-    UKIs moved; current kernel, `limine.conf`, and Limine history untouched
-  - verify: `readlink`/`lsblk` assertions pass; ESP listing shows retained files; moved
-    files present in backup
-  - depends: 1.2, 2.2
-  - delegate: OpenDevopsSpecialist
-  - notes: explicit user approval required immediately before execution
-
-- [ ] 2.4 Verify Arch still boots via Limine and ESP free space grew; record the result.
-
-  - criteria: Arch boots the current kernel through Limine
-  - verify: Arch firmware entry selectable/boots; ESP free-space delta recorded
-  - depends: 2.3
-
-## Group 3 — Retired Fedora removal (4)
-
-- [ ] 3.1 Re-check the 2 TB disk serial/WWN and both Fedora PARTUUIDs
-      (`9aae0356-4274-46c0-8593-bbcd9769b22f`, `16921d6b-a8b7-4f04-8fdf-44ebc6d36acc`)
-      immediately before the first removal command; abort on any mismatch.
-
-  - criteria: identifiers match the assert-else-abort pattern
-  - verify: `readlink`/`lsblk` assertions pass against the baseline in the Execution Record
+  - criteria: fresh identity assertion passes immediately before the write; only p1–p3 deleted; both new partitions inside the recorded extent with those exact partlabels
+  - verify: `sgdisk --print`/`lsblk` show the two partitions with their partlabels; `/dev/disk/by-partlabel/disk-samsung-ESP` and `-cryptroot` resolve
   - depends: 1.2, 1.5
+  - notes: explicit user approval required immediately before execution
+  - refs: design D2, D3
 
-- [ ] 3.2 Re-assert the 2 TB disk serial/WWN and the Fedora ESP PARTUUID
-      (`9aae0356-4274-46c0-8593-bbcd9769b22f`) immediately before the command, then remove the
-      retired Fedora 600 MiB ESP only after backup.
+- [ ] 2.2 If `partx -u` cannot refresh the table because a partition of the disk is
+      open, reboot into Arch and resume here — the re-read is not allowed to
+      become a reason to force anything.
 
-  - criteria: fresh identity assertion passes immediately before deletion; only that
-    partition is deleted; GPT backup is current
-  - verify: `readlink`/`lsblk` assertions pass; `lsblk`/`sgdisk` no longer list it;
-    neighbors unchanged
+  - criteria: the new partition nodes exist and resolve by partlabel
+  - verify: `lsblk` shows both new partitions; no step in this group was retried against a stale table
+  - depends: 2.1
+  - refs: design D5
+
+- [ ] 2.3 Verify the repartition: the Arch root and Arch ESP (p5, p6) keep their
+      PARTUUIDs, start and end sectors exactly as baselined, and the disk's total
+      sector count is unchanged.
+
+  - criteria: p5 and p6 byte-identical in the table; nothing outside the target extent changed
+  - verify: partition-table diff against the baseline in the Execution Record
+  - depends: 2.2
+
+- [ ] 2.4 Format the target: FAT32 on the new ESP; LUKS2 with a passphrase only (no
+      TPM) on `disk-samsung-cryptroot`, opened as `cryptroot`; btrfs on
+      `/dev/mapper/cryptroot`. Record the LUKS-header UUID (`cryptsetup luksUUID`)
+      and the btrfs UUID from the format output in the Execution Record — they are
+      evidence, not configuration, because no mount in the system names them.
+
+  - criteria: fresh identity assertion before formatting; LUKS2 passphrase only; no TPM; no UUID written into any repository file
+  - verify: `cryptsetup luksDump` shows LUKS2; `/dev/mapper/cryptroot` present; `blkid` output recorded
+  - depends: 2.3
+  - notes: explicit user approval required immediately before execution
+  - refs: design D6, D8
+
+- [ ] 2.5 Create the subvolume set on the new btrfs — `@`, `@nix`, `@cache`,
+      `@log`, `@tmp`, `@images`, `@snapshots` — and mount the layout at `/mnt`
+      with `zstd:3`, `noatime`, `ssd`, `discard=async`, `space_cache=v2`; mount
+      the ESP at `/mnt/boot`, and the data disk's existing `@home` and `@data` at
+      `/mnt/home` and `/mnt/data` with the options `_storage.nix` declares, so the
+      install writes no shadow home into the root subvolume.
+
+  - criteria: exactly those seven subvolumes exist; no `@home` is created on the LUKS; `/home` and `/data` resolve to LinuxData
+  - verify: `btrfs subvolume list` and `findmnt` output recorded
+  - depends: 2.4
+  - refs: design D7
+
+## Group 3 — SK hynix: retired Fedora removal (3)
+
+- [ ] 3.1 Re-assert the SK hynix serial/WWN and both Fedora PARTUUIDs
+      (`9aae0356-4274-46c0-8593-bbcd9769b22f` and
+      `16921d6b-a8b7-4f04-8fdf-44ebc6d36acc`), then delete the retired Fedora ESP
+      and the retired Fedora ext4. Create nothing in their place.
+
+  - criteria: fresh identity assertion before each deletion; only those two partitions deleted; the freed extent left unpartitioned
+  - verify: `lsblk`/`sgdisk` no longer list them; freed extent recorded for the future Windows reinstall
+  - depends: 1.4, 2.5
+  - notes: explicit user approval required immediately before execution
+  - refs: design D9
+
+- [ ] 3.2 Verify Windows 500 GiB, Shared 150 GiB and LinuxData 650 GiB keep their
+      PARTUUIDs, partlabels and bounds, and that `/data` and `/home` are still
+      mounted from the same filesystem UUID.
+
+  - criteria: every kept partition unchanged; `findmnt /home /data` shows `47fa5ee2-…`
+  - verify: partition-table diff against the baseline; `findmnt` output recorded
   - depends: 3.1
-  - delegate: OpenDevopsSpecialist
-  - notes: explicit user approval required immediately before execution
 
-- [ ] 3.3 Re-assert the 2 TB disk serial/WWN and the Fedora ext4 PARTUUID
-      (`16921d6b-a8b7-4f04-8fdf-44ebc6d36acc`) immediately before the command, then remove the
-      retired Fedora 1 GiB ext4 only after backup.
+- [ ] 3.3 Copy the SK hynix GPT and Fedora ESP backup from `/root/install-backups/`
+      into the new root's `/root/install-backups/`, so the only copy of that
+      disk's table is not destroyed when Arch is deleted after the soak.
 
-  - criteria: fresh identity assertion passes immediately before deletion; only that
-    partition is deleted
-  - verify: `readlink`/`lsblk` assertions pass; partition gone; Windows/Shared/LinuxData
-    PARTUUIDs and start/end sectors unchanged
-  - depends: 3.2
-  - delegate: OpenDevopsSpecialist
-  - notes: explicit user approval required immediately before execution
+  - criteria: the backup exists on both disks; checksums match the originals
+  - verify: sha256 comparison recorded
+  - depends: 3.1, 2.5
+  - refs: design D12
 
-- [ ] 3.4 Re-read the partition table and verify Windows (500 GiB), Shared (150 GiB), and
-      LinuxData (650 GiB) identities and bounds unchanged, and the freed extent is ~535.7 GiB
-      contiguous.
+## Group 4 — Root state carry, then the export checkout (4)
 
-  - criteria: neighbors unchanged; contiguous extent confirmed
-  - verify: partition-table diff vs the baseline in the Execution Record
-  - depends: 3.3
-  - notes: do not remove the Fedora NVRAM entry yet — that is gated in Group 6 after NixOS
-    boot is proven
+- [ ] 4.1 Copy the root state that identifies the machine into `/mnt`, preserving
+      ownership and mode: `/etc/ssh/ssh_host_*`, `/var/lib/sops-nix/key.txt`,
+      `/var/lib/tailscale`, `/var/lib/bluetooth`.
 
-## Group 4 — Permanent storage provisioning (5)
+  - criteria: all four present at identical relative paths with ownership and modes intact
+  - verify: `ls -l` and checksum comparison per item; fleet SSH host key matches the pinned ed25519 key
+  - depends: 2.5
+  - refs: design D11
 
-- [ ] 4.1 Re-assert the 2 TB disk serial/WWN and the recorded extent bounds immediately
-      before creating partitions, then create exactly two partitions inside the verified
-      extent: a 2 GiB NixOS ESP with the GPT EFI System Partition type GUID (EF00 /
-      `C12A7328-F81F-11D2-BA4B-00A0C93EC93B`) and a ~533.7 GiB Linux LUKS partition, aligned
-      to extent boundaries; no `/dev/nvmeX` reference.
-
-  - criteria: fresh identity assertion passes immediately before creation; the ESP carries
-    the EF00 type GUID; new partitions lie only within the recorded extent sectors;
-    neighbors untouched
-  - verify: `readlink`/`lsblk` assertions pass; partition table shows the two new
-    partitions inside extent bounds with the ESP type GUID set
-  - depends: 3.4
-  - delegate: OpenDevopsSpecialist
-  - notes: explicit user approval required immediately before execution
-
-- [ ] 4.2 Verify the new partitions sit inside the recorded extent, the ESP carries the EF00
-      type GUID (`C12A7328-F81F-11D2-BA4B-00A0C93EC93B`), and Windows/Shared/LinuxData bounds
-      are unchanged.
-
-  - verify: `lsblk`/`sgdisk` bounds match the recorded extent sectors and the ESP type GUID
-    is EF00
-  - depends: 4.1
-
-- [ ] 4.3 Re-assert both new partitions' PARTUUIDs immediately before formatting; format
-      the NixOS ESP as FAT32; format the verified target as LUKS2 with a passphrase only (no
-      TPM enrollment); record the LUKS-header UUID via `cryptsetup luksUUID`; open it as
-      `cryptroot`; format Btrfs on `/dev/mapper/cryptroot`; capture the actual new filesystem
-      UUIDs from the format output (never invented) and mount the ESP at `/mnt/boot`. Later
-      mount and config steps use the `cryptroot` mapping and the recorded LUKS-header UUID.
-
-  - criteria: fresh identity assertion passes immediately before formatting; LUKS2
-    passphrase only; no TPM; LUKS-header UUID recorded via `cryptsetup luksUUID`; Btrfs on
-    `/dev/mapper/cryptroot`; ESP FAT32 mounted at `/mnt/boot`; UUIDs recorded from actual
-    format output
-  - verify: `cryptsetup luksUUID` output recorded; `/dev/mapper/cryptroot` present;
-    `cryptsetup luksDump` shows LUKS2; ESP and Btrfs UUIDs captured via `blkid`;
-    `findmnt /mnt/boot` shows the new ESP
-  - depends: 4.2
-  - delegate: OpenDevopsSpecialist
-  - notes: explicit user approval required immediately before execution
-
-- [ ] 4.4 Create the LUKS subvolume layout on the Btrfs at `/dev/mapper/cryptroot`: `@root`,
-      `@nix`, `@cache`, `@log`, `@tmp`, `@images`, `@snapshots`. `/home` and `/data` stay on
-      LinuxData — mount its existing `@home` and `@data` at `/mnt/home` and `/mnt/data` and
-      create nothing on the LUKS for them.
-
-  - criteria: all seven LUKS subvolumes exist; no home subvolume is created on the LUKS
-  - verify: `btrfs subvolume list /mnt` shows the full layout and no `@home`
-  - depends: 4.3
-
-- [ ] 4.5 Mount the `/dev/mapper/cryptroot` layout with `zstd:3`/`noatime`; record actual
-      UUIDs and mount options in the Execution Record; never hardcode `/dev/nvmeX`.
-
-  - verify: `findmnt` shows each subvolume with `zstd:3,noatime`
-  - depends: 4.4
-
-## Group 5 — Configuration and state staging (7)
-
-- [ ] 5.1 Replace the old Arch root and ESP declarations in the curated `_hardware.nix`
-      with the actual generated metadata: the new NixOS ESP UUID mounted at `/boot`, the
-      actual LUKS-header UUID (from `cryptsetup luksUUID`, not PARTUUID/Btrfs UUID) in
-      `boot.initrd.luks.devices.cryptroot.device = "/dev/disk/by-uuid/<actual-LUKS-UUID>"`,
-      the Btrfs UUID, and every LUKS-backed mount — `@root`, `@nix`, `@cache`, `@log`,
-      `@tmp`, `@images`, `@snapshots`; preserve the Shared/LinuxData declarations —
-      LinuxData's `/home` and `/data` already derive from `_storage.nix`. No `/dev/nvmeX`,
-      no invented UUIDs, no username literals.
-
-  - criteria: file references only real UUIDs/by-id identities and topology values; LUKS
-    initrd mapping present; Shared/LinuxData untouched
-  - verify: exhaustive search for `/dev/nvmeX`, invented UUIDs, and username literals
-    returns nothing
-  - depends: 4.5
-  - delegate: CoderAgent
-
-- [ ] 5.2 Commit and push the metadata change, then re-run the readiness gates from the
-      Arch checkout: strict validation and a full toplevel eval/build still pass. The full
-      build runs here — after the generated metadata is committed/pushed, before the final
-      ISO install pass — so the 34 GiB standalone build never lands in installer tmpfs.
-
-  - verify: commit pushed; `nix build .#nixosConfigurations.legion.config.system.build.toplevel`,
-    `nix flake check --no-build --no-write-lock-file`, and
-    `openspec validate --all --strict` all green
-  - depends: 5.1
-  - delegate: BuildAgent
-
-- [ ] 5.3 Stage the root and primary-user sops age keys and NetworkManager profiles before
-      activation; keys referenced by path, values never written to artifacts.
-
-  - criteria: keys/profiles present at declared paths; no secret value in any artifact
-  - verify: paths resolve; log/diff scan shows no secret material
-  - depends: 4.5, 5.2
-
-- [ ] 5.4 Copy Tailscale state, Bluetooth pairing, and SSH host keys into the staged target
-      preserving ownership.
-
-  - verify: files present with ownership/ACLs intact
-  - depends: 5.3
-
-- [ ] 5.5 Inventory and copy selected durable user state (browser profile, SSH, Syncthing,
-      Grist, QMD/docs/projects) preserving ACLs, xattrs, and numeric IDs; exclude `~/.cache`,
-      legacy standalone Home Manager/Nix profiles, and rootless container images.
-
-  - criteria: included classes copied with numeric IDs intact; excluded classes absent
-  - verify: `rsync -aHAX --numeric-ids`/`cp --preserve` check plus explicit absence check of excluded classes
-  - depends: 5.3, 5.4
-  - delegate: OpenDevopsSpecialist
-
-- [ ] 5.6 Verify no secret values enter logs, diffs, or artifacts from the staging work.
-
-  - criteria: secret scan of artifacts and the change diff is clean
-  - verify: grep of artifacts + review of the diff
-  - depends: 5.3, 5.4, 5.5
-  - delegate: CodeReviewer
-
-- [ ] 5.7 Clone the pushed repo and check out the recorded 5.2 SHA in detached state at
-      `/mnt/etc/nixos` on the mounted target so the flake persists there for the install;
-      never run `nixos-generate-config` over the curated repo.
-
-  - criteria: `/mnt/etc/nixos` is an exact clean checkout of the recorded 5.2 SHA; the
-    curated repo is untouched by generation tools
-  - verify: `git rev-parse HEAD` at `/mnt/etc/nixos` equals the recorded 5.2 SHA and
-    `git status --porcelain` is empty before install
-  - depends: 4.5, 5.2
-
-## Group 6 — Install and acceptance (6)
-
-- [ ] 6.1 Install from NixOS media into the mounted target with the pinned command:
-      `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub` — the toplevel builds into the
-      target store from the clean checkout at `/mnt/etc/nixos` in 5.7.
-
-  - criteria: install completes; bootloader registered on the NixOS-owned ESP
-  - verify: `nixos-install --root /mnt --flake /mnt/etc/nixos#shrub` exit 0; ESP
-    populated; new firmware entry present
-  - depends: 5.3, 5.4, 5.5, 5.7
-  - delegate: OpenDevopsSpecialist
-  - notes: explicit user approval required immediately before execution
-
-- [ ] 6.2 Set the primary-user login password after installation and before first reboot:
-      `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'`; the password is never
-      recorded in any artifact.
-
-  - verify: password set on the installed target; no password material in artifacts
-  - depends: 6.1
-
-- [ ] 6.3 Boot through the new NixOS firmware entry and verify: LUKS decryption, all
-      mounts/subvolumes, network, NixOS + embedded Home Manager generation, desktop, secrets,
-      Syncthing identity, Niks3, tailnet services, Snapper, and firmware/GPU/audio.
-
-  - criteria: every item in the verification checklist passes; generation shows embedded HM
-  - verify: `findmnt`, generations, network, and service checks recorded
-  - depends: 6.2
-
-- [ ] 6.4 Verify Windows and Arch firmware boots still work and Arch remains the verified
-      rollback path.
-
-  - verify: firmware menu shows Windows and Arch; both boot; Arch rollback confirmed
-  - depends: 6.3
-
-- [ ] 6.5 Remove the retired Fedora NVRAM entry only after backup and provision verification,
-      and only after NixOS boot is proven.
-
-  - criteria: Fedora entry removed; Windows/Arch/NixOS entries intact
-  - verify: `efibootmgr` listing recorded
-  - depends: 6.3, 6.4
-  - delegate: OpenDevopsSpecialist
-  - notes: explicit user approval required immediately before execution
-
-- [ ] 6.6 Record the soak checkpoint: verified state, generation, and rollback instructions
+- [ ] 4.2 Copy exactly the NetworkManager profiles on the operator's keep-list from
+      `/etc/NetworkManager/system-connections/` into `/mnt`, and record the list
       in the Execution Record.
 
-  - verify: Execution Record contains soak details
-  - depends: 6.5
+  - criteria: the copied set equals the keep-list; the list is explicit before the copy runs, not "all of them"
+  - verify: file-by-file listing of both source selection and destination
+  - depends: 4.1
+  - refs: design D11
 
-## Group 7 — Handoff and deferred scope (3)
+- [ ] 4.3 Verify no state outside the carried set was copied and no secret value
+      reached an artifact: the excluded service state (ollama, docker, flatpak) is
+      absent from `/mnt`, and neither the Execution Record nor any log in the
+      working tree holds key material.
 
-- [ ] 7.1 Update operator docs with actual UUIDs, backup paths, and install/verification
-      results.
+  - criteria: excluded classes absent; artifact scan clean
+  - verify: absence checks plus a scan of the change's own artifacts
+  - depends: 4.1, 4.2
 
-  - delegate: DocWriter
-  - depends: 6.6
+- [ ] 4.4 Clone the repository and check out the recorded gate SHA (task 1.1) into a
+      scratch directory root can read, and verify it is clean before the install.
 
-- [ ] 7.2 Run strict OpenSpec validation (`openspec validate --all --strict`) and repository
-      checks; all green.
+  - criteria: exact SHA, detached, no local modifications; the flake is not edited after the gate
+  - verify: `git rev-parse HEAD` equals the recorded SHA and `git status --porcelain` is empty
+  - depends: 1.1, 2.5
+  - refs: design D5
 
-  - verify: validation and repo checks pass
+## Group 5 — Install from the running Arch system (4)
+
+- [ ] 5.1 Install into the mounted target from the running Arch system, with a scratch
+      checkout of the recorded SHA as the flake path:
+      `sudo nix run nixpkgs#nixos-install-tools -- --root /mnt --flake /root/legion-export#legion --no-root-passwd`.
+      The toplevel is copied from the local store through the script's `auto`
+      substituter, so expect copies and no rebuild; record the target store's
+      size before and after.
+
+  - criteria: install completes; bootloader installed on the new ESP; no rebuild of the toplevel
+  - verify: exit 0; `/mnt/boot` populated with the generation's kernels; `/mnt/nix/var/nix/profiles/system` set
+  - depends: 2.5, 4.4
+  - notes: explicit user approval required immediately before execution
+  - refs: design D5
+
+- [ ] 5.2 Set the primary-user login password after installation and before the
+      first reboot: `nixos-enter --root /mnt -c 'passwd <topology-derived-user>'`.
+      The password is never recorded.
+
+  - criteria: password set on the installed target; root left locked by `--no-root-passwd`
+  - verify: password change succeeds interactively; no password material in artifacts
+  - depends: 5.1
+
+- [ ] 5.3 Remove the firmware entries that point at what this change deleted:
+      re-read `efibootmgr`, match the `Windows Boot Manager` and `Fedora` entries
+      against the baseline ids, and delete those two only. Keep `Limine`.
+
+  - criteria: the two entries gone; the Limine entry and the new NixOS entry intact
+  - verify: `efibootmgr` listing recorded before and after
+  - depends: 3.1, 5.1
+  - notes: explicit user approval required immediately before execution
+  - refs: design D10
+
+- [ ] 5.4 Fall back to NixOS media only if the running-system path is unavailable: in
+      that case clone the recorded SHA to `/mnt/etc/nixos`, verify it clean, and
+      run the same `nixos-install` from the media — accepting that the closure is
+      built inside the installer's store instead of copied from the local one.
+
+  - criteria: the same configuration and the same checkout SHA, whichever path ran
+  - verify: `git rev-parse HEAD` at the install source equals the recorded SHA
+  - depends: 5.1
+  - refs: design D5
+
+## Group 6 — Boot verification and soak (4)
+
+- [ ] 6.1 Boot through the new NixOS firmware entry and verify: LUKS passphrase
+      prompt, all seven root subvolumes mounted at their declared paths, `/home`
+      and `/data` on LinuxData, `/boot` on the new ESP by partlabel, network,
+      Home Manager generation, desktop session, secrets decryption, tailnet
+      identity, Syncthing identity, Snapper, and the NVIDIA/iGPU stack.
+
+  - criteria: every item passes; the mounts match the disko declaration exactly
+  - verify: `findmnt`, `systemctl --failed`, generation listing and service checks recorded
+  - depends: 5.2, 5.3
+  - refs: design D7, D8, D11
+
+- [ ] 6.2 Verify Arch still boots through Limine and remains the rollback path, and
+      that the freed SK hynix extent is still free.
+
+  - criteria: Arch boots the current kernel; rollback path confirmed
+  - verify: firmware menu shows Limine; Arch boots; `sgdisk --print` on the SK hynix recorded
+  - depends: 6.1
+
+- [ ] 6.3 Verify the same mounted root state that the plan carried is live: the
+      fleet's pinned SSH host key, the sops age key decrypting system secrets, the
+      tailnet node identity, Bluetooth pairings, and the NetworkManager profiles on
+      the keep-list.
+
+  - criteria: all five classes verified from the booted system, not from the mount
+  - verify: `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`, sops-rendered path present, `tailscale status`, `bluetoothctl devices`, `nmcli connection show`
+  - depends: 6.1
+
+- [ ] 6.4 Record the soak checkpoint: verified state, generation, what rollback would
+      do, and the explicit statement that the post-soak group has not run.
+
+  - criteria: the Execution Record names the checkpoint before any post-soak work
+  - verify: record present and dated
+  - depends: 6.3
+  - refs: design D13
+
+## Group 7 — Post-soak consolidation (5)
+
+- [ ] 7.1 Confirm the soak is being ended deliberately — NixOS has been the daily
+      system through the soak, Arch is still bootable, and the operator accepts
+      that the next group destroys it.
+
+  - criteria: explicit operator decision recorded; not triggered by a failure
+  - verify: Execution Record holds the decision
+  - depends: 6.4
+  - notes: explicit user approval required immediately before execution
+  - refs: design D12, D13
+
+- [ ] 7.2 Re-assert the Samsung serial/WWN and the Arch root, Arch ESP and WinRE
+      PARTUUIDs (`e33cb524-…`, `1a2c5601-…`, `b5c0d8da-…`), then delete p5, p6
+      and p4, and re-read the table with `partx -u`.
+
+  - criteria: fresh identity assertion before each deletion; the ESP and LUKS partitions make no other change
+  - verify: `sgdisk --print` recorded; only the ESP and the LUKS partition remain
   - depends: 7.1
-  - delegate: BuildAgent
+  - notes: explicit user approval required immediately before execution
 
-- [ ] 7.3 Explicitly record deferred scope: Arch root and retirement untouched, LinuxData
-      trailing ~27.3 GiB growth deferred, and the future encrypted backup receiver out of scope.
+- [ ] 7.3 Grow the LUKS partition from sector 4196352 to the last sector of the disk
+      (474.94 GiB) and re-read the table.
 
-  - criteria: no task in this change touches the Arch root or LinuxData bounds
-  - verify: docs state the deferred items
+  - criteria: the partition's end equals the disk's last sector; the ESP is unchanged
+  - verify: `sgdisk --print` plus `blockdev --getsz` comparison recorded
   - depends: 7.2
+
+- [ ] 7.4 Grow the container and the filesystem it holds: `cryptsetup resize
+cryptroot`, then `btrfs filesystem resize max /` from the booted system, and
+      verify the root filesystem reports the grown size with all seven subvolumes
+      intact.
+
+  - criteria: the mapper and the btrfs both match the partition; subvolumes and their data unchanged
+  - verify: `cryptsetup status cryptroot`, `btrfs filesystem usage /`, `btrfs subvolume list /`
+  - depends: 7.3
+
+- [ ] 7.5 Remove the `Limine` firmware entry, verify the new NixOS entry is the only
+      one left for this disk, and record the final layout.
+
+  - criteria: Limine entry gone; NixOS entry intact
+  - verify: `efibootmgr` listing recorded
+  - depends: 7.4
+  - refs: design D13
+
+## Group 8 — Handoff and deferred scope (3)
+
+- [ ] 8.1 Update operator documentation with the actual UUIDs, partlabels, backup
+      paths, the install path that ran, and the verification results.
+
+  - depends: 7.5
+
+- [ ] 8.2 Run strict OpenSpec validation and repository checks; all green.
+
+  - verify: `openspec validate --all --strict` and `nix flake check --no-build --no-write-lock-file`
+  - depends: 8.1
+
+- [ ] 8.3 Record deferred scope explicitly: the eventual Windows reinstall into the
+      freed SK hynix extent, LinuxData's trailing ~27.3 GiB, and TPM enrolment for
+      the LUKS root. No task in this change partitions, mounts or writes into that
+      freed extent.
+
+  - criteria: the deferred items are stated where the follow-up work will look for them
+  - verify: docs state them; no task above touches the freed extent
+  - depends: 8.2
 
 ## Execution Record
 
-Populate during apply with baseline identifiers, backup paths/checksums, generated UUIDs,
-validation results, and rollback checkpoints. Never record secret values.
+Populate during apply with baseline identifiers, backup paths and checksums, the Windows backup confirmation, the LUKS-header and filesystem UUIDs, the carried NetworkManager keep-list, validation results, and the soak and consolidation checkpoints. Never record secret values.

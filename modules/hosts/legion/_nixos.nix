@@ -1,5 +1,5 @@
 { primaryUser }:
-_:
+{ pkgs, ... }:
 let
   snapperCommon = {
     ALLOW_GROUPS = [ ];
@@ -45,6 +45,26 @@ in
   system.stateVersion = "26.11";
   networking.hostName = "legion";
   i18n.defaultLocale = "en_AU.UTF-8";
+
+  # Lid close on AC is a no-op; on battery systemd-logind keeps its default
+  # (suspend).
+  services.logind.settings.Login.HandleLidSwitchExternalPower = "ignore";
+
+  # The built-in ITE keyboard (048d:c987); toggle-kbd unbinds this interface.
+  programs.toggle-kbd.usbInterface = "3-9:1.0";
+
+  # Lenovo battery conservation mode (Arch /etc/tmpfiles.d/lenovo-battery.conf).
+  systemd.tmpfiles.rules = [
+    "w /sys/bus/platform/drivers/ideapad_acpi/VPC2004:00/conservation_mode - - - - 1"
+  ];
+
+  # Replaces the Arch root NetworkManager dispatcher that curled ipapi.co;
+  # automatic-timezoned sets time.timeZone itself.
+  services.automatic-timezoned.enable = true;
+
+  # Arch runs the latest mainline (7.x); NixOS otherwise evaluates the 6.18 LTS
+  # default and the open NVIDIA/openrazer modules must build against this.
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   # Failure registrations for units only this host runs; the shared set lives
   # in flake.modules.nixos.notify.
