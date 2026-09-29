@@ -45,21 +45,18 @@ Automatic module discovery SHALL be limited to files that conform to the reposit
 ### Requirement: Shared host and service data is typed and host-owned
 
 Machine identity, architecture, home paths, and service topology SHALL be modeled
-as typed options — `topology.hosts` beside the schema, `config.fleet` for
-identity and service coordinates, or native options (`networking.hostName`,
-`home.username`, `home.homeDirectory`, `system.stateVersion`,
-`pkgs.stdenv.hostPlatform.system`), each declared once — a machine this
-repository configures in its own host composition, fleet-wide values beside the
-schema — and read by consumers via the normal module system, never passed through
-`specialArgs` or duplicated in reusable feature modules. Service endpoints SHALL
-be resolved from the fleet inventory by naming a service, endpoint and access
-route, never restated as host or port literals. Reusable
-feature aspects SHALL read the per-evaluation current-host projection for the
-machine they are composed into, and SHALL NOT read a hardcoded topology key.
-Fleet-aware features MAY read the fleet registry, because that value is identical
-in every evaluation. A host's primary user SHALL be one structured value in that
-registry carrying the account name and numeric UID; NixOS SHALL create that
-account and Home Manager SHALL own its user configuration.
+as typed options — `topology.hosts` beside the schema, `config.fleet` for identity
+and service coordinates, or the native option that already expresses the fact
+(`networking.hostName`, `home.username`, `home.homeDirectory`,
+`system.stateVersion`, `pkgs.stdenv.hostPlatform.system`) — each declared once, by
+the owning host composition or beside the schema, and read through the normal
+module system rather than passed through `specialArgs` or duplicated in a reusable
+feature. Reusable feature aspects SHALL read the per-evaluation current-host
+projection for the machine they are composed into, and SHALL NOT read a hardcoded
+topology key. Fleet-aware features MAY read the fleet registry, because that value
+is identical in every evaluation. A host's primary user SHALL be one structured
+value in that registry carrying the account name and numeric UID; NixOS SHALL
+create that account and Home Manager SHALL own its user configuration.
 
 #### Scenario: Reusable aspect needs a host path or identity
 

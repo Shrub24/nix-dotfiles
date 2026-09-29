@@ -10,15 +10,12 @@ flake-wide topology key.
 
 ### Requirement: The fleet registry stays the single source of truth
 
-Machine entries (`topology.hosts.<name>`) SHALL remain typed flake-parts
-options, declared once: a machine this repository configures declares its own
-entry in its own host composition, while the machines it only reaches are
-declared beside the schema in `modules/policy/topology.nix`. Service endpoints
-SHALL NOT be declared here: they resolve from nix-fleet's canonical service
-inventory (`lib.serviceEndpoints`), so a consumer names a service, an endpoint
-and an access route and never restates a host or port. Each machine entry SHALL
-carry the login user used to reach that machine. Peer and alias lists SHALL be
-derived from the registry rather than maintained as parallel literals.
+Machine entries (`topology.hosts.<name>`) SHALL remain typed flake-parts options,
+each declared once: a machine this repository configures declares its own entry in
+its own host composition, while the machines it only reaches are declared beside
+the schema in `modules/policy/topology.nix`. Each entry SHALL carry the login user
+used to reach that machine. Peer and alias lists SHALL be derived from the registry
+rather than maintained as parallel literals.
 
 #### Scenario: A machine is registered once
 
@@ -34,6 +31,19 @@ derived from the registry rather than maintained as parallel literals.
 - **THEN** that set SHALL be derived from the registry for the current
   evaluation
 - **AND** a hand-maintained peer list SHALL NOT exist beside the registry
+
+### Requirement: Service endpoints are resolved, never restated
+
+A consumer SHALL reach a fleet service by naming it in nix-fleet's canonical
+service inventory — service, endpoint and access route — and SHALL NOT declare the
+endpoint's host, port or URL itself. No `topology.services` option SHALL exist.
+
+#### Scenario: A feature needs a service endpoint
+
+- **WHEN** a feature needs the address of a fleet service
+- **THEN** it resolves the endpoint from the fleet inventory, naming the service,
+  the endpoint and the access route
+- **AND** no hostname, port or URL literal for that service appears in the module
 
 ### Requirement: Each host evaluation receives a typed current-host record
 
