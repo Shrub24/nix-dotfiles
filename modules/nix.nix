@@ -156,17 +156,13 @@ in
         # the whole machine.
         "max-jobs" = 4;
         "cores" = 4;
-        "nix-path" = "nixpkgs=flake:nixpkgs";
         "keep-derivations" = true;
         "warn-dirty" = false;
         "accept-flake-config" = true;
         "download-buffer-size" = 268435456;
         "post-build-hook" = lib.getExe niks3UploadHook;
+        "nix-path" = [ "nixpkgs=flake:nixpkgs" ];
       };
-
-      environment.etc."profile.d/nix-path.sh".text = ''
-        export NIX_PATH=nixpkgs=flake:nixpkgs
-      '';
 
       # Builds are children of the daemon on this host (`build-users-group` is
       # empty), so the unit's cgroup is what bounds them: batch CPU and idle I/O
@@ -214,12 +210,11 @@ in
         # keeps one long build from taking the whole machine.
         "max-jobs" = 4;
         "cores" = 4;
-        "nix-path" = "nixpkgs=flake:nixpkgs";
         "keep-derivations" = true;
         "warn-dirty" = false;
         "accept-flake-config" = true;
+        "nix-path" = [ "nixpkgs=flake:nixpkgs" ];
       };
-      nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
 
       # These are interactive machines: builds are children of the daemon, so
       # batch CPU and idle I/O scheduling plus a CPU weight and memory bound
