@@ -12,6 +12,8 @@ continuing. These commands have not been executed on the machine.
 - Leave the SK hynix 2 TB disk, serial `ADC5N475011305I3I`, untouched. Its LinuxData
   filesystem already holds `/home` and `/data`.
 - Defer Fedora deletion, Arch retirement, LUKS expansion, and Windows reinstallation.
+- NixOS installs systemd-boot on the new ESP. Limine is Arch's loader: it stays
+  the way back into Arch through the soak and retires with Arch, not before.
 
 **Never run `disko --mode disko` on legion.** The declaration describes the eventual
 whole-disk layout; running its partitioner would destroy the Arch fallback.
@@ -32,7 +34,7 @@ set -euo pipefail
 cd /home/saurabhj/.dotfiles/nix
 
 # The reviewed switch configuration. Change only after validating a newer commit.
-REV=$(git rev-parse 1156eaf87391)
+REV=$(git rev-parse e5e369572270)
 EXPORT="$HOME/legion-install-$REV"
 mkdir -p "$EXPORT"
 git archive "$REV" | tar -x -C "$EXPORT"
@@ -51,6 +53,10 @@ printf 'System: %s\nInstaller: %s\n' "$SYSTEM" "$TOOLS"
 test -x "$TOOLS/bin/nixos-install"
 test -x "$TOOLS/bin/nixos-enter"
 ```
+
+The daemon's post-build hook uploads each completed output to the cache, so this
+build is pushed as it completes. Recovery media still has to arrange the closure
+itself — see the end of this runbook.
 
 Stop if validation or either build fails. Keep the result symlinks: they protect
 these outputs from garbage collection. The export excludes uncommitted changes.
