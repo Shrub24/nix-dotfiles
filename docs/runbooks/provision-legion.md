@@ -9,9 +9,12 @@ continuing. These commands have not been executed on the machine.
 - Samsung 512 GB, serial `S6Z5NE0W500203`: replace Windows partitions 1–3 with a
   2 GiB ESP and approximately 161.6 GiB of LUKS-encrypted btrfs.
 - Preserve Arch root (partition 5), Arch ESP (partition 6), and WinRE (partition 4).
-- Leave the SK hynix 2 TB disk, serial `ADC5N475011305I3I`, untouched. Its LinuxData
-  filesystem already holds `/home` and `/data`.
-- Defer Fedora deletion, Arch retirement, LUKS expansion, and Windows reinstallation.
+- Leave the SK hynix 2 TB disk, serial `ADC5N475011305I3I`, otherwise untouched:
+  only its retired Fedora partitions are removed, and its LinuxData filesystem
+  already holds `/home` and `/data`.
+- Remove the retired Fedora partitions and create nothing in their place, leaving
+  the extent free for the eventual Windows reinstall.
+- Defer Arch retirement, LUKS expansion, and Windows reinstallation.
 - NixOS installs systemd-boot on the new ESP. Limine is Arch's loader: it stays
   the way back into Arch through the soak and retires with Arch, not before.
 
@@ -20,8 +23,8 @@ whole-disk layout; running its partitioner would destroy the Arch fallback.
 
 The planning checklist is
 [the dual-boot change](../../openspec/changes/nixos-dual-boot-install/tasks.md).
-This runbook stops at the first-boot soak; deleting Fedora is not an installation
-prerequisite. No disk operation below should be executed by an agent without fresh
+This runbook stops at the first-boot soak; Arch retirement, LUKS growth and the
+Windows reinstall are not installation prerequisites. No disk operation below should be executed by an agent without fresh
 operator approval.
 
 ## 1. Build before changing partitions
@@ -112,7 +115,7 @@ EFI variables must be mounted writable. `/home` and `/data` must use LinuxData U
 `47fa5ee2-addd-466b-b7fc-4e7d92968234` on the SK hynix. Only the Windows partitions
 must be unused; Arch's root and ESP remain mounted.
 
-## 3. Back up the Samsung table and ESPs
+## 3. Back up both tables and the ESPs
 
 Store these backups on `/data`, on the other physical disk, and copy them
 off-machine if possible. Confirm `/data` is mounted before creating the directory.
@@ -132,17 +135,65 @@ sudo dd \
   if=/dev/disk/by-partuuid/1a2c5601-1793-4364-bee7-c5df7c0cc8f3 \
   of="$BACKUP/arch-esp.img" bs=4M status=progress conv=fsync
 
+HYNIX=/dev/disk/by-id/nvme-SHGP31-2000GM_ADC5N475011305I3I
+sudo sgdisk --backup="$BACKUP/hynix.gpt" "$HYNIX"
+sudo dd \
+  if=/dev/disk/by-partuuid/9aae0356-4274-46c0-8593-bbcd9769b22f \
+  of="$BACKUP/fedora-esp.img" bs=4M status=progress conv=fsync
+
 sudo bash -c '
   cd "$1"
-  sha256sum samsung.gpt samsung-before.json windows-esp.img arch-esp.img > SHA256SUMS
+  sha256sum samsung.gpt hynix.gpt samsung-before.json windows-esp.img arch-esp.img \
+    fedora-esp.img > SHA256SUMS
   sha256sum -c SHA256SUMS
 ' bash "$BACKUP"
+
+# The hynix artefacts also go cross-disk: /data is on the disk being changed,
+# and /root is on the Samsung, which this runbook preserves through the soak.
+sudo install -d -m 0700 /root/install-backups
+sudo cp -a "$BACKUP/hynix.gpt" "$BACKUP/fedora-esp.img" /root/install-backups/
+sudo cmp "$BACKUP/hynix.gpt" /root/install-backups/hynix.gpt
+sudo cmp "$BACKUP/fedora-esp.img" /root/install-backups/fedora-esp.img
 ```
 
 The running Arch ESP may change during a kernel update. Do not run package updates
 while capturing its image or during this installation.
 
-## 4. Replace Windows partitions 1–3
+## 4. Remove the retired Fedora partitions
+
+**Destructive checkpoint:** both GPT backups verified, and explicit operator
+approval. These two partitions are unused — Fedora has no firmware entry and
+nothing on them is mounted — and nothing is created in their place.
+
+```sh
+HYNIX=/dev/disk/by-id/nvme-SHGP31-2000GM_ADC5N475011305I3I
+FEDORA_ESP=/dev/disk/by-partuuid/9aae0356-4274-46c0-8593-bbcd9769b22f
+FEDORA_EXT4=/dev/disk/by-partuuid/16921d6b-a8b7-4f04-8fdf-44ebc6d36acc
+
+test "$(lsblk -dn -o SERIAL "$HYNIX" | xargs)" = ADC5N475011305I3I
+for p in "$FEDORA_ESP" "$FEDORA_EXT4"; do
+  test -b "$p"
+  findmnt --source "$p" && { echo "$p is mounted"; exit 1; }
+done
+sudo sgdisk --print "$HYNIX"
+```
+
+After confirming that checkpoint, delete the two partitions:
+
+```sh
+sudo sgdisk --delete=4 --delete=5 "$HYNIX"
+sudo sgdisk --verify "$HYNIX"
+sudo partx --delete --nr 4:5 "$HYNIX" || true
+sudo udevadm settle
+sudo sfdisk --json "$HYNIX"
+```
+
+Compare against `hynix.gpt`: Windows 500 GiB (`28a0a913-…`), Shared 150 GiB
+(`ab412804-…`) and LinuxData 650 GiB (`47fa5ee2-…`) must keep their PARTUUIDs,
+partlabels and bounds, and the freed extent must stay unpartitioned. This disk is
+never written again in this runbook.
+
+## 5. Replace Windows partitions 1–3
 
 **Destructive checkpoint:** verified Windows backup, verified disk identity and
 bounds, and explicit operator approval. Confirm the three target partitions are
@@ -200,7 +251,7 @@ Compare against `samsung-before.json`: partitions 4, 5 and 6 must retain their
 PARTUUIDs and exact bounds. Verify both new partitions belong to the Samsung and
 have the requested bounds before continuing.
 
-## 5. Format and mount the new system
+## 6. Format and mount the new system
 
 **Destructive checkpoint:** recheck the new partitions' disk, labels and sizes.
 Only these new partitions are formatted.
@@ -263,7 +314,7 @@ sudo blkid /dev/mapper/cryptroot "$ESP"
 
 Keep the header backup private and copy it off-machine.
 
-## 6. Copy machine identity and chosen networks
+## 7. Copy machine identity and chosen networks
 
 ```sh
 sudo install -d -m 0755 /mnt/etc/ssh
@@ -304,7 +355,7 @@ sudo ls -l /mnt/etc/NetworkManager/system-connections/
 
 Never print private keys, tokens or network passwords into the execution record.
 
-## 7. Install and set the login password
+## 8. Install and set the login password
 
 Install the exact output built in section 1, not a newly evaluated working tree:
 
@@ -323,14 +374,22 @@ sudo efibootmgr -v
 
 Stop on an installation error; do not reboot until it is resolved. Verify a new
 NixOS/Linux Boot Manager entry points to the new ESP and **Limine still points to
-the preserved Arch ESP**. Leave stale Windows/Fedora entries alone for now.
+the preserved Arch ESP**. The retired Fedora partitions have no firmware entry;
+the Windows entry does, and it now points at an ESP this install replaced —
+resolve its id from a fresh listing rather than an earlier one, and delete it:
+
+```sh
+sudo efibootmgr -v
+sudo efibootmgr --delete-bootnum --bootnum <id>
+sudo efibootmgr -v
+```
 
 Home Manager activation can change the shared home during installation or first
 boot. Close applications before installation and keep a home snapshot/backup if
 rollback must include application state. Arch's partitions remain intact, but its
 home configuration is not an independent copy.
 
-## 8. Boot and verify
+## 9. Boot and verify
 
 Close applications, sync writes and reboot. Select the new NixOS entry in the
 firmware boot menu. After logging in:
@@ -369,7 +428,7 @@ script's name if needed on Arch.
 If Arch cannot perform the installation, boot NixOS media and re-verify disk
 identity. For a target already formatted, **do not repeat partitioning, luksFormat,
 mkfs or subvolume creation**. Open the existing LUKS container and repeat only the
-mount commands from section 5, then restore/verify machine state.
+mount commands from section 6, then restore/verify machine state.
 
 The built closure remains in Arch's separate store, not the live ISO's store.
 Arrange a cache or copy the closure before installing from media; do not assume the
