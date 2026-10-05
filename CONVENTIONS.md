@@ -3,7 +3,10 @@
 Rules that no tool enforces. `nix fmt` owns formatting and statix/deadnix own
 mechanical lint — neither is restated here. Boundaries and rationale live in
 [ARCHITECTURE.md](ARCHITECTURE.md); the pattern rules live in the
-`dendritic-nix` agent skill. This document covers what neither does.
+`dendritic-nix` agent skill. General implementation discipline (minimality,
+test value, scope, done) lives in the `lean-implementation` skill; the
+`review-conventions` skill reviews against this document. This document covers
+what none of them does.
 
 ## Comments
 
@@ -23,7 +26,9 @@ Keep, at one or two lines:
 - a footgun whose failure is silent or misleading — a store symlink a program
   rewrites, a parser that rejects a duplicate node, a pin that must match an
   external file, an absence that is deliberate and load-bearing
-- a `ponytail:` marker naming the ceiling and the upgrade path
+- a standard debt marker, one line, with the trigger that retires it:
+  `TODO:` deferred work, `FIXME:` known-wrong behaviour, `HACK:` a deliberate
+  workaround or shortcut with its ceiling and upgrade path
 - one terse divider inside a long list
 
 Rationale is stated once. Put it in the commit message or a durable decision in

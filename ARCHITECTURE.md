@@ -207,7 +207,7 @@ age key + tooling), a shared credentials aspect
 one encrypted file per consumer group — `llm-providers.yaml`, `web-search.yaml`,
 `github.yaml`, `sourcegraph.yaml`), and each service's own feature module (its
 service-specific secrets and rendered env templates — `aichat.env`,
-`grist.env`, `docs-mcp.env`, `hermes.env`, `niks3-auth-token`,
+`grist.env`, `hermes.env`, `niks3-auth-token`,
 `nix-access-tokens`). A consumer that can resolve a key itself reads the
 decrypted secret path — pi providers and pi-web-access via `!cat`, MCP headers
 via `!command` — and only keys whose consumer can read nothing but the
@@ -226,7 +226,7 @@ generated config and decrypted secret paths, so a config or secret change
 restarts the service declaratively. Activation hooks remain only where the
 service manager cannot model the work.
 
-Active user services: docs-mcp, grist, qmd, mcp-nixos, web-catalog, moniqued, memex's
+Active user services: grist, qmd, mcp-nixos, web-catalog, moniqued, memex's
 hourly index timer, surge (the
 headless download daemon on port 1700), niks3-auto-upload (a socket-activated
 cache upload queue), and the weekly nh-clean timer — which is a user timer only on the non-NixOS host: on
@@ -254,7 +254,7 @@ owns the unit and its notify registration.
 LLM traffic goes to the OmniRoute gateway on the builder host, an endpoint the
 fleet service inventory carries (`lib.serviceEndpoints`).
 Service ports and display metadata are owned by `lib/web-services.nix`
-(grist 8484, docs-mcp 6280, qmd 8181, mcp-nixos 8000, web-catalog 8123);
+(grist 8484, qmd 8181, mcp-nixos 8000, web-catalog 8123);
 canonical contract: [web-service-catalog](openspec/specs/web-service-catalog/spec.md).
 Grist binds loopback only (`127.0.0.1:8484`) and is not reverse-proxied;
 its bundled SQLite state persists at `~/.local/share/grist`.
@@ -313,11 +313,33 @@ describes only machines that are always on.
   configuration surface is rendered by the `programs.pi-coding-agent` Home
   Manager module, but the test is the write path, not whether the file holds
   settings. Pi's `settings.json` is declared
-  because its failed write is a caught `EACCES` that reports loudly; the three
-  extension settings files — `pi-tool.json`, `pi-stamp.json`, and
-  `pi-herdr.json` — are not, because they save through a
+  because its failed write is a caught `EACCES` that reports loudly; the
+  extension settings files `pi-tool.json` and `pi-stamp.json` are not, because they save through a
   temporary file plus `rename()`, which replaces a store symlink with a real
   file instead of failing, and diverges silently.
+- **Delegation is herdsman; pane state is Herdr's own integration** —
+  `pi-herdsman` replaces `pi-subagents` (kept installed, unloaded, as the
+  fallback) and the official `herdr integration install pi` replaces
+  `@narumitw/pi-herdr`. The integration is a file Herdr writes to
+  `~/.pi/agent/extensions/herdr-agent-state.ts`, so it stays imperative and is
+  re-run after a Herdr upgrade. Herdsman passes a definition's `skills` paths
+  to Pi unchanged, so the agent definitions carry `@home@` placeholders that the
+  Home Manager module substitutes at build time, and the drift guard reads the
+  skill names back out of those paths. Worker and delegate preload the
+  `lean-implementation` body instead of only advertising it: an advertisement
+  lets the model skip the read, and that skill is where their implementation
+  rules live. It costs the skill's tokens on every child request. Two
+  publishers of pane metadata never run at once: the swap is one change.
+
+- **Herdsman's config is seeded, not linked** — `pi-herdsman/config.json` is
+  rewritten atomically whenever settings change through `/agents`, so it takes
+  the same treatment as Herdr's `config.toml`: an activation step merges the
+  keys this repository owns — `disabledDefinitions` for the bundled
+  generalist/implementer roles, and `modelScopes` for the per-role model
+  allow-lists — into the real file, and everything set through the UI survives
+  a switch. A scope only restricts, so each list names the models that
+  definition actually pins.
+
 - **Plugin-owned config tables are declared, not merged** — Herdr and its
   plugins rewrite `config.toml` by renaming a temporary file over the real
   path, so a store symlink breaks them with `EACCES` in `/nix/store`. The file
@@ -342,6 +364,24 @@ describes only machines that are always on.
   symlinks, so Pi-specific personas are not placed there. Extension paths in a
   definition are written relative to the definition file, which keeps them free
   of hardcoded home directories.
+
+- **The why lives in `context/`** — the keep-the-why skill owns it: decisions,
+  rejected alternatives, workarounds, incidents and constraints, each with a
+  status and a revisit trigger. `ARCHITECTURE.md` describes the current shape,
+  `CONVENTIONS.md` holds the rules, OpenSpec holds intended behaviour, and
+  `context/` holds why any of it is the way it is. Durable Decisions entries
+  move there as the skill's retrospective pass reaches them.
+
+- **Session mode is a launch choice** — plain `pi` is the implementor with the
+  user in the loop; `pio` appends `~/.pi/agent/modes/orchestrator.md`. A mode is
+  appended prompt text fixed for the session, so the prompt cache sees one head,
+  and `AGENTS.md` stays mode-neutral.
+
+- **Implementation discipline has one source** — the `lean-implementation`
+  skill. Agent definitions that write or review code list it and tell the agent
+  to read it; the global `AGENTS.md` points at it. `CONVENTIONS.md` only applies it to
+  this repository's boundaries, and role definitions keep only role mechanics (escalation, report shape),
+  so a change to the discipline is a one-file edit that every role picks up.
 
 ## Verification
 

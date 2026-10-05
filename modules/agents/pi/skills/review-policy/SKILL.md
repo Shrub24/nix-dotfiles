@@ -20,6 +20,9 @@ description: Severity ladder and finding discipline for code and plan reviews â€
   or repro, or a contract contradiction.
 - For a diff review, require that the issue is caused or made reachable by that
   diff. Pre-existing problems outside the target are not findings.
+- Flag a diff that makes a non-obvious choice, rejects a plausible alternative,
+  adds a workaround, or abandons a change without a `context/` entry or a
+  reason in the commit message, as a P2 unless the choice is irreversible.
 - Do not invent issues. If everything looks good, say so plainly â€” and say
   exactly `No issues found.` when nothing qualifies.
 - Prefer small corrective edits over broad rewrites when fixes are in scope.

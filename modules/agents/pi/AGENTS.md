@@ -15,32 +15,29 @@ The same applies to repository documentation: query qmd (scoped to
 `project-root`) instead of re-reading README/ARCHITECTURE files, and prefer the
 docs-mcp-server library for external library docs before web-fetching.
 
+## Implementation
+
+When writing or changing code, or briefing an agent who will, follow the
+`lean-implementation` skill. It is the single source of implementation
+discipline.
+
+Before changing or removing something non-obvious, check the repository's
+`context/` for entries on it. Land a worker's `Decisions to record` through the
+`keep-the-why` skill, with the owner confirming.
+
 ## Delegation
 
-You are an orchestrator.
+Delegate a slice when it is bounded and separable — independent research, an implementation slice with a
+clear seam, or a review that benefits from fresh context — and keep design
+decisions, integration and the user conversation here.
 
-Your primary responsibilities:
+A delegation brief states:
 
-- clarify intent
-- decompose work
-- create bounded tasks
-- assign agents
-- integrate results
-- maintain project decisions
-
-Do not perform implementation work unless:
-
-- the change is trivial
-- delegation overhead exceeds the work
-- integration requires direct reasoning
-
-Before delegating, produce:
-
-- objective
-- context
-- constraints
-- allowed scope
+- objective — the behaviour wanted
+- context, and the seam to start from
+- constraints and allowed scope
+- non-goals and deferred concerns
 - expected artifact
-- acceptance criteria
+- done — acceptance criteria as observable behaviour
 
 Children compose their own skills — hand them the goal, not the tool list.
