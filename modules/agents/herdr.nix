@@ -2,12 +2,9 @@
 {
   # The herdr-radar fork: `packages.default` is the plugin root Herdr registers,
   # `packages.herdr-anchor` the pane wrapper, and `homeManagerModules.default`
-  # the module imported below. It is a local checkout for now — the fork carries
-  # uncommitted packaging work and has no remote of its own yet — so this input
-  # is not reproducible from a URL; replace it with the fork's git URL once it
-  # is pushed.
+  # the module imported below.
   flake-file.inputs.herdr-radar = {
-    url = "git+file:///home/saurabhj/Projects/dev/custom/herdr-radar";
+    url = "github:Shrub24/herdr-radar";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -35,7 +32,7 @@
         herdrPackage = config.programs.herdr.package;
         settings.anchors = {
           auto_create = true;
-          command = "${pkgs.runtimeShell} -c 'if jj root >/dev/null 2>&1; then exec jjui; else exec yazi; fi'";
+          command = "${pkgs.runtimeShell} -c 'exec yazi'";
         };
       };
 
@@ -76,6 +73,7 @@
           status_indicators = "symbols";
           show_agent_labels_on_pane_borders = true;
           toast.delivery = "system";
+          sidebar_max_width = 48;
         };
         # Prefix: herdr default (ctrl+b) for now — shift+space proved
         # non-capturable in practice; revisit with a plugin later.
@@ -232,9 +230,6 @@
       # thing this file cannot be. Seeding it as a real file keeps the published
       # keys authoritative without freezing the file against Herdr's own writes.
       xdg.configFile."herdr/config.toml".enable = false;
-      # Ordered after the plugin link so the `configure` call below reaches the
-      # fork rather than whatever plugin of the same id is registered when the
-      # activation starts.
       home.activation.herdrConfig =
         lib.hm.dag.entryAfter
           ([ "writeBoundary" ] ++ lib.optional config.programs.herdr-radar.enable "linkHerdrRadar")
@@ -248,20 +243,12 @@
               "$HOME/.config/herdr/config.toml.new"
             ${pkgs.coreutils}/bin/mv -f "$HOME/.config/herdr/config.toml.new" "$HOME/.config/herdr/config.toml"
 
-            # The seed above replaces the whole file, so the blocks a plugin owns
-            # have to go back in; herdr-radar's `configure` action writes its sidebar
-            # and tab-bar blocks and reloads. Both calls are best-effort, and the
-            # fork writes nothing on startup, so a Herdr that is not running (or a
-            # plugin that is not linked yet) simply leaves the sidebar and tab-bar
-            # blocks out until one of these runs.
-            # Seeding those blocks from the fork's pure export instead is blocked
-            # on the export contract: `--print` picks its palette from `[theme]
-            # name` (`terminal` here has none, so it answers light) and a pinned
-            # `--variant` freezes the appearance and claims `[theme.custom]`.
-            # That reload is the server's half: sidebar layouts and themes are
-            # client-side presentation, and the UI's own reload config action
-            # (prefix+shift+r) is what also reloads the client's local settings.
-            ${lib.getExe config.programs.herdr.package} plugin action invoke hhdebb.herdr-radar.configure || true
+            # The seed replaces the whole file, so radar's sidebar and tab-bar
+            # blocks go back in through its own merge. A refusal (a config that
+            # would not parse) aborts the switch; `|| true` here hid exactly that.
+            ${config.programs.herdr-radar.package}/bin/configure.js --apply
+            # Layouts and themes are client-side; a running Herdr picks them up
+            # on prefix+shift+r, this reload covers the server half.
             ${lib.getExe config.programs.herdr.package} server reload-config || true
           '';
     };
