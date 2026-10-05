@@ -11,11 +11,8 @@
     };
   };
 
-  # NixOS owns the login shell and the /etc/shells entry; the Home Manager
-  # value below owns the shell's configuration. Both halves are needed, and
-  # only the pair makes fish the interactive shell rather than a program that
-  # happens to be on PATH. The desktop never showed the gap because Arch owns
-  # /etc/passwd there.
+  # NixOS owns the login shell and the /etc/shells entry; Home Manager owns the shell's
+  # configuration. Both halves are needed to make fish the interactive shell.
   flake.modules.nixos.fish =
     { config, pkgs, ... }:
     {
@@ -43,7 +40,6 @@
               set -l base_buffer $argv[2]
 
               if not test -e "$cand"; and not test -L "$cand"
-                # We use the clean base_buffer (e.g., "git ") + cand ("commit") + space
                 set -l comps (complete -C "$base_buffer "(string escape -- "$cand") 2>/dev/null)
 
                 if test -n "$comps"
@@ -67,10 +63,8 @@
                 return
               end
 
-              # 1. Identify the exact token we are currently typing (e.g., "$S" or "commi")
               set -l current_token (commandline -ct)
 
-              # 2. Extract the "Base Context" by subtracting the token from the end of the buffer.
               set -l token_len (string length -- "$current_token")
               set -l buf_len (string length -- "$cmd_buffer")
               set -l cut_pos (math $buf_len - $token_len)
@@ -80,7 +74,6 @@
                 set base_buffer (string sub -l $cut_pos -- "$cmd_buffer")
               end
 
-              # 3. Launch FZF
               set -l fzf_raw (complete -C "$cmd_buffer" | fzf \
                 --delimiter="\t" \
                 --query=(string unescape -- "$current_token") \
@@ -105,7 +98,6 @@
                   if not string match -q "*/" "$selection"
                     commandline -i " "
                   end
-                  # Recurse instantly for continuous navigation
                   _fzf_complete_lookahead
                 else
                   if not string match -q "*/" "$selection"
@@ -120,10 +112,6 @@
           };
 
           plugins = with pkgs.fishPlugins; [
-            {
-              name = "tide";
-              inherit (tide) src;
-            }
             {
               name = "fzf-fish";
               inherit (fzf-fish) src;
@@ -180,31 +168,15 @@
             bind \cs 'commandline -i "sudo "; commandline -f execute'
 
             set fzf_preview_dir_cmd eza --all --color=always
-            # Route file previews through pistol so both fzf surfaces (this
-            # one and the ctrl-space lookahead router) share one association
-            # table — images would otherwise reach bat here and render
-            # nothing.
+            # pistol, not bat: file previews share one association table across both
+            # fzf surfaces — images would otherwise reach bat and render nothing.
             set fzf_preview_file_cmd pistol
             set fzf_diff_highlighter delta --paging=never --width=20
 
-            # Noctalia's fzf palette is rendered as a POSIX file. Two traps
-            # here, both hit in practice:
-            #
-            # 1. Sourcing the fish variant instead would write FZF_DEFAULT_OPTS
-            #    through `set -Ux`, so every session re-appends the palette and
-            #    the variable grows without bound.
-            #
-            # 2. Even via the POSIX file, the palette renders as MULTILINE
-            #    text. Command substitution turns each line into a fish list
-            #    element, and an exported list var in that shape makes every
-            #    later exec in the shell fail with fish's "argument or exported
-            #    variable exceeds the OS argument length limit" — the snacks
-            #    terminal, zoxide, mise, everything. Flattening to one line
-            #    (tr) is what makes it safe.
-            #
-            # The guard stops re-appends in nested shells (kitty windows,
-            # herdr panes, snacks terminals all inherit and re-run this), which
-            # is how the variable accumulated 15 palette copies before.
+            # Noctalia's fzf palette must be sourced from the POSIX file (the fish
+            # variant grows FZF_DEFAULT_OPTS via set -Ux) and flattened with tr: a
+            # multiline exported list var breaks every later exec in the shell. The
+            # guard prevents nested shells re-appending it.
             if test -f "$XDG_CONFIG_HOME/fzf/themes/noctalia.sh"; and not string match -q -- '*bg+:*' -- $FZF_DEFAULT_OPTS
               set -gx FZF_DEFAULT_OPTS "$FZF_DEFAULT_OPTS "(
                 sh -c 'FZF_DEFAULT_OPTS=; . "$XDG_CONFIG_HOME/fzf/themes/noctalia.sh"; printf %s "$FZF_DEFAULT_OPTS"' | tr '\n' ' '

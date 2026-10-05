@@ -12,8 +12,6 @@ let
   };
   system = "x86_64-linux";
   hostId = "spectre";
-  # Evaluation-local projection: features read config.currentHost, so one aspect
-  # value serves every host and only the composition names "self".
   currentHost = {
     id = hostId;
     inherit primaryUser;
@@ -21,9 +19,8 @@ let
   };
   currentHostModule = { inherit currentHost; };
   dispatch = inputs.nix-fleet.lib.buildProfile;
-  # Which fleet hosts the laptop trusts and talks to — the same canonical
-  # records the desktop reads, minus itself. Multiplexing rides the selection
-  # rather than the global block.
+  # Which fleet hosts the laptop trusts is host policy; multiplexing rides the
+  # selection rather than the global block.
   sshOptions = {
     ControlMaster = "auto";
   };
@@ -43,14 +40,9 @@ let
   hmAspect = name: config.flake.modules.homeManager.${name};
   nixosAspect = name: config.flake.modules.nixos.${name};
 
-  # Lean portable profile: no local service tier; memory is the binding
-  # constraint on 8 GB of soldered RAM.
-  # Omitted deliberately, not by drift. The service tier — docs-mcp, grist,
-  # qmd, memex, niks3, surge, syncthing, web-catalog, mutagen — because the
-  # laptop reaches those over the tailnet rather than running them. And
-  # ghostty, vscode, opencode, media, zsh, hermes, modal, tools, chromium,
-  # brave-origin: the desktop is where those are used. mcp-nixos is selected
-  # for its client wiring only — its daemon stays off, so Pi spawns its own.
+  # Lean portable profile — deliberate omissions, not drift: the service tier is
+  # reached over the tailnet, the desktop-only apps are not installed here, and
+  # mcp-nixos is wired for its client only (its daemon stays off).
   hmAspects = [
     "current-host"
     "pi"
@@ -83,6 +75,7 @@ let
     "defaults"
     "shell"
     "fish"
+    "starship"
     "tmux"
     "wezterm"
     "kitty"
@@ -97,11 +90,8 @@ let
     "zathura"
   ];
 
-  # Phase 1 of the secrets bootstrap: the machine installs and
-  # switches without any secret-consuming aspect, because sops activation fails
-  # when no key can decrypt. Phase 2 adds "sops-foundation", "credentials", and
-  # "nix" (whose HM value renders the GITHUB_PAT access-token file) once the
-  # host's age key is generated and the secrets are re-encrypted for it.
+  # Phase 1: sops activation fails when no key can decrypt, so the
+  # secret-consuming aspects wait for the host's age key to be a recipient.
   hmAspectsPhase1 = lib.subtractLists [
     "sops-foundation"
     "credentials"
@@ -131,9 +121,8 @@ let
     "mosh"
   ];
 
-  # NixOS mirror of the Home Manager phase gate: notify registers a system
-  # secret, so phase 1 omits it until the host's age key is a recipient. The
-  # beszel agent is not gated — it holds only the hub's public key.
+  # notify registers a system secret, so phase 1 omits it too; beszel-agent
+  # is not gated — it holds only the hub's public key.
   nixosAspectsPhase1 = lib.subtractLists [
     "notify"
   ] nixosAspects;
@@ -149,9 +138,8 @@ let
       (import ./spectre/_disko.nix { })
       { nixpkgs.overlays = [ overlay ]; }
       {
-        # The one unfree package the lean set pulls in (unrar, via the cli
-        # aspect). The desktop's NVIDIA predicate list is desktop-only and
-        # deliberately not inherited.
+        # The lean set's only unfree package (unrar, via cli); the desktop's
+        # NVIDIA predicate list is deliberately not inherited.
         nixpkgs.config.allowUnfreePredicate = pkg: lib.getName pkg == "unrar";
       }
       inputs.home-manager.nixosModules.home-manager
@@ -182,23 +170,19 @@ let
     ]
     ++ map nixosAspect (if secretsEnrolled then nixosAspects else nixosAspectsPhase1)
     ++ lib.optionals secretsEnrolled [
-      # The embedded Home Manager's activation unit; registered here rather than
-      # in the notify aspect because it exists only in host evaluations.
+      # The embedded Home Manager's activation unit; host evals only.
       { services.notify.events."home-manager-${primaryUser.name}".failure.severity = "critical"; }
     ];
   };
 
-  # Phase 1 → phase 2 flip. While the
-  # host's age key is not yet a recipient in .sops.yaml, the switch would fail
-  # on the secret-consuming aspects; the composition then omits them. After
-  # `sops updatekeys` has run from the desktop, set this to true and switch
-  # again — the only edit install day makes to this file.
+  # Phase 1 → phase 2 flip: set true once `sops updatekeys` has run from the
+  # desktop and the host's age key is a recipient in .sops.yaml. This is the
+  # only edit install day makes to this file.
   secretsEnrolled = false;
 in
 {
   config = {
-    # This machine's own registry entry. Fleet entries and service endpoints
-    # live beside the schema in modules/policy/topology.nix.
+    # This machine's registry entry; the rest live in the topology schema.
     topology.hosts.${hostId} = {
       inherit primaryUser;
       sshUser = primaryUser.name;
@@ -209,10 +193,8 @@ in
     flake.checks.${system} = {
       nixos-spectre = nixosConfiguration.config.system.build.toplevel;
 
-      # Boot-level gate for the laptop's aspect composition (design D9):
-      # eval-only checking has already proven insufficient in this repository.
-      # Headless, no greeter, no graphical assertions — the point is that the
-      # selected aspects coexist and the machine boots.
+      # Boot-level gate for the composition: eval-only checking has proven
+      # insufficient here. Headless — the point is that it boots.
       vm-spectre-boot = pkgsUnfree.testers.runNixOSTest {
         name = "vm-spectre-boot";
         nodes.spectre = {

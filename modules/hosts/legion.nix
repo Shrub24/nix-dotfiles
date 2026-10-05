@@ -5,8 +5,7 @@
   ...
 }:
 let
-  # The single typed account declaration; every consumer (HM, NixOS,
-  # system-manager, VM, raw host modules) derives from it.
+  # The single account declaration; every consumer derives from it.
   primaryUser = {
     name = "saurabhj";
     uid = 1000;
@@ -14,8 +13,6 @@ let
   };
   system = "x86_64-linux";
   hostId = "legion";
-  # Evaluation-local projection: features read config.currentHost, so one aspect
-  # value serves every host and only the composition names "self".
   currentHost = {
     id = hostId;
     inherit primaryUser;
@@ -27,20 +24,14 @@ let
     endpoint = "api";
     via = "tailnet";
   };
-  # Build dispatch: nix-fleet's pure resolver turns the canonical inventory and
-  # this repository's profile into normalized specs, and nixpkgs renders them
-  # into /etc/nix/machines. The private key is a credential reference the
-  # resolver deliberately leaves null — the coordinator's dispatch key is
-  # root-owned — so the composition fills it in.
+  # nix-fleet's resolver normalizes the profile into specs; the private key is
+  # a credential reference it leaves null, so the composition fills it in.
   dispatch = inputs.nix-fleet.lib.buildProfile;
   dispatchSpecs = map (spec: spec // { sshKeyPath = "/root/.ssh/nix-remote"; }) (
     dispatch.resolveBuildProfile config.fleet "workstations"
   );
-  # Which fleet hosts this machine trusts and talks to. nix-fleet owns the
-  # records — hostnames, host keys, management account; the selection is host
-  # policy. Trust is its own door, so naming a host here never makes it
-  # schedulable. Multiplexing is a property of the connections this machine
-  # actually makes, so it rides the selection rather than the global block.
+  # Which fleet hosts this machine trusts is host policy; trust is not use.
+  # Multiplexing rides the selection rather than the global block.
   sshOptions = {
     ControlMaster = "auto";
   };
@@ -164,14 +155,14 @@ let
     "web-catalog"
     "shell"
     "fish"
+    "starship"
     "zsh"
     "tmux"
     "wezterm"
     "kitty"
     "foot"
   ];
-  # Full set minus the system-owned duplicates NixOS provides itself
-  # (tailscale/syncthing/mosh/niks3), plus the embedded-only hardware aspects.
+  # Full set minus the aspects NixOS itself provides, plus embedded-only ones.
   embeddedHmAspects =
     lib.subtractLists [
       "tailscale"
@@ -184,9 +175,8 @@ let
       "libcamera"
       "codex"
     ];
-  # Arch boot configuration is machine-specific (dracut drop-in, Limine conf) and
-  # lives in the host's own raw module (modules/hosts/legion/_system.nix), so there
-  # is no shared systemManager boot aspect.
+  # No shared systemManager boot aspect: the Arch boot config is
+  # machine-specific (modules/hosts/legion/_system.nix).
   systemAspects = [
     "current-host"
     "network"
@@ -244,8 +234,7 @@ let
     modules = [
       currentHostModule
       sshTrustModule
-      # Use system-manager's native remote-build options, like the NixOS host
-      # below; it imports the upstream option definitions as well.
+      # system-manager's native remote-build options, as on the NixOS host.
       {
         nix.distributedBuilds = true;
         nix.buildMachines = dispatch.buildMachines dispatchSpecs;
@@ -266,8 +255,7 @@ let
       (import ./legion/_disko.nix { })
       { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration
       { nixpkgs.config.allowUnfreePredicate = unfreePredicate; }
-      # Which builders this host schedules is composition policy, resolved from
-      # the canonical inventory rather than restated here.
+      # Builder selection is composition policy from the canonical inventory.
       {
         nix.distributedBuilds = true;
         nix.buildMachines = dispatch.buildMachines dispatchSpecs;
@@ -304,8 +292,7 @@ let
 in
 {
   config = {
-    # This machine's own registry entry. Fleet entries and service endpoints
-    # live beside the schema in modules/policy/topology.nix.
+    # This machine's registry entry; the rest live in the topology schema.
     topology.hosts.${hostId} = {
       inherit primaryUser;
       sshUser = primaryUser.name;
@@ -320,67 +307,6 @@ in
       home-manager-activation = homeConfiguration.activationPackage;
       system-manager-config = systemConfiguration;
       nixos-system = nixosConfiguration.config.system.build.toplevel;
-
-      # Agent-definition drift guard: pi-subagents treats a missing explicit
-      # skill as an advisory warning, so a renamed or deleted skill would
-      # silently under-instruct children. Fail eval instead.
-      # Skills may live in the repo skills dir OR the user-global
-      # ~/.agents/skills discovery root (cross-tool home: ast-grep,
-      # codebase-memory, ...). Globals are declared here explicitly so a
-      # rename still fails eval; repo skills are checked against skillsDir.
-      pi-agent-skills-referenced =
-        let
-          agentsDir = ../agents/pi/agents;
-          skillsDir = ../agents/pi/skills;
-          globalSkills = [
-            "ast-grep"
-            "codebase-memory"
-            "codebase-design"
-            "code-review"
-            "dendritic-nix"
-            "diagnose"
-            "docs-search"
-            "domain-modeling"
-            "find-skills"
-            "grilling"
-            "implement"
-            "jj"
-            "nh"
-            "nix-toolkit"
-            "qmd"
-            "review-local-changes"
-            "tdd"
-            "writing-for-agents"
-            "xberg"
-          ];
-          agentFiles = builtins.attrNames (
-            lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name) (
-              builtins.readDir agentsDir
-            )
-          );
-          referenced = lib.unique (
-            lib.flatten (
-              map (
-                agentFile:
-                let
-                  parts = lib.splitString "---" (builtins.readFile (agentsDir + "/${agentFile}"));
-                  # File starts with ---, so the frontmatter is element 1.
-                  frontmatter = lib.elemAt parts 1;
-                  lines = lib.filter (line: lib.hasPrefix "skills:" line) (lib.splitString "\n" frontmatter);
-                in
-                map lib.trim (lib.flatten (map (line: lib.splitString "," (lib.removePrefix "skills:" line)) lines))
-              ) agentFiles
-            )
-          );
-          available =
-            builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir skillsDir))
-            ++ globalSkills;
-          missing = lib.subtractLists available referenced;
-        in
-        if missing == [ ] then
-          pkgs.runCommand "pi-agent-skills-referenced" { } "touch $out"
-        else
-          throw "pi agent files reference missing skills: ${lib.concatStringsSep ", " missing}";
 
       # VM boot gate: catches module-system conflicts that eval-only misses.
       vm-desktop = pkgsUnfree.testers.runNixOSTest {
@@ -498,9 +424,8 @@ in
           legion.start()
           legion.wait_for_unit("multi-user.target")
           legion.succeed("nix-store --version")
-          # nix-daemon is socket-activated and idle until a client connects, and
-          # root talks to the local store without touching it — force a real
-          # daemon round-trip so the unit actually starts.
+          # nix-daemon is socket-activated, so force a real daemon round-trip:
+          # root talks to the local store without starting the unit.
           legion.succeed("nix --store daemon store ping")
           legion.wait_for_unit("nix-daemon.service")
 

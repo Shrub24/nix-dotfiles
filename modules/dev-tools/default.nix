@@ -3,7 +3,6 @@ _: {
     { pkgs, ... }:
     {
       home.packages = with pkgs; [
-        zotero
         posting
         isd
         crun
