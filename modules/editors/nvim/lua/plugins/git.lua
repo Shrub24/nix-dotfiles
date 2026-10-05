@@ -1,10 +1,5 @@
--- Git plugins. Ported from lua/plugins/git.lua.
---
--- The buffer-local maps in gitsigns' on_attach are preserved verbatim, including
--- the `return "<Ignore>"` in the ]h/[h callbacks — those are inert without
--- `expr = true`, which is how the original was written. LazyVim's gitsigns
--- extra also mapped these for visual mode; that is part of the keymap parity
--- work in _keymap-parity.md, not this port.
+-- The gitsigns on_attach maps are verbatim, including the inert `return
+-- "<Ignore>"` in the ]h/[h callbacks: those need `expr = true` to fire.
 local function gitsigns_on_attach(bufnr)
   local gs = package.loaded.gitsigns
 

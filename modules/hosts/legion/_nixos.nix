@@ -46,38 +46,33 @@ in
   networking.hostName = "legion";
   i18n.defaultLocale = "en_AU.UTF-8";
 
-  # Lid close on AC is a no-op; on battery systemd-logind keeps its default
-  # (suspend).
+  # Lid close on AC is a no-op; on battery logind keeps its suspend default.
   services.logind.settings.Login.HandleLidSwitchExternalPower = "ignore";
 
   # The built-in ITE keyboard (048d:c987); toggle-kbd unbinds this interface.
   programs.toggle-kbd.usbInterface = "3-9:1.0";
 
-  # Lenovo battery conservation mode (Arch /etc/tmpfiles.d/lenovo-battery.conf).
+  # Lenovo battery conservation mode.
   systemd.tmpfiles.rules = [
     "w /sys/bus/platform/drivers/ideapad_acpi/VPC2004:00/conservation_mode - - - - 1"
   ];
 
-  # Replaces the Arch root NetworkManager dispatcher that curled ipapi.co;
   # automatic-timezoned sets time.timeZone itself.
   services.automatic-timezoned.enable = true;
 
-  # Arch runs the latest mainline (7.x); NixOS otherwise evaluates the 6.18 LTS
-  # default and the open NVIDIA/openrazer modules must build against this.
+  # The open NVIDIA and openrazer modules must build against the kernel
+  # Arch runs (mainline); NixOS would evaluate the 6.18 LTS default.
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  # Failure registrations for units only this host runs; the shared set lives
-  # in flake.modules.nixos.notify.
+  # Units only this host runs; the shared set is in notify.
   services.notify.events = {
     "niks3-auto-upload".failure = { };
     "home-manager-${primaryUser.name}".failure.severity = "critical";
     syncthing.failure.severity = "warning";
   };
 
-  # Snapper covers the root and home subvolumes. /data only holds rescue
-  # images and package/cache residue, so it deliberately has no snapshot
-  # config: opaque rescue images gain nothing from CoW snapshots, and the
-  # mount remains available for future bulk storage.
+  # /data deliberately has no snapshot config: it holds only rescue images
+  # and cache residue, which gain nothing from CoW snapshots.
   services.snapper = {
     snapshotInterval = "hourly";
     cleanupInterval = "hourly";

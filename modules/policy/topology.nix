@@ -1,11 +1,3 @@
-# Fleet topology: the machines that exist, read via `config` by consumers —
-# never injected through argument buses. Service endpoints are deliberately not
-# restated here: consumers resolve them from nix-fleet's canonical service
-# inventory (`lib.serviceEndpoints`), so the two can never disagree.
-#
-# Declaration ownership follows the fact. A machine this repository configures
-# contributes its own entry from its own host file (modules/hosts/<host>.nix);
-# the machines it only reaches are fleet facts and live here beside the schema.
 { lib, ... }:
 let
   primaryUserType = lib.types.submodule {
@@ -42,8 +34,7 @@ let
     };
   };
 
-  # The per-evaluation projection of the entry a host composition selected. This
-  # is what reusable features read; none of them knows which machine it is in.
+  # Per-evaluation projection of the entry the host composition selected.
   currentHostType = lib.types.submodule {
     options = {
       id = lib.mkOption {

@@ -31,15 +31,13 @@ _: {
           kdegraphics-thumbnailers
         ];
 
-      # breeze-icons intentionally omitted — user runs Sweet-Rainbow
-      # icon pack (in ~/.local/share/icons/ via matugen). If KDE-specific icons
-      # break in dolphin/kdeconnect, add kdePackages.breeze-icons here.
+      # breeze-icons intentionally omitted — user runs Sweet-Rainbow (via matugen);
+      # add kdePackages.breeze-icons here if KDE-specific icons break.
     };
 
   flake.modules.nixos.kde-apps = _: {
-    # The one deliberate exception to the tailnet-only exposure policy: KDE
-    # Connect needs LAN peers, so programs.kdeconnect opens 1714-1764 tcp/udp.
-    # The package itself comes from Home Manager (services.kdeconnect).
+    # Deliberate exception to the tailnet-only exposure policy: KDE Connect needs
+    # LAN peers, so programs.kdeconnect opens 1714-1764 tcp/udp.
     programs.kdeconnect = {
       enable = true;
       package = null;

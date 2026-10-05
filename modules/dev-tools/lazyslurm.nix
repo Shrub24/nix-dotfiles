@@ -1,6 +1,5 @@
 { inputs, ... }: {
-  # Not in nixpkgs, and upstream maintains its own buildRustPackage, so the
-  # input is consumed rather than a recipe reimplemented here.
+  # Not in nixpkgs; upstream maintains its own buildRustPackage.
   flake-file.inputs.lazyslurm = {
     url = "github:hill/lazyslurm";
     inputs.nixpkgs.follows = "nixpkgs";

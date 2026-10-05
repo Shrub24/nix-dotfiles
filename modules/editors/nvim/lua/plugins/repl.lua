@@ -1,6 +1,3 @@
--- Ported from lua/plugins/repl.lua. The `init` block from the vim-slime spec
--- became `before`, which lze runs before the plugin loads — the same moment
--- lazy.nvim ran `init`.
 return {
   {
     "vim-slime",

@@ -1,6 +1,6 @@
 _:
 let
-  # Tracked seed for the mutable theme, read as a repo path literal → store path.
+  # Tracked seed for the mutable theme.
   dankThemeSeed = ./wezterm-dank-theme.toml;
 in
 {
@@ -60,9 +60,8 @@ in
           local wezterm_replay = wezterm.plugin.require("https://github.com/btrachey/wezterm-replay")
           wezterm_replay.apply_to_config(config)
 
-          -- Noctalia owns colors/Noctalia.toml (regenerated on every wallpaper-driven
-          -- palette change); this config only names it, so the shell theme drives
-          -- wezterm without a hook ever writing a Nix-owned file.
+          -- Noctalia owns colors/Noctalia.toml (regenerated on palette change); this
+          -- config only names it, so the theme drives wezterm without a hook writing a Nix file.
           local theme_path = wezterm.config_dir .. "/colors/Noctalia.toml"
           wezterm.add_to_config_reload_watch_list(theme_path)
           config.colors, _ = wezterm.color.load_scheme(theme_path)
@@ -111,7 +110,6 @@ in
           })
           tabline.apply_to_config(config)
 
-          -- Window padding
           config.window_padding.left = "0.25cell"
 
           -- Tabline theme colors
@@ -152,10 +150,8 @@ in
           -- Re-apply settings after plugins to prevent them from being clobbered
           config.window_decorations = "NONE"
 
-          -- Hyperlink rules
           config.hyperlink_rules = wezterm.default_hyperlink_rules()
 
-          -- Key bindings
           config.keys = {
             { key = "A", mods = "CTRL|SHIFT", action = act.EmitEvent("toggle-opencode") },
             { key = "S", mods = "CTRL|SHIFT", action = act.ShowLauncherArgs { flags = "DOMAINS" } },

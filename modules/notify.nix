@@ -1,8 +1,6 @@
 { config, inputs, ... }:
 let
-  # Resolved at the flake-parts level from the fleet's canonical service
-  # inventory, closed over by the NixOS module. Tailnet-only: dispatch no
-  # longer rides the public ingress.
+  # Resolved at the flake-parts level from the fleet's service inventory.
   ntfyUrl = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
     service = "ntfy";
     endpoint = "api";
@@ -13,11 +11,8 @@ in
   flake.modules.nixos.notify =
     { config, ... }:
     {
-      # nix-fleet owns the mechanism: the daemon, the `notify` CLI, the
-      # `unit-notify` systemd event handler and the
-      # `services.notify.events.<unit>.{failure,success}` contract. This aspect
-      # binds the fleet's dispatch policy and registers the units whose failure
-      # means the machine is broken or unreachable.
+      # nix-fleet owns the mechanism and the `services.notify.events.<unit>`
+      # contract; this binds the dispatch policy and the units this host cares about.
       imports = [ inputs.nix-fleet.modules.nixos.notify ];
 
       services.notify = {
@@ -25,29 +20,21 @@ in
           enable = true;
           serverUrl = ntfyUrl;
 
-          # Routing is declared by use case, never derived from severity, and
-          # fails closed at eval without both halves. `system` is the one
-          # use case this fleet routes today (host/unit health), matching the
-          # topic the old implicit fallback targeted.
+          # Routing is declared by use case, never derived from severity, and fails
+          # closed at eval without both halves. `system` is the one such use case here.
           topics.system = "system";
           defaultTopic = "system";
         };
 
-        # ntfy-only dispatch. Telegram is off, not merely unconfigured: the
-        # shared aspect asserts its chat id and topics whenever it is enabled,
-        # and dispatch policy is consumer-local.
+        # ntfy-only dispatch: the shared aspect requires a chat id and topics
+        # whenever telegram is enabled, and dispatch policy is consumer-local.
         telegram.enable = false;
 
-        # System-scoped ntfy token. Placeholder until filled with
-        # `sops secrets/notify.yaml`; dispatch is best-effort, so an unauthorised
-        # token degrades delivery without affecting the observed unit.
+        # TODO: fill secrets/notify.yaml — the placeholder token only degrades
+        # delivery, so the observed unit is unaffected either way.
         secretFiles.hostSystem = ../secrets/notify.yaml;
 
-        # Registration follows ownership: the fleet's aspects register the
-        # units they own — nix-baseline owns nix-daemon, ssh owns sshd,
-        # tailscale owns tailscaled, beszel-agent and nix-gc their own. What is
-        # left here is this composition's policy: the units nothing else owns,
-        # and the severity this host wants on units owned elsewhere.
+        # Only units nothing else owns; the fleet's aspects register their own.
         events = {
           sshd.failure.severity = "critical";
           greetd.failure.severity = "critical";
@@ -56,8 +43,7 @@ in
         };
       };
 
-      # The daemon dispatches over /run/notify/notify.sock; root units need no
-      # membership, so this grant exists for the owner's own `notify` calls.
+      # Root units need no membership; the grant is for the owner's own calls.
       users.users.${config.currentHost.primaryUser.name}.extraGroups = [ "notify" ];
     };
 }

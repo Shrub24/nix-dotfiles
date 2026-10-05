@@ -12,8 +12,8 @@ _: {
         enable = true;
         users = [ config.currentHost.primaryUser.name ];
       };
-      # ZMK boards (nice!nano, 1d50:615e), ported from Arch's 93-zmk.rules:
-      # keypeek speaks ZMK Studio RPC over the board's USB serial and HID.
+      # ZMK boards (nice!nano, 1d50:615e): keypeek speaks ZMK Studio RPC over the
+      # board's USB serial and HID.
       services.udev.extraRules = ''
         SUBSYSTEMS=="usb", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="615e", MODE:="0666"
         KERNEL=="hidraw*", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="615e", MODE:="0666"

@@ -89,8 +89,7 @@ _: {
         xdg-user-dirs
       ];
 
-      # delta owns jj's pager, diff formatter, and merge tool; nothing overrides
-      # ui.pager or ui.diff-formatter here.
+      # delta owns jj's pager, diff formatter, and merge tool.
       programs.delta = {
         enable = true;
         enableJujutsuIntegration = true;
@@ -104,9 +103,8 @@ _: {
       programs.yazi.enable = true;
       programs.tealdeer.enable = true;
 
-      # Noctalia renders ~/.config/glow/noctalia.json from the live palette; glow
-      # only has to be pointed at it. Without this the template writes a
-      # stylesheet nothing reads.
+      # Noctalia renders glow/noctalia.json; without pointing glow at it the template
+      # writes a stylesheet nothing reads.
       xdg.configFile."glow/glow.yml".text = ''
         style: "${config.xdg.configHome}/glow/noctalia.json"
         mouse: false
@@ -124,11 +122,11 @@ _: {
           };
           ui.editor = "nvim";
           git.push-new-bookmarks = true;
-          # lazyjj has no config file; it reads `lazyjj.*` from jj's config. Match
-          # the formatter delta renders with so both panes agree.
+          # lazyjj has no config file; it reads `lazyjj.*` from jj's config. Match the
+          # formatter delta renders with so both panes agree.
           lazyjj.diff-format = "git";
-          # jjui shells out to jj with JJUI set, so scope delta to that environment
-          # — jj must never page inside a TUI.
+          # jjui shells out to jj with JJUI set, so scope delta to that environment —
+          # jj must never page inside a TUI.
           "--scope" = [
             {
               "--when".environments = [ "JJUI" ];

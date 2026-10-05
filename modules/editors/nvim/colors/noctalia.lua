@@ -1,11 +1,5 @@
--- Noctalia (Material You) colourscheme. The palette is rendered by matugen
--- from the noctalia template into the noctalia cache, base16-nvim owns the
--- syntax/LSP/treesitter/Diff/Telescope groups, and the groups the rest of this
--- config names by hand are set below.
---
--- Self-contained on purpose: configFiles only installs config/{options,keymaps,
--- autocmds}.lua from lua/config/, so anything else in that directory would
--- never reach ~/.config/nvim.
+-- Self-contained on purpose: configFiles installs only config/{options,keymaps,
+-- autocmds}.lua, so other files in lua/config never reach ~/.config/nvim.
 
 local function rgb(hex)
 	local r, g, b = hex:match("#(%x%x)(%x%x)(%x%x)")
@@ -22,9 +16,8 @@ local function blend(fg, bg, alpha)
 	return string.format("#%02x%02x%02x", mix(fr, br), mix(fg_g, bg_g), mix(fb, bb))
 end
 
---- Accent slots, named after the base16 slot they come from. Referenced by
---- lua/plugins/lualine.lua and lua/plugins/buffers.lua as Base16<Name> /
---- Base16Bg<Name>.
+--- Accent slots named after their base16 slot; lualine.lua and buffers.lua use
+--- them as Base16<Name> / Base16Bg<Name>.
 local ACCENTS = {
 	Red = "base08",
 	Orange = "base09",
@@ -88,9 +81,8 @@ local function apply()
 	hi("LuaLineDiffRemoved", { fg = accent.Red })
 end
 
--- The palette lives in the noctalia cache, not the config tree: ~/.config/nvim
--- is installed read-only from the Nix store, so matugen cannot write into it.
--- dofile rather than require because the path is outside the runtimepath.
+-- The palette is not in the config tree (~/.config/nvim is read-only from the
+-- store, so matugen cannot write into it) and is dofile'd, being off the rtp.
 local palette = (vim.env.XDG_CACHE_HOME or (vim.env.HOME .. "/.cache")) .. "/noctalia/nvim-palette.lua"
 local ok, matugen = pcall(dofile, palette)
 if ok and type(matugen) == "table" then
@@ -102,10 +94,8 @@ apply()
 
 vim.g.colors_name = "noctalia"
 
--- matugen rewrites the palette and signals every nvim with SIGUSR1; reloading
--- the colourscheme re-runs apply() against the new one. The rendered module has
--- its own SIGUSR1 handler for its base16 palette and Telescope groups, and both
--- read the same file, so the order they fire in does not matter.
+-- matugen rewrites the palette and SIGUSR1s every nvim, which reloads the
+-- colourscheme; the rendered module handles its own SIGUSR1 off the same file.
 local signal = vim.uv.new_signal()
 signal:start(
 	"sigusr1",

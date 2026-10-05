@@ -5,8 +5,8 @@ _: {
       shellIntegration.enableFishIntegration = true;
 
       # Palette rendered by the noctalia theme template into
-      # ~/.config/kitty/themes/noctalia.conf (modules/desktop/noctalia.nix); the
-      # include below picks it up (kitty reloads includes on SIGUSR1).
+      # ~/.config/kitty/themes/noctalia.conf (modules/desktop/noctalia.nix); the include
+      # below picks it up (kitty reloads includes on SIGUSR1).
       settings = {
         font_family = "Maple Mono NF";
         font_size = 14;
@@ -31,8 +31,8 @@ _: {
       extraConfig = ''
         include themes/noctalia.conf
 
-        # herdr-radar's agent-icon font, mapped by codepoint rather than offered
-        # as a fallback, so the icons resolve whatever the primary font is.
+        # herdr-radar's agent-icon font, mapped by codepoint rather than offered as a
+        # fallback, so the icons resolve whatever the primary font is.
         symbol_map U+E1A0-U+E1B7 Herdr Agent Icons Max
         symbol_map U+E1C0-U+E1C5 Herdr Agent Icons Max
       '';

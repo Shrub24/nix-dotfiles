@@ -1,10 +1,6 @@
-# Plugins the old config used that nixpkgs does not package. Built from pinned
-# GitHub revisions so the versions are reproducible.
-#
-# The in-tree sops module is not here: it is ordinary config Lua at
-# nvim/lua/sops_nvim/init.lua and `require("sops_nvim")` resolves from the
-# config runtimepath. The old spec's `dir = stdpath("config") .. "/lua/sops_nvim"`
-# was a lazy.nvim formality, not a plugin.
+# Plugins nixpkgs does not package, pinned by revision so the versions are
+# reproducible. The in-tree sops module is not one: it is config Lua at
+# nvim/lua/sops_nvim, resolved from the config runtimepath.
 { pkgs }:
 let
   inherit (pkgs.vimUtils) buildVimPlugin;

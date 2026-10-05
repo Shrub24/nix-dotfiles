@@ -26,8 +26,7 @@ _: {
       };
 
       # HM's xdg.portal adds extraPortals to home.packages but not
-      # systemd.user.packages - the store units are invisible to systemd
-      # on non-NixOS (no /etc/profiles/per-user/ fallback).
+      # systemd.user.packages — the store units are invisible to systemd on non-NixOS.
       systemd.user.packages = with pkgs; [
         xdg-desktop-portal
         xdg-desktop-portal-gtk
@@ -38,9 +37,7 @@ _: {
 
       home.packages = [ pkgs.wl-clipboard ];
 
-      # on NixOS UWSM pulls these from the systemd user env via the
-      # NixOS UWSM module; on Arch the imperative ~/.config/uwsm/env still
-      # sources them (hm-session-vars.sh isn't read by Arch's UWSM).
+      # NixOS UWSM pulls these from the systemd user env; Arch's UWSM sources ~/.config/uwsm/env.
       home.sessionVariables = {
         QT_QPA_PLATFORM = "wayland";
         ELECTRON_OZONE_PLATFORM_HINT = "auto";

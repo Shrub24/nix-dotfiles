@@ -14,21 +14,8 @@ in
       ...
     }:
     let
-      # Image preview policy behind pistol's image/* association. The caller
-      # is an fzf preview window, so pane geometry comes from fzf's own
-      # variables and falls back to 80x40 for a bare pistol invocation.
-      #
-      # The rule inside fzf: the kitty graphics protocol is emitted only by
-      # icat's unicode placeholders, and only in a kitty-family terminal
-      # (kitty itself, or a herdr pane — herdr renders the protocol itself
-      # when terminal.kitty_graphics is on, the default). The placeholders
-      # are ordinary text cells, so fzf's repaint erases the image with the
-      # cells that carried it; chafa's kitty output is direct a=T transfer
-      # with no placeholders and no delete, so it would outlive the preview
-      # that created it. If icat is missing or refuses, symbols are rendered
-      # instead. Everywhere outside kitty, chafa's auto format picks what the
-      # terminal advertises — sixel where supported (fzf renders that in
-      # cells), symbols as the last resort.
+      # Image preview: only icat's unicode placeholders survive fzf's repaint (in
+      # kitty-family terminals); elsewhere chafa picks the format, symbols as fallback.
       previewImage = pkgs.writeShellScript "preview-image" ''
         set -o pipefail
 
@@ -39,10 +26,8 @@ in
           test -n "''${KITTY_PID:-}" ||
           test -n "''${KITTY_LISTEN_ON:-}" ||
           test -n "''${HERDR_PANE_ID:-}"; then
-          # --clear drops the previous placement. The trailing reset code
-          # arrives without a newline, which fzf reads as a scroll offset, so
-          # it is folded onto the previous line. Both tricks come from fzf's
-          # own bin/fzf-preview.sh.
+          # --clear drops the previous placement; the trailing reset code arrives
+          # without a newline (fzf reads it as a scroll offset), so it is folded on.
           if ! {
             command -v kitten >/dev/null 2>&1 &&
             kitten icat --clear --transfer-mode=memory --unicode-placeholder \
@@ -101,14 +86,10 @@ in
         sessionVariables = {
           NIX_PATH = "nixpkgs=flake:nixpkgs";
           UV_TOOL_PYTHON_PREFERENCE = "only-managed";
-          # uv materialises venvs by linking out of its cache. clone is reflink,
-          # the only mode that survives a btrfs subvolume boundary — and the
-          # cache and the projects share one filesystem. The default hardlink
-          # silently falls back to a full copy for every venv.
+          # clone (reflink) is the only mode that survives a btrfs subvolume boundary;
+          # the default hardlink silently falls back to a full copy for every venv.
           UV_LINK_MODE = "clone";
-          # Aube's Linux default prefers hardlinks; those cross-subvolume
-          # installs fall back to copies. Explicit clone uses Btrfs reflinks,
-          # matching uv's strategy for project dependencies.
+          # Same cross-subvolume story for Aube; clone uses reflinks, matching uv.
           AUBE_PACKAGE_IMPORT_METHOD = "clone";
           QMD_EMBED_MODEL = "hf://Qwen/Qwen3-Embedding-0.6B-GGUF/Qwen3-Embedding-0.6B-f16.gguf";
           PNPM_HOME = "${config.home.homeDirectory}/.local/share/pnpm";

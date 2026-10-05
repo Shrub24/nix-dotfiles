@@ -1,6 +1,5 @@
-# Web service catalog — single source of truth for localhost web service metadata.
-# Service-local facts only. Public routing, TLS, Cloudflare, and OIDC config live
-# in the homelab repo's web-services.nix, not here.
+# Localhost web service catalog: service-local facts only. Public routing, TLS,
+# Cloudflare and OIDC config live in the homelab repo's web-services.nix.
 {
   lib,
 }:
@@ -53,8 +52,6 @@ let
       port = 8000;
       icon = "si-nixos";
       description = "NixOS options, packages and channels (MCP HTTP)";
-      # MCP has no UI to open; the path below is the endpoint a client POSTs to,
-      # which the sidebar keeps out of the homepage block (see useUiPath).
       mcp.path = "/mcp";
     };
 
@@ -70,7 +67,6 @@ let
 
   # ── Normalization ───────────────────────────────────────────────────
 
-  # Merge a service entry with defaults and derive URLs.
   normalizeService =
     id: svc:
     let
@@ -91,20 +87,17 @@ let
       uiUrl = if uiPath != null then "${baseUrl}${uiPath}" else null;
       healthUrl = if healthPath != null then "${baseUrl}${healthPath}" else null;
       openapiUrl = if openapiPath != null then "${baseUrl}${openapiPath}" else null;
-      # MCP is a protocol endpoint, not a page: a client POSTs to it, so it is
-      # kept out of uiUrl and with it out of the homepage block, which would
-      # otherwise render a link that only errors in a browser.
+      # MCP is a protocol endpoint a client POSTs to, not a page: kept out of
+      # uiUrl, and with it out of the homepage block that would render it.
       mcpUrl = if mcpPath != null then "${baseUrl}${mcpPath}" else null;
       icon = svc.icon or null;
       description = svc.description or null;
     };
 
-  # Normalize all services into a list.
   normalize = catalog: mapAttrsToList normalizeService catalog.services;
 
   # ── Homepage adapter ────────────────────────────────────────────────
 
-  # Render homepage-compatible grouped output from services that have a ui.path.
   toHomepage =
     catalog:
     let

@@ -1,11 +1,8 @@
--- Increment 1: prove the plumbing before porting behaviour.
---   startup plugins resolve, lze drives activation, the nix -> lua info channel
---   works, and treesitter + lsp binaries come from nix with no installer.
 vim.loader.enable()
 
 do
-  -- _G.nixInfo is the nix -> lua channel. Under nix it reads values the wrapper
-  -- baked in; outside nix the fallback returns the supplied default.
+  -- _G.nixInfo: the nix -> lua channel; outside nix the fallback below returns
+  -- the default it is called with.
   local ok
   ok, _G.nixInfo = pcall(require, vim.g.nix_info_plugin_name)
   if not ok then
@@ -76,34 +73,28 @@ require("config.options")
 require("config.keymaps-core") -- LazyVim defaults; own maps override
 require("config.keymaps")
 require("config.autocmds")
--- LazyVim's LSP behaviour: diagnostics, inlay hints, folds and the buffer-local
--- maps every attached server gets.
 require("config.lsp")
 -- Opt-in capture; see lua/config/errorlog.lua. No-op without $NVIM_ERRORLOG.
 require("config.errorlog")
 
 local inline_specs = {
-  -- mini.nvim is configured entirely in lua/plugins/lazyvim-core.lua (icons,
-  -- mock, ai, pairs, move, hipatterns). lze keeps the first spec per name, so
-  -- a second inline spec here would be silently discarded.
+  -- mini.nvim is configured in lua/plugins/lazyvim-core.lua; lze keeps the first
+  -- spec per name, so a second spec here would be silently dropped.
 {
-    -- Started at load because blink's <Tab> chain requires it directly; the old
-    -- spec had `opts` with no lazy trigger, which lazy.nvim also started eagerly.
+    -- blink's <Tab> chain requires it directly, so it loads at startup.
     "sidekick.nvim",
     auto_enable = true,
     after = function()
       require("sidekick").setup({
         cli = {
           watch = true,
-          -- ai.lua disabled only the tmux mux backend.
           mux = { backend = "tmux", enabled = false },
         },
       })
     end,
   },
   {
-    -- LazyVim's editor.inc-rename extra loaded this; `cmd` keeps the :IncRename
-    -- command working without starting the plugin at load.
+    -- From LazyVim's editor.inc-rename extra; `cmd` avoids loading it eagerly.
     "inc-rename.nvim",
     auto_enable = true,
     cmd = { "IncRename" },
@@ -131,10 +122,8 @@ local inline_specs = {
   { "blink-nerdfont.nvim", auto_enable = true, on_require = "blink-nerdfont", after = function() end },
   { "blink-cmp-git", auto_enable = true, on_require = "blink-cmp-git", after = function() end },
   { "blink-ripgrep.nvim", auto_enable = true, on_require = "blink-ripgrep", after = function() end },
-  -- blink-copilot drives copilot.lua, likewise only required on use.
-  -- copilot.lua still needs its own setup: it owns the auth token and the
-  -- suggestion engine, while blink-copilot does the rendering. Leaving its
-  -- own suggestion UI on would double-draw, so it is disabled here.
+  -- copilot.lua owns auth and the suggestion engine, blink-copilot renders, so
+  -- leaving its own suggestion UI on would double-draw.
   {
     "copilot.lua",
     auto_enable = true,
@@ -157,9 +146,8 @@ local inline_specs = {
   { "colorful-menu.nvim", auto_enable = true, on_require = "colorful-menu", after = function() end },
   { "lspkind.nvim", auto_enable = true, on_require = "lspkind", after = function() end },
   {
-    -- Ported from lua/plugins/blink.lua. The old spec listed its sources as
-    -- `dependencies`; under nix they are separate specs in _plugins.nix and
-    -- only the provider wiring lives here.
+    -- Sources are separate specs in _plugins.nix; only the provider wiring
+    -- lives here.
     "blink.cmp",
     auto_enable = true,
     event = "DeferredUIEnter",
@@ -210,7 +198,6 @@ local inline_specs = {
         sources = {
           default = { "lsp", "path", "snippets", "buffer", "copilot", "nerdfont", "git", "ripgrep" },
           providers = {
-            -- copilot-lua supplies ghost text; blink-copilot surfaces it here.
             copilot = {
               name = "copilot",
               module = "blink-copilot",
@@ -276,9 +263,8 @@ vim.cmd.colorscheme("noctalia")
 
 require("sops_nvim").setup()
 
--- Plugin specs live one file per group under lua/plugins/, mirroring the
--- original config's layout. Each returns a list of lze specs. This list grows as
--- each remaining lua/plugins/*.lua is ported.
+-- Plugin specs live one file per group under lua/plugins/, each returning a
+-- list of lze specs.
 local groups = {
   -- LazyVim's core plugin layer first; the user's own groups then override it.
   "plugins.lazyvim-core",

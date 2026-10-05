@@ -43,9 +43,8 @@ writeTextFile {
 
 
     def is_safe_data_entry(name):
-        # Accept any single-component filename of safe characters; the fd-based
-        # ownership/O_NOFOLLOW checks below are the actual security boundary, so
-        # the name only needs to rule out path traversal and dotfiles.
+        # The name check only rules out traversal and dotfiles; the fd-based
+        # ownership and O_NOFOLLOW checks below are the real security boundary.
         return bool(name) and all(c.isalnum() or c in "-_." for c in name) and not name.startswith(".")
 
 

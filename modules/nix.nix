@@ -1,13 +1,11 @@
 { inputs, ... }:
 let
-  # Substitution policy for the non-NixOS host, which nix-fleet's `nix-baseline`
-  # aspect does not cover (it is NixOS-only). The NixOS side takes the fleet's
-  # catalog instead — see flake.modules.nixos.nix.
+  # nix-fleet's nix-baseline is NixOS-only; this is the non-NixOS policy.
   substitutionSettings = {
     "connect-timeout" = 5;
     "stalled-download-timeout" = 30;
     "download-attempts" = 2;
-    "http-connections" = 8;
+    "http-connections" = 50;
     "max-substitution-jobs" = 8;
     # Misses are cheap; the built-in one-hour negative cache is not.
     "narinfo-cache-negative-ttl" = 60;
@@ -28,8 +26,7 @@ in
     }:
     {
       # Prebuilt database as a hash-pinned store path, so nix-locate and
-      # command-not-found never read a locally built index. The import also
-      # supplies `comma-with-db`, which is why plain `comma` is not installed.
+      # command-not-found never read a built index; supplies `comma-with-db`.
       imports = [ inputs.nix-index-database.homeModules.nix-index ];
 
       sops.templates."nix-access-tokens" = {
@@ -89,11 +86,8 @@ in
 
       programs.nh = {
         enable = true;
-        # GC has exactly one owner per host. On the non-NixOS host
-        # (`targets.genericLinux`, where nothing system-scoped can collect the
-        # store) this user timer (`nh clean user`) is it; on NixOS the fleet's
-        # `nh-gc` capability, selected by flake.modules.nixos.nix, runs
-        # `nh clean all` as root, which covers user generations too.
+        # GC has one owner per host: the user timer here, the fleet's root
+        # `nh-gc` capability on NixOS.
         clean = {
           enable = config.targets.genericLinux.enable;
           dates = "weekly";
@@ -148,12 +142,8 @@ in
         "auto-optimise-store" = true;
         "always-allow-substitutes" = true;
         "builders-use-substitutes" = true;
-        # Local builds are the overflow path, not the default: the build hook
-        # prefers any scheduled builder with a free slot, so local work happens
-        # when home-forge's budget is spent. These caps keep that overflow from
-        # saturating an interactive desktop — `cores` bounds each build's own
-        # parallelism, which is what one long build would otherwise take from
-        # the whole machine.
+        # Local builds are the overflow path; `cores` bounds each build's own
+        # parallelism so one long build cannot take the whole machine.
         "max-jobs" = 4;
         "cores" = 4;
         "keep-derivations" = true;
@@ -164,11 +154,8 @@ in
         "nix-path" = [ "nixpkgs=flake:nixpkgs" ];
       };
 
-      # Builds are children of the daemon on this host (`build-users-group` is
-      # empty), so the unit's cgroup is what bounds them: batch CPU and idle I/O
-      # scheduling yield to interactive work, and the weight and memory bounds
-      # only bite under contention. system-manager has no `nix.daemon*Policy`
-      # options, so they are set on the unit directly.
+      # Builds are children of the daemon here, so the unit's cgroup bounds them;
+      # system-manager has no `nix.daemon*Policy` options.
       systemd.services.nix-daemon.serviceConfig = {
         CPUSchedulingPolicy = "batch";
         IOSchedulingClass = "idle";
@@ -182,32 +169,25 @@ in
   flake.modules.nixos.nix =
     { config, ... }:
     {
-      # nix-fleet owns the daemon baseline (substitution catalog + tuning) and
-      # the GC unit; this aspect selects them and binds what is host-specific.
-      # The Home Manager timer is off on NixOS — the root unit below is the
-      # host's single GC owner (see flake.modules.homeManager.nix above).
+      # nix-fleet owns the daemon baseline and the GC unit; this selects them and
+      # binds what is host-specific (identity, scheduling, evaluation knobs).
       imports = [
         inputs.nix-fleet.modules.nixos.nix-baseline
         inputs.nix-fleet.modules.nixos.nix-gc
       ];
 
-      # Selection is enablement: the fleet aspects declare no `enable`, so
-      # importing them is what turns them on.
+      # Importing is the enable — the fleet aspects declare no `enable`.
       services.nix-gc = {
         dates = "weekly";
         extraArgs = "--keep-since 7d";
       };
 
-      # Only what the fleet baseline does not own: identity, scheduling and
-      # evaluation knobs specific to these workstations.
       nix.settings = {
         # nixpkgs already lists "root" and this list concatenates, so naming it
         # again renders a duplicate.
         "trusted-users" = [ config.currentHost.primaryUser.name ];
-        # Local builds are the overflow path, not the default: the build hook
-        # prefers any scheduled builder with a free slot, so this budget only
-        # bounds what the workstation adds when home-forge is busy. `cores`
-        # keeps one long build from taking the whole machine.
+        # Local builds are the overflow path; `cores` keeps one long build from
+        # taking the whole machine.
         "max-jobs" = 4;
         "cores" = 4;
         "keep-derivations" = true;
@@ -216,9 +196,8 @@ in
         "nix-path" = [ "nixpkgs=flake:nixpkgs" ];
       };
 
-      # These are interactive machines: builds are children of the daemon, so
-      # batch CPU and idle I/O scheduling plus a CPU weight and memory bound
-      # let a session keep the machine responsive while a build runs.
+      # These are interactive machines: batch CPU and idle I/O scheduling plus a
+      # CPU weight and memory bound keep a session responsive while a build runs.
       nix.daemonCPUSchedPolicy = "batch";
       nix.daemonIOSchedClass = "idle";
       systemd.services.nix-daemon.serviceConfig = {

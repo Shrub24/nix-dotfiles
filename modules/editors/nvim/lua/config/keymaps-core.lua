@@ -131,10 +131,8 @@ map("n", "[e", diagnostic_goto(false, "ERROR"), { desc = "Prev Error" })
 map("n", "]w", diagnostic_goto(true, "WARN"), { desc = "Next Warning" })
 map("n", "[w", diagnostic_goto(false, "WARN"), { desc = "Prev Warning" })
 
--- autoformat state: mirrors LazyVim.format.enabled/enable (g/b variables), so
--- conform can honour it. <leader>uf toggles globally, <leader>uF per buffer.
--- Deferred: this file loads before snacks' plugin spec activates, and Snacks is
--- a lazy field on _G, not a module — index it lazily inside the callbacks.
+-- Mirrors LazyVim.format's g/b variables so conform honours the toggle:
+-- <leader>uf globally, <leader>uF per buffer.
 local function autoformat_enabled(buf)
 	buf = (buf == nil or buf == 0) and vim.api.nvim_get_current_buf() or buf
 	local baf = vim.b[buf].autoformat
@@ -143,10 +141,8 @@ local function autoformat_enabled(buf)
 	end
 	return vim.g.autoformat == nil or vim.g.autoformat
 end
--- All Snacks.toggle.* registrations, deferred: this file loads before the
--- snacks plugin spec runs, and Snacks is a lazy field on _G (set by
--- snacks.init on first access), not a requireable module. UIEnter fires when
--- the first UI attaches, which headless sessions also get.
+-- Snacks.toggle.* waits for UIEnter: this file loads before the snacks spec,
+-- and Snacks is a lazy _G field (set on first access), not a requireable module.
 vim.api.nvim_create_autocmd("UIEnter", {
   once = true,
   callback = function()
@@ -270,8 +266,7 @@ map("n", "<leader><tab>d", "<cmd>tabclose<cr>", { desc = "Close Tab" })
 map("n", "<leader><tab>[", "<cmd>tabprevious<cr>", { desc = "Previous Tab" })
 
 -- lua
--- LazyVim's spec carried `ft = "lua"` (a lazy.nvim keys option its
--- safe_keymap_set knew how to consume); vim.keymap.set does not, so the
+-- LazyVim's `ft = "lua"` keys option has no vim.keymap.set equivalent, so the
 -- buffer-local scoping is done with a FileType autocmd instead.
 vim.api.nvim_create_autocmd("FileType", {
 	pattern = "lua",

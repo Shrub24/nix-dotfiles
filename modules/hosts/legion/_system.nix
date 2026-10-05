@@ -3,8 +3,7 @@ _: {
   nixpkgs.hostPlatform = "x86_64-linux";
   system-manager.allowAnyDistro = true;
 
-  # Machine-specific boot: this disk's dracut drop-in and the Limine/snapper conf
-  # naming this root subvolume. No shared aspect can own either.
+  # Machine-specific: this disk's dracut drop-in and the Limine/snapper conf.
   environment.etc."dracut.conf.d/10-optimise.conf".text = ''
     reproducible="yes"
     hostonly="yes"
@@ -14,7 +13,7 @@ _: {
   '';
 
   # Matches the live file (DRACUT_FALLBACK deliberately absent); replaceExisting
-  # backs the original up before the first takeover.
+  # backs the original up on first takeover.
   environment.etc."default/limine" = {
     replaceExisting = true;
     text = ''

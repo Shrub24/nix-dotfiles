@@ -1,14 +1,11 @@
 _: {
-  # Native module rather than a hand-setcap'd package: programs.wireshark
-  # creates the `wireshark` group and wraps dumpcap with
-  # cap_net_raw,cap_net_admin for that group, so capture works unprivileged and
-  # survives a package bump.
+  # Native module wraps dumpcap with cap_net_raw,cap_net_admin so capture works unprivileged.
   flake.modules.nixos.wireshark =
     { config, pkgs, ... }:
     {
       programs.wireshark = {
         enable = true;
-        # Upstream's default is wireshark-cli; the GUI is the point here.
+        # Default is wireshark-cli; the GUI is the point.
         package = pkgs.wireshark;
       };
 

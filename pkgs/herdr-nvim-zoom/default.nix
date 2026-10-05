@@ -14,10 +14,8 @@ writeShellApplication {
   ];
 
   text = ''
-    # Toggle a full-screen (zoomed) herdr-nvim sidebar pane in the focused
-    # workspace. Resolve everything from the pane list — herdr's keybind
-    # shell commands run without HERDR_PANE_ID, so --current is
-    # unavailable; the sidebar pane is identified by its manifest title.
+    # Keybind scripts run without HERDR_PANE_ID, so --current is unavailable:
+    # both panes are resolved from `herdr pane list`, the sidebar by its title.
     focused=$(herdr pane list | jq -r '
       .result.panes
       | map(select(.focused))[0]

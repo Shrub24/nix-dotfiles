@@ -1,14 +1,6 @@
 _: {
-  # UoM GlobalProtect. The published install guide ships the proprietary Palo
-  # Alto agent, which is not packaged on NixOS; openconnect's own GP stack is —
-  # `openconnect --protocols` lists `gp` ("Compatible with Palo Alto Networks
-  # (PAN) GlobalProtect SSL VPN") and the NetworkManager plugin we already
-  # install advertises the same, with `protocol` as a settable data key. So the
-  # connection is a declarative NetworkManager profile and nothing more: the
-  # portal and protocol are configuration, the Okta hand-off is the browser's.
-  #
-  # On Arch this profile is not in play — NetworkManager there is Arch's own,
-  # and the connection is set up imperatively.
+  # The official Palo Alto agent is unpackaged on NixOS; openconnect's `gp`
+  # protocol backs this declarative profile. On Arch the profile is imperative.
   flake.modules.nixos.globalprotect = _: {
     networking.networkmanager.ensureProfiles.profiles.globalprotect = {
       connection = {

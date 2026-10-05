@@ -11,9 +11,8 @@ _: {
         escapeTime = 0;
 
         extraConfig = ''
-          # Noctalia owns this file (regenerated on every palette change). The path
-          # is absolute because tmux does not expand environment variables in
-          # source-file arguments.
+          # Noctalia regenerates this file on palette change. Absolute path: tmux does
+          # not expand environment variables in source-file arguments.
           source-file -q "${config.xdg.configHome}/tmux/themes/noctalia.conf"
 
           set -g default-terminal "tmux-256color"

@@ -1,11 +1,8 @@
 # Closure notes: docs/plugins.md
 { pkgs, custom }:
 let
-  # Three packages in this closure are flagged unfree in nixpkgs:
-  #   scope.nvim               auto-generated metadata, licence undetermined
-  #   copilot-language-server  Microsoft binary, pulled in by copilot-lualine
-  #   harpoon-lualine          same undetermined-metadata case as scope.nvim
-  # Accept exactly those rather than enabling allowUnfree globally.
+  # Narrow unfree allowlist: scope.nvim and harpoon-lualine have undetermined
+  # licences; copilot-language-server is Microsoft's, via copilot-lualine.
   unfreeAllowed = [
     "scope.nvim"
     "copilot-language-server"
@@ -50,16 +47,16 @@ with pkgs'.vimPlugins;
     lazy = false;
     data = [ base16-nvim ];
   };
-  # ai.lua only turned off the tmux mux backend; the plugin itself is enabled and
-  # blink's <Tab> chain calls sidekick's next-edit-suggestion directly.
+  # ai.lua disables only sidekick's tmux backend; blink's <Tab> chain calls
+  # next-edit-suggestion, so the plugin is startup.
   ai = {
     lazy = false;
     data = [ sidekick-nvim ];
   };
 
   # --- optional, activated by lze ------------------------------------------
-  # Grammars are listed explicitly. withAllGrammars pulled 320 parsers (251 MB),
-  # almost all for languages this config never opens.
+  # Grammars listed explicitly: withAllGrammars pulls 320 parsers (251 MB), most
+  # for languages this config never opens.
   treesitter = {
     lazy = true;
     data = [
@@ -130,9 +127,8 @@ with pkgs'.vimPlugins;
       friendly-snippets
     ];
   };
-  # Declared explicitly rather than left as a transitive dependency of
-  # copilot-lualine. copilot-lua supplies inline ghost text; blink-copilot
-  # surfaces it as a completion source.
+  # Explicit, not transitive via copilot-lualine: copilot-lua supplies the ghost
+  # text, blink-copilot surfaces it as a blink completion source.
   copilot = {
     lazy = true;
     data = [
@@ -173,8 +169,7 @@ with pkgs'.vimPlugins;
       marks-nvim
     ];
   };
-  # Both arrived via LazyVim extras (editor.harpoon2, editor.aerial), not from
-  # the config's own specs. lualine's centre component needs harpoon-lualine.
+  # lualine's centre component needs harpoon-lualine.
   navigation-extras = {
     lazy = true;
     data = [
@@ -187,7 +182,6 @@ with pkgs'.vimPlugins;
     lazy = true;
     data = [
       oil-nvim
-      # yazi-nvim removed; the user disabled it and oil is the file manager.
     ];
   };
   # mini.nvim is a monorepo: ai, bracketed, hipatterns, icons, move, pairs,
@@ -208,8 +202,8 @@ with pkgs'.vimPlugins;
     lazy = true;
     data = [
       rainbow-delimiters-nvim
-      # vim-illuminate removed; superseded by snacks.words.
-      # unimpaired-nvim removed; superseded by mini.bracketed.
+      # snacks.words supersedes vim-illuminate, mini.bracketed supersedes
+      # unimpaired-nvim.
     ];
   };
   custom-plugins = {
@@ -239,14 +233,11 @@ with pkgs'.vimPlugins;
     lazy = true;
     data = [
       nvim-dap-view
-      # nvim-dap-ui removed; superseded by nvim-dap-view.
     ];
   };
 
-  # --- restored after the closure rewrite dropped them --------------------
-  # These were in the old lazy-lock.json and had lze specs or LazyVim-extra
-  # keymaps pointing at them, but the rewritten closure omitted their nix specs.
-  # which-key was the visible one: its lze spec existed, the plugin did not.
+  # --- plugins referenced by lze specs in the Lua tree --------------------
+  # Dropping one leaves a spec with no plugin behind it.
   keys = {
     lazy = true;
     data = [

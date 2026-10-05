@@ -5,8 +5,8 @@ _: {
 
       server.enable = true;
 
-      # The noctalia theme template renders ~/.config/foot/themes/noctalia and
-      # its hook adds this include to foot.ini (modules/desktop/noctalia.nix).
+      # Palette rendered by the noctalia theme template into ~/.config/foot/themes/noctalia
+      # (modules/desktop/noctalia.nix); foot.ini declares the include, no hook.
       settings.main.include = "~/.config/foot/themes/noctalia";
     };
   };

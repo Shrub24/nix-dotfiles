@@ -43,8 +43,8 @@ _: {
   flake.modules.nixos.syncthing =
     { config, ... }:
     let
-      # Both the account and its home come from the projection; the NixOS eval
-      # has no `home.*` options of its own.
+      # Both the account and its home come from the projection; the NixOS eval has
+      # no `home.*` options.
       primaryUser = config.currentHost.primaryUser;
       home = config.users.users.${primaryUser.name}.home;
     in

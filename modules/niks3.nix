@@ -4,8 +4,7 @@
   ...
 }:
 let
-  # Resolved at the flake-parts level from the fleet's canonical service
-  # inventory, closed over by the HM and NixOS modules.
+  # Resolved at the flake-parts level from the fleet's canonical service inventory.
   niks3ServerUrl = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
     service = "niks3-write";
     endpoint = "api";
@@ -14,10 +13,8 @@ let
 in
 {
   flake.modules.nixos.niks3 = _: {
-    # Closure upload to a remote cache. nix-fleet owns the mechanism — the
-    # upstream post-build-hook module, the sops secret and its rotation
-    # restart, the socket path; this binds the server URL and where the token
-    # lives. sops-nix is a documented consumer requirement, not a choice.
+    # nix-fleet owns the mechanism; this binds the server URL and the token.
+    # sops-nix is the fleet aspect's documented consumer requirement, not a choice.
     imports = [
       inputs.nix-fleet.modules.nixos.niks3-publisher
       inputs.sops-nix.nixosModules.sops

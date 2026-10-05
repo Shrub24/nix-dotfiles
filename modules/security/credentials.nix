@@ -1,14 +1,5 @@
-# Shared user-scoped credentials, one secret file per consumer group so a host
-# decrypts only what its selected aspects consume. Each entry needs only the
-# file and the YAML key: format defaults to yaml, path to
-# ~/.config/sops-nix/secrets/<name>, owner/mode to the invoking user at 0400.
-#
-# Consumers read these two ways. Where the tool has a native key mechanism it
-# points at the decrypted secret path — pi providers and pi-web-access use
-# `!cat <path>`, MCP headers `!command`, magic-context `{file:...}` — so the
-# value never enters the environment. Everything else is exported by the
-# `agent-env.env` template below, and only for keys whose consumer can read
-# nothing but the environment.
+# One secret file per consumer group; each entry needs only the file and the
+# YAML key (sops-nix defaults: yaml, ~/.config/sops-nix/secrets/<name>, 0400).
 _: {
   flake.modules.homeManager.credentials =
     { config, ... }:
@@ -61,9 +52,7 @@ _: {
             SOURCEGRAPH_TOKEN = "sourcegraph_token";
           };
 
-        # Environment for tools that cannot be pointed at a file. Every line
-        # names its env-only consumer; delete a line when that consumer gains a
-        # key mechanism.
+        # Env-only consumers; drop a line once its consumer gains a key mechanism.
         templates."agent-env.env".content = ''
           OMNIROUTE_API_KEY=${config.sops.placeholder.OMNIROUTE_API_KEY}
           NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}

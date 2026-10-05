@@ -20,10 +20,8 @@ write("SESSION", "--- pid " .. vim.fn.getpid() .. " cwd " .. vim.fn.getcwd() .. 
 
 local levels = { [0] = "TRACE", [1] = "DEBUG", [2] = "INFO", [3] = "WARN", [4] = "ERROR", [5] = "ERROR" }
 
--- Plugins replace vim.notify during their own setup (snacks is a startup
--- plugin and does exactly this), so a single wrap at init would be silently
--- undone. Capture whatever is current each time, and re-install after the
--- events that follow plugin setup.
+-- Plugins replace vim.notify during their setup (snacks does), so a single
+-- wrap at init would be silently undone; re-install after each setup event.
 local wrapped
 local function install_notify()
   local current = vim.notify
@@ -44,8 +42,7 @@ vim.api.nvim_create_autocmd({ "DeferredUIEnter", "UIEnter", "User" }, {
   callback = install_notify,
 })
 
--- The message history includes neovim's own errors and everything echoed to
--- the cmdline, which vim.notify never sees.
+-- vim.notify never sees neovim's own errors or cmdline echoes; `messages` does.
 local function dump_messages(label)
   local ok, res = pcall(vim.api.nvim_exec2, "messages", { output = true })
   if ok and res.output and res.output ~= "" then
@@ -61,8 +58,7 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
   end,
 })
 
--- Pulling the window out of focus is the point at which a hung or warning
--- dialog is most likely and most useful to have on disk already.
+-- FocusLost: the point where a hung or warning dialog is most likely to exist.
 vim.api.nvim_create_autocmd("FocusLost", {
   group = "ErrorLog",
   callback = function()

@@ -9,18 +9,16 @@ stdenvNoCC.mkDerivation {
   pname = "codexbar";
   inherit version src;
 
-  # nixpkgs' codexbar is macOS-only; the project ships a Linux CLI tarball per release.
+  # nixpkgs' codexbar is macOS-only; upstream's Linux tarball has no top-level dir.
   sourceRoot = ".";
 
   installPhase = ''
     runHook preInstall
     install -Dm755 CodexBarCLI $out/bin/codexbar
-    # The provider plugins are JavaScript shipped as a SwiftPM resource bundle,
-    # and the binary resolves it next to itself (executableDirectory), so the
-    # bundle has to land in bin/ — without it every provider reports
-    # "CodexBarCore resource bundle is missing next to the executable".
+    # Must land in bin/: the binary resolves this SwiftPM bundle next to itself,
+    # else providers fail with "CodexBarCore resource bundle is missing".
     cp -r CodexBar_CodexBarCore.bundle "$out/bin/"
-    # Sibling of the binary too; read for the version string.
+    # Beside the binary too: the version string is read from there.
     install -Dm644 VERSION "$out/bin/VERSION"
     runHook postInstall
   '';

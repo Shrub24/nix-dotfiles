@@ -1,6 +1,5 @@
--- Ported from lua/plugins/dap.lua. nvim-dap itself is a nix dependency of
--- nvim-dap-view; its `<leader>de` keymap lives in init.lua's inline nvim-dap
--- spec, so it is only created once dap is loaded.
+-- nvim-dap arrives as a nix dependency of nvim-dap-view; its `<leader>de` keymap
+-- lives in init.lua's inline nvim-dap spec, so it only exists once dap loads.
 return {
   {
     "nvim-dap-view",
@@ -13,7 +12,6 @@ return {
       },
     },
     after = function()
-      -- Ported verbatim, including the type annotations.
       ---@module 'dap-view'
       ---@type dapview.Config
       local opts = {

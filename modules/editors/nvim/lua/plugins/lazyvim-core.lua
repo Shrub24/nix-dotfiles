@@ -139,8 +139,6 @@ return {
 			},
 		},
 		after = function()
-			-- The `vim.o.filetype == "lazy"` branch in upstream's config is
-			-- lazy.nvim-specific and dropped.
 			require("noice").setup({
 				lsp = {
 					override = {
@@ -258,18 +256,15 @@ return {
 		end,
 	},
 
-	-- mini.nvim: the monorepo's modules are set up individually. mini.icons and
-	-- mini.ai are configured in the inline spec in init.lua (which mocks
-	-- nvim-web-devicons for everything else); this spec carries upstream's
-	-- mini.pairs opts, which the inline spec did not.
+	-- mini.nvim modules are set up individually: mini.icons and mini.ai live in
+	-- the inline spec in init.lua, and the mini.pairs opts are carried here.
 	{
 		"mini.nvim",
 		auto_enable = true,
 		event = "DeferredUIEnter",
 		after = function()
-			-- LazyVim.mini.pairs(opts), inlined. Skips autopair when the cursor
-			-- is inside a treesitter string node or the next char closes an
-			-- unbalanced pair.
+			-- mini.pairs: skips autopair inside a treesitter string node or when the
+			-- next char closes an unbalanced pair.
 			require("mini.pairs").setup({
 				modes = { insert = true, command = true, terminal = false },
 				skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
@@ -280,13 +275,10 @@ return {
 			require("mini.move").setup({})
 			require("mini.hipatterns").setup({})
 
-			-- Carried over from the (now-discarded) duplicate inline mini spec in
-			-- init.lua: lze keeps the FIRST spec registered for a name and drops
-			-- later ones as duplicates, so this after callback is the only one
-			-- that runs for mini.nvim.
+			-- lze keeps the first spec per name, so this is mini.nvim's only after
+			-- callback.
 			require("mini.icons").setup()
 			require("mini.icons").mock_nvim_web_devicons()
-			-- LazyVim.mini.ai(opts), inlined, with LazyVim.mini.ai_buffer replaced
 			local ai = require("mini.ai")
 			ai.setup({
 				n_lines = 500,
@@ -316,7 +308,7 @@ return {
 		end,
 	},
 
-	-- dial.nvim. The four expr maps below carry LazyVim's editor.dial extra.
+	-- dial.nvim: the four expr maps below come from LazyVim's editor.dial extra.
 	{
 		"dial.nvim",
 		auto_enable = true,
@@ -328,8 +320,7 @@ return {
 		},
 	},
 
-	-- yanky.nvim. Ported from LazyVim's coding.yanky extra; the history picker
-	-- map goes straight to Snacks (the config's only picker).
+	-- yanky.nvim, from LazyVim's coding.yanky extra; the history picker uses Snacks.
 	{
 		"yanky.nvim",
 		auto_enable = true,
@@ -371,7 +362,6 @@ return {
 		end,
 	},
 
-	-- conform.nvim: LazyVim's <leader>cF map for injected languages. The user's
-	-- lsp.lua already carries conform.setup with their formatters_by_ft, so no
-	-- opts are duplicated here.
+	-- conform.nvim: LazyVim's <leader>cF map for injected languages only; lsp.lua
+	-- carries conform.setup, so no opts are duplicated here.
 }

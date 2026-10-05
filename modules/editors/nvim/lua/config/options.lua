@@ -1,6 +1,3 @@
--- Editor options. Ported from the LazyVim config; the only change is dropping
--- the header that referenced LazyVim's own defaults.
-
 -- Centralize swap, backup and undo files.
 local state_dir = vim.fn.stdpath("state") .. "/"
 

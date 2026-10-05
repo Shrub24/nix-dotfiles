@@ -1,10 +1,5 @@
 _: {
   flake.modules.homeManager.defaults = _: {
-    # Desktop-wide default application associations, as desktop file IDs.
-    # Reconciled with the live ~/.config/mimeapps.list on 2026-09-14: the browser
-    # is Firefox there, so Firefox wins here too; Brave Origin keeps only the
-    # chrome-scheme fallback. Telegram and Bruno desktop files do not exist on
-    # this host, so their scheme handlers are not declared.
     xdg.mimeApps = {
       enable = true;
 
@@ -27,8 +22,7 @@ _: {
         "x-scheme-handler/discord" = [ "vesktop.desktop" ];
         "x-scheme-handler/geo" = [ "google-maps-geo-handler.desktop" ];
 
-        # nvim is a pacman package (/usr/bin/nvim) whose desktop file lives in
-        # /usr/share/applications — outside Nix, so referenced, not owned.
+        # nvim is a pacman package; its desktop file lives outside Nix, so referenced, not owned.
         "text/plain" = [ "nvim.desktop" ];
 
         "application/pdf" = [ "okularApplication_pdf.desktop" ];

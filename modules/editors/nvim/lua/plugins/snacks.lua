@@ -1,11 +1,3 @@
--- Ported from lua/plugins/snacks.lua.
---
--- The dashboard's four `LazyVim.pick*` action strings became direct
--- Snacks.picker calls — the only LazyVim API use in the whole config. Every
--- other option table is verbatim.
---
--- The inline snacks spec in init.lua is replaced by this file; `<leader>ga`
--- moved here with it.
 return {
   {
     "snacks.nvim",
@@ -43,22 +35,11 @@ return {
         lazygit = { enabled = true },
         bigfile = { enabled = true },
         dashboard = {
-          -- Off for now. snacks merges its `defaults.sections` (which ends with
-          -- { section = "startup" }) into whatever this table supplies, and that
-          -- section hardcodes require("lazy.stats") — lazy.nvim's stats module,
-          -- which nothing here provides. Supplying a shorter `sections` list does
-          -- not remove it: list values merge by index.
-          --
-          -- Re-enable with { section = "startup", enabled = false } as the third
-          -- entry once the surrounding `opts.config` nesting is understood. As
-          -- written, `center`/`keys`/`sections` all sit under dashboard.opts.config,
-          -- while snacks reads them as direct children of the dashboard config.
+          -- off because snacks merges `sections` by index, so its default
+          -- trailing "startup" section (require("lazy.stats")) cannot be dropped.
           enabled = false,
           opts = {
             config = {
-              -- snacks' default sections end with { section = "startup" }, which
-              -- calls require("lazy.stats") — lazy.nvim's stats module. Nothing
-              -- here provides it, so the section errors on every UIEnter.
               sections = {
                 { section = "header" },
                 { section = "keys", gap = 1, padding = 1 },
@@ -154,9 +135,9 @@ return {
           enabled = true,
           grep = { follow = true },
           previewers = {
-            max_size = 1024 * 1024, -- 1MB
-            max_line_length = 500, -- max line length
-            ft = "txt", ---@type string? filetype for highlighting. Use `nil` for auto detect
+            max_size = 1024 * 1024,
+            max_line_length = 500,
+            ft = "txt",
           },
         },
         notifier = { enabled = true },

@@ -5,9 +5,8 @@
   zip,
 }:
 {
-  # Upstream's bat hook also rewrites ~/.config/bat/config to select the theme.
-  # That file is Nix-rendered here and the selection lives in the BAT_THEME
-  # session variable, so only the cache rebuild is left.
+  # Upstream's bat hook also rewrites ~/.config/bat/config, which is Nix-rendered
+  # here (theme comes from BAT_THEME), so only the cache rebuild is left.
   bat = writeShellApplication {
     name = "noctalia-template-bat";
     runtimeInputs = [ bat ];
@@ -16,10 +15,8 @@
     '';
   };
 
-  # Run a template's own apply.sh from a writable copy. Upstream's libreoffice
-  # hook assembles its .oxt inside its own directory, which is read-only in the
-  # store; the script resolves its static files relative to its own location, so
-  # staging the directory carries them along.
+  # apply.sh runs from a writable copy: upstream's libreoffice hook assembles its
+  # .oxt inside the template dir, which is read-only in the store.
   stage = writeShellApplication {
     name = "noctalia-template-stage";
     runtimeInputs = [

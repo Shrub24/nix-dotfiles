@@ -113,9 +113,8 @@ _: {
               [[ ! -f ~/.config/zshrc/.p10k.zsh ]] || source ~/.config/zshrc/.p10k.zsh
             ''
             (lib.mkOrder 1500 ''
-              # Noctalia renders the fzf palette into this file on every theme
-              # change; sourcing it appends --color flags, which win over the
-              # FZF_DEFAULT_OPTS exported by programs.fzf.
+              # Noctalia renders the fzf palette into this file on every theme change;
+              # sourcing it appends --color flags, which win over programs.fzf's defaults.
               [[ -r "''${XDG_CONFIG_HOME:-$HOME/.config}/fzf/themes/noctalia.sh" ]] \
                 && source "''${XDG_CONFIG_HOME:-$HOME/.config}/fzf/themes/noctalia.sh"
             '')

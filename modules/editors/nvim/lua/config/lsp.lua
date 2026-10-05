@@ -1,7 +1,6 @@
 -- LazyVim's LSP behaviour layer (maps, diagnostics, hints, folds) without LazyVim.
 -- Port notes + deviations: docs/lsp.md
 
--- LazyVim.lsp.action[kind]: apply the first code action of that kind.
 local function code_action(kind)
 	vim.lsp.buf.code_action({
 		apply = true,
@@ -12,8 +11,6 @@ local function code_action(kind)
 	})
 end
 
--- LazyVim.lsp.code_actions(filter): every code action kind the servers on the buffer
--- advertise, statically or through dynamic registration.
 local function code_actions(filter)
 	local kinds = {}
 	local seen = {}
@@ -56,8 +53,7 @@ local function set_default(option, value)
 	return true
 end
 
--- LazyVim's servers["*"].keys: lhs, mode and desc verbatim. LazyVim writes each
--- entry positionally (lhs first, rhs second); they are named here.
+-- LazyVim's servers["*"].keys, verbatim (written positionally upstream).
 local keys = {
 	{ lhs = "<leader>cl", rhs = function() Snacks.picker.lsp_config() end, desc = "Lsp Info" },
 	{ lhs = "gd", rhs = vim.lsp.buf.definition, desc = "Goto Definition", has = "definition" },
@@ -151,8 +147,8 @@ local keys = {
 	},
 }
 
--- LazyVim's servers["*"]: capabilities for all servers, plus the keys above kept on the
--- config so apply_keys() and `:lua vim.lsp.config["*"].keys` share one source of truth.
+-- Capabilities for all servers, with the keys above on the config so apply_keys()
+-- and `:lua vim.lsp.config["*"].keys` share one source.
 vim.lsp.config("*", {
 	capabilities = {
 		workspace = {
@@ -185,11 +181,10 @@ vim.diagnostic.config({
 	},
 })
 
--- LazyVim's inlay_hints.exclude.
 local inlay_hints_exclude = { "vue" }
 
--- A `has` name resolves to an LSP method, as LazyVim did in
--- lazyvim.plugins.lsp.keymaps: "definition" -> "textDocument/definition".
+-- A `has` name resolves to an LSP method, as upstream did: "definition" ->
+-- "textDocument/definition".
 local function method_supported(buf, has)
 	local methods = type(has) == "string" and { has } or has
 	for _, method in ipairs(methods) do
@@ -231,7 +226,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
 		apply_keys(buf)
 
-		-- inlay_hints.enabled = true
 		if
 			client
 			and client:supports_method("textDocument/inlayHint")
@@ -241,7 +235,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
 			vim.lsp.inlay_hint.enable(true, { bufnr = buf })
 		end
 
-		-- folds.enabled = true
 		if client and client:supports_method("textDocument/foldingRange") then
 			if set_default("foldmethod", "expr") then
 				set_default("foldexpr", "v:lua.vim.lsp.foldexpr()")

@@ -1,9 +1,5 @@
-# Hardware policy for the desktop. Disko owns the install target — the ESP, the
-# LUKS container and the root subvolumes declared in _disko.nix — and renders
-# their `fileSystems` and `boot.initrd.luks.devices`, so this file must not
-# declare a root-disk mount. What it declares instead is what no layer
-# provisions: the data disk's own mounts, derived from _storage.nix, and the
-# Windows-shared NTFS volume.
+# What no layer provisions: the data disk's mounts (from _storage.nix) and
+# the Windows-shared NTFS volume. Disko renders root mounts — do not add one.
 { primaryUser }:
 { config, ... }:
 let
@@ -15,8 +11,7 @@ let
   };
 in
 {
-  # UEFI + systemd-boot. Disko creates the ESP at the head of the Samsung disk
-  # and declares its mount; which bootloader manages it is still host policy.
+  # UEFI + systemd-boot; disko creates the ESP and its mount.
   boot.loader.systemd-boot = {
     enable = true;
     configurationLimit = 20; # match snapper retention
@@ -24,7 +19,6 @@ in
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot";
 
-  # Kernel modules: stock + btrfs + nvme + intel i915 + nvidia + iwlwifi.
   boot.initrd.availableKernelModules = [
     "nvme"
     "xhci_pci"
@@ -47,8 +41,7 @@ in
   hardware.enableRedistributableFirmware = true;
   hardware.i2c.enable = true;
 
-  # Home and bulk data live on the data disk, whose UUID and subvolume names
-  # _storage.nix owns; the root install changes nothing about that disk.
+  # Data-disk mounts, derived from _storage.nix.
   fileSystems."/home" = btrfsOf dataDisk.homeSubvol dataDisk.uuid dataDisk.commonOptions;
 
   fileSystems."/data" = btrfsOf dataDisk.dataSubvol dataDisk.uuid dataDisk.commonOptions;
@@ -67,7 +60,7 @@ in
     ];
   };
 
-  # zram swap (31G on 32G RAM - matches current Arch setup).
+  # zram swap (31G on 32G RAM).
   zramSwap = {
     enable = true;
     memoryPercent = 100;
@@ -76,15 +69,14 @@ in
   # CPU: 13th Gen Intel i7-13700H.
   hardware.cpu.intel.updateMicrocode = true;
 
-  # Hybrid graphics: Intel Iris Xe (iGPU) + NVIDIA RTX 4060 Max-Q (dGPU).
-  # Prime offload mode: iGPU renders by default; dGPU on demand via
-  # `nvidia-offload <cmd>`.
+  # Hybrid Intel Iris Xe + NVIDIA RTX 4060 Max-Q; Prime offload renders on
+  # the iGPU and exposes `nvidia-offload <cmd>` for the dGPU.
   services.xserver.videoDrivers = [ "nvidia" ];
 
   # Open module: reclocking concerns that kept this proprietary are obsolete on Ada.
   hardware.nvidia = {
     modesetting.enable = true;
-    powerManagement.enable = true; # important for laptop power states
+    powerManagement.enable = true;
     powerManagement.finegrained = true; # RTX 4060 supports fine-grained
     open = true;
     package = config.boot.kernelPackages.nvidiaPackages.stable;

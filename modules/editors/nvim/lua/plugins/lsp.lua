@@ -1,15 +1,5 @@
--- Ported from lua/plugins/lsp.lua. LazyVim resolved LSP servers from PATH and
--- started those listed under opts.servers; without LazyVim, `vim.lsp.enable`
--- does that job. basedpyright and ruff were enabled in the source; lua_ls and
--- bashls were enabled implicitly by LazyVim's core. The servers below them were
--- enabled by LazyVim's lang.*/linting extras and are back after a
--- `vim.fn.executable()` check on each lspconfig `cmd`.
---
--- refactoring.nvim was dropped here: it was declared but never used (the config
--- maps no `:Refactor` keys, and LazyVim's editor.refactoring extra supplied
--- none either), and it was the only thing pulling in async.nvim — whose
--- lua/async.lua is a *table* at the same module path where promise-async ships
--- a *function*, which broke nvim-ufo. See the note in _plugins.nix.
+-- Servers LazyVim's core and lang.*/linting extras used to enable; `vim.lsp.enable`
+-- does that job now, gated on `vim.fn.executable()` where the server is optional.
 return {
   {
     "nvim-lspconfig",
@@ -20,8 +10,7 @@ return {
       vim.lsp.enable "ruff"
       vim.lsp.enable "lua_ls"
       vim.lsp.enable "bashls"
-      -- lang.json / lang.yaml / lang.markdown / lang.tex / lang.go / lang.helm
-      -- / linting.eslint, plus the servers mason had installed.
+      -- from LazyVim's lang.json/yaml/markdown/tex/go/helm and linting.eslint extras.
       vim.lsp.enable "jsonls"
       vim.lsp.enable "yamlls"
       vim.lsp.enable "marksman"
@@ -32,11 +21,10 @@ return {
       vim.lsp.enable "ast_grep"
       vim.lsp.enable "vtsls"
       vim.lsp.enable "typos_lsp"
-      -- NOT enabled: lspconfig's `just` server starts `just-lsp`, which is not
-      -- on PATH (`vim.fn.executable("just-lsp") == 0`). Add the package and
-      -- `vim.lsp.enable "just"` here once it is.
-      -- sidekick's next-edit-suggestions run on the copilot LSP server,
-      -- not on copilot.lua (which only does completions).
+      -- `just` is absent: lspconfig's server needs `just-lsp` on PATH. Enable it
+      -- here once the package is added.
+      -- sidekick's next-edit-suggestions run on the copilot LSP server, not on
+      -- copilot.lua, which only does completions.
       vim.lsp.enable "copilot"
     end,
   },

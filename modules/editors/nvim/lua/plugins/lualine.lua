@@ -1,28 +1,16 @@
--- Ported from lua/plugins/lualine.lua. The width-calculator engine, theme
--- mapping to the noctalia Base16* groups, and every section are the original
--- `opts` function verbatim.
---
--- The harpoon2 component needs harpoon (not yet in _plugins.nix); lualine
--- renders an empty section for a missing source rather than erroring, so the
--- component is kept and harpoon is recorded as pending in _keymap-parity.md.
---
--- Removed: the `extensions` entry "lazy" (no lazy.nvim anymore) and the
--- commented-out sidekick block (kept upstream in git history).
+-- lualine renders an empty section for a missing source rather than erroring.
 local component_widths = { mode = 0, branch = 0, diff = 0, ft = 0, filename = 0 }
 
--- Helper: Measures the visual width of a component (stripping colors)
 local function track_width(str, name)
-  -- Remove Lualine highlight codes (e.g. %#LualineMode#) to get real text length
+  -- strip lualine highlight codes (%#...#) before measuring width
   local text_only = str:gsub("%%#.-#", "")
   component_widths[name] = vim.fn.strdisplaywidth(text_only)
   return str
 end
 
--- Helper: Calculates the exact spaces needed to reach the center
 local function get_center_padding()
   local screen_width = vim.o.columns
 
-  -- 1. Sum of everything to the left
   local left_width = (component_widths.mode or 0)
     + (component_widths.branch or 0)
     + (component_widths.diff or 0)
@@ -31,7 +19,6 @@ local function get_center_padding()
 
   local center_group_width = 25
 
-  -- 3. The Math: (Screen/2) - Left_Stuff - (Center_Stuff/2)
   local padding = math.floor((screen_width / 2) - left_width - (center_group_width / 2))
   if padding < 0 then
     padding = 0
@@ -51,9 +38,7 @@ local function diff_source()
   end
 end
 
--- ========================================================================
--- 2. THEME (group names, defined in colors/noctalia.lua)
--- ========================================================================
+-- THEME (group names, defined in colors/noctalia.lua)
 
 local theme = {}
 for _, mode in ipairs({ "insert", "normal", "visual", "command", "replace", "inactive", "terminal" }) do
@@ -78,11 +63,7 @@ local function lualine_opts()
       component_separators = { left = "", right = "" },
     },
 
-    -- ======================================================================
-    -- 4. SECTIONS CONFIGURATION (With Width Tracking)
-    -- ======================================================================
-
-    -- LEFT (Mode) - Tracked
+    -- LEFT (Mode)
     sections = {
       lualine_a = {
         {
@@ -95,7 +76,7 @@ local function lualine_opts()
         },
       },
 
-      -- LEFT (Branch/Diff) - Tracked
+      -- LEFT (branch/diff)
       lualine_b = {
         {
           "b:gitsigns_head",
@@ -116,7 +97,6 @@ local function lualine_opts()
       -- CENTER STRATEGY:
       -- [Filetype][Filename] -> [CALCULATED SPACER] -> [Tabs][Harpoon] -> [Flexible Spacer]
       lualine_c = {
-        -- 1. Filetype (Tracked)
         {
           "filetype",
           icon_only = true,
@@ -128,7 +108,6 @@ local function lualine_opts()
             return track_width(str, "ft")
           end,
         },
-        -- 2. Filename (Tracked)
         {
           "filename",
           path = 1,
@@ -144,7 +123,6 @@ local function lualine_opts()
           end,
         },
 
-        -- 3. THE MAGIC PADDER (Pushes Center Group to Absolute Center)
         {
           function()
             return get_center_padding()
@@ -153,7 +131,6 @@ local function lualine_opts()
           separator = "",
         },
 
-        -- 5. HARPOON (The Centerpiece) — harpoon is not in the closure yet
         {
           "harpoon2",
           icon = "󰀱",
@@ -163,7 +140,6 @@ local function lualine_opts()
           no_harpoon = "",
         },
 
-        -- 6. RIGHT FILLER (Pushes remaining components to far right)
         {
           function()
             return "%="

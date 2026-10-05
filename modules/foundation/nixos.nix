@@ -1,20 +1,18 @@
 _: {
-  # Host and state version are host-owned; this aspect owns the account and the
-  # base-OS surface both NixOS hosts share.
+  # The account and base-OS surface both NixOS hosts share; hostname and state
+  # version are host-owned.
   flake.modules.nixos.foundation =
     { config, pkgs, ... }:
     let
       primaryUser = config.currentHost.primaryUser;
     in
     {
-      # Arch supplied /usr/bin/git; nothing on NixOS did. No config: the user's
-      # git config is unmanaged and lives in the carried /home.
+      # No declarative config: the user's git config is unmanaged and lives in
+      # the carried /home.
       programs.git.enable = true;
 
-      # uv's python-build-standalone CPython and the prebuilt rust/go binaries
-      # in ~/.local/bin, ~/.cargo/bin and ~/go/bin (plus mise's node/bun) run
-      # against Nix's glibc only through nix-ld. These append to the module's
-      # systemd/nix default set.
+      # uv's CPython and the prebuilt rust/go/node binaries run against Nix's
+      # glibc only through nix-ld; these append to the module's default set.
       programs.nix-ld = {
         enable = true;
         libraries = with pkgs; [
@@ -33,26 +31,13 @@ _: {
         binfmt = true;
       };
 
-      # NixOS owns the account; Home Manager owns its home configuration.
       users.users.${primaryUser.name} = {
         isNormalUser = true;
         inherit (primaryUser) uid;
         group = primaryUser.name;
         extraGroups = [ "wheel" ];
-        # The fleet owns the SSH hardening (`services.ssh-baseline` turns
-        # PasswordAuthentication off) and leaves who may log in to the
-        # consumer — ssh.nix has no key option, and build-account.nix
-        # deliberately ships the dispatch account with none. So the keys are
-        # declared here, beside the account they belong to.
-        #
-        # Deliberate set, not a copy of any host's ~/.ssh/authorized_keys:
-        # `whip` (20 auths) and `u0_a925` (7) both come from galaxy over the
-        # tailnet, `admin` from a second device, and the desktop's own outbound
-        # identity (modules/ssh.nix uses it as IdentityFile) so it can administer
-        # the hosts it builds for. The desktop's file also carried u0_a818 and a
-        # windows-client key with no authentications in six months, and had
-        # churned outside Nix — transcribing it would ratify whatever drifted in
-        # rather than state a decision.
+        # The fleet owns SSH hardening and offers no key option, so who may log in
+        # is declared here — a deliberate set, not a copy of any host's keys.
         openssh.authorizedKeys.keys = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFBqFsxbrn6SVOHXi4+LS5olKxEW8JlZ5V+irA18/586 saurabhj@arch"
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINC4MMzkSTgp9ohQMY4uZay4srU7ZUcyYEz/Mi8L7q8X u0_a925@localhost"

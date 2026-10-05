@@ -1,11 +1,6 @@
 _: {
-  # nix-fleet is the fleet's platform repository and the authority for the pins
-  # both repositories share: one nix-fleet bump moves them together instead of
-  # letting each repository drift on its own copy. The remaining inputs are this
-  # repository's own and are declared by the feature module that consumes them.
-  #
-  # flake-parts and treefmt-nix are the only inputs here that ship their own
-  # nested nixpkgs alongside a fleet pin, so neither declares a follows.
+  # flake-parts and treefmt-nix ship a nested nixpkgs, already redirected by
+  # their nix-fleet follows.
   flake-file.inputs = {
     nix-fleet.url = "github:Shrub24/nix-fleet";
 

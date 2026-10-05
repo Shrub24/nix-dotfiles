@@ -1,8 +1,3 @@
--- Autocmds. Ported from the LazyVim config.
---
--- Dropped: the `kulala_ui` softwrap autocmd (the rest/kulala plugin came from
--- LazyVim's util.rest extra and is not in the closure), and the
--- SnacksReactiveToggle group (reactive.nvim is disabled).
 local augroup = vim.api.nvim_create_augroup("NvimConfig", { clear = true })
 local autocmd = vim.api.nvim_create_autocmd
 

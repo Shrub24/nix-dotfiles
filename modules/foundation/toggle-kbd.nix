@@ -1,8 +1,6 @@
 _: {
-  # Disables the built-in keyboard and trackpad (e.g. with an external board
-  # resting on the deck) and restores them. The privileged half is a store
-  # helper with the interface baked in; sudo lets the user run exactly its
-  # `lock` and `unlock` verbs without a password — nothing else under usbhid.
+  # The privileged half is a store helper with the interface baked in; sudo lets
+  # the user run exactly its `lock`/`unlock` verbs, nothing else under usbhid.
   flake.modules.nixos.toggle-kbd =
     {
       config,

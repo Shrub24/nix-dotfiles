@@ -6,15 +6,12 @@
 {
   imports = [ wlib.wrapperModules.neovim ];
 
-  # Milestone 2 flips the primary name to "nvim". Until the port is a
-  # daily-driver substitute it installs as nvim-nix, so the pacman nvim at
-  # /usr/bin/nvim keeps working unchanged.
+  # nvim-nix, not nvim: the pacman nvim at /usr/bin/nvim keeps working.
   config.binName = "nvim-nix";
   config.settings.aliases = [ ];
   config.settings.dont_link = true;
 
-  # The Lua tree beside this file. Includes and the runtimepath are generated
-  # from here; nothing outside this directory is read at runtime.
+  # The Lua tree beside this file; includes and runtimepath come from here.
   config.settings.config_directory = ./.;
 
   config.specs = import ./_plugins.nix {

@@ -12,8 +12,7 @@
       programs.vicinae = {
         enable = true;
         systemd.enable = true;
-        # nixpkgs' recipe; the module default would build the input's own copy
-        # against the input's own nixpkgs.
+        # nixpkgs' recipe; the module default builds the input's own copy.
         package = pkgs.vicinae;
         settings = {
           close_on_focus_loss = true;
@@ -25,7 +24,7 @@
             };
           };
           # Noctalia renders the theme under this name (see the vicinae entry in
-          # modules/desktop/noctalia.nix), so selection needs no hook.
+          # modules/desktop/noctalia.nix); selection needs no hook.
           theme.dark.name = "noctalia";
           launcher_window.opacity = 0.85;
           providers = {

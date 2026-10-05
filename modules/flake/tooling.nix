@@ -3,10 +3,8 @@
   ...
 }:
 {
-  # nix-fleet owns the shared treefmt definition (nixfmt, statix, deadnix,
-  # prettier for Markdown/YAML/JSON, taplo) and the formatter priorities that
-  # make the chain converge. This file adds only what is specific to this
-  # repository.
+  # nix-fleet owns the shared treefmt definition; this file adds only what is
+  # specific to this repository.
   imports = [ inputs.nix-fleet.flakeModules.tooling ];
 
   perSystem =
@@ -14,13 +12,12 @@
     {
       treefmt.settings.global.excludes = [
         "pkgs/_sources/**"
-        # nixos-facter output: a machine-generated capture like nvfetcher's,
-        # so prettier would reformat it here and churn it again on every
-        # regeneration.
+        # nixos-facter output: a machine-generated capture, so prettier would
+        # reformat it here and churn it again on every regeneration.
         "modules/hosts/*/facter.json"
-        # Pi subagent definitions are verbatim prompt text with YAML
-        # frontmatter; the formatter renumbers their ordered lists and would
-        # defeat byte-level comparison against upstream's bundled agents.
+        # Pi subagent definitions are verbatim prompt text, compared byte-level
+        # against upstream's bundled agents; the formatter renumbers their
+        # ordered lists.
         "modules/agents/pi/agents/**"
         "secrets/**"
         ".brv/**"

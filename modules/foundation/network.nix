@@ -31,10 +31,8 @@ _: {
 
   ;
 
-  # The systemManager aspect's resolved.conf.d mdns-disable drop-in is owned
-  # natively by services.resolved on NixOS.
-  # enableResolvedMdns is dropped — enable resolved with mDNS off.
-  # Re-add the option if a caller ever needs mDNS on; avahi is the separate knob.
+  # NixOS owns the mdns-disable drop-in natively (services.resolved), so
+  # enableResolvedMdns is dropped; re-add it if a caller ever needs mDNS on.
   flake.modules.nixos.network =
     { pkgs, ... }:
     let
@@ -45,10 +43,7 @@ _: {
       services.resolved.settings.Resolve.MulticastDNS = "no";
 
       # nixos-facter's detected-DHCP module sets networking.useDHCP on every
-      # physical interface it finds on a host with a report, which fights
-      # NetworkManager for the same links. The aspect owns physical
-      # networking; detected hardware facts stay wired. Plain priority beats
-      # facter's own mkDefault.
+      # physical interface, which fights NetworkManager; plain priority wins.
       hardware.facter.detected.dhcp.enable = false;
 
       networking.networkmanager = {

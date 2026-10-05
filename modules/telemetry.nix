@@ -1,13 +1,5 @@
-# Host-local telemetry contributor. nix-fleet owns the mechanism end to end: the
-# `services.telemetry` contract, the orphan guard, and the private providers that
-# realize it. This contributor exists so the selection is a local aspect name
-# (registration is filesystem-driven, activation is host-driven) and so a host's
-# registration policy has one place to live.
-#
-# Selection is enablement: importing the fleet module makes `services.telemetry`
-# real on this host, which is what lets a consumer read `otlp.httpUrl`. Reading
-# that on a host without this aspect fails closed by name, so the endpoint is
-# only readable where a collector actually runs.
+# Selection is enablement: importing the fleet module is what makes
+# `services.telemetry` readable here; consumers elsewhere fail closed by name.
 { inputs, ... }:
 {
   flake.modules.nixos.telemetry =

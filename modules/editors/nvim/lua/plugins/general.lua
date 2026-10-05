@@ -1,13 +1,3 @@
--- Ported from lua/plugins/general.lua.
---
--- Changes, none of them behavioural:
---   treesitter: `build = ":TSUpdate"` is gone — grammars come from nix
---   (`withPlugins` in _plugins.nix), so there is nothing to update. The
---   `opts.disable` list is preserved as a filetype disable table for parity.
---   `dependencies` fields are gone; each dependency is its own nix spec.
---
--- Not carried over (source had them commented out): neoscroll, venv-selector,
--- remote-nvim, satellite.
 return {
   {
     "smart-splits.nvim",
@@ -24,8 +14,6 @@ return {
     auto_enable = true,
     lazy = false,
     after = function()
-      -- Ported from the source `opts.disable` list; grammars themselves are
-      -- nix-managed.
       vim.api.nvim_create_autocmd("FileType", {
         pattern = { "latex", "text", "opencode", "opencode-output", "fstab", "kdl" },
         callback = function(args)
@@ -93,9 +81,8 @@ return {
     end,
   },
   {
-    -- Single module of the mini.nvim monorepo already used for mini.ai /
-    -- mini.pairs / mini.icons. Mappings kept as nvim-surround's so muscle
-    -- memory carries over; visual mode is `sa` rather than nvim-surround's `S`.
+    -- mini.surround, from the mini.nvim monorepo already used for mini.ai /
+    -- mini.pairs / mini.icons. Mappings follow nvim-surround's; visual is `sa`.
     "mini.surround",
     auto_enable = true,
     event = "DeferredUIEnter",
@@ -114,9 +101,8 @@ return {
     end,
   },
   {
-    -- Broader ]/[ set than unimpaired; LazyVim already owns most prefixes, so
-    -- only the groups it does not bind are enabled. Defaults: no `h` group, so
-    -- git.lua's ]h / [h (gitsigns hunks) are untouched.
+    -- Binds only the ]/[ groups LazyVim leaves free; the `h` group stays off so
+    -- git.lua's gitsigns ]h / [h are untouched.
     "mini.bracketed",
     auto_enable = true,
     event = "DeferredUIEnter",

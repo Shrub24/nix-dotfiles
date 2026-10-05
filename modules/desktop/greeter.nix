@@ -6,7 +6,6 @@ _: {
       ...
     }:
     let
-      # This machine's account, projected by the host composition.
       primaryUser = config.currentHost.primaryUser;
 
       noctaliaGreeterPackage = pkgs.noctalia-greeter;
@@ -58,10 +57,8 @@ _: {
 
       niriUwsmLauncher = pkgs.writeShellApplication {
         name = "niri-uwsm-session";
-        # uwsm stays on pacman until NixOS day — NixOS creates
-        # /etc/profiles/per-user/<user>/bin/ with uwsm on the systemd service
-        # PATH; on Arch that path doesn't exist so niri's bare-name
-        # `uwsm finalize` spawn fails -> WAYLAND_DISPLAY never exported.
+        # HACK: uwsm stays on pacman until NixOS day — on Arch the bare-name spawn fails
+        # (no /etc/profiles/per-user PATH), so /usr/bin/uwsm is pinned.
         text = ''
           UWSM_SILENT_START=2 exec ${pkgs.systemd}/bin/systemd-cat --identifier=niri-uwsm \
             /usr/bin/uwsm start -N "Niri (UWSM)" -D niri -e -- ${pkgs.niri}/bin/niri
@@ -109,12 +106,8 @@ _: {
 
   ;
 
-  # NixOS translation of the systemManager greeter aspect. The nixpkgs-native
-  # services.displayManager.noctalia-greeter module owns the greeter.toml render
-  # and the greetd session wiring; the polkit sync rule, greeter.log, and
-  # wayland session desktop entries stay hand-rolled here.
-  # Upstream clobbers greeter.toml on every boot (no regression — the previous
-  # store-symlink approach had the same semantics).
+  # Upstream rewrites greeter.toml on every boot; the native module owns greeter.toml
+  # and the greetd wiring, while the polkit rule and desktop entries stay hand-rolled here.
   flake.modules.nixos.greeter =
     {
       config,
@@ -155,7 +148,7 @@ _: {
     in
     {
       # extraArgs preserves the "--user" session arg; settings.user.default pins
-      # the [user] default in greeter.toml.
+      # greeter.toml's [user] default.
       services.displayManager.noctalia-greeter = {
         enable = true;
         extraArgs = [
@@ -172,12 +165,11 @@ _: {
         binPath = "${pkgs.niri}/bin/niri";
       };
 
-      # Noctalia's greeter-sync pkexec wrapper lives at /run/wrappers/bin/pkexec
-      # on NixOS; the polkit rule authorizing it is environment.etc below.
+      # pkexec wrapper lands at /run/wrappers/bin/pkexec on NixOS.
       security.polkit.enablePkexecWrapper = true;
 
-      # greetd is the login session, so its PAM stack must unlock gnome-keyring;
-      # otherwise the desktop session starts with the login keyring locked.
+      # greetd is the login session, so its PAM stack must unlock gnome-keyring
+      # or the desktop session starts with the login keyring locked.
       security.pam.services.greetd.enableGnomeKeyring = true;
 
       systemd.tmpfiles.rules = [

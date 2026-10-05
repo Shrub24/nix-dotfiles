@@ -1,19 +1,9 @@
-# Install-day disk layout for the laptop, and the source of the installed
-# system's mounts: disko's NixOS module renders `fileSystems`, the LUKS
-# initrd device and `swapDevices` from this device tree, so _hardware.nix
-# must not restate any of them.
-#
-# Only `boot.loader.*` stays outside — disko creates the ESP, and systemd-boot
-# installs into it, but which bootloader manages it is still host policy.
-#
-# Running this is destructive: `disko --mode disko` (or `nixos-anywhere`)
-# wipes the named disk. The laptop is single-boot on a wiped disk, so there
-# is nothing to preserve — that is precisely why the desktop's install
-# (nixos-dual-boot-install) provisions by hand instead.
+# Disko owns the laptop's disk: it renders `fileSystems`, the LUKS initrd
+# device and `swapDevices`, so _hardware.nix must not restate them. Running
+# this is destructive: `disko --mode disko` wipes the named disk.
 _:
 let
-  # Tuned once and shared by every subvolume so the mount options cannot
-  # drift between them.
+  # Shared by every subvolume so the mount options cannot drift.
   opts = [
     "noatime"
     "compress=zstd:3"
@@ -26,17 +16,15 @@ in
   disko.devices = {
     disk.main = {
       type = "disk";
-      # CONFIRM ON THE LIVE MEDIA (`lsblk -o NAME,SIZE,MODEL`): the internal
-      # NVMe. A wrong value here formats the wrong device.
+      # CONFIRM ON THE LIVE MEDIA (`lsblk -o NAME,SIZE,MODEL`): a wrong value here
+      # formats the wrong device.
       device = "/dev/nvme0n1";
       content = {
         type = "gpt";
         partitions = {
           ESP = {
-            # 2 GiB, matching the desktop's install: ~60-70 MB per NixOS
-            # generation (Ice Lake kernel + systemd initrd) against a
-            # configurationLimit of 20 is 1.2-1.4 GB, which a 1 GiB ESP
-            # cannot hold.
+            # 2 GiB: ~60-70 MB per generation against a configurationLimit of
+            # 20 is 1.2-1.4 GB, which a 1 GiB ESP cannot hold.
             size = "2G";
             type = "EF00";
             content = {
@@ -54,18 +42,14 @@ in
             content = {
               type = "luks";
               name = "cryptroot";
-              # Format-time only: disko reads this to run cryptsetup, and never
-              # emits it into `boot.initrd.luks.devices`, so the installed system
-              # still prompts. nixos-anywhere injects the file via
-              # `--disk-encryption-keys /tmp/secret.key <local-path>`.
+              # Format-time only — disko never emits it into boot.initrd.luks.devices,
+              # so the installed system still prompts; nixos-anywhere injects it.
               passwordFile = "/tmp/secret.key";
-              # `settings` is spread into `boot.initrd.luks.devices.cryptroot`
-              # and read selectively by disko's own cryptsetup calls, so
+              # `settings` is spread into boot.initrd.luks.devices.cryptroot, so
               # crypttabExtraOpts reaches the installed system unchanged.
               settings = {
                 allowDiscards = true;
-                # Enrolment is a post-install step; the passphrase stays as
-                # the fallback so a firmware reset degrades to a prompt.
+                # Enrolment is a post-install step; the passphrase stays as fallback.
                 crypttabExtraOpts = [ "tpm2-device=auto" ];
               };
               content = {
@@ -89,19 +73,15 @@ in
                     mountpoint = "/.snapshots";
                     mountOptions = opts;
                   };
-                  # Reserved, empty: the mountpoint impermanence/preservation
-                  # would bind durable state into. Declaring it now costs
-                  # nothing and avoids a subvolume create plus a live-data move
-                  # later. Nothing writes here until that change lands.
+                  # Reserved for impermanence; declaring it now avoids a subvolume
+                  # create and a live-data move later. Nothing writes here yet.
                   "@persist" = {
                     mountpoint = "/persist";
                     mountOptions = opts;
                   };
-                  # The desktop's root-disk set, minus @images: the laptop hosts
-                  # no VMs (libvirtd is off), and rootless podman keeps its 4.2G
-                  # store under ~/.local/share/containers, not /var/lib. Keeping
-                  # these out of @ is what stops journal and package-cache churn
-                  # landing in every root snapshot.
+                  # Desktop root-disk set minus @images: no VMs, and rootless
+                  # podman stores under ~/.local, so these out of @ keep churn
+                  # out of the root snapshots.
                   "@log" = {
                     mountpoint = "/var/log";
                     mountOptions = opts;

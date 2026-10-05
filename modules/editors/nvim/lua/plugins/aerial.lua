@@ -1,6 +1,5 @@
--- Aerial (symbol outline). Came from LazyVim's editor.aerial extra; nothing in
--- the old config configured it. lualine's `extensions` list names it, which is
--- inert until the plugin exists.
+-- Symbol outline. lualine's `extensions` list names it; inert until the plugin
+-- exists.
 return {
   {
     "aerial.nvim",

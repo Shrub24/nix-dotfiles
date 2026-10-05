@@ -1,10 +1,7 @@
 { inputs, lib, ... }:
 let
-  # Fleet hosts this machine trusts and talks to. Which ones is host policy, so
-  # the selection is resolved from the canonical inventory at the composition
-  # boundary and injected per class — an aspect cannot see the flake's
-  # `config.fleet`. The contract owns the management account
-  # (`managementUser`), so no aspect restates it.
+  # Which fleet hosts this machine trusts is host policy, injected per class — an
+  # aspect cannot see the flake's `config.fleet`; the contract owns the account.
   sshTrustAspect = {
     options.sshTrust = lib.mkOption {
       type = lib.types.listOf lib.types.attrs;
@@ -62,9 +59,8 @@ in
           };
         };
 
-        # One alias per fleet host this machine talks to, carrying that
-        # machine's own reach account. Host keys are pinned through the system
-        # known-hosts file — Home Manager has no option for it.
+        # One alias per fleet host, carrying that machine's own reach account.
+        # Host keys go in the system known-hosts file — Home Manager has no option.
         extraConfig = resolve.sshConfig config.sshTrust;
       };
     }
@@ -113,9 +109,8 @@ in
       ...
     }:
     {
-      # nix-fleet owns the server hardening. Client tuning stays off: Home
-      # Manager owns the client config, and the fleet fragment's ControlPath
-      # would duplicate the one set there.
+      # nix-fleet owns the server hardening. Client tuning stays off: Home Manager
+      # owns the client config and the fleet fragment would duplicate its ControlPath.
       imports = [
         inputs.nix-fleet.modules.nixos.ssh
         sshTrustAspect
@@ -123,13 +118,10 @@ in
 
       services.ssh-baseline.clientTuning = false;
 
-      # Host keys from the canonical inventory. This is the system file
-      # (/etc/ssh/ssh_known_hosts), not client tuning — that stays off because
-      # Home Manager owns the user's own config.
+      # Host keys from the canonical inventory; the system file, not client tuning.
       programs.ssh.knownHosts = resolve.knownHosts config.sshTrust;
 
-      # Client-side host list; the server is services.openssh above, user-side
-      # client config lives in homeManager.ssh.
+      # Client-side host list; the user's own config lives in the homeManager aspect.
       environment.etc."ssh/ssh_config.d/30-remote-hosts.conf" = {
         text = ''
           # Remote build/managed hosts — ControlMaster enabled for multiplexing

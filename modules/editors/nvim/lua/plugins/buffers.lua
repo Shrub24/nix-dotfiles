@@ -1,8 +1,5 @@
--- Buffer line and per-tab buffer scoping. Ported from lua/plugins/buffers.lua.
---
--- scope.nvim is load-bearing for resession: its config declares
--- `extensions = { scope = {} }`. `config = true` in the original means the
--- plugin's own setup() runs with defaults.
+-- Buffer line and per-tab buffer scoping. scope.nvim is load-bearing: resession's
+-- config declares `extensions = { scope = {} }`.
 local function bufferline_opts()
   return {
     options = {
@@ -27,8 +24,7 @@ local function bufferline_opts()
           {
             name = "Tests",
             icon = "",
-            -- Base16BgGreen, not the old RainbowBgGreen: the noctalia theme
-            -- provides the Base16* groups.
+            -- the noctalia theme provides the Base16* groups
             highlight = { link = "Base16BgGreen" },
             matcher = function(buf)
               local n = buf.name

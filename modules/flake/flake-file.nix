@@ -1,15 +1,7 @@
 { inputs, ... }:
 {
-  # flake-file generates flake.nix from the input declarations in this tree:
-  # the core module supplies the flake-file.* options, the write-flake app and
-  # checks.check-flake-file. Its auto-follow module is deliberately not
-  # imported: auto-follow rewrites nested `follows` through flake-edit and
-  # discards any `follows` a module declares, which would leave the generated
-  # flake.nix holding state the tree cannot reproduce. Every nested follows is
-  # declared where its input is declared instead, so the file stays a pure
-  # function of the tree. The dendritic entry point is declared rather than
-  # imported from flake-file's preset, so nothing sets a default url or follows
-  # that this repository would have to override back out.
+  # Core flake-file module, not the dendritic preset: auto-follow rewrites
+  # `follows` through flake-edit; see ARCHITECTURE.md.
   imports = [
     inputs.flake-file.flakeModules.default
   ];

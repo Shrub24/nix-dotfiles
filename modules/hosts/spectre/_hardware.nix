@@ -1,22 +1,14 @@
-# Hardware policy for the laptop. Disko owns the disk — this file must not
-# declare `fileSystems`, `boot.initrd.luks.devices` or `swapDevices`, because
-# disko's NixOS module renders all three from `_disko.nix` and two sources for
-# one option is a conflict, not a merge.
+# Disko owns the disk (see _disko.nix): it renders `fileSystems`,
+# `boot.initrd.luks.devices` and `swapDevices`, so none may be declared here.
 _:
 { lib, pkgs, ... }:
 {
-  # Measured facts from the machine itself (kernel modules, hostPlatform,
-  # graphics, bluetooth, fingerprint) instead of the guesses this file used to
-  # carry. Everything facter sets is `mkDefault`, so the policy below still
-  # wins with plain assignments — refreshing the report cannot clobber it.
-  #
-  # Inert until a report exists, so evaluation converges without the file.
-  # Generate it from the live media before installing:
+  # nixos-facter sets every fact with `mkDefault`, so the policy below wins.
+  # Generate the report with:
   #   nix run nixpkgs#nixos-facter > modules/hosts/spectre/facter.json
   hardware.facter.reportPath = lib.mkIf (builtins.pathExists ./facter.json) ./facter.json;
 
-  # UEFI + systemd-boot, single boot: adding Windows later is a resize, not a
-  # reinstall. Disko creates the ESP; which bootloader manages it stays policy.
+  # UEFI + systemd-boot, single boot: Windows later is a resize, not a reinstall.
   boot.loader.systemd-boot = {
     enable = true;
     # ~50 MB per generation on the 1 GiB ESP.
@@ -25,7 +17,6 @@ _:
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot";
 
-  # Kernel modules: stock + btrfs + nvme + i915 + iwlwifi.
   boot.initrd.availableKernelModules = [
     "nvme"
     "xhci_pci"
@@ -40,10 +31,8 @@ _:
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
-  # Hibernation resumes from the @swap subvolume's 12 GiB swapfile. The LUKS
-  # and btrfs UUIDs come from disko; `resume_offset` cannot — it is the
-  # swapfile's physical extent, so capture it once from the installed system:
-  # `btrfs inspect-internal map-swapfile -r /swap/swapfile`.
+  # REPLACE-ON-INSTALL resume_offset: the swapfile's physical extent, which disko
+  # cannot derive — `btrfs inspect-internal map-swapfile -r /swap/swapfile`.
   boot.initrd.systemd.enable = true;
   boot.kernelParams = [ "resume_offset=REPLACE-ON-INSTALL" ];
   boot.resumeDevice = "/dev/mapper/cryptroot";
@@ -61,17 +50,15 @@ _:
   # This generation runs warm.
   services.thermald.enable = true;
   services.power-profiles-daemon.enable = true;
-  # Charge threshold where the firmware exposes it (hp-wmi).
-  # REPLACE-ON-INSTALL: confirm the battery exposes charge_control_end_threshold;
-  # if it does, declare the threshold here rather than in a shared aspect.
+  # REPLACE-ON-INSTALL: if the firmware exposes charge_control_end_threshold
+  # (hp-wmi), declare the battery charge threshold here.
 
   zramSwap = {
     enable = true;
     memoryPercent = 50;
   };
 
-  # NetworkManager owns interfaces (via the shared network aspect); no per-interface
-  # DHCP here.
+  # No per-interface DHCP: NetworkManager owns interfaces via the network aspect.
 
   nixpkgs.hostPlatform = "x86_64-linux";
 }

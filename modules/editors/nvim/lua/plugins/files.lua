@@ -1,5 +1,3 @@
--- Ported from lua/plugins/files.lua. yazi.nvim had plugin-level
--- `enabled = false` in the source, so its spec is not carried over.
 return {
   {
     "oil.nvim",
