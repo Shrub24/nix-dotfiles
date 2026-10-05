@@ -20,8 +20,12 @@ _: {
                 ];
               };
               pi = {
-                model = "omniroute/coder-high";
-                fallback_models = [ "omniroute/budget" ];
+                model = "omniroute/neural/deepseek-v4.1-flash";
+                fallback_models = [
+                  "omniroute/neural/glm-5.3-flash"
+                  "openai-codex/gpt-6-luna"
+                ];
+                thinking_level = "low";
               };
             };
             dreamer.disable = true;
@@ -45,7 +49,6 @@ _: {
             todowrite.enabled = true;
 
             pi.subagent_extensions = [
-              "extensions/omniroute/src/index.ts"
               "npm/node_modules/pi-tool-repair/tool-repair.ts"
             ];
           };

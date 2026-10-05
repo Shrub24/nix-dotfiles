@@ -16,18 +16,49 @@
   };
   codexbar = {
     pname = "codexbar";
-    version = "v0.70.0";
+    version = "v0.72.0";
     src = fetchurl {
-      url = "https://github.com/steipete/CodeXBar/releases/download/v0.70.0/CodexBarCLI-v0.70.0-linux-x86_64.tar.gz";
-      sha256 = "sha256-4/a+GP5waNst/PqTxbO+4gmijXpxpSRV7584Oj0sRZw=";
+      url = "https://github.com/steipete/CodeXBar/releases/download/v0.72.0/CodexBarCLI-v0.72.0-linux-x86_64.tar.gz";
+      sha256 = "sha256-F3K1ovTWi5Wc2WmomX5BQUdJWfXMia3/FbE00HW3i3A=";
+    };
+  };
+  omniroute = {
+    pname = "omniroute";
+    version = "438930705452d2ce43d4e90fa1da91c1ac2e97d6";
+    src = fetchFromGitHub {
+      owner = "Shrub24";
+      repo = "OmniRoute";
+      rev = "438930705452d2ce43d4e90fa1da91c1ac2e97d6";
+      fetchSubmodules = false;
+      sha256 = "sha256-4AYwqWmBuNGojnx0eiD7uTgvfSklMQLgj9lixdKEqT8=";
+    };
+    date = "2026-10-07";
+  };
+  pi-bolt = {
+    pname = "pi-bolt";
+    version = "bolt-v0.7.1";
+    src = fetchFromGitHub {
+      owner = "opensec-git";
+      repo = "Pi-Bolt";
+      rev = "bolt-v0.7.1";
+      fetchSubmodules = false;
+      sha256 = "sha256-dmverQ+DPLhTU9HNOdRvmnNsJvaHXBE5r0TMi+w3Cz4=";
+    };
+  };
+  pi-bolt-runtime = {
+    pname = "pi-bolt-runtime";
+    version = "bolt-v0.7.1";
+    src = fetchurl {
+      url = "https://github.com/opensec-git/Pi-Bolt/releases/download/bolt-v0.7.1/pi-bolt-runtime-linux-x64.tar.gz";
+      sha256 = "sha256-npAz0e3feU89wxUs0MR4k6KnJH0032OihcE47lUHKy4=";
     };
   };
   xberg-cli = {
     pname = "xberg-cli";
-    version = "v1.3.0";
+    version = "v1.3.5";
     src = fetchurl {
-      url = "https://github.com/xberg-io/xberg/releases/download/v1.3.0/xberg-cli-x86_64-unknown-linux-gnu.tar.gz";
-      sha256 = "sha256-+aI5mpk8RqsRGy/YTQD318ZkCJspcw5YgS20VAfUYnc=";
+      url = "https://github.com/xberg-io/xberg/releases/download/v1.3.5/xberg-cli-x86_64-unknown-linux-gnu.tar.gz";
+      sha256 = "sha256-TIzwkO8lsex7QQy62sxXiLBllOu/rlJ2PZ6vTc4heZg=";
     };
   };
 }

@@ -1,17 +1,11 @@
-# The register of MCP servers this repository serves to Pi.
+# The register of MCP servers this repository serves to Pi: each aspect that owns
+# a server writes its entry here, and the pi aspect renders the register into
+# ~/.pi/agent/mcp.json. Entries Pi owns itself stay in modules/agents/pi.nix.
 #
-# Written by the aspect that owns a server — it knows its own endpoint, and
-# whether a client can reach it at all — and rendered into
-# ~/.pi/agent/mcp.json by the pi aspect. Entries Pi owns itself (third-party
-# and fleet endpoints, whose configured ids its subagent definitions select)
-# stay in modules/agents/pi.nix rather than here.
-#
-# The declaration lives in a raw module every writer imports, so an aspect that
-# serves a server never depends on the pi aspect being selected as well.
-#
-# It is declared in Home Manager's namespace rather than a repository-owned one
-# on purpose: that module ships no MCP option yet, so if it gains one the build
-# fails with "already declared" and the register moves onto upstream's option.
+# It is a raw module that every writer imports, so an aspect that serves a server
+# never depends on the pi aspect being selected. It declares into Home Manager's
+# namespace (there is no repository-owned one yet) so that an upstream option of
+# the same name fails the build rather than being silently shadowed.
 {
   lib,
   ...

@@ -12,7 +12,6 @@ noSkills: false
 noExtensions: true
 extensions:
 @childExtensions@
-  - "@home@/.pi/agent/extensions/omniroute/src/index.ts"
 skills:
   - "@home@/.pi/agent/skills/codebase-explore/SKILL.md"
   - "@home@/.pi/agent/skills/handoff-artifact/SKILL.md"

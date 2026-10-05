@@ -113,7 +113,6 @@ let
     "languages"
     "intelli-shell"
     "lazyjournal"
-    "lazyslurm"
     "mise"
     "direnv"
     "monique"

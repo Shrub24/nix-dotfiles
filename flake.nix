@@ -61,10 +61,6 @@
         nixpkgs.follows = "nixpkgs";
       };
     };
-    lazyslurm = {
-      url = "github:hill/lazyslurm";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
       inputs = {
@@ -93,6 +89,10 @@
     noctalia = {
       url = "github:noctalia-dev/noctalia";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pi-extensions = {
+      url = "github:Shrub24/pi-extensions";
+      flake = false;
     };
     sops-nix = {
       url = "github:Mic92/sops-nix";

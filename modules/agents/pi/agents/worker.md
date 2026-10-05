@@ -11,7 +11,6 @@ inheritSkills: true
 noExtensions: true
 extensions:
 @childExtensions@
-  - "@home@/.pi/agent/extensions/omniroute/src/index.ts"
 skills:
   - "@home@/.pi/agent/skills/codebase-explore/SKILL.md"
   - "@home@/.agents/skills/ast-grep/SKILL.md"
@@ -48,11 +47,6 @@ tools:
   - mcp__docs_mcp_server__search_docs
   - mcp__docs_mcp_server__list_libraries
   - mcp__docs_mcp_server__find_version
-  - mcp__docs_mcp_server__list_jobs
-  - mcp__docs_mcp_server__get_job_info
-  - mcp__docs_mcp_server__cancel_job
-  - mcp__docs_mcp_server__remove_docs
-  - mcp__docs_mcp_server__fetch_url
   - mcp__nixos__nix
   - mcp__nixos__nix_versions
   - mcp__grep_app__searchGitHub

@@ -23,3 +23,24 @@ fetch.url = "https://github.com/steipete/CodeXBar/releases/download/$ver/CodexBa
 src.webpage = "https://storage.googleapis.com/brv-releases/channels/stable/version"
 src.regex = "[0-9.]+"
 fetch.url = "https://storage.googleapis.com/brv-releases/channels/stable/brv-linux-x64.tar.gz"
+
+# OmniRoute publishes no releases, so the pin tracks the deploy/edge branch's
+# commit — the line that carries @omniroute/pi-agent.
+[omniroute]
+src.git = "https://github.com/Shrub24/OmniRoute"
+src.branch = "deploy/edge"
+fetch.github = "Shrub24/OmniRoute"
+
+# Pi-Bolt ships the runtime its AOT build compiles with as a release asset
+# beside the tag, and upstream's release workflow asserts the tree's VERSION
+# equals that tag, so the tag is the only version the pair is published at.
+# Two entries because a package carries one fetcher: the tree and the runtime.
+# `pi-bolt-runtime` keeps the tag as its version, so pkgs/pi-bolt strips the
+# `bolt-v` prefix for the derivation and the runtime URL needs no rebuilding.
+[pi-bolt]
+src.github = "opensec-git/Pi-Bolt"
+fetch.github = "opensec-git/Pi-Bolt"
+
+[pi-bolt-runtime]
+src.github = "opensec-git/Pi-Bolt"
+fetch.url = "https://github.com/opensec-git/Pi-Bolt/releases/download/$ver/pi-bolt-runtime-linux-x64.tar.gz"

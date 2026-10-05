@@ -12,7 +12,6 @@ noSkills: false
 noExtensions: true
 extensions:
 @childExtensions@
-  - "@home@/.pi/agent/extensions/omniroute/src/index.ts"
   - "@home@/.pi/agent/npm/node_modules/pi-web-access/dist/index.js"
 skills:
   - "@home@/.pi/agent/skills/web-research/SKILL.md"

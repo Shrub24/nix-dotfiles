@@ -11,7 +11,6 @@ inheritSkills: true
 noExtensions: true
 extensions:
 @childExtensions@
-  - "@home@/.pi/agent/extensions/omniroute/src/index.ts"
 skills:
   - "@home@/.pi/agent/skills/codebase-explore/SKILL.md"
 preloadedSkills:

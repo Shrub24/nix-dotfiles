@@ -14,6 +14,17 @@ let
   };
 in
 {
+  # Plugin recipes only: which of them a build compiles in is the caller's
+  # selection, so `pi-bolt` takes `plugins` (see pkgs/pi-plugins).
+  pi-plugins = final.callPackage ./pi-plugins { piExtensions = inputs.pi-extensions; };
+  # The source tree and the AOT runtime are one upstream release (nvfetcher.toml),
+  # so `version` is that tag minus the prefix upstream puts on it.
+  pi-bolt = final.callPackage ./pi-bolt {
+    src = generatedSources.pi-bolt.src;
+    version = final.lib.removePrefix "bolt-v" generatedSources.pi-bolt.version;
+    runtime = generatedSources.pi-bolt-runtime.src;
+    piPlugins = final.pi-plugins;
+  };
   nix-search-tv-fzf = final.callPackage ./nix-search-tv-fzf { };
   xberg-cli = final.callPackage ./xberg-cli {
     inherit (generatedSources.xberg-cli) version src;

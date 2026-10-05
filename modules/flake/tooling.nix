@@ -15,7 +15,7 @@
         # nixos-facter output: a machine-generated capture, so prettier would
         # reformat it here and churn it again on every regeneration.
         "modules/hosts/*/facter.json"
-        # Pi subagent definitions are verbatim prompt text, compared byte-level
+        # Pi agent definitions are verbatim prompt text, compared byte-level
         # against upstream's bundled agents; the formatter renumbers their
         # ordered lists.
         "modules/agents/pi/agents/**"

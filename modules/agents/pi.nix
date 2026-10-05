@@ -1,4 +1,9 @@
-{ config, inputs, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 let
   # Read at the flake-parts level and closed over by the HM module — the same
   # shape as omniroute/ntfy/niks3. The endpoint resolves from the fleet's
@@ -15,8 +20,44 @@ let
     endpoint = "mcp";
     via = "tailnet";
   };
+  # A build compiles the recipes of the rows that name it; the package carries
+  # no selection of its own.
+  compiledPlugins =
+    registry: variant:
+    lib.listToAttrs (
+      map (row: lib.nameValuePair row.id registry.plugins.${row.id}) (
+        lib.filter (row: lib.elem variant (row.compiled or [ ])) (import ./_pi-extensions.nix)
+      )
+    );
 in
 {
+  perSystem =
+    {
+      pkgs,
+      system,
+      ...
+    }:
+    let
+      # The repository's own package set — the one modules/hosts/* extend pkgs
+      # with — so the generated-source arguments stay in pkgs/default.nix and
+      # `.#pi-bolt` builds the same derivation the host does.
+      repoPkgs = pkgs.extend (import ../../pkgs { inherit inputs system; });
+      registry = repoPkgs.pi-plugins;
+      # The child build carries a whole child's surface; only the lead one adds
+      # the host's runtime extensions. `repoPkgs.pi-bolt` already carries
+      # `piPlugins` (pkgs/default.nix), so only the selection is set here.
+      package =
+        variant:
+        repoPkgs.pi-bolt.override {
+          plugins = compiledPlugins registry variant;
+          pname = if variant == "lead" then "pi-bolt" else "pi-bolt-${variant}";
+        };
+    in
+    {
+      packages.pi-bolt = package "lead";
+      packages.pi-bolt-child = package "child";
+    };
+
   flake.modules.homeManager.pi =
     {
       config,
@@ -25,10 +66,10 @@ in
       ...
     }:
     let
-      # The Claude subscription path: claude-code is the executable
-      # pi-claude-bridge drives via the Agent SDK. Home Manager owns it like any
-      # other agent binary (see modules/agents/herdr.nix), and the bridge reads
-      # the path below rather than resolving `claude` on PATH.
+      stockPi = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi;
+      # The Claude subscription path: pi-claude-bridge drives this executable
+      # through the Agent SDK, and reads the path below rather than resolving
+      # `claude` on PATH.
       claudeCode = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.claude-code;
 
       json = pkgs.formats.json { };
@@ -36,35 +77,66 @@ in
       # Pi agent dir; referenced by rendered settings and out-of-store symlinks.
       piAgentDir = "${config.home.homeDirectory}/.pi/agent";
 
-      # Local extension checkouts live under ~/Projects, not at a mountpoint:
-      # the home tree moved to the data disk and the mountpoint is a storage
-      # fact (see modules/hosts/legion/_storage.nix), not something consumers
-      # name. Paths through here survive a mountpoint rename unchanged.
-      piExtensions = name: "${config.home.homeDirectory}/Projects/dev/custom/pi-extensions/${name}";
-      piOmniroute = "${config.home.homeDirectory}/Projects/dev/custom/OmniRoute/@omniroute/pi-agent";
+      # Rows are the single list of extensions: the settings list and the
+      # launcher both read them, so nothing can be installed for one and dropped
+      # by the other.
+      piExtensionRows = import ./_pi-extensions.nix;
+      # A row's source or path carries one placeholder: `@home@` for the
+      # operator's home, `@extensions@` for the pinned pi-extensions input, or
+      # `@recipe@<id>` for the source a pkgs/pi-plugins recipe resolves — so the
+      # running configuration never reads a live checkout.
+      rowPath =
+        value:
+        if lib.hasPrefix "@recipe@" value then
+          pkgs.pi-plugins.plugins.${lib.removePrefix "@recipe@" value}.dir
+        else
+          lib.replaceStrings
+            [ "@home@" "@extensions@" ]
+            [ config.home.homeDirectory "${inputs.pi-extensions}" ]
+            value;
+      # A row with no settings source is compiled-only (pi-vcc), so it is neither
+      # installed nor passed as -e.
+      loadable = row: (row.load or true) && row ? source;
+      # What the operator's build does not contain: a compiled factory loads
+      # unconditionally, so these are exactly the extensions to pass as -e.
+      runtimeRows = lib.filter (
+        row: loadable row && !(lib.elem "lead" (row.compiled or [ ]))
+      ) piExtensionRows;
+      pathlessRows = map (row: row.id) (lib.filter (row: (row.path or null) == null) runtimeRows);
+      # A compiled row with no recipe fails as a missing attribute; name the row.
+      missingRecipes = map (row: row.id) (
+        lib.filter (
+          row: (row.compiled or [ ]) != [ ] && !(pkgs.pi-plugins.plugins ? ${row.id})
+        ) piExtensionRows
+      );
+      # A child's -e list is written for upstream pi too, so the child launcher
+      # has to drop the extensions its own binary already contains.
+      childDuplicates = lib.concatMapStringsSep " | " (id: "*${id}*") (
+        map (row: row.id) (lib.filter (row: lib.elem "child" (row.compiled or [ ])) piExtensionRows)
+      );
+      piBoltExtensions = map (row: rowPath row.path) (
+        lib.filter (row: (row.path or null) != null) runtimeRows
+      );
 
-      # The thin base every subagent gets. Denying extension discovery also
-      # drops Pi's built-ins, including MCP and codemode; magic-context
-      # loads its child entry, not the parent session manager. Per-role
-      # additions (provider, web tools) live in the definition that needs them.
+      # The base every child gets, written for upstream pi: denying extension
+      # discovery also denies Pi's built-ins, so MCP and codemode are named back.
+      # Per-role additions (provider, web tools) live in the definition that
+      # needs them.
       childExtensions = [
         "builtin:mcp"
         "builtin:codemode"
-        "${piExtensions "pi-cbmem"}/extensions/cbmem.ts"
-        "${piExtensions "pi-output-policy"}/extensions/output-policy.ts"
-        "${piExtensions "pi-bash-processes"}/extensions/background-tasks.ts"
+        "${inputs.pi-extensions}/pi-cbmem/extensions/cbmem.ts"
+        "${inputs.pi-extensions}/pi-output-policy/extensions/output-policy.ts"
+        "${inputs.pi-extensions}/pi-bash-processes/extensions/background-tasks.ts"
         "${piAgentDir}/npm/node_modules/@cortexkit/pi-magic-context/dist/subagent-entry.js"
-        "${piAgentDir}/npm/node_modules/pi-blackhole/dist/index.js"
         "${piAgentDir}/npm/node_modules/pi-tool-repair/tool-repair.ts"
         "${piAgentDir}/npm/node_modules/@gotgenes/pi-permission-system/src/index.ts"
       ];
       childExtensionsYaml = lib.concatStringsSep "\n" (map (path: "  - ${path}") childExtensions);
 
-      # Credentials reach pi by path, not by environment. The wiring is emitted
-      # only where the credentials aspect is selected: the laptop's phase-1
-      # evaluation selects no sops at all, and the extensions then report a
-      # missing credential exactly as they did before the keys were configured
-      # here.
+      # Credentials reach pi by path, not by environment, and only where a
+      # credentials aspect is selected — the laptop's phase-1 evaluation selects
+      # no sops, and its extensions report a missing credential as before.
       sopsSecrets = (config.sops or { }).secrets or { };
 
       webSearchKeyConfig = lib.mapAttrs (_field: secret: "!cat ${sopsSecrets.${secret}.path}") (
@@ -81,8 +153,8 @@ in
         }
       );
 
-      # The models a delegated agent may run on. Each agent's frontmatter picks
-      # one of them; the list is the ceiling, not a preference order.
+      # Each definition's frontmatter picks one of these; the list is a ceiling,
+      # not a preference order.
       workhorseModels = [
         "openai-codex/gpt-6-luna"
         "omniroute/coder-high"
@@ -90,13 +162,9 @@ in
         "omniroute/smart-budget"
       ];
 
-      # Herdsman's configuration is one app-written file. These are the keys this
-      # repository owns: `disabledDefinitions` drops the bundled generalist and
-      # implementer, whose vocabulary duplicates worker and delegate, and
-      # `modelScopes` restores the per-role model allow-lists the previous
-      # delegation surface carried. A scope that exists only restricts — a
-      # definition's own list can never widen the global one — so each list names
-      # the models that definition may actually run on.
+      # The keys this repository owns in herdsman's app-written config: the two
+      # bundled roles whose vocabulary duplicates worker and delegate, and the
+      # per-role model allow-lists. A scope only restricts.
       herdsmanConfig = builtins.toJSON {
         disabledDefinitions = [
           "generalist"
@@ -119,73 +187,117 @@ in
         };
       };
 
-      # Pi materialises a missing or stale source here on next start.
-      packages = [
-        "npm:pi-web-access"
-        "npm:@cortexkit/pi-magic-context"
-        # pi-recap writes its own config (temp file + rename), so its model
-        # and multiplexer template stay a one-time `/recap-config` pass.
-        "npm:@zhcsyncer/pi-recap"
-        "npm:pi-rewind-hook"
-        # "npm:pi-interactive-shell"
-        {
-          source = "git:github.com/ayghri/i-have-adhd";
-          skills = [ ];
-        }
-        "npm:@narumitw/pi-tool"
-        # "npm:@narumitw/pi-btw"
-        "npm:pi-context-view"
-        "npm:pi-vim"
-        "npm:@narumitw/pi-starship"
-        "extensions/omniroute"
-        "npm:@ff-labs/pi-fff"
-        "npm:pi-draft-history"
-        # "npm:pi-context"
-        "${piExtensions "pi-herdsman"}"
-        "${piExtensions "pi-cbmem"}"
-        "npm:@juicesharp/rpiv-ask-user-question"
-        # "npm:pi-boomerang"
-        "npm:pi-cache-optimizer"
-        "${piExtensions "pi-bash-processes"}"
-        "${piExtensions "pi-tool-renderer"}"
-        "npm:@vanillagreen/pi-extension-manager"
-        "${piExtensions "pi-output-policy"}"
-        "${piExtensions "pi-reqcap"}"
-        "npm:@gotgenes/pi-permission-system"
-        "npm:pi-intercom"
-        "npm:pi-loop-police"
-        # Package dir, not entry files — a file path fails with "package source not found".
-        "${piExtensions "pi-jev"}"
-        "npm:pi-tool-repair"
-        # `extensions = []` suppresses the manifest entry: installed, not loaded.
-        # pi-subagents stays as the fallback delegation surface.
-        {
-          source = piExtensions "pi-subagents";
-          extensions = [ ];
-          skills = [ ];
-        }
-        {
-          source = "npm:pi-blackhole";
-          extensions = [ ];
-          skills = [ ];
-        }
-        # "npm:@luxusai/pi-hindsight"
-        # "npm:pi-claude-bridge"
-        "npm:@gotgenes/pi-anthropic-auth"
-        # "npm:@howaboua/pi-codex-conversion"
-        # "npm:@vanillagreen/pi-hooks"
-        # "@spences10/pi-context"
-      ];
+      # Pi materialises a missing or stale source here on next start. A row with
+      # `load = false` is still installed; `overrides` is what keeps it out of a
+      # discovery-based session.
+      packages = map (
+        row:
+        if row.overrides or { } == { } then
+          rowPath row.source
+        else
+          { source = rowPath row.source; } // row.overrides
+      ) (lib.filter (row: row ? source) piExtensionRows);
+
+      # The operator's session: discovery off, the four built-ins named back, the
+      # host's extensions by path. Herdr's state file joins them only once Herdr
+      # has written it — a missing -e path is fatal.
+      piBoltLead = pkgs.pi-bolt.override { plugins = compiledPlugins pkgs.pi-plugins "lead"; };
+      piBoltChild = pkgs.pi-bolt.override {
+        plugins = compiledPlugins pkgs.pi-plugins "child";
+        pname = "pi-bolt-child";
+      };
+      piBolt = pkgs.writeShellScriptBin "pi-bolt" ''
+        flags=(${lib.concatMapStringsSep " " (arg: lib.escapeShellArg arg) piBoltFlags})
+        herdr="$HOME/.pi/agent/extensions/herdr-agent-state.ts"
+        if [ -f "$herdr" ]; then flags+=(-e "$herdr"); fi
+        # Herdsman reads this from its own environment and passes it into the
+        # child pane; a session variable would reach every operator shell.
+        export PI_HERDSMAN_CHILD_COMMAND=pi-bolt-child
+        exec ${piBoltLead}/bin/pi-bolt "''${flags[@]}" "$@"
+      '';
+      # `pi` is the lead launcher, not the stock binary, so scripts and non-fish
+      # shells reach Pi-Bolt too. hiPrio outranks the stock package's own `pi`,
+      # which stays reachable as `pi-stock`.
+      alias =
+        name: target:
+        pkgs.runCommand name { } ''
+          mkdir -p $out/bin
+          ln -s ${target} $out/bin/${name}
+        '';
+      piCommand = alias "pi" "${piBolt}/bin/pi-bolt";
+      piStock = alias "pi-stock" "${stockPi}/bin/pi";
+      # A child's extension list is written for upstream pi, so this drops the
+      # paths the child binary already compiles in rather than registering them
+      # twice. Herdsman passes the long flag.
+      piBoltChildLauncher = pkgs.writeShellScriptBin "pi-bolt-child" ''
+        args=()
+        # Herdsman supplies both when it leads the launch; a launch without them
+        # would discover the settings packages the child compiles.
+        has_no_extensions=
+        for arg in "$@"; do
+          case "$arg" in -ne | --no-extensions) has_no_extensions=1 ;; esac
+        done
+        while [ $# -gt 0 ]; do
+          case "$1" in
+          -e | --extension)
+            if [ $# -lt 2 ]; then
+              echo "pi-bolt-child: $1 needs a path" >&2
+              exit 2
+            fi
+            case "''${2,,}" in
+            ${childDuplicates}) ;;
+            *) args+=("$1" "$2") ;;
+            esac
+            shift 2
+            ;;
+          *)
+            args+=("$1")
+            shift
+            ;;
+          esac
+        done
+        if [ -z "$has_no_extensions" ]; then
+          args=(--no-extensions -e builtin:mcp -e builtin:codemode "''${args[@]}")
+        fi
+        exec ${piBoltChild}/bin/pi-bolt "''${args[@]}"
+      '';
+      piBoltFlags = [
+        "--no-extensions"
+        "-e"
+        "builtin:mcp"
+        "-e"
+        "builtin:codemode"
+        "-e"
+        "builtin:tool-search"
+        "-e"
+        "builtin:llama.cpp"
+      ]
+      ++ lib.concatMap (path: [
+        "-e"
+        path
+      ]) piBoltExtensions;
+
     in
     {
       imports = [ ./_pi-mcp.nix ];
 
+      # A row that loads with no installed path would be silently absent from a
+      # session; a row that compiles with no recipe fails at an attribute.
+      assertions = [
+        {
+          assertion = pathlessRows == [ ];
+          message = "pi: these extensions load at runtime but have no installed path, so a Pi-Bolt launch would drop them: ${lib.concatStringsSep ", " pathlessRows}";
+        }
+        {
+          assertion = missingRecipes == [ ];
+          message = "pi: these rows compile into a Pi-Bolt build but have no recipe in pkgs/pi-plugins: ${lib.concatStringsSep ", " missingRecipes}";
+        }
+      ];
+
       programs.pi-coding-agent = {
-        # Unmodified upstream package: a local override changes the derivation
-        # and loses the binary-cache hit. The Bun compile flags and the codemode
-        # worker shims are upstream (numtide/llm-agents.nix#10192), and `useBun`
-        # already defaults to true.
-        package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi;
+        # Unmodified upstream: a local override changes the derivation and loses
+        # the binary-cache hit.
+        package = stockPi;
 
         settings = {
           theme = "noctalia";
@@ -210,7 +322,7 @@ in
           compaction.enabled = false;
           transport = "auto";
 
-          # Trial: MCP tools use codemode; ordinary tools stay directly available.
+          # MCP tools go through codemode; ordinary tools stay direct.
           defaultTools = [ "+codemode" ];
           codemode.mode = "on";
           showCacheMissNotices = true;
@@ -283,71 +395,7 @@ in
             # Spike guards, not budgets: a past-window request is skipped, not spent.
             rateLimitPerMinute = 60;
             rateLimitPerHour = 1000;
-            # Spend guard on pi-typesafe's persisted ledger; ~cents at our state sizes.
-            maxRequestsPerDay = 5000;
-          };
-
-          # Replacement list, not additive; absolute paths (runner children
-          # resolve relative ones against cwd, not the agent dir).
-          subagents = {
-            disableBuiltins = true;
-            agentOverrides = {
-              reviewer.disabled = true;
-              evidence-auditor.disabled = true;
-            };
-            defaultExtensions = [
-              "${piAgentDir}/extensions/omniroute/src/index.ts"
-              # codebase-memory over MCP stdio (pi-cbmem workspace member).
-              "${piExtensions "pi-cbmem"}/extensions/cbmem.ts"
-              # Children resolve mcp:<server> selectors against Pi's built-in
-              # MCP (Pi >= 0.99).
-              "${piAgentDir}/npm/node_modules/@ff-labs/pi-fff/src/index.ts"
-              # Tool-result truncation + bash backgrounding for children:
-              # children run the heaviest greps/reads and would otherwise
-              # pull 80K-token tool results into their own context.
-              "${piExtensions "pi-output-policy"}/extensions/output-policy.ts"
-              "${piExtensions "pi-bash-processes"}/extensions/background-tasks.ts"
-              # Child entry of magic-context (NOT dist/index.js, which is the
-              # parent session manager): registers ctx_search + todowrite and
-              # deliberately omits session-scoped tools.
-              "${piAgentDir}/npm/node_modules/@cortexkit/pi-magic-context/dist/subagent-entry.js"
-              # Compaction for children only.
-              "${piAgentDir}/npm/node_modules/pi-blackhole/dist/index.js"
-              "${piAgentDir}/npm/node_modules/pi-tool-repair/tool-repair.ts"
-              "${piAgentDir}/npm/node_modules/pi-intercom/index.ts"
-              "${piAgentDir}/npm/node_modules/pi-loop-police/extensions/index.ts"
-            ];
-            defaultProvider = "omniroute";
-
-            # Model pools per role: the outer `allow` is the fleet pool and each
-            # agent's own list narrows it, since both must match. `strict` is
-            # what makes the bound real — without it an out-of-scope frontmatter
-            # or parent-inherited model only warns, leaving a per-run
-            # `[model=…]` as the only thing actually bounded.
-            #
-            # sol sits in the outer pool solely for oracle, whose own list is the
-            # only place it appears; no working agent can resolve a sol, astra,
-            # terra or claude-opus model. Aliases need no entry: they resolve to
-            # the canonical agent before the scope is applied.
-            modelScope = {
-              enforce = true;
-              strict = true;
-              allow = workhorseModels ++ [
-                "omniroute/explorer"
-                "openai-codex/gpt-6.1-sol"
-              ];
-              agents = {
-                worker.allow = workhorseModels;
-                delegate.allow = workhorseModels;
-                researcher.allow = workhorseModels;
-                reviewer.allow = workhorseModels;
-                evidence-auditor.allow = workhorseModels;
-                scout.allow = [ "omniroute/explorer" ];
-                oracle.allow = [
-                  "openai-codex/gpt-6.1-sol"
-                ];
-              };
-            };
+            maxRequestsPerSession = 5000;
           };
 
           rewind.retention = {
@@ -358,7 +406,13 @@ in
         };
       };
 
-      home.packages = [ claudeCode ];
+      home.packages = [
+        claudeCode
+        piBolt
+        piBoltChildLauncher
+        piStock
+        (lib.hiPrio piCommand)
+      ];
 
       # Session mode is chosen at launch: plain `pi` implements with the user
       # in the loop; `pio` appends the orchestrator stance.
@@ -366,35 +420,24 @@ in
 
       home.sessionVariables = {
         HINDSIGHT_BASE_URL = hindsightUrl;
-        PI_BLACKHOLE_MEMORY = "false";
-        # Child context limits are NOT handled here: blackhole's mid-run path needs
-        # pi's JS module graph (AgentSession.prototype), which a compiled pi does
-        # not ship, so any in-run threshold set below is inert for children. The
-        # threshold is kept only because blackhole still compacts at run end.
-        PI_BLACKHOLE_COMPACT_AFTER_TOKENS = "200000";
       };
 
-      # pi-tool.json and pi-stamp.json stay application-owned: they save with a
-      # temporary file plus rename(), which replaces a store symlink with a real
-      # file instead of failing.
-      #
-      # pi-claude-bridge writes claude-bridge.json in place (writeFileSync, no
-      # rename), so a symlink survives — its own startup notice being the only
-      # write it ever makes. The notice key is declared here for that reason:
-      # the notice cannot fire, so the file is never written, and `/login` stays
-      # imperative — the credential it writes lands in ~/.claude.
+      # Files whose writer renames over the path (pi-tool.json, pi-stamp.json)
+      # stay application-owned: a rename replaces a store symlink instead of
+      # failing. claude-bridge.json writes in place, so it is safe to declare —
+      # its startup-notice key is set precisely so the notice never fires and
+      # `/login` stays imperative, landing the credential in ~/.claude.
       home.file = {
-        # Pi's MCP servers. Underscore ids keep Pi's normalized namespaces and
-        # pi-subagents selectors identical.
+        # Pi's MCP servers. Underscore ids keep Pi's normalized namespaces
+        # stable: the tool names a model sees are mcp__<server>__<tool>.
         ".pi/agent/mcp.json".source = json.generate "pi-native-mcp.json" {
           mcpServers = {
             docs_mcp_server = {
               url = docsMcpUrl;
               description = "Library documentation search, served by the fleet's index on the forge.";
             };
-            # One tool with a large schema, and the one server whose tools are
-            # worth declaring: GitHub code search is reached mid-investigation,
-            # where a codemode script would cost more than the declaration.
+            # GitHub code search is reached mid-investigation, where a codemode
+            # script costs more than declaring the one tool.
             grep_app = {
               url = "https://mcp.grep.app";
               exposure = "direct";
@@ -403,8 +446,7 @@ in
               url = "https://sourcegraph.com/.api/mcp";
               description = "Sourcegraph public-code search: commit, diff, keyword and file lookups.";
             }
-            # `!command` is Pi's value form; the token never leaves the
-            # decrypted secret file.
+            # `!command` is Pi's value form; the token never leaves the secret file.
             // lib.optionalAttrs (sopsSecrets ? SOURCEGRAPH_TOKEN) {
               headers.Authorization = "!printf 'token %s' \"$(cat ${sopsSecrets.SOURCEGRAPH_TOKEN.path})\"";
             };
@@ -474,14 +516,6 @@ in
           provider.pathToClaudeCodeExecutable = "${claudeCode}/bin/claude";
         };
 
-        ".pi/agent/extensions/subagent/config.json".source = json.generate "pi-subagents-config.json" {
-          fleetView = true;
-          toolDescriptionMode = "compact";
-          inlineToolDisplay = "rich";
-          missions.enabled = false;
-          scheduledRuns.enabled = false;
-        };
-
         ".pi/agent/extensions/pi-tool-repair.json".source = json.generate "pi-tool-repair.json" {
 
           grammarRepair = {
@@ -518,8 +552,6 @@ in
 
         ".pi/agent/skills".source = ./pi/skills;
 
-        # Out-of-store symlink so the fork is edited in place, no rebuild needed.
-        ".pi/agent/extensions/omniroute".source = config.lib.file.mkOutOfStoreSymlink piOmniroute;
       };
 
       # Herdsman's configuration is one app-written file: changing settings

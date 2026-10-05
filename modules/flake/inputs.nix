@@ -23,6 +23,10 @@ _: {
     };
 
     # Package layer: consumed by pkgs/ recipes rather than by one feature.
+    pi-extensions = {
+      url = "github:Shrub24/pi-extensions";
+      flake = false;
+    };
 
     # Disk layout capture for install day (written but unimported until the
     # bare-metal install; see modules/hosts/legion/_disko.nix).
