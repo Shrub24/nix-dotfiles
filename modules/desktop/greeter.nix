@@ -58,7 +58,7 @@ _: {
 
       niriUwsmLauncher = pkgs.writeShellApplication {
         name = "niri-uwsm-session";
-        # ponytail: uwsm stays on pacman until NixOS day — NixOS creates
+        # uwsm stays on pacman until NixOS day — NixOS creates
         # /etc/profiles/per-user/<user>/bin/ with uwsm on the systemd service
         # PATH; on Arch that path doesn't exist so niri's bare-name
         # `uwsm finalize` spawn fails -> WAYLAND_DISPLAY never exported.

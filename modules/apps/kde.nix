@@ -31,7 +31,7 @@ _: {
           kdegraphics-thumbnailers
         ];
 
-      # ponytail: breeze-icons intentionally omitted — user runs Sweet-Rainbow
+      # breeze-icons intentionally omitted — user runs Sweet-Rainbow
       # icon pack (in ~/.local/share/icons/ via matugen). If KDE-specific icons
       # break in dolphin/kdeconnect, add kdePackages.breeze-icons here.
     };

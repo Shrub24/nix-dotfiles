@@ -344,7 +344,7 @@
         "C %h/.local/share/wallpapers/wallpapersden.com_colorful-textured-abstract_3840x2160.jpg 0644 - - - ${wallpaperSeed}"
       ];
 
-      # ponytail: niri's KDL parser rejects a second binds node in one file, so shell binds render into noctalia-binds.kdl included below.
+      # niri's KDL parser rejects a second binds node in one file, so shell binds render into noctalia-binds.kdl included below.
       xdg.configFile."niri/noctalia.kdl" =
         lib.mkIf (config ? wayland.windowManager.niri && config.wayland.windowManager.niri.enable)
           {

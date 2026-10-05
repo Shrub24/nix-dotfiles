@@ -33,7 +33,7 @@ _: {
 
   # The systemManager aspect's resolved.conf.d mdns-disable drop-in is owned
   # natively by services.resolved on NixOS.
-  # ponytail: enableResolvedMdns is dropped — enable resolved with mDNS off.
+  # enableResolvedMdns is dropped — enable resolved with mDNS off.
   # Re-add the option if a caller ever needs mDNS on; avahi is the separate knob.
   flake.modules.nixos.network =
     { pkgs, ... }:

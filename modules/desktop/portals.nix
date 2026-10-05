@@ -38,7 +38,7 @@ _: {
 
       home.packages = [ pkgs.wl-clipboard ];
 
-      # ponytail: on NixOS UWSM pulls these from the systemd user env via the
+      # on NixOS UWSM pulls these from the systemd user env via the
       # NixOS UWSM module; on Arch the imperative ~/.config/uwsm/env still
       # sources them (hm-session-vars.sh isn't read by Arch's UWSM).
       home.sessionVariables = {
