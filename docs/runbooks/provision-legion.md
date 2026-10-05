@@ -27,6 +27,22 @@ This runbook stops at the first-boot soak; Arch retirement, LUKS growth and the
 Windows reinstall are not installation prerequisites. No disk operation below should be executed by an agent without fresh
 operator approval.
 
+## Pre-flight
+
+The install consumes a commit, never the working tree. All four checks run in the
+repository root:
+
+```sh
+git status --porcelain      # empty
+git rev-parse HEAD          # the revision the export is taken from; record it
+df -h /nix                  # at least 40 GiB free on the Arch root for the build
+nix flake check --no-build --no-write-lock-file
+```
+
+Section 1 exports the checked-out commit, repeats the check on the export, and builds
+the full toplevel; the post-build hook pushes it to the cache. Stop here or there on
+any failure.
+
 ## 1. Build before changing partitions
 
 Use Bash for the commands below, including if your login shell is fish:
@@ -36,8 +52,8 @@ bash
 set -euo pipefail
 cd /home/saurabhj/.dotfiles/nix
 
-# The reviewed switch configuration. Change only after validating a newer commit.
-REV=$(git rev-parse e5e369572270)
+# The checked-out commit, or an earlier validated one set in REV.
+REV=$(git rev-parse "${REV:-HEAD}")
 EXPORT="$HOME/legion-install-$REV"
 mkdir -p "$EXPORT"
 git archive "$REV" | tar -x -C "$EXPORT"
@@ -162,8 +178,9 @@ while capturing its image or during this installation.
 ## 4. Remove the retired Fedora partitions
 
 **Destructive checkpoint:** both GPT backups verified, and explicit operator
-approval. These two partitions are unused — Fedora has no firmware entry and
-nothing on them is mounted — and nothing is created in their place.
+approval. These two partitions are unused — nothing on them is mounted — and
+nothing is created in their place. The `Fedora` firmware entry goes with them, in
+section 8, once the new NixOS entry is verified.
 
 ```sh
 HYNIX=/dev/disk/by-id/nvme-SHGP31-2000GM_ADC5N475011305I3I
@@ -189,9 +206,10 @@ sudo sfdisk --json "$HYNIX"
 ```
 
 Compare against `hynix.gpt`: Windows 500 GiB (`28a0a913-…`), Shared 150 GiB
-(`ab412804-…`) and LinuxData 650 GiB (`47fa5ee2-…`) must keep their PARTUUIDs,
-partlabels and bounds, and the freed extent must stay unpartitioned. This disk is
-never written again in this runbook.
+(`ab412804-…`) and LinuxData 650 GiB (`17e798c6-…`) must keep their PARTUUIDs,
+partlabels and bounds, LinuxData must still carry filesystem UUID `47fa5ee2-…`, and
+the freed extent must stay unpartitioned. This disk is never written again in this
+runbook.
 
 ## 5. Replace Windows partitions 1–3
 
@@ -353,6 +371,21 @@ sudo ls -ld /mnt/var/lib/{tailscale,bluetooth,sops-nix}
 sudo ls -l /mnt/etc/NetworkManager/system-connections/
 ```
 
+### Retire Arch's vdirsyncer
+
+`vdirsyncer` and `khal` are no longer declared, so nothing on the new system
+re-creates the sync. Arch's crontab still runs a binary that is gone, and `/home`
+still carries the Google OAuth token and the client credentials:
+
+```sh
+crontab -r                      # the sole entry runs /usr/bin/vdirsyncer
+crontab -l || true
+rm -rf ~/.vdirsyncer            # token file plus the inline client id and secret
+```
+
+Revoke that OAuth client in the Google account's security settings; deleting the
+files does not.
+
 Never print private keys, tokens or network passwords into the execution record.
 
 ## 8. Install and set the login password
@@ -374,9 +407,10 @@ sudo efibootmgr -v
 
 Stop on an installation error; do not reboot until it is resolved. Verify a new
 NixOS/Linux Boot Manager entry points to the new ESP and **Limine still points to
-the preserved Arch ESP**. The retired Fedora partitions have no firmware entry;
-the Windows entry does, and it now points at an ESP this install replaced —
-resolve its id from a fresh listing rather than an earlier one, and delete it:
+the preserved Arch ESP**. Only then delete the two entries belonging to what this
+install removed — `Windows Boot Manager`, whose ESP is gone, and `Fedora`, whose
+partitions are gone. Record the listing first, and resolve each `BootNNNN` id from a
+fresh one, because the firmware assigns them:
 
 ```sh
 sudo efibootmgr -v
@@ -387,7 +421,10 @@ sudo efibootmgr -v
 Home Manager activation can change the shared home during installation or first
 boot. Close applications before installation and keep a home snapshot/backup if
 rollback must include application state. Arch's partitions remain intact, but its
-home configuration is not an independent copy.
+home configuration is not an independent copy. An unmanaged file already sitting at
+a Home Manager target is renamed to `<name>.backup` by first activation instead of
+aborting it, so those renames are the record of what the declarative configuration
+displaced.
 
 ## 9. Boot and verify
 
@@ -395,7 +432,8 @@ Close applications, sync writes and reboot. Select the new NixOS entry in the
 firmware boot menu. After logging in:
 
 ```sh
-for target in / /nix /boot /home /data; do findmnt "$target"; done
+for target in / /nix /boot /home /data /mnt/Shared /.snapshots /var/cache /var/log \
+  /var/tmp /var/lib/libvirt/images; do findmnt "$target"; done
 systemctl --failed
 systemctl status home-manager-saurabhj.service --no-pager
 sudo tailscale status
@@ -404,12 +442,26 @@ bluetoothctl devices
 nmcli connection show
 sudo snapper list-configs
 systemctl list-timers --all 'snapper*'
+
+uname -r                                  # linuxPackages_latest, not the LTS default
+timedatectl show -p Timezone --value      # set from GeoIP by automatic-timezoned
+busctl get-property org.freedesktop.login1 /org/freedesktop/login1 \
+  org.freedesktop.login1.Manager HandleLidSwitchExternalPower    # ignore
+cat /sys/bus/platform/drivers/ideapad_acpi/VPC2004:00/conservation_mode   # 1
+command -v toggle-kbd codex opencode
+sudo grep toggle-kbd-helper /etc/sudoers  # NOPASSWD for lock and unlock only
+ls -l /lib64/ld-linux-x86-64.so.2         # nix-ld shim for prebuilt binaries
+ls /proc/sys/fs/binfmt_misc/              # appimage registrations
+git config --global --list                # the carried unmanaged ~/.gitconfig
+ls ~/*.backup ~/.config/*.backup 2>/dev/null
 ```
 
 Confirm LUKS unlock, root mounts on `cryptroot`, home/data on LinuxData, desktop,
 input, audio, networking, NVIDIA, root-secret decryption, and the existing legion
 tailnet identity. Check Syncthing's identity before permitting unexpected
-resynchronisation.
+resynchronisation. Confirm the lid is ignored on AC power (battery behaviour is
+unchanged), a ZMK board appears for keypeek with its `/dev/hidraw*` node at mode
+666, and a KDE Connect phone pairs over the LAN.
 
 The carried imperative keyboard script may shadow the Nix version. On NixOS only:
 
@@ -438,8 +490,9 @@ rather than starting a large build in the ISO's tmpfs.
 
 ## After successful daily use
 
-Stop here for the soak. Fedora deletion, stale firmware cleanup, Arch retirement,
-LUKS growth, TPM enrolment and Windows reinstallation are separate operations.
+Stop here for the soak: the freed SK hynix extent stays unpartitioned and Arch stays
+bootable through Limine. Arch retirement, LUKS growth, TPM enrolment and the Windows
+reinstallation are separate operations.
 Before retiring Arch, capture fresh partition identities and prepare a separate
 growth procedure preserving the LUKS partition's start and identity and respecting
 the GPT last usable sector. Do not use the physical disk's final sector as a
