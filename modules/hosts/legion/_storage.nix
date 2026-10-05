@@ -1,5 +1,10 @@
 # The data disk's topology: UUID and subvolume names nothing else restates.
 #
+# TODO: mountpoint, homeMountpoint, homeChurn, nodatacow and homeUser have no
+# consumer; the subvolumes and +C were realised by
+# docs/runbooks/migrate-home-to-data-disk.md. Drop them, or adopt them in disko,
+# when the data disk is next reorganised.
+#
 # homeChurn paths are nested subvolumes, so home snapshots exclude them.
 # Snapshots do not descend into child subvolumes. Regenerable state only.
 #

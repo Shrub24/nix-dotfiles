@@ -30,8 +30,6 @@ in
         # whenever telegram is enabled, and dispatch policy is consumer-local.
         telegram.enable = false;
 
-        # TODO: fill secrets/notify.yaml — the placeholder token only degrades
-        # delivery, so the observed unit is unaffected either way.
         secretFiles.hostSystem = ../secrets/notify.yaml;
 
         # Only units nothing else owns; the fleet's aspects register their own.
