@@ -78,6 +78,118 @@
       pnpm = "latest";
       bun = "latest";
     };
+
+    # Desktop widgets calibrated to this machine's eDP-1 panel; the shared
+    # noctalia aspect keeps no geometry.
+    noctalia.settings.desktop_widgets = {
+      schema_version = 2;
+      widget_order = [
+        "desktop-widget-0000000000000001"
+        "desktop-widget-0000000000000003"
+        "desktop-widget-0000000000000004"
+        "desktop-widget-0000000000000005"
+      ];
+      grid = {
+        cell_size = 16;
+        major_interval = 4;
+        visible = true;
+      };
+      widget = {
+        "desktop-widget-0000000000000001" = {
+          box_height = 512.0;
+          box_width = 560.0;
+          cx = 381.5;
+          cy = 837.5;
+          output = "eDP-1";
+          rotation = 0.0;
+          type = "fancy_audio_visualizer";
+          settings = {
+            background = false;
+            bar_width = 0.7;
+            bloom_intensity = 0.5;
+            inner_diameter = 0.4;
+            primary_color = "secondary";
+            ring_opacity = 0.4;
+            secondary_color = "on_secondary";
+            visualization_mode = "bars_rings";
+          };
+        };
+        "desktop-widget-0000000000000003" = {
+          box_height = 320.0;
+          box_width = 560.0;
+          cx = 853.5;
+          cy = 533.5;
+          flip_x = true;
+          output = "eDP-1";
+          rotation = 0.0;
+          type = "audio_visualizer";
+          settings = {
+            background = false;
+            bands = 64;
+            centered = true;
+            color_1 = "on_secondary";
+            color_2 = "secondary";
+            mirrored = true;
+            show_when_idle = true;
+          };
+        };
+        "desktop-widget-0000000000000004" = {
+          box_height = 304.0;
+          box_width = 192.0;
+          cx = 389.5;
+          cy = 381.5;
+          output = "eDP-1";
+          rotation = 0.0;
+          type = "media_player";
+          settings = {
+            background = false;
+            color = "error";
+            hide_when_no_media = true;
+            layout = "vertical";
+          };
+        };
+        "desktop-widget-0000000000000005" = {
+          box_height = 0.0;
+          box_width = 0.0;
+          cx = 853.5;
+          cy = 293.5;
+          output = "eDP-1";
+          rotation = 0.0;
+          type = "clock";
+          settings = {
+            background = false;
+            color = "secondary";
+          };
+        };
+      };
+    };
+  };
+
+  # This machine's external DP-1 and NVIDIA render node; the shared niri
+  # aspect carries neither.
+  wayland.windowManager.niri.settings = {
+    debug."render-drm-device" = "/dev/dri/by-path/pci-0000:01:00.0-render";
+
+    _children = [
+      {
+        workspace = {
+          _args = [ "home" ];
+          open-on-output = "DP-1";
+        };
+      }
+      {
+        workspace = {
+          _args = [ "dev" ];
+          open-on-output = "DP-1";
+        };
+      }
+      {
+        workspace = {
+          _args = [ "mb" ];
+          open-on-output = "DP-1";
+        };
+      }
+    ];
   };
 
   services.hermes-agent = {

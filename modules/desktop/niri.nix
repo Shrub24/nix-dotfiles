@@ -13,35 +13,12 @@ _: {
         enable = true;
 
         settings = {
-          debug = {
-            render-drm-device = "/dev/dri/by-path/pci-0000:01:00.0-render";
-          };
-
           config-notification = {
             disable-failed = { };
           };
 
           # toKDL: repeated root nodes go through _children.
           _children = [
-            {
-              workspace = {
-                _args = [ "home" ];
-                open-on-output = "DP-1";
-              };
-            }
-            {
-              workspace = {
-                _args = [ "dev" ];
-                open-on-output = "DP-1";
-              };
-            }
-            {
-              workspace = {
-                _args = [ "mb" ];
-                open-on-output = "DP-1";
-              };
-            }
-
             {
               spawn-at-startup = [
                 "uwsm"
