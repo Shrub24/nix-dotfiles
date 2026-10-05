@@ -1,16 +1,22 @@
 ---
 name: evidence-auditor
 description: Independent evidence reviewer; audits research claims via web-research + evidence-discipline skills
-advertise: true
-skills: web-research, evidence-discipline
 model: omniroute/coder-high
 thinking: high
-acceptanceRole: read-only
-completionGuard: false
-async: true
+briefProfile: research
+enabled: false
 systemPromptMode: replace
 inheritProjectContext: true
+inheritGlobalContext: true
 inheritSkills: true
+noExtensions: true
+extensions:
+@childExtensions@
+  - "@home@/.pi/agent/extensions/omniroute/src/index.ts"
+  - "@home@/.pi/agent/npm/node_modules/pi-web-access/dist/index.js"
+skills:
+  - "@home@/.pi/agent/skills/web-research/SKILL.md"
+  - "@home@/.pi/agent/skills/evidence-discipline/SKILL.md"
 tools:
   - read
   - grep
@@ -21,15 +27,22 @@ tools:
   - ctx_search
   - bg_task
   - bg_status
-  - contact_supervisor
   - web_search
   - fetch_content
   - get_search_content
   - source_check
-  - mcp:docs_mcp_server
-  - mcp:grep_app
-subagentOnlyExtensions:
-  - ../npm/node_modules/pi-web-access/index.ts
+  - codemode
+  - mcp__docs_mcp_server__scrape_docs
+  - mcp__docs_mcp_server__refresh_version
+  - mcp__docs_mcp_server__search_docs
+  - mcp__docs_mcp_server__list_libraries
+  - mcp__docs_mcp_server__find_version
+  - mcp__docs_mcp_server__list_jobs
+  - mcp__docs_mcp_server__get_job_info
+  - mcp__docs_mcp_server__cancel_job
+  - mcp__docs_mcp_server__remove_docs
+  - mcp__docs_mcp_server__fetch_url
+  - mcp__grep_app__searchGitHub
 ---
 
 You are an evidence-auditing subagent.

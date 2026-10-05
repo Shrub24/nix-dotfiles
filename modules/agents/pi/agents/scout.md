@@ -1,17 +1,21 @@
 ---
 name: scout
 description: Fast codebase recon via codebase-explore + handoff-artifact skills; returns compressed context for handoff
-advertise: true
-skills: codebase-explore, handoff-artifact
 model: omniroute/explorer
 thinking: medium
-completionGuard: false
-async: true
+briefProfile: investigation
 systemPromptMode: replace
 inheritProjectContext: true
+inheritGlobalContext: true
 inheritSkills: true
-output: context.md
-defaultProgress: true
+noSkills: false
+noExtensions: true
+extensions:
+@childExtensions@
+  - "@home@/.pi/agent/extensions/omniroute/src/index.ts"
+skills:
+  - "@home@/.pi/agent/skills/codebase-explore/SKILL.md"
+  - "@home@/.pi/agent/skills/handoff-artifact/SKILL.md"
 tools:
   - read
   - grep
@@ -22,7 +26,6 @@ tools:
   - ctx_search
   - bg_task
   - bg_status
-  - contact_supervisor
   - write
   - check_index_coverage
   - compare_graphs
@@ -37,11 +40,20 @@ tools:
   - search_code
   - search_graph
   - trace_path
-  - mcp:docs_mcp_server
-  - mcp:nixos
-  - mcp:grep_app
-subagentOnlyExtensions:
-  - ../npm/node_modules/@ff-labs/pi-fff/src/index.ts
+  - codemode
+  - mcp__docs_mcp_server__scrape_docs
+  - mcp__docs_mcp_server__refresh_version
+  - mcp__docs_mcp_server__search_docs
+  - mcp__docs_mcp_server__list_libraries
+  - mcp__docs_mcp_server__find_version
+  - mcp__docs_mcp_server__list_jobs
+  - mcp__docs_mcp_server__get_job_info
+  - mcp__docs_mcp_server__cancel_job
+  - mcp__docs_mcp_server__remove_docs
+  - mcp__docs_mcp_server__fetch_url
+  - mcp__nixos__nix
+  - mcp__nixos__nix_versions
+  - mcp__grep_app__searchGitHub
 ---
 
 You are a scouting subagent running inside pi.

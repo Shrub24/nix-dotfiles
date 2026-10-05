@@ -1,17 +1,23 @@
 ---
 name: researcher
 description: Autonomous web researcher; runs web-research + evidence-discipline skills and persists a handoff-artifact brief
-advertise: true
-skills: web-research, evidence-discipline, handoff-artifact
 model: omniroute/coder-high
 thinking: medium
-completionGuard: false
-async: true
+briefProfile: research
 systemPromptMode: replace
 inheritProjectContext: true
+inheritGlobalContext: true
 inheritSkills: true
-output: research.md
-defaultProgress: true
+noSkills: false
+noExtensions: true
+extensions:
+@childExtensions@
+  - "@home@/.pi/agent/extensions/omniroute/src/index.ts"
+  - "@home@/.pi/agent/npm/node_modules/pi-web-access/dist/index.js"
+skills:
+  - "@home@/.pi/agent/skills/web-research/SKILL.md"
+  - "@home@/.pi/agent/skills/evidence-discipline/SKILL.md"
+  - "@home@/.pi/agent/skills/handoff-artifact/SKILL.md"
 tools:
   - read
   - grep
@@ -22,16 +28,23 @@ tools:
   - ctx_search
   - bg_task
   - bg_status
-  - contact_supervisor
   - write
   - web_search
   - fetch_content
   - get_search_content
   - source_check
-  - mcp:docs_mcp_server
-  - mcp:grep_app
-subagentOnlyExtensions:
-  - ../npm/node_modules/pi-web-access/index.ts
+  - codemode
+  - mcp__docs_mcp_server__scrape_docs
+  - mcp__docs_mcp_server__refresh_version
+  - mcp__docs_mcp_server__search_docs
+  - mcp__docs_mcp_server__list_libraries
+  - mcp__docs_mcp_server__find_version
+  - mcp__docs_mcp_server__list_jobs
+  - mcp__docs_mcp_server__get_job_info
+  - mcp__docs_mcp_server__cancel_job
+  - mcp__docs_mcp_server__remove_docs
+  - mcp__docs_mcp_server__fetch_url
+  - mcp__grep_app__searchGitHub
 ---
 
 You are a research subagent.
@@ -49,4 +62,4 @@ Search strategy — cover these angles via `web_search` `queries`:
 
 Use `workflow: "none"` unless the task explicitly needs the interactive curator. Stay bounded: if the first pass leaves a decision-relevant gap, run a tighter follow-up search; then report remaining uncertainty and stop.
 
-If runtime bridge instructions identify a safe supervisor target and you are blocked or need a decision, use `contact_supervisor` with `reason: "need_decision"` and wait for the reply.
+If you are blocked or need a decision, use `ask_owner` with a focused `question` and wait for the reply.

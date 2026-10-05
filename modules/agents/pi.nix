@@ -43,6 +43,23 @@ in
       piExtensions = name: "${config.home.homeDirectory}/Projects/dev/custom/pi-extensions/${name}";
       piOmniroute = "${config.home.homeDirectory}/Projects/dev/custom/OmniRoute/@omniroute/pi-agent";
 
+      # The thin base every subagent gets. Denying extension discovery also
+      # drops Pi's built-ins, including MCP and codemode; magic-context
+      # loads its child entry, not the parent session manager. Per-role
+      # additions (provider, web tools) live in the definition that needs them.
+      childExtensions = [
+        "builtin:mcp"
+        "builtin:codemode"
+        "${piExtensions "pi-cbmem"}/extensions/cbmem.ts"
+        "${piExtensions "pi-output-policy"}/extensions/output-policy.ts"
+        "${piExtensions "pi-bash-processes"}/extensions/background-tasks.ts"
+        "${piAgentDir}/npm/node_modules/@cortexkit/pi-magic-context/dist/subagent-entry.js"
+        "${piAgentDir}/npm/node_modules/pi-blackhole/dist/index.js"
+        "${piAgentDir}/npm/node_modules/pi-tool-repair/tool-repair.ts"
+        "${piAgentDir}/npm/node_modules/@gotgenes/pi-permission-system/src/index.ts"
+      ];
+      childExtensionsYaml = lib.concatStringsSep "\n" (map (path: "  - ${path}") childExtensions);
+
       # Credentials reach pi by path, not by environment. The wiring is emitted
       # only where the credentials aspect is selected: the laptop's phase-1
       # evaluation selects no sops at all, and the extensions then report a
@@ -73,6 +90,35 @@ in
         "omniroute/smart-budget"
       ];
 
+      # Herdsman's configuration is one app-written file. These are the keys this
+      # repository owns: `disabledDefinitions` drops the bundled generalist and
+      # implementer, whose vocabulary duplicates worker and delegate, and
+      # `modelScopes` restores the per-role model allow-lists the previous
+      # delegation surface carried. A scope that exists only restricts — a
+      # definition's own list can never widen the global one — so each list names
+      # the models that definition may actually run on.
+      herdsmanConfig = builtins.toJSON {
+        disabledDefinitions = [
+          "generalist"
+          "implementer"
+        ];
+        modelScopes = {
+          allow = workhorseModels ++ [
+            "omniroute/explorer"
+            "openai-codex/gpt-6.1-sol"
+          ];
+          agents = {
+            worker.allow = workhorseModels;
+            delegate.allow = workhorseModels;
+            researcher.allow = workhorseModels;
+            "evidence-auditor".allow = workhorseModels;
+            scout.allow = [ "omniroute/explorer" ];
+            oracle.allow = [ "openai-codex/gpt-6.1-sol" ];
+            reviewer.allow = [ "openai-codex/gpt-6.1-sol" ];
+          };
+        };
+      };
+
       # Pi materialises a missing or stale source here on next start.
       packages = [
         "npm:pi-web-access"
@@ -82,22 +128,20 @@ in
         "npm:@zhcsyncer/pi-recap"
         "npm:pi-rewind-hook"
         # "npm:pi-interactive-shell"
-        # "git:github.com/DietrichGebert/ponytail"
         {
           source = "git:github.com/ayghri/i-have-adhd";
           skills = [ ];
         }
         "npm:@narumitw/pi-tool"
         # "npm:@narumitw/pi-btw"
-        "npm:@narumitw/pi-herdr"
         "npm:pi-context-view"
         "npm:pi-vim"
         "npm:@narumitw/pi-starship"
         "extensions/omniroute"
         "npm:@ff-labs/pi-fff"
         "npm:pi-draft-history"
-        "npm:pi-context"
-        "${piExtensions "pi-subagents"}"
+        # "npm:pi-context"
+        "${piExtensions "pi-herdsman"}"
         "${piExtensions "pi-cbmem"}"
         "npm:@juicesharp/rpiv-ask-user-question"
         # "npm:pi-boomerang"
@@ -106,6 +150,7 @@ in
         "${piExtensions "pi-tool-renderer"}"
         "npm:@vanillagreen/pi-extension-manager"
         "${piExtensions "pi-output-policy"}"
+        "${piExtensions "pi-reqcap"}"
         "npm:@gotgenes/pi-permission-system"
         "npm:pi-intercom"
         "npm:pi-loop-police"
@@ -113,6 +158,12 @@ in
         "${piExtensions "pi-jev"}"
         "npm:pi-tool-repair"
         # `extensions = []` suppresses the manifest entry: installed, not loaded.
+        # pi-subagents stays as the fallback delegation surface.
+        {
+          source = piExtensions "pi-subagents";
+          extensions = [ ];
+          skills = [ ];
+        }
         {
           source = "npm:pi-blackhole";
           extensions = [ ];
@@ -130,27 +181,11 @@ in
       imports = [ ./_pi-mcp.nix ];
 
       programs.pi-coding-agent = {
-        package =
-          (inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi.override {
-            useBun = true;
-          }).overrideAttrs
-            (old: {
-              preBuild = ''
-                mkdir -p src/extensions/codemode
-                echo 'import "../../../dist/extensions/codemode/worker.js";' > src/extensions/codemode/worker.ts
-              '';
-              preInstall =
-                builtins.replaceStrings
-                  [
-                    "--compile ./dist/bun/cli.js"
-                    "./src/utils/image-resize-worker.ts --outfile"
-                  ]
-                  [
-                    "--compile --no-compile-autoload-bunfig --compile-autoload-package-json ./dist/bun/cli.js"
-                    "./src/utils/image-resize-worker.ts ./src/extensions/codemode/worker.ts --outfile"
-                  ]
-                  old.preInstall;
-            });
+        # Unmodified upstream package: a local override changes the derivation
+        # and loses the binary-cache hit. The Bun compile flags and the codemode
+        # worker shims are upstream (numtide/llm-agents.nix#10192), and `useBun`
+        # already defaults to true.
+        package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi;
 
         settings = {
           theme = "noctalia";
@@ -267,8 +302,6 @@ in
               # Children resolve mcp:<server> selectors against Pi's built-in
               # MCP (Pi >= 0.99).
               "${piAgentDir}/npm/node_modules/@ff-labs/pi-fff/src/index.ts"
-              # Spec-hash install dir; stable across content updates.
-              "${piAgentDir}/tmp/extensions/git-github.com/363c5354/DietrichGebert/ponytail/pi-extension/index.js"
               # Tool-result truncation + bash backgrounding for children:
               # children run the heaviest greps/reads and would otherwise
               # pull 80K-token tool results into their own context.
@@ -327,6 +360,10 @@ in
 
       home.packages = [ claudeCode ];
 
+      # Session mode is chosen at launch: plain `pi` implements with the user
+      # in the loop; `pio` appends the orchestrator stance.
+      home.shellAliases.pio = "pi --append-system-prompt ${piAgentDir}/modes/orchestrator.md";
+
       home.sessionVariables = {
         HINDSIGHT_BASE_URL = hindsightUrl;
         PI_BLACKHOLE_MEMORY = "false";
@@ -339,9 +376,7 @@ in
 
       # pi-tool.json and pi-stamp.json stay application-owned: they save with a
       # temporary file plus rename(), which replaces a store symlink with a real
-      # file instead of failing. pi-herdr.json is refused on read when it is not
-      # a regular file (its own lstat guard), so a store symlink breaks the
-      # plugin outright.
+      # file instead of failing.
       #
       # pi-claude-bridge writes claude-bridge.json in place (writeFileSync, no
       # rename), so a symlink survives — its own startup notice being the only
@@ -464,7 +499,19 @@ in
         #
         ".pi/agent/pi-starship.toml".source = ./pi/pi-starship.toml;
 
-        ".pi/agent/agents".source = ./pi/agents;
+        # Herdsman passes `skills` and `extensions` values to Pi unchanged, so
+        # the definitions carry @home@ placeholders instead of a hardcoded home
+        # directory and @childExtensions@ for the shared thin base above.
+        ".pi/agent/agents".source = pkgs.runCommand "pi-agents" { } ''
+          mkdir $out
+          for f in ${./pi/agents}/*.md; do
+            substitute "$f" "$out/$(basename "$f")" \
+              --subst-var-by home ${config.home.homeDirectory} \
+              --subst-var-by childExtensions ${lib.escapeShellArg childExtensionsYaml}
+          done
+        '';
+
+        ".pi/agent/modes".source = ./pi/modes;
 
         # Global main-agent instructions: skill routing + delegation policy.
         ".pi/agent/AGENTS.md".source = ./pi/AGENTS.md;
@@ -474,5 +521,24 @@ in
         # Out-of-store symlink so the fork is edited in place, no rebuild needed.
         ".pi/agent/extensions/omniroute".source = config.lib.file.mkOutOfStoreSymlink piOmniroute;
       };
+
+      # Herdsman's configuration is one app-written file: changing settings
+      # through `/agents` rewrites it atomically (temp file plus rename), which
+      # is the same write path as herdr's config.toml and would replace a store
+      # symlink with a real file. The keys this repository owns are merged
+      # recursively into the real file instead, so anything set through the UI
+      # survives a switch.
+      home.activation.piHerdsmanConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        cfg="$HOME/.pi/agent/pi-herdsman/config.json"
+        ${pkgs.coreutils}/bin/mkdir -p "$(dirname "$cfg")"
+        if ${pkgs.coreutils}/bin/test -s "$cfg"; then
+          ${pkgs.jq}/bin/jq --argjson owned '${herdsmanConfig}' \
+            '. * $owned' "$cfg" > "$cfg.new"
+        else
+          ${pkgs.jq}/bin/jq -n --argjson owned '${herdsmanConfig}' \
+            '$owned' > "$cfg.new"
+        fi
+        ${pkgs.coreutils}/bin/mv -f "$cfg.new" "$cfg"
+      '';
     };
 }
