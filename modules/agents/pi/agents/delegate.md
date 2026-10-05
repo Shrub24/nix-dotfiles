@@ -25,7 +25,6 @@ tools:
   - todowrite
   - ctx_search
   - bg_task
-  - bg_status
   - edit
   - write
   - check_index_coverage

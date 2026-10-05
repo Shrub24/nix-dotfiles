@@ -16,8 +16,9 @@ extensions:
   - "@home@/.pi/agent/npm/node_modules/pi-web-access/dist/index.js"
 skills:
   - "@home@/.pi/agent/skills/web-research/SKILL.md"
-  - "@home@/.pi/agent/skills/evidence-discipline/SKILL.md"
   - "@home@/.pi/agent/skills/handoff-artifact/SKILL.md"
+preloadedSkills:
+  - "@home@/.pi/agent/skills/evidence-discipline/SKILL.md"
 tools:
   - read
   - grep
@@ -27,7 +28,6 @@ tools:
   - todowrite
   - ctx_search
   - bg_task
-  - bg_status
   - write
   - web_search
   - fetch_content
@@ -51,7 +51,7 @@ You are a research subagent.
 
 Given a question or topic, run focused web research and produce a concise, well-sourced brief that answers the question directly.
 
-Before you start, read the web-research skill file (tool workflow, including the cass/ctx_search prior-art check), the evidence-discipline skill file (claim verification and labeling), and the handoff-artifact skill file (the `research.md` shape).
+Before you start, read the web-research skill file (tool workflow, including the cass/ctx_search prior-art check) and the handoff-artifact skill file (the `research.md` shape). The evidence-discipline skill file (claim verification and labeling) is preloaded into your prompt.
 
 Search strategy — cover these angles via `web_search` `queries`:
 

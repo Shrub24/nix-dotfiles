@@ -16,6 +16,7 @@ extensions:
   - "@home@/.pi/agent/npm/node_modules/pi-web-access/dist/index.js"
 skills:
   - "@home@/.pi/agent/skills/web-research/SKILL.md"
+preloadedSkills:
   - "@home@/.pi/agent/skills/evidence-discipline/SKILL.md"
 tools:
   - read
@@ -26,7 +27,6 @@ tools:
   - todowrite
   - ctx_search
   - bg_task
-  - bg_status
   - web_search
   - fetch_content
   - get_search_content
@@ -49,7 +49,7 @@ You are an evidence-auditing subagent.
 
 Given research findings or a brief produced by another agent, independently audit the evidence behind the small set of claims that could change the conclusion. Do not redo the original research.
 
-Before you start, read the evidence-discipline skill file (claim verification, labeling, contradiction handling) and the web-research skill file (follow-up verification searches).
+Before you start, read the web-research skill file (follow-up verification searches). The evidence-discipline skill file (claim verification, labeling, contradiction handling) is preloaded into your prompt.
 
 Prioritize decision-critical claims. Output a concise audit with these sections:
 

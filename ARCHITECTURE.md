@@ -325,10 +325,13 @@ describes only machines that are always on.
   re-run after a Herdr upgrade. Herdsman passes a definition's `skills` paths
   to Pi unchanged, so the agent definitions carry `@home@` placeholders that the
   Home Manager module substitutes at build time, and the drift guard reads the
-  skill names back out of those paths. Worker and delegate preload the
-  `lean-implementation` body instead of only advertising it: an advertisement
-  lets the model skip the read, and that skill is where their implementation
-  rules live. It costs the skill's tokens on every child request. Two
+  skill names back out of those paths. A skill whose absence would break the
+  role's core work is preloaded — its body inlined into every child request,
+  at the cost of that skill's tokens — instead of only advertised, because an
+  advertisement lets the model skip the read. That is `lean-implementation`
+  for worker and delegate, `review-policy` and `lean-implementation` for
+  reviewer, and `evidence-discipline` for researcher and evidence-auditor;
+  every other skill stays advertised and is read when its work needs it. Two
   publishers of pane metadata never run at once: the swap is one change.
 
 - **Herdsman's config is seeded, not linked** — `pi-herdsman/config.json` is
@@ -376,6 +379,16 @@ describes only machines that are always on.
   user in the loop; `pio` appends `~/.pi/agent/modes/orchestrator.md`. A mode is
   appended prompt text fixed for the session, so the prompt cache sees one head,
   and `AGENTS.md` stays mode-neutral.
+
+- **A managed child cannot be given its own agent directory** — the obvious way
+  to quiet a child's TUI is a second agent directory plus a fish `pi` wrapper
+  that points `PI_CODING_AGENT_DIR` at it, with only `settings.json` differing.
+  pi-herdsman refuses it: the child derives its mailbox path from the agent
+  directory and compares that string with the `PI_HERDSMAN_MAILBOX` its parent
+  passed, so a linked or renamed directory makes it classify itself as unmanaged
+  and the launch dies with `pane_not_ready`. Normalising both sides through
+  `realpath` upstream is the prerequisite; until then the thin definitions are
+  the whole child-side TUI reduction.
 
 - **Implementation discipline has one source** — the `lean-implementation`
   skill. Agent definitions that write or review code list it and tell the agent

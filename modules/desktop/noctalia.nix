@@ -298,6 +298,12 @@
             output_path = "$XDG_CACHE_HOME/noctalia/nvim-palette.lua";
             post_hook = "${pkgs.procps}/bin/pkill -SIGUSR1 -x nvim || true";
           };
+          # Radar's lifecycle roles mapped onto Noctalia's roles; local because
+          # the mapping is ours. No hook: Radar reads the file at startup.
+          agent-radar = {
+            input_path = "${localTemplates}/agent-radar.toml";
+            output_path = "$XDG_CONFIG_HOME/radar/config.toml";
+          };
         };
 
       # Specialized at the feature use site: uid from the projected account.

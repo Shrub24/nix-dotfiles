@@ -22,7 +22,6 @@ tools:
   - todowrite
   - ctx_search
   - bg_task
-  - bg_status
   - check_index_coverage
   - compare_graphs
   - detect_changes
