@@ -5,11 +5,6 @@
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  flake.modules.nixos.monique = _: {
-    imports = [ inputs.monique.nixosModules.default ];
-    programs.monique.enable = true;
-  };
-
   flake.modules.homeManager.monique =
     {
       pkgs,

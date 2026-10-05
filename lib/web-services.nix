@@ -31,14 +31,6 @@ let
       health.path = "/status";
     };
 
-    docs-mcp = {
-      name = "Docs MCP";
-      port = 6280;
-      icon = "openai";
-      description = "Grounded docs MCP server";
-      ui.path = "/";
-    };
-
     qmd = {
       name = "QMD";
       port = 8181;
