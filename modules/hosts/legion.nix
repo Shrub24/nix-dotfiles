@@ -24,12 +24,18 @@ let
     endpoint = "api";
     via = "tailnet";
   };
-  # nix-fleet's resolver normalizes the profile into specs; the private key is
-  # a credential reference it leaves null, so the composition fills it in.
+  # Flip after enrolling all six keys in secrets/hosts/legion/ssh.yaml.
+  sshIdentitiesEnrolled = true;
+  identityAspects = lib.optional sshIdentitiesEnrolled "legion-ssh-identities";
+  # nix-fleet leaves the credential reference to this host's composition.
   dispatch = inputs.nix-fleet.lib.buildProfile;
-  dispatchSpecs = map (spec: spec // { sshKeyPath = "/root/.ssh/nix-remote"; }) (
-    dispatch.resolveBuildProfile config.fleet "workstations"
-  );
+  dispatchSpecs = map (
+    spec:
+    spec
+    // {
+      sshKeyPath = if sshIdentitiesEnrolled then "/run/secrets/ssh-builder" else "/root/.ssh/nix-remote";
+    }
+  ) (dispatch.resolveBuildProfile config.fleet "workstations");
   # Which fleet hosts this machine trusts is host policy; trust is not use.
   # Multiplexing rides the selection rather than the global block.
   sshOptions = {
@@ -110,6 +116,7 @@ let
     "lsp"
     "nvim"
     "cli"
+    "git"
     "languages"
     "intelli-shell"
     "lazyjournal"
@@ -160,7 +167,8 @@ let
     "wezterm"
     "kitty"
     "foot"
-  ];
+  ]
+  ++ identityAspects;
   # Full set minus the aspects NixOS itself provides, plus embedded-only ones.
   embeddedHmAspects =
     lib.subtractLists [
@@ -184,7 +192,8 @@ let
     "greeter"
     "nix"
     "nixbuild"
-  ];
+  ]
+  ++ identityAspects;
   nixosAspects = [
     "current-host"
     "foundation"
@@ -209,7 +218,8 @@ let
     "syncthing"
     "niks3"
     "mosh"
-  ];
+  ]
+  ++ identityAspects;
   homeConfiguration = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
     modules = [

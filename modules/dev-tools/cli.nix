@@ -19,7 +19,6 @@ _: {
         glow
         entr
         git-filter-repo
-        github-cli
         curlie
         lazydocker
         lazyjj

@@ -53,6 +53,7 @@ let
     "lsp"
     "nvim"
     "cli"
+    "git"
     "languages"
     "intelli-shell"
     "lazyjournal"

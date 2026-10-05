@@ -79,20 +79,29 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ nix.nix ssh.nix tailscale.nix   homeManager AND systemManager AND nixos
   ├─ hosts/legion.nix      selects explicit aspect lists → host outputs (HM, system, NixOS)
   ├─ hosts/spectre.nix   selects the lean NixOS laptop set → nixosConfigurations.spectre
+  ├─ hosts/legion/ssh-identities.nix  enrollment-gated HM/system/NixOS identities
   ├─ hosts/legion/_*.nix   raw host files (_home, _system, _nixos, _hardware, _disko, _storage) — ignored
   └─ hosts/spectre/_*.nix  raw host files (_home, _nixos, _hardware, _disko) — ignored
 
 Host composition lives in modules/hosts/legion.nix and modules/hosts/spectre.nix,
 not flake.nix:
-  ├─ 62 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
-  ├─ 7 systemManager aspects + _system.nix → systemConfigs.legion
-  └─ 23 nixos aspects + _nixos.nix + _disko.nix + embedded HM → nixosConfigurations.legion
+  ├─ 63 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
+  ├─ 8 systemManager aspects + _system.nix → systemConfigs.legion
+  └─ 24 nixos aspects + _nixos.nix + _disko.nix + embedded HM → nixosConfigurations.legion
 
 modules/hosts/spectre.nix composes the laptop as a NixOS-only host —
 no standalone HM output and no system-manager counterpart (the embedded
 Home Manager is its only configuration path):
   └─ 44 lean HM aspects (phase-gated) + _home.nix, 20 nixos aspects +
      _nixos.nix + _hardware.nix + _disko.nix + embedded HM → nixosConfigurations.spectre
+
+The Legion counts above include one enrollment-gated aspect in each class,
+selected by `sshIdentitiesEnrolled`:
+`legion-ssh-identities` delivers client keys through Home Manager and builder
+and server host keys through the system layer, from `secrets/hosts/legion/ssh.yaml`.
+Server host-key restoration applies only on NixOS; Arch sshd keeps its existing keys.
+[Identity enrollment](docs/runbooks/enroll-legion-identities.md) records the
+one-time import and external age-key bootstrap required for a fresh install.
 
 Build dispatch is resolved, not restated. `nix-fleet` owns the canonical
 inventory — target system, tailnet hostname, SSH host key — and this repository
@@ -218,6 +227,15 @@ is exposed to the root daemon, and no system secret is rendered into user
 state. Canonical contract:
 [secrets-ownership-model](openspec/specs/secrets-ownership-model/spec.md).
 
+Git configuration is Home Manager-owned through the `git` aspect: Git LFS,
+delta, user preferences, GitHub CLI settings and its credential helper are
+native module declarations. Interactive GitHub authentication remains in the
+login keyring; neither the OAuth token nor the keyring is a Nix-owned file.
+Legion's enrollment-gated SSH identity aspect delivers private keys from a
+host-specific encrypted file, so restoring those keys requires the bootstrap
+age identities, not a surviving home directory. Age identities stay externally
+provisioned: encrypting the bootstrap key with itself would make recovery circular.
+
 ## Service Lifecycle
 
 User services follow systemd's own lifecycle model instead of activation
@@ -318,9 +336,12 @@ describes only machines that are always on.
   temporary file plus `rename()`, which replaces a store symlink with a real
   file instead of failing, and diverges silently.
 - **Delegation is herdsman; pane state is Herdr's own integration** —
-  `pi-herdsman` replaces `pi-subagents` (kept installed, unloaded, as the
-  fallback) and the official `herdr integration install pi` replaces
-  `@narumitw/pi-herdr`. The integration is a file Herdr writes to
+  `pi-herdsman` replaces `pi-subagents`, which is gone outright: no extension
+  row, no `subagents` settings block and no rendered config remain. What that
+  block carried lives where its owner reads it — the disabled roles through
+  herdsman's own `disabledDefinitions`, a child's extensions and provider
+  through its agent definition. The official `herdr integration install pi`
+  replaces `@narumitw/pi-herdr`. The integration is a file Herdr writes to
   `~/.pi/agent/extensions/herdr-agent-state.ts`, so it stays imperative and is
   re-run after a Herdr upgrade. Herdsman passes a definition's `skills` paths
   to Pi unchanged, so the agent definitions carry `@home@` placeholders that the
@@ -367,6 +388,79 @@ describes only machines that are always on.
   symlinks, so Pi-specific personas are not placed there. Extension paths in a
   definition are written relative to the definition file, which keeps them free
   of hardcoded home directories.
+- **Pi-Bolt plugin sources are flake inputs** — its local extensions come from
+  the `pi-extensions` input, advanced by `nix flake update pi-extensions` and
+  replaceable for a local build with `--override-input`. `pkgs/pi-plugins` is
+  the one place a compiled plugin's recipe lives: where its source comes from
+  (an npm pin, a path in that input, or a pinned upstream checkout), which
+  file exports its factory, and the patch its compile-time assumptions need,
+  applied with `--replace-fail` so a moved upstream fails loudly. Every source
+  here is a pin: the npm tarballs by hand, the local plugins from the
+  `pi-extensions` input, and OmniRoute's `deploy/edge` checkout through
+  nvfetcher like the rest of `pkgs/_sources` — so the running configuration
+  never reads a live checkout, and `nix flake update pi-extensions` is what
+  moves the local plugins' code. The launcher disables extension discovery, so
+  compiled plugins need not be removed from the normal Pi `packages` list. Loop Police's mutable config lives in the agent directory;
+  Ask User Question keeps its built-in English fallback in the compiled build.
+
+  A compiled factory is unconditional: `--no-extensions` disables discovery and
+  Pi's built-ins, not the factories baked into the binary, so which plugins are
+  compiled is a build-time decision with two answers — `pkgs/pi-bolt` builds the
+  recipes it is handed and carries no selection of its own. The lead build is
+  the operator's session; the child build is what a delegated child launches
+  with, which is why it leaves out the renderer, starship, vim and recap the
+  operator wants and the child does not. Both are derived from one row table:
+  a row's `compiled` list names the builds that contain it. Two plugins need
+  help being compiled: Loop Police and Ask User Question read a file beside
+  their own source, which no longer exists once the source is bytes in the
+  binary, so their paths move to a Pi-provided location or their fallback; and
+  permission-system resolves its bash-parser wasm through `require.resolve`,
+  which is a build-time resolution and so becomes an embedded file import, after
+  which the `npm root -g` walk is dead code worth short-circuiting.
+
+  Compiled plugin code must also bind the modules the executable runs: Pi's own
+  tsconfig points the host packages at `packages/*/src` while the build bundles
+  `packages/*/dist`, so a plugin compiled from that map gets a second copy of the
+  host's classes and a class-style patch — the renderer's user-message component —
+  lands on a class the app never renders with. `pkgs/pi-bolt` stages a tsconfig
+  beside the plugin files that moves the coding-agent entry to `dist`, and the AOT
+  ceiling it exports is the largest single module's top-level bytecode, re-measured
+  when the plugin set changes.
+
+  What a binary does not contain must still reach the session, and that is the
+  one place both Pi entry points read the same list: one row per extension in
+  `modules/agents/_pi-extensions.nix` yields the settings `packages` entry the
+  discovery-based `pi` loads and the extension path a discovery-denied Pi-Bolt
+  launch passes. A row that loads without an installed path, or compiles without
+  a recipe, fails evaluation rather than going quietly missing.
+
+- **One extension list serves both Pi binaries** — the definitions' extension
+  paths are written for upstream pi, and the child launcher drops the ones its
+  own binary already compiles in rather than registering them twice. That drop
+  is load-bearing rather than hygiene: on the CLI a duplicate is a startup
+  failure, so a definition still naming a compiled plugin presents as a pane
+  that never comes up. The launchers pass `--no-extensions` for the same reason
+  — it suppresses the settings `packages` set, though not the compiled
+  factories — and the child launcher supplies it with the two builtins a child
+  needs when the launch does not, so a child started without herdsman's own flag
+  list is still complete. The wrapper is the only place that can make that
+  choice, and `pi` is that wrapper rather than a name a shell function shadows:
+  installed with `lib.hiPrio` over the stock package's own `pi`, so a script or a
+  bash shell reaches Pi-Bolt too, while the stock binary stays installed under its
+  own name, `pi-stock`. Routing is not ours: the lead launcher exports
+  `PI_HERDSMAN_CHILD_COMMAND`, and pi-herdsman — which creates the pane itself —
+  runs that command as the child's process (`herdr pane run <pane> '<command>
+--extension …'`), so no shell function or per-kind override is involved. Herdr's
+  own `agent start --kind pi` path, which types the canonical `pi` into the pane's
+  shell, is only the fallback for a lead that sets no command.
+  Herdsman supplies its own session layout flags (`--session-dir`, `--session`)
+  and nothing intercepts them, which is what keeps a child's sessions in
+  `.pi/sessions/children`, while operator sessions stay in the global root
+  (`~/.pi/agent/sessions`) — Pi resolves one session root at a time, so a
+  project-local operator `sessionDir` hides every pre-existing session from the
+  picker, `--continue`, Magic Context and Memex (removed 2026-10-06; migrating
+  the operator's sessions into their projects stays a manual step).
+  `pi-stock` is the stock binary, so degrading costs no rebuild.
 
 - **The why lives in `context/`** — the keep-the-why skill owns it: decisions,
   rejected alternatives, workarounds, incidents and constraints, each with a

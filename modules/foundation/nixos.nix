@@ -7,8 +7,7 @@ _: {
       primaryUser = config.currentHost.primaryUser;
     in
     {
-      # No declarative config: the user's git config is unmanaged and lives in
-      # the carried /home.
+      # Home Manager owns user configuration; Git is also available to root.
       programs.git.enable = true;
 
       # uv's CPython and the prebuilt rust/go/node binaries run against Nix's

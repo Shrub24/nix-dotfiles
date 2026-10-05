@@ -339,17 +339,28 @@ Keep the header backup private and copy it off-machine.
 
 ## 7. Copy machine identity and chosen networks
 
+The current configuration has [SSH identity enrollment](enroll-legion-identities.md)
+enabled: sops restores the client, builder and server host keys. Copy the external
+root age bootstrap key before installation:
+
+```sh
+sudo install -d -m 0700 /mnt/var/lib/sops-nix
+sudo install -m 0600 /var/lib/sops-nix/key.txt /mnt/var/lib/sops-nix/key.txt
+sudo cmp /var/lib/sops-nix/key.txt /mnt/var/lib/sops-nix/key.txt
+```
+
+**Only when installing an unenrolled revision** (`sshIdentitiesEnrolled = false`),
+also preserve the old server and builder key files. Skip this block for the current
+configuration:
+
 ```sh
 sudo install -d -m 0755 /mnt/etc/ssh
-sudo install -d -m 0700 /mnt/var/lib/sops-nix
 sudo bash -c 'cp -a /etc/ssh/ssh_host_* /mnt/etc/ssh/'
-sudo cp -a /var/lib/sops-nix/key.txt /mnt/var/lib/sops-nix/
-
-# The daemon's remote-builder identity. The NixOS host's nix.buildMachines names
-# this same path, and nothing on the target re-creates the key.
-sudo ls -l /root/.ssh/nix-remote
 sudo install -d -m 0700 /mnt/root/.ssh
 sudo install -m 0600 /root/.ssh/nix-remote /mnt/root/.ssh/nix-remote
+sudo cmp /etc/ssh/ssh_host_ed25519_key /mnt/etc/ssh/ssh_host_ed25519_key
+sudo cmp /root/.ssh/nix-remote /mnt/root/.ssh/nix-remote
+sudo ssh-keygen -lf /mnt/etc/ssh/ssh_host_ed25519_key.pub
 ```
 
 Copy mutable daemon state while its owner is stopped. **Use a local terminal, not
@@ -375,10 +386,6 @@ sudo cp -a \
   "/etc/NetworkManager/system-connections/CHOSEN-NETWORK.nmconnection" \
   /mnt/etc/NetworkManager/system-connections/
 
-sudo cmp /etc/ssh/ssh_host_ed25519_key /mnt/etc/ssh/ssh_host_ed25519_key
-sudo cmp /var/lib/sops-nix/key.txt /mnt/var/lib/sops-nix/key.txt
-sudo cmp /root/.ssh/nix-remote /mnt/root/.ssh/nix-remote
-sudo ssh-keygen -lf /mnt/etc/ssh/ssh_host_ed25519_key.pub
 sudo ls -ld /mnt/var/lib/{tailscale,bluetooth,sops-nix}
 sudo ls -l /mnt/etc/NetworkManager/system-connections/
 ```
@@ -419,34 +426,34 @@ files does not.
 
 Never print private keys, tokens or network passwords into the execution record.
 
-### Retire Arch's git credential helper
+### Migrate Git configuration to Home Manager
 
-`~/.gitconfig` is unmanaged and carried. Its global helper names
-`/usr/lib/git-core/git-credential-libsecret`, an Arch path absent from the configured
-NixOS git. The GitHub-specific helpers also name the old `~/.nix-profile`, whereas
-embedded Home Manager installs packages under `/etc/profiles/per-user/saurabhj`.
+The `git` aspect owns the preferences previously in `~/.gitconfig`, Git LFS,
+delta and GitHub's credential helper. The old file takes precedence over Home
+Manager's `~/.config/git/config`, so leaving it in place would retain the stale
+Arch libsecret and hidden `.gh-wrapped` helper paths. Before the first activation,
+back it up outside Git's automatic config search paths, then remove the original.
+Do not overwrite an existing backup. Do the same for an unmanaged
+`~/.config/git/config` if present; a Home Manager store link needs no manual removal.
+The existing `~/.config/gh/config.yml` also becomes HM-owned: preserve it before a
+standalone HM switch, or let embedded HM's configured `.backup` handling move it
+aside. The generated file preserves its preferences and `co` alias.
+`~/.config/gh/hosts.yml` and the keyring remain application-owned.
 
-After booting NixOS, check both the environment token and the stored keyring login,
-then use the public `gh` command on PATH rather than its hidden wrapped binary:
+Interactive GitHub credentials remain in the login keyring and are not copied into
+Nix configuration. After boot, verify the generated configuration and check both
+the environment token and stored keyring login:
 
 ```sh
+git config --global --show-origin --list
 gh auth status
 env -u GH_TOKEN -u GITHUB_TOKEN gh auth status
-
-git config --global --fixed-value --unset-all credential.helper \
-  /usr/lib/git-core/git-credential-libsecret
-for host in https://github.com https://gist.github.com; do
-  git config --global --replace-all "credential.$host.helper" ''
-  git config --global --add "credential.$host.helper" '!gh auth git-credential'
-done
 ```
 
-The empty host-specific helper resets inherited helpers before invoking `gh`. These
-commands do not change or delete tokens. Other HTTPS hosts need a working helper
-selected separately; do not silently replace keyring storage with plaintext `store`.
 If the stored GitHub login fails, unlock the carried keyring first. If its token has
 been revoked, renew it with `gh auth login` rather than deleting unrelated keyring
-state.
+state. Do not run `gh auth setup-git` to write a second set of global helpers: the
+native Home Manager module already owns them.
 
 ## 8. Install and set the login password
 
@@ -535,15 +542,17 @@ for target in / /nix /boot /home /data /mnt/Shared /.snapshots /var/cache /var/l
 systemctl --failed
 systemctl status home-manager-saurabhj.service --no-pager
 sudo tailscale status
-systemctl status sops-install-secrets.service nix-daemon.service --no-pager
+systemctl status nix-daemon.service --no-pager
 sudo test -s /var/lib/sops-nix/key.txt
 sudo test -s /run/secrets/rendered/nixbuild.net.env
 sudo test -s /run/secrets/niks3.api_token
 test -r ~/.config/sops/age/keys.txt
 test -s ~/.config/sops-nix/secrets/GITHUB_TOKEN
 sudo ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-  -i /root/.ssh/nix-remote dev@home-forge true
-sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+  -i /run/secrets/ssh-builder dev@home-forge true
+for type in ed25519 rsa ecdsa; do
+  sudo ssh-keygen -lf "/run/secrets/ssh-host-$type"
+done
 bluetoothctl devices
 nmcli connection show
 sudo snapper list-configs
@@ -558,7 +567,7 @@ command -v toggle-kbd codex opencode
 sudo grep toggle-kbd-helper /etc/sudoers  # NOPASSWD for lock and unlock only
 ls -l /lib64/ld-linux-x86-64.so.2         # nix-ld shim for prebuilt binaries
 ls /proc/sys/fs/binfmt_misc/              # appimage registrations
-git config --global --list                # the carried unmanaged ~/.gitconfig
+git config --global --show-origin --list
 ls ~/*.backup ~/.config/*.backup 2>/dev/null
 ```
 
@@ -569,13 +578,19 @@ resynchronisation. Confirm the lid is ignored on AC power (battery behaviour is
 unchanged), a ZMK board appears for keypeek with its `/dev/hidraw*` node at mode
 666, and a KDE Connect phone pairs over the LAN.
 
-Run the GitHub checks and helper repair from section 7 after logging in. If sops
-fails, verify the shared home is mounted and the copied root age key exists with
-root ownership and mode `0600`. Restore a missing key from its secured backup;
-do not generate a replacement, which cannot decrypt the existing secrets. Then
-restart the failed activation/service after correcting the key. If builder SSH
-fails, check `/root/.ssh/nix-remote` and its permissions against the section 7 copy,
-and verify Tailscale connectivity and the configured host key; do not bypass host
+Run the GitHub checks from section 7 after logging in. `sudo sshd -T` lists the
+selected server key paths; compare all three fingerprints with the pre-install
+record. For an unenrolled revision, use `/root/.ssh/nix-remote` for the builder
+check and fingerprint the copied `/etc/ssh/ssh_host_*_key.pub` files instead.
+
+Root sops runs through NixOS activation, not a `sops-install-secrets.service` unit;
+the secret-file checks above verify its output. If sops fails, verify the shared
+home is mounted and the copied root age key exists with root ownership and mode
+`0600`. Restore a missing key from its secured backup; do not generate a replacement,
+which cannot decrypt the existing secrets. Re-run system activation and the failed
+Home Manager service after correcting the key. If builder SSH fails, check
+`/run/secrets/ssh-builder` is present, root-owned and mode `0400`, then verify
+Tailscale connectivity and the configured host key; do not bypass host
 key checking or rotate the builder identity to work around a missing local key.
 
 The carried imperative keyboard script may shadow the Nix version. On NixOS only:
