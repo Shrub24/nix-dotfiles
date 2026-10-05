@@ -170,7 +170,7 @@ in
     { config, ... }:
     {
       # nix-fleet owns the daemon baseline and the GC unit; this selects them and
-      # binds what is host-specific (identity, scheduling, evaluation knobs).
+      # binds what is host-specific (identity, I/O class, memory, evaluation knobs).
       imports = [
         inputs.nix-fleet.modules.nixos.nix-baseline
         inputs.nix-fleet.modules.nixos.nix-gc
@@ -196,14 +196,10 @@ in
         "nix-path" = [ "nixpkgs=flake:nixpkgs" ];
       };
 
-      # These are interactive machines: batch CPU and idle I/O scheduling plus a
-      # CPU weight and memory bound keep a session responsive while a build runs.
-      nix.daemonCPUSchedPolicy = "batch";
+      # The fleet contract owns CPU policy, weights and I/O priority; the hosts keep
+      # idle I/O (so that priority is inert) and bound daemon memory themselves.
       nix.daemonIOSchedClass = "idle";
-      systemd.services.nix-daemon.serviceConfig = {
-        CPUWeight = 50;
-        MemoryHigh = "8G";
-      };
+      systemd.services.nix-daemon.serviceConfig.MemoryHigh = "8G";
     }
 
   ;
