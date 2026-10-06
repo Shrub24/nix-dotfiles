@@ -29,8 +29,12 @@ operator approval.
 
 ## Pre-flight
 
-The install consumes a commit, never the working tree. All four checks run in the
-repository root:
+The install consumes a commit, never the working tree. The working copy is jj's;
+git's `HEAD` stays pinned to its parent revision, so an empty `git status` means
+jj's working-copy commit carries nothing, and `git rev-parse HEAD` names the
+revision `git archive` exports. Satisfy the gate with jj — commit the change, or
+describe it and run `jj new` — never with `git add`/`git commit`, which is where a
+colocated repository gets confused. All four checks run in the repository root:
 
 ```sh
 git status --porcelain      # empty
@@ -58,6 +62,7 @@ EXPORT="$HOME/legion-install-$REV"
 mkdir -p "$EXPORT"
 git archive "$REV" | tar -x -C "$EXPORT"
 printf 'Installing commit: %s\n' "$REV"
+jj log -r @- --no-graph -T 'change_id.short() ++ " " ++ commit_id ++ "\n"'   # the same revision, in jj terms
 df -h /nix /data
 
 nix flake check "path:$EXPORT" --no-build --no-write-lock-file
@@ -426,12 +431,50 @@ a Home Manager target is renamed to `<name>.backup` by first activation instead 
 aborting it, so those renames are the record of what the declarative configuration
 displaced.
 
+`--no-root-passwd` leaves root without a password, and the configuration declares
+none for `saurabhj` either, so the account is locked until that `passwd` call — which
+makes it the one step in this runbook that must not be skipped. sudo needs the same
+password (`security.sudo.wheelNeedsPassword` is at its default), and
+`users.mutableUsers` is `true`, so what you set here survives every later rebuild.
+
+Nothing has to be declared for that to keep working. The alternative is to declare
+`initialHashedPassword` before installing: the activation script applies it during
+`nixos-install`, so the machine comes up with a working login. Use a `$y$` (yescrypt)
+hash rather than `$6$`, because the hash is world-readable in the store and in git
+history.
+
+### Recovery: no usable login
+
+If the installed system comes up without a working login, the account exists but has
+no password, and root has none either, so there is no way in from the installed
+system itself. Boot NixOS media and enter it:
+
+```sh
+cryptsetup open "$CRYPT" cryptroot
+
+mkdir -p /mnt
+mount -o "$OPTS,subvol=@" /dev/mapper/cryptroot /mnt
+mkdir -p /mnt/{boot,nix}
+mount -o "$OPTS,subvol=@nix" /dev/mapper/cryptroot /mnt/nix
+mount -o fmask=0077,dmask=0077 "$ESP" /mnt/boot
+
+nixos-enter --root /mnt
+passwd saurabhj
+```
+
+Set `$CRYPT`, `$ESP` and `$OPTS` again in the media's shell; they are the values from
+section 6. This repeats only the mount commands — no partitioning, `luksFormat`,
+`mkfs` or subvolume creation. Reboot into the installed system and confirm the
+password before changing anything about the firmware entries.
+
 ## 9. Boot and verify
 
 Close applications, sync writes and reboot. Select the new NixOS entry in the
-firmware boot menu. After logging in:
+firmware boot menu. Logging in at the greeter with the password set in section 8 is
+the first check that it took; confirm `sudo` accepts the same password:
 
 ```sh
+sudo -v
 for target in / /nix /boot /home /data /mnt/Shared /.snapshots /var/cache /var/log \
   /var/tmp /var/lib/libvirt/images; do findmnt "$target"; done
 systemctl --failed

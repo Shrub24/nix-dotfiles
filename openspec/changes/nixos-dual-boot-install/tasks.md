@@ -179,12 +179,13 @@
 
 ## Group 5 — Install from the running Arch system (4)
 
-- [ ] 5.1 Install into the mounted target from the running Arch system, with a scratch
-      checkout of the recorded SHA as the flake path:
-      `sudo nix run nixpkgs#nixos-install-tools -- --root /mnt --flake /root/legion-export#legion --no-root-passwd`.
-      The toplevel is copied from the local store through the script's `auto`
-      substituter, so expect copies and no rebuild; record the target store's
-      size before and after.
+- [ ] 5.1 Install into the mounted target from the running Arch system, using the
+      toplevel the gate build produced from the verified checkout (runbook section 1):
+      `sudo nix run nixpkgs#nixos-install-tools -- --root /mnt --system <gate toplevel store path> --no-root-passwd`.
+      Installing the built object rather than re-evaluating a flake keeps the
+      installed system identical to the configuration that passed the gate. The toplevel is copied
+      from the local store through the script's `auto` substituter, so expect copies
+      and no rebuild; record the target store's size before and after.
 
   - criteria: install completes; bootloader installed on the new ESP; no rebuild of the toplevel
   - verify: exit 0; `/mnt/boot` populated with the generation's kernels; `/mnt/nix/var/nix/profiles/system` set
@@ -199,6 +200,9 @@
   - criteria: password set on the installed target; root left locked by `--no-root-passwd`
   - verify: password change succeeds interactively; no password material in artifacts
   - depends: 5.1
+  - notes: with `--no-root-passwd` and no declared user password, a missed password
+    leaves a locked account and no root login; the runbook's recovery section re-enters
+    the installed system from media
 
 - [ ] 5.3 Remove the firmware entries that point at what this change deleted:
       re-read `efibootmgr`, match the `Windows Boot Manager` and `Fedora` entries

@@ -69,7 +69,7 @@ Risks it carries, and how the plan answers them:
 
 - **Repartitioning the disk that holds the running root.** The GPT edit itself is a write to the table area; the kernel is made to re-read it with `partx -u` (per-partition BLKPG deltas), not `partprobe`/`BLKRRPART`, which fails with `EBUSY` when any partition of that disk is open — and p5 is the running root. If the re-read still refuses, the new nodes appear after a reboot into Arch; the plan resumes there, because no later step depends on the re-read having happened in the same boot.
 - **The EFI variable write from the chroot.** `nixos-enter` does `mount --rbind /sys "$mountPoint/sys"`, which carries the `efivarfs` mount into the chroot, so `boot.loader.efi.canTouchEfiVariables = true` and systemd-boot's `bootctl install` write the new `BootNNNN` entry. The plan asserts `/sys/firmware/efi/efivars` exists and is writable before starting, so a legacy-mode boot is caught before the install rather than after it.
-- **A flake path root cannot read.** The install runs as root from a scratch checkout of the recorded SHA, not from the operator's working tree — which also keeps the uncommitted changes in that tree out of the installed system.
+- **A tree the operator has edited.** The gate build runs in an export of the recorded SHA, never the operator's working tree, so uncommitted changes cannot reach the installed system — and the install then takes the object that passed the gate rather than re-evaluating the flake as root.
 - **Arch changes under the install.** The skeptical case for media is a running system that cannot be trusted; that risk is real but smaller than the tmpfs-build and state-copy costs, and the fallback is one ISO boot away.
 
 The fallback differs only in where the closure comes from: media must build it inside the installer's store, so the same recorded SHA is cloned to `/mnt/etc/nixos` and installed with `nixos-install --root /mnt --flake /mnt/etc/nixos#legion`.
@@ -145,7 +145,7 @@ The soak is a period of ordinary use with three things true: NixOS boots and is 
 1. **Provision:** format the ESP, `luksFormat` LUKS2 with a passphrase, open as `cryptroot`, `mkfs.btrfs`, create the seven subvolumes, mount the layout at `/mnt` with the declared options plus the data disk's `@home` and `@data` at `/mnt/home` and `/mnt/data` and the ESP at `/mnt/boot`.
 1. **SK hynix:** delete the two retired Fedora partitions, assert the kept partitions unchanged, then copy that disk's GPT and ESP backup into the new root so it outlives Arch.
 1. **State:** copy the D11 root state into `/mnt`, including the operator's NetworkManager keep-list, and verify each item.
-1. **Install:** `nixos-install --root /mnt --flake <clean checkout of the recorded SHA>#legion --no-root-passwd`, set the login password with `nixos-enter`, remove the Windows and Fedora firmware entries.
+1. **Install:** `nixos-install --root /mnt --system <toplevel built from the clean export of the recorded SHA> --no-root-passwd`, set the login password with `nixos-enter`, remove the Windows and Fedora firmware entries.
 1. **Verify:** boot NixOS through the new entry (LUKS prompt, mounts, network, Home Manager generation, desktop, secrets, services), then boot Arch and confirm the rollback path.
 1. **Soak:** NixOS daily, Arch still bootable, freed extent untouched.
 1. **Consolidate:** delete p5, p6 and p4, grow the LUKS partition to the disk end, `cryptsetup resize`, `btrfs filesystem resize max`, remove the Limine entry, verify the final layout.
