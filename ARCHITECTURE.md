@@ -212,8 +212,10 @@ service-specific secrets and rendered env templates — `aichat.env`,
 `nix-access-tokens`). A consumer that can resolve a key itself reads the
 decrypted secret path — pi providers and pi-web-access via `!cat`, MCP headers
 via `!command` — and only keys whose consumer can read nothing but the
-environment reach the shared `agent-env.env` template. Secrets decrypt once by
-the merged sops config and templates render into the Home Manager generation,
+environment reach the shared env templates — one key list rendered per shell
+dialect (`agent-env.env` for POSIX shells, `agent-env.fish` for fish), so each
+shell sources its own syntax directly. Secrets decrypt once by the merged sops
+config and templates render into the Home Manager generation,
 so ownership is relocated without changing the rendered outputs. No user secret
 is exposed to the root daemon, and no system secret is rendered into user
 state. Canonical contract:
@@ -435,11 +437,14 @@ describes only machines that are always on.
   — it suppresses the settings `packages` set, though not the compiled
   factories — and the child launcher supplies it with the two builtins a child
   needs when the launch does not, so a child started without herdsman's own flag
-  list is still complete. The wrapper is the only place that can make that
-  choice, and `pi` is that wrapper rather than a name a shell function shadows:
-  installed with `lib.hiPrio` over the stock package's own `pi`, so a script or a
-  bash shell reaches Pi-Bolt too, while the stock binary stays installed under its
-  own name, `pi-stock`. Routing is not ours: the lead launcher exports
+  list is still complete. These entrypoints belong to `pkgs/pi-bolt`, not
+  separate Home Manager launcher derivations. The lead package publishes `pi`
+  and `pi-bolt`, and the child publishes `pi-bolt-child`; each keeps its payload
+  in the same store output so Radar sees one installation. Compilation is
+  separate, so launcher-only changes reuse the AOT build. Home Manager selects
+  plugins and runtime extension paths and installs the lead with `lib.hiPrio`
+  over stock Pi; `pi-stock` remains the explicit fallback. Routing is not ours:
+  the lead launcher exports
   `PI_HERDSMAN_CHILD_COMMAND`, and pi-herdsman — which creates the pane itself —
   runs that command as the child's process (`herdr pane run <pane> '<command>
 --extension …'`), so no shell function or per-kind override is involved. Herdr's
