@@ -43,6 +43,8 @@
       };
 
       config = lib.mkIf cfg.enable {
+        home.packages = [ cfg.package ];
+
         systemd.user.services.qmd = {
           Unit = {
             Description = "QMD — local markdown search engine (MCP HTTP server)";

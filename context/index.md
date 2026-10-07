@@ -46,6 +46,7 @@
 
 ## L
 
+- [legion-desktop.md](legion-desktop.md) — why the phone widget needs gdbus on the shell's PATH, and why the KDE portal backend is kept out of the frontend's startup Settings query
 - [legion-hardware.md](legion-hardware.md) — why iwlwifi stays out of the initrd and facter's graphics modules are pinned off
 
 ## M
@@ -63,6 +64,8 @@
 - [pi-plugin-sources.md](pi-plugin-sources.md) — why every Pi extension source is a pin rather than a live checkout, and what that costs
 
 ## Q
+
+- [qmd.md](qmd.md) — why the CLI and the user service share one Nix build, and where its trust and spec collection live
 
 ## R
 
