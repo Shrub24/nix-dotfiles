@@ -2,11 +2,12 @@
 
 ### Requirement: Pi is disabled without runtime residue
 
-**Reason**: Pi is enabled on the Arch host through the native Home Manager
+**Reason**: Pi is enabled on the fleet's hosts through the native Home Manager
 module and carries a full declarative configuration. A requirement asserting
 that it stays disabled describes the opposite of the capability's behaviour.
 
-**Migration**: Superseded by "Pi is enabled for the Arch host". The
+**Migration**: Superseded by "Pi is enabled through the native Home Manager
+module". The
 "skeleton" retention model is dropped entirely; no disabled-state guarantee
 survives.
 
@@ -34,7 +35,7 @@ by Pi at startup when they are missing from the agent's package directory.
 
 #### Scenario: Pi is enabled with a rendered settings file
 
-- **WHEN** the Arch Home Manager configuration is applied with Pi enabled
+- **WHEN** a host applies the Home Manager configuration with Pi enabled
 - **THEN** `programs.pi-coding-agent.enable = true` with the package from `inputs.llm-agents`
 - **AND** `~/.pi/agent/settings.json` resolves to a read-only Nix store path
 
@@ -67,24 +68,25 @@ schemas.
 
 ## ADDED Requirements
 
-### Requirement: Pi is enabled for the Arch host
+### Requirement: Pi is enabled through the native Home Manager module
 
-The Arch host SHALL select the `pi` Home Manager aspect and SHALL enable Pi
-through `programs.pi-coding-agent.enable`. No system-manager or NixOS aspect
-SHALL be introduced for Pi.
+A host that uses Pi SHALL select the `pi` Home Manager aspect and SHALL enable Pi
+through `programs.pi-coding-agent.enable`. No NixOS aspect SHALL be introduced
+for Pi.
 
 #### Scenario: Host composition enables Pi
 
 - **WHEN** `hmAspects` in `modules/hosts/legion.nix` and `_home.nix` in the host directory are inspected
 - **THEN** the `pi` aspect is selected and `programs.pi-coding-agent.enable = true` is set
-- **AND** no Pi configuration appears in the system-manager or NixOS aspect lists
+- **AND** no Pi configuration appears in the NixOS aspect lists
 
 ### Requirement: Pi extension configuration files are rendered by Nix
 
-Pi configuration surfaces not covered by the upstream Home Manager module
-SHALL be rendered declaratively as read-only Nix store paths under the agent
-directory. These surfaces are the MCP server registry, the per-extension
-settings files, and the extension directories that are not installed as
+Pi extension configuration SHALL be rendered declaratively as read-only Nix
+store paths under the agent directory for the surfaces the upstream Home
+Manager module does not cover. These surfaces are the MCP server registry, the
+per-extension settings files, and the extension directories that are not
+installed as
 packages.
 
 #### Scenario: Extension configuration is store-backed

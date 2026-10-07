@@ -1,8 +1,8 @@
 # saurabhj's Nix Configuration
 
-Dendritic flake: home-manager for the user environment, system-manager for
-daemon/root concerns on the non-NixOS host, and a native NixOS configuration
-for the bare-metal target (`nixosConfigurations.legion`).
+Dendritic flake: a NixOS configuration per host (`nixosConfigurations.legion`
+and `nixosConfigurations.spectre`), each embedding its Home Manager user
+environment.
 
 ## Requirements
 
@@ -20,13 +20,7 @@ nix develop          # or: direnv allow (uses .envrc — `use flake . --impure`)
 ## Usage
 
 ```bash
-# Switch the user environment (home-manager)
-nh home switch -c saurabhj
-
-# Switch system configuration (system-manager, non-NixOS host)
-system-manager switch --flake .#legion
-
-# Switch the NixOS configuration (bare-metal desktop host)
+# Switch the NixOS configuration (desktop host)
 nh os switch .#legion
 
 # Switch the NixOS configuration (portable laptop host)
@@ -64,7 +58,7 @@ it, so a single nix-fleet update moves them together — and it owns the canonic
 inventory: what each fleet machine _is_ (target system, tailnet hostname, SSH
 host key). `modules/policy/fleet.nix` imports its contract, so this repository
 declares only what it decides — the login user, the account it configures, which
-builders it schedules. Everything else here — home-manager, system-manager,
+builders it schedules. Everything else here — home-manager,
 Noctalia, agent and desktop tooling — is this repository's own input and updates
 independently.
 

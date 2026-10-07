@@ -85,7 +85,7 @@ content is through.
 ## Phase 3 — post-boot (~10 min)
 
 ```fish
-findmnt /home /data; df -h / /data        # verify both mounts
+for m in /home /data; do findmnt "$m"; done; df -h / /data        # verify both mounts
 
 # one admin mount to reach the old top level
 sudo mkdir -p /mnt/top

@@ -12,16 +12,14 @@ primary purpose, and validation that runs before the machine is installed.
 ### Requirement: The portable host is a composed NixOS output
 
 The repository SHALL provide `nixosConfigurations.spectre` as a NixOS host
-composed exclusively from existing named aspects plus its own raw host modules,
-with no `systemConfigs` output, no standalone `homeConfigurations` output, and no
-`targets.genericLinux` value.
+composed exclusively from existing named aspects plus its own raw host modules.
 
 #### Scenario: The host is composed from aspects
 
 - **WHEN** the laptop configuration is evaluated
 - **THEN** its modules SHALL be the shared NixOS and Home Manager aspects
   selected in its host composition plus the host's raw `_nixos.nix`, `_home.nix`,
-  and `_hardware.nix` modules
+  `_hardware.nix`, and `_disko.nix` modules
 - **AND** Home Manager SHALL be embedded through the NixOS home-manager module
   with global packages and user packages enabled
 

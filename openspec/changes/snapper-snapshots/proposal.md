@@ -22,5 +22,5 @@ own tracking item.
 
 The install-day layout stays owned by the install changes
 (`nixos-dual-boot-install`, `add-spectre-host`); this change owns the snapshots
-that layout exists for. No spec deltas: this is deployment layout, not a
-contract.
+that layout exists for. The capability contract is filed as
+`specs/snapper-snapshots/spec.md`.

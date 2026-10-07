@@ -27,7 +27,7 @@ The Home Manager aspect (`flake.modules.homeManager.surge`) SHALL add
 
 The output directory SHALL be set explicitly, because `surge server start`
 defaults it to the working directory. The daemon SHALL NOT run as a system
-service, and no `systemManager` Surge service SHALL exist.
+service, and no Surge system service SHALL exist.
 
 #### Scenario: Home Manager activation
 
@@ -35,7 +35,7 @@ service, and no `systemManager` Surge service SHALL exist.
 - **THEN** `surge` is on the user PATH
 - **AND** the `surge` user unit is enabled on `default.target` with the port and
   output directory set explicitly
-- **AND** no system-manager or NixOS system service for Surge exists
+- **AND** no Surge system service exists
 
 #### Scenario: The daemon writes where the user looks
 
@@ -43,8 +43,8 @@ service, and no `systemManager` Surge service SHALL exist.
 - **THEN** it lands under the user's own home directory
 - **AND** it is owned by that user rather than by root
 
-#### Scenario: Both hosts behave identically
+#### Scenario: Every host behaves identically
 
-- **WHEN** the NixOS target and the non-NixOS host are evaluated
+- **WHEN** the fleet's hosts are evaluated
 - **THEN** each has the same user unit from the same aspect
-- **AND** the NixOS embedded Home Manager SHALL NOT subtract the `surge` aspect
+- **AND** the embedded Home Manager SHALL NOT subtract the `surge` aspect

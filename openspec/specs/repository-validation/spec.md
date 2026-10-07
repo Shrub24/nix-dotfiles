@@ -18,7 +18,7 @@ The flake SHALL expose a tree-aware formatter and a formatting check for maintai
 
 ### Requirement: Flake checks cover formatting lint and evaluation
 
-The flake check set SHALL enforce formatting, Statix, Deadnix, and evaluation of the supported Home Manager and system-manager configurations without mutating the lock file.
+The flake check set SHALL enforce formatting, Statix, Deadnix, and evaluation of the supported host configurations without mutating the lock file.
 
 #### Scenario: Maintainer runs repository checks
 

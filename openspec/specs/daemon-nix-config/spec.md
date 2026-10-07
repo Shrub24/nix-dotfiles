@@ -44,11 +44,11 @@ The system SHALL provide nixbuild.net access configuration and credentials in ro
 
 ### Requirement: System secrets use a root-owned decryption identity
 
-System-manager secrets SHALL be decrypted using a pre-generated root-owned age identity that is independent of the Home Manager user's identity.
+System secrets SHALL be decrypted using a pre-generated root-owned age identity that is independent of the Home Manager user's identity.
 
 #### Scenario: System secrets activate
 
-- **WHEN** system-manager installs root-owned secrets
+- **WHEN** NixOS system activation installs root-owned secrets
 - **THEN** it SHALL use a persistent age identity readable only by root
 - **AND** the encrypted secret recipients SHALL include that identity
 

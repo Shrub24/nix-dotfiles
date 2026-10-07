@@ -3,7 +3,6 @@
 | Capability                   | Status | Source change                                         | Source spec                                                                                               |
 | ---------------------------- | ------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `daemon-nix-config`          | active | `archive/2026-06-17-add-system-manager`               | `openspec/changes/archive/2026-06-17-add-system-manager/specs/daemon-nix-config/spec.md`                  |
-| `system-manager-foundation`  | active | `archive/2026-06-17-add-system-manager`               | `openspec/changes/archive/2026-06-17-add-system-manager/specs/system-manager-foundation/spec.md`          |
 | `nvfetcher-package-sources`  | active | `archive/2026-06-19-add-nvfetcher-for-packages`       | `openspec/changes/archive/2026-06-19-add-nvfetcher-for-packages/specs/nvfetcher-package-sources/spec.md`  |
 | `opencode-snip-integration`  | active | `archive/2026-08-09-migrate-tokf-to-snip`             | `openspec/changes/archive/2026-08-09-migrate-tokf-to-snip/specs/opencode-snip-integration/spec.md`        |
 | `snip-package`               | active | `archive/2026-08-09-migrate-tokf-to-snip`             | `openspec/changes/archive/2026-08-09-migrate-tokf-to-snip/specs/snip-package/spec.md`                     |
@@ -12,7 +11,7 @@
 | `tmux`                       | active | `archive/2026-08-09-tmux-ssh-mutagen-modules`         | `openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/tmux/spec.md`                         |
 | `web-service-catalog`        | active | `archive/2026-08-09-web-services-ssot`                | `openspec/changes/archive/2026-08-09-web-services-ssot/specs/web-service-catalog/spec.md`                 |
 | `wezterm-config`             | active | `archive/2026-08-09-migrate-to-wezterm`               | `openspec/changes/archive/2026-08-09-migrate-to-wezterm/specs/wezterm-config/spec.md`                     |
-| `secrets-ownership-model`    | active | `dendritic-cleanup-pre-nixos`                         | `openspec/changes/dendritic-cleanup-pre-nixos/design.md`                                                  |
+| `secrets-ownership-model`    | active | `archive/2026-08-18-dendritic-cleanup-pre-nixos`      | `openspec/changes/archive/2026-08-18-dendritic-cleanup-pre-nixos/specs/secrets-ownership-model/spec.md`   |
 | `current-host-facts`         | active | `archive/2026-09-21-current-host-facts`               | `openspec/changes/archive/2026-09-21-current-host-facts/specs/current-host-facts/spec.md`                 |
 | `spectre-host`               | active | `add-spectre-host`                                    | `openspec/changes/add-spectre-host/specs/spectre-host/spec.md`                                            |
 | `filesystem-bootstrap`       | active | `archive/2026-09-21-nixos-filesystem-bootstrap`       | `openspec/changes/archive/2026-09-21-nixos-filesystem-bootstrap/specs/filesystem-bootstrap/spec.md`       |

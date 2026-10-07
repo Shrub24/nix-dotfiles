@@ -36,17 +36,13 @@ The `kde-apps` NixOS module SHALL enable `programs.kdeconnect` with `package = n
 
 ### Requirement: Firewall ownership is NixOS-only
 
-The `kde-apps` NixOS module SHALL be wired only into the NixOS configuration (`nixosAspects` on the Arch host), so firewall-port ownership exists solely on the NixOS target.
+The `kde-apps` NixOS module SHALL be wired only into the NixOS configuration
+(`nixosAspects`), so firewall-port ownership exists solely on the NixOS target.
 
 #### Scenario: NixOS target opens ports
 
 - **WHEN** the NixOS target is active
 - **THEN** firewall rules for 1714–1764 are present
-
-#### Scenario: Non-NixOS host produces no firewall change
-
-- **WHEN** a non-NixOS host (Arch/system-manager) evaluates the Home Manager configuration
-- **THEN** no NixOS firewall change is produced, while the HM user daemon may still run under its graphical session
 
 ### Requirement: No indicator service
 

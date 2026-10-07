@@ -47,9 +47,9 @@ endpoint's host, port or URL itself. No `topology.services` option SHALL exist.
 
 ### Requirement: Each host evaluation receives a typed current-host record
 
-Every NixOS, Home Manager, and system-manager evaluation SHALL receive a typed
+Every NixOS and embedded Home Manager evaluation SHALL receive a typed
 `currentHost` record through the normal module system, using one shared schema
-across all three classes. The record SHALL be passed as a module value — never
+across both classes. The record SHALL be passed as a module value — never
 through `specialArgs` or `extraSpecialArgs`.
 
 #### Scenario: Host composition projects its own record

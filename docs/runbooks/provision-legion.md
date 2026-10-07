@@ -409,20 +409,11 @@ not something to copy. If the new login password differs from the old keyring
 password, unlock the existing keyring with its old password and change its password
 to match. Do not delete or reset the keyring to fix an unlock failure.
 
-### Retire Arch's vdirsyncer
+### Revoke Arch's vdirsyncer OAuth client
 
-`vdirsyncer` and `khal` are no longer declared, so nothing on the new system
-re-creates the sync. Arch's crontab still runs a binary that is gone, and `/home`
-still carries the Google OAuth token and the client credentials:
-
-```sh
-crontab -r                      # the sole entry runs /usr/bin/vdirsyncer
-crontab -l || true
-rm -rf ~/.vdirsyncer            # token file plus the inline client id and secret
-```
-
-Revoke that OAuth client in the Google account's security settings; deleting the
-files does not.
+`vdirsyncer` and `khal` are no longer declared and the cron entry that ran them
+lived on Arch's root. The Google OAuth client it used is still valid: revoke it in
+the Google account's security settings, because deleting local files does not.
 
 Never print private keys, tokens or network passwords into the execution record.
 
@@ -465,7 +456,7 @@ sudo "$TOOLS/bin/nixos-install" \
   --system "$SYSTEM" \
   --no-root-passwd
 
-sudo "$TOOLS/bin/nixos-enter" --root /mnt -c 'passwd saurabhj'
+sudo "$TOOLS/bin/nixos-enter" --root /mnt -c '/nix/var/nix/profiles/system/sw/bin/passwd saurabhj'
 
 sudo readlink /mnt/nix/var/nix/profiles/system
 sudo ls /mnt/boot/loader/entries/
@@ -498,6 +489,9 @@ none for `saurabhj` either, so the account is locked until that `passwd` call â€
 makes it the one step in this runbook that must not be skipped. sudo needs the same
 password (`security.sudo.wheelNeedsPassword` is at its default), and
 `users.mutableUsers` is `true`, so what you set here survives every later rebuild.
+The command uses the absolute path because `nixos-enter` has no `passwd` on its
+`PATH`: the setuid wrapper under `/run/wrappers` does not exist in the chroot. Do not
+pass the host's `PATH` in to compensate.
 
 Nothing has to be declared for that to keep working. The alternative is to declare
 `initialHashedPassword` before installing: the activation script applies it during
@@ -520,8 +514,7 @@ mkdir -p /mnt/{boot,nix}
 mount -o "$OPTS,subvol=@nix" /dev/mapper/cryptroot /mnt/nix
 mount -o fmask=0077,dmask=0077 "$ESP" /mnt/boot
 
-nixos-enter --root /mnt
-passwd saurabhj
+nixos-enter --root /mnt -c '/nix/var/nix/profiles/system/sw/bin/passwd saurabhj'
 ```
 
 Set `$CRYPT`, `$ESP` and `$OPTS` again in the media's shell; they are the values from

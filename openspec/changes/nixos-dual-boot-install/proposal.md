@@ -42,7 +42,7 @@ The placement changed from the original draft. It put NixOS in the retired-Fedor
 
 ### Install from the running Arch system
 
-- **Adopted.** `nixos-install` from nixpkgs, run on the running Arch host into the mounted target, is the primary path: nix is already installed, the toplevel copies from the local store instead of being rebuilt inside installer tmpfs, the gate build validates the exact configuration that gets installed, and the root state copies directly. Repartitioning the disk that holds the running root is safe because only non-busy partitions change, and the chroot's EFI variable write works because `nixos-enter` carries `efivarfs` in on a recursive `/sys` bind.
+- **Adopted.** `nixos-install` from nixpkgs, run on the running pre-install system into the mounted target, is the primary path: nix is already installed, the toplevel copies from the local store instead of being rebuilt inside installer tmpfs, the gate build validates the exact configuration that gets installed, and the root state copies directly. Repartitioning the disk that holds the running root is safe because only non-busy partitions change, and the chroot's EFI variable write works because `nixos-enter` carries `efivarfs` in on a recursive `/sys` bind.
 - NixOS media is the documented fallback; the only difference is that the closure is built inside the installer's store.
 - In both paths the install source is a clean checkout of the recorded gate SHA — `git rev-parse HEAD` verified equal and `git status --porcelain` empty — and `nixos-generate-config` never runs over the curated repo.
 
@@ -59,7 +59,7 @@ The placement changed from the original draft. It put NixOS in the retired-Fedor
 
 ### Modified Capabilities
 
-- None. This change is operational: it consumes existing capabilities (`nixos-bare-metal-readiness` as a hard dependency, plus `storage-topology`, `system-manager-foundation`, `dendritic-module-composition`, and `secrets-ownership-model`) rather than altering their specs. The root-disk fileSystems move from `_hardware.nix` to the disko declaration, which changes where a fact lives, not which facts are mounted.
+- None. This change is operational: it consumes existing capabilities (`nixos-bare-metal-readiness` as a hard dependency, plus `storage-topology`, `dendritic-module-composition`, and `secrets-ownership-model`) rather than altering their specs. The root-disk fileSystems move from `_hardware.nix` to the disko declaration, which changes where a fact lives, not which facts are mounted.
 
 ## Impact
 

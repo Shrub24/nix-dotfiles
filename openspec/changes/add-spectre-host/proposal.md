@@ -36,10 +36,12 @@ a second host can select them.
   codec, and Thunderbolt authorisation for the two USB-C ports. The fingerprint
   reader is unsupported upstream and is left disabled with the finding recorded
   in the host file.
-- Storage: 1 GiB ESP plus one LUKS2 container covering the rest of the disk,
-  TPM2 enrolled beside the passphrase, btrfs subvolumes (`@`, `@nix`, `@home`,
-  `@swap` NOCOW), and a 12 GiB swapfile with `resume_offset` for hibernation.
-  Single boot: nothing reserved for another operating system.
+- Storage: 2 GiB ESP plus one LUKS2 container covering the rest of the disk,
+  TPM2 enrolled beside the passphrase, nine btrfs subvolumes (`@`, `@nix`,
+  `@home`, `@snapshots` at `/.snapshots`, `@log`, `@cache`, `@tmp`, `@swap`,
+  `@persist` reserved), and a 12 GiB swapfile with `resume_offset` for
+  hibernation. Single boot: nothing reserved for another operating system.
+  The disk is declared with disko (`modules/hosts/spectre/_disko.nix`).
 - Secrets bootstrap in two phases: install with no secret-consuming aspect, then
   generate the laptop's own age key, add it as a recipient in `.sops.yaml`,
   re-encrypt with `sops updatekeys`, and switch a second time. The private key
@@ -72,4 +74,5 @@ a second host can select them.
   (re-encrypted in place), `README.md`, `ARCHITECTURE.md`.
 - New machine-side state: one LUKS2 container and one TPM2 enrolment on the
   laptop, and one host-scoped age key at the user's key path.
-- No change to the desktop's runtime behavior, and no new flake input.
+- No change to the desktop's runtime behavior; the `disko` input is added for
+  the laptop's and desktop's disk declarations.

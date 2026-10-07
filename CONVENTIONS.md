@@ -98,7 +98,7 @@ timer running `nh clean all` where the module runs `nh clean user`.
   the reason in the comment above it.
 
 - Every `.nix` under `modules/` is a flake-parts module that publishes named
-  aspects under `flake.modules.homeManager`, `.systemManager`, or `.nixos`. A
+  aspects under `flake.modules.homeManager` or `.nixos`. A
   raw class module lives only under an underscore-prefixed path segment.
 
 - One feature per file, spanning every class it applies to. Registration is

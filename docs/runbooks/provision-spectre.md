@@ -133,7 +133,7 @@ The machine boots to a passphrase prompt, then NixOS. Verify the topology
 before anything else:
 
 ```fish
-findmnt / /nix /home /persist /var/log /var/cache /var/tmp /swap /.snapshots /boot
+for m in / /nix /home /persist /var/log /var/cache /var/tmp /swap /.snapshots /boot; do findmnt "$m"; done
 btrfs subvolume list /
 sudo btrfs filesystem usage /
 ```

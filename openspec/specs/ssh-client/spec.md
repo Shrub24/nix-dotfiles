@@ -14,7 +14,7 @@ Defines the canonical requirements for the ssh client capability.
 ### Requirement: Declarative SSH client config
 
 The system SHALL provide declarative SSH client configuration via `programs.ssh.*`.
-The module SHALL be published as `flake.modules.homeManager.ssh` from `modules/ssh.nix` (which also holds the system-side `systemManager.ssh` and `nixos.ssh` values for the same feature).
+The module SHALL be published as `flake.modules.homeManager.ssh` from `modules/ssh.nix` (which also holds the system-side `nixos.ssh` value for the same feature).
 The module SHALL NOT manage the user's `~/.ssh/known_hosts`, `authorized_keys`, or private key material.
 
 #### Scenario: Module exists and enables SSH config
@@ -59,9 +59,8 @@ because a class aspect cannot read the flake's `config.fleet`.
 
 The system classes SHALL pin the host keys of every selected fleet host, ending
 trust-on-first-use for those connections. NixOS SHALL use
-`programs.ssh.knownHosts`; system-manager, which has no such option, SHALL render
-the contract's `knownHosts` output into `/etc/ssh/ssh_known_hosts`. The user's
-own `~/.ssh/known_hosts` SHALL remain unmanaged, because ssh appends to it.
+`programs.ssh.knownHosts`. The user's own `~/.ssh/known_hosts` SHALL remain
+unmanaged, because ssh appends to it.
 
 #### Scenario: Selected hosts are pinned
 

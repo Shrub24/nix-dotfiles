@@ -80,7 +80,7 @@ fails with `EACCES`, and creating a file where a foreign symlink already exists
 is refused rather than clobbered. So the old symlinks must be gone **before**
 the switch, and every path Nix is about to own must be gone with them.
 
-- [ ] 5.0 Build the activation package **before** the dark window, so a build failure cannot leave the directories half-moved
+- [x] 5.0 Build the activation package **before** the dark window, so a build failure cannot leave the directories half-moved
 
   ```sh
   cd ~/.dotfiles/nix
@@ -90,7 +90,7 @@ the switch, and every path Nix is about to own must be gone with them.
   - criteria: no commit is needed — staged files are tracked, so the flake sees them. The build only produces store paths; it does not touch `~/.pi/agent` or `~/.config/herdr`, so it is safe to run while the old symlinks are still in place.
   - verify: the build exits zero and prints a store path.
 
-- [ ] 5.0b Stop Herdr and confirm nothing is holding the directories
+- [x] 5.0b Stop Herdr and confirm nothing is holding the directories
 
   ```sh
   herdr server stop
@@ -98,11 +98,11 @@ the switch, and every path Nix is about to own must be gone with them.
   ls ~/.dotfiles/apps/herdr/*.sock 2>&1        # expect "No such file"
   ```
 
-- [ ] 5.1 Confirm both top-level paths are the HM link-farm symlinks and record their sizes
+- [x] 5.1 Confirm both top-level paths are the HM link-farm symlinks and record their sizes
 
   - verify: `readlink ~/.pi/agent ~/.config/herdr` prints `/nix/store/*-home-manager-files/...` for both; `du -sh ~/.dotfiles/apps/pi ~/.dotfiles/apps/herdr`
 
-- [ ] 5.2 Remove the two symlinks with `unlink` (never `rm -rf`), then move the real directories into place
+- [x] 5.2 Remove the two symlinks with `unlink` (never `rm -rf`), then move the real directories into place
 
   ```sh
   unlink ~/.pi/agent
@@ -114,7 +114,7 @@ the switch, and every path Nix is about to own must be gone with them.
   - criteria: `unlink` removes only the symlink; both `mv` calls are renames within one filesystem, so ~1.1 GB moves instantly and no copy is made. `mv` also removes the now-empty `../apps` entries, so there is nothing left to `rmdir` afterwards.
   - verify: `[ -L ~/.pi/agent ] || [ -L ~/.config/herdr ]` prints nothing; `ls ~/.pi/agent` shows `npm`, `sessions`, `git`, and the rest; `ls ~/.config/herdr` shows `plugins/` and `plugins.json`.
 
-- [ ] 5.3 Delete every path Nix is about to own
+- [x] 5.3 Delete every path Nix is about to own
 
   ```sh
   rm ~/.config/herdr/config.toml
@@ -134,7 +134,7 @@ the switch, and every path Nix is about to own must be gone with them.
     - on the Herdr side: `plugins/`, `plugins.json`, `session.json`, `release-notes.json`, `.plugins.lock`, logs, sockets
   - verify: `ls ~/.pi/agent` shows no config JSON and no `agents`; `ls ~/.pi/agent/extensions` shows `omniroute` gone.
 
-- [ ] 5.4 Switch
+- [x] 5.4 Switch
 
   ```sh
   cd ~/.dotfiles/nix
@@ -143,7 +143,7 @@ the switch, and every path Nix is about to own must be gone with them.
 
   - criteria: activation succeeds with no "existing file would be clobbered" error and no write into a store path.
 
-- [ ] 5.5 Verify the rendered configuration is store-backed, the directories are real, and Herdr does not replace its own config symlink
+- [x] 5.5 Verify the rendered configuration is store-backed, the directories are real, and Herdr does not replace its own config symlink
 
   ```sh
   readlink ~/.pi/agent/settings.json ~/.pi/agent/agents ~/.config/herdr/config.toml
@@ -157,6 +157,21 @@ the switch, and every path Nix is about to own must be gone with them.
 - [ ] 5.6 Delete the temporary backup
 
   - criteria: `/tmp/settings.json.bak-*` removed once 5.5 passes.
+  - reason: still open — not verifiable now: the host has rebooted since the
+    deploy, so `/tmp` was cleared and the backup's removal cannot be confirmed.
+
+### Deploy evidence (recorded after the dark window)
+
+- 5.0–5.4 performed: `~/.pi/agent` and `~/.config/herdr` are real directories,
+  not symlinks.
+- 5.3/5.5 store-backed surfaces resolve into
+  `/nix/store/*-home-manager-files/.pi/agent/`: `settings.json`, `agents`,
+  `mcp.json`, `pi-fff.json`, `pi-starship.toml`, `extensions/pi-tool-repair.json`.
+- 5.5 Herdr write hazard fired: `~/.config/herdr/config.toml` is a real 22 KB
+  file, not a store symlink, because Herdr and its plugin rename over the path.
+  The module was updated to seed the file at activation
+  (`modules/agents/herdr.nix`, `home.activation.herdrConfig`), and the
+  `herdr-config` delta now states the seeded-file contract.
 
 ### Rollback
 

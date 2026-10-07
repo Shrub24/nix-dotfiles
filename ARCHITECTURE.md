@@ -1,15 +1,11 @@
 # Architecture
 
-This repository is a single-user Nix configuration for two hosts: an Arch desktop
-(`legion`) and a portable NixOS laptop (`spectre`, HP Spectre x360
-13-aw0039TU).
-It composes three privilege-scoped layers from feature modules that are
-discovered by directory scan but activated only by explicit host selection:
-a user-scoped Home Manager configuration, a root-scoped system-manager
-configuration (transitional, for the non-NixOS host), and a NixOS
-configuration for the bare-metal hosts (`nixosConfigurations.legion` on the
-desktop, `nixosConfigurations.spectre` on the laptop; the aspect side-port has
-landed, the desktop's bare-metal install remains follow-up work).
+This repository is a single-user Nix configuration for two hosts: a desktop
+(`legion`) and a portable laptop (`spectre`, HP Spectre x360 13-aw0039TU). Both
+are NixOS — `nixosConfigurations.legion` and `nixosConfigurations.spectre`.
+Each composes feature modules that are discovered by directory scan but
+activated only by explicit host selection, and each embeds the user-scoped
+Home Manager configuration beside its system-scoped NixOS aspects.
 
 `README.md` covers setup and operator commands. This document records the
 durable boundaries, the composition model, and the design rationale.
@@ -20,22 +16,20 @@ are referenced here rather than restated.
 
 The split is along a privilege boundary, not a feature boundary:
 
-- **User scope** — Home Manager (`homeConfigurations.saurabhj`) owns
-  user-level programs, services, and secrets. Canonical contract:
-  [system-manager-foundation](openspec/specs/system-manager-foundation/spec.md).
-- **System scope (transitional)** — system-manager (`systemConfigs.legion`)
-  owns daemons, root-owned state, and machine-wide configuration on the
-  non-NixOS host. Same canonical contract, mirrored: daemon and root-owned
-  concerns never live in Home Manager modules. Each system-manager aspect
-  has a native NixOS counterpart activated on the NixOS target (side-port
-  landed via `openspec/changes/nixos-boilerplate/`).
-- **NixOS target** — `nixosConfigurations.legion` evaluates under
-  `nix flake check` as a third host output, composing native NixOS aspects
-  plus the full Home Manager composition embedded via
+- **User scope** — the embedded Home Manager configuration owns user-level
+  programs, services, and secrets. There is no standalone HM output: Home
+  Manager runs only as an embedded NixOS configuration.
+- **System scope** — the NixOS aspect set owns daemons, root-owned state, and
+  machine-wide configuration. Daemon and root-owned concerns never live in
+  Home Manager modules.
+- **NixOS hosts** — `nixosConfigurations.legion` and
+  `nixosConfigurations.spectre` evaluate under `nix flake check`, composing
+  native NixOS aspects plus the full Home Manager composition embedded via
   `home-manager.nixosModules.home-manager` (`useGlobalPkgs`/`useUserPackages`
-  over `embeddedHmAspects` — the HM aspect set minus the system-owned
+  over each host's HM aspect list; `specialArgs` stays empty). Legion's
+  `embeddedHmAspects` is its HM aspect set minus the system-owned
   tailscale/syncthing/mosh/niks3 aspects, plus the NixOS-only
-  cuda/libcamera aspects; `specialArgs` stays empty).
+  cuda/libcamera/codex aspects.
   Hardware configuration follows the `nixos-generate-config` convention at
   `modules/hosts/legion/_hardware.nix`: redistributable firmware, i2c,
   fwupd (desktop-services aspect), stable + open NVIDIA with Prime offload,
@@ -45,12 +39,12 @@ The split is along a privilege boundary, not a feature boundary:
 
 Feature modules live in a single `modules/` tree — the only discovery
 root. `import-tree` scans it; every unmarked `.nix` there is a flake-parts
-module that publishes named aspects under `flake.modules.homeManager.<name>`,
-`flake.modules.systemManager.<name>`, or `flake.modules.nixos.<name>`. Raw
+module that publishes named aspects under `flake.modules.homeManager.<name>` or
+`flake.modules.nixos.<name>`. Raw
 class-specific modules are never scanned: they live only under `_`-named
 segments (`/_` in a path is ignored). A feature spanning classes holds
 multiple values in one file — `nix.nix`, `ssh.nix`, and `tailscale.nix`
-each publish a homeManager, systemManager, and nixos aspect. Registration
+each publish a homeManager and nixos aspect. Registration
 is filesystem-driven; activation is host-driven.
 
 ## Composition
@@ -70,36 +64,38 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ apps/*.nix           end-user GUI apps (media, zathura, pavucontrol)
   ├─ apps/browser/*.nix   firefox, chromium, thunderbird, brave-origin — lazy HM enable
   ├─ desktop/*.nix        compositor + shell env (niri, noctalia, monique, vicinae, portals, greeter)
-  ├─ foundation/*.nix    network → systemManager aspect; boot + nixos.nix (base-OS aspects)
+  ├─ foundation/*.nix    boot, network, nixos (base-OS aspects)
   ├─ policy/*.nix        fleet contract + typed topology schema, endpoints, currentHost
   ├─ shell/*.nix         per-shell homeManager aspects + terminals (wezterm, ghostty, tmux)
   ├─ security/*.nix      sops-foundation + shared credentials aspects
-  ├─ *.nix               nixbuild (systemManager), niks3/mosh/mutagen/syncthing
+  ├─ *.nix               nixbuild (nixos), niks3/mosh/mutagen/syncthing
   │                      (homeManager); all but mutagen also publish a nixos aspect
-  ├─ nix.nix ssh.nix tailscale.nix   homeManager AND systemManager AND nixos
-  ├─ hosts/legion.nix      selects explicit aspect lists → host outputs (HM, system, NixOS)
+  ├─ nix.nix ssh.nix tailscale.nix   homeManager AND nixos
+  ├─ hosts/legion.nix      selects explicit aspect lists → nixosConfigurations.legion
   ├─ hosts/spectre.nix   selects the lean NixOS laptop set → nixosConfigurations.spectre
-  ├─ hosts/legion/ssh-identities.nix  enrollment-gated HM/system/NixOS identities
-  ├─ hosts/legion/_*.nix   raw host files (_home, _system, _nixos, _hardware, _disko, _storage) — ignored
+  ├─ hosts/legion/ssh-identities.nix  enrollment-gated HM/NixOS identities
+  ├─ hosts/legion/_*.nix   raw host files (_home, _nixos, _hardware, _disko, _storage) — ignored
   └─ hosts/spectre/_*.nix  raw host files (_home, _nixos, _hardware, _disko) — ignored
 
 Host composition lives in modules/hosts/legion.nix and modules/hosts/spectre.nix,
 not flake.nix:
-  ├─ 63 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
-  ├─ 8 systemManager aspects + _system.nix → systemConfigs.legion
   └─ 24 nixos aspects + _nixos.nix + _disko.nix + embedded HM → nixosConfigurations.legion
 
-modules/hosts/spectre.nix composes the laptop as a NixOS-only host —
-no standalone HM output and no system-manager counterpart (the embedded
-Home Manager is its only configuration path):
-  └─ 44 lean HM aspects (phase-gated) + _home.nix, 20 nixos aspects +
-     _nixos.nix + _hardware.nix + _disko.nix + embedded HM → nixosConfigurations.spectre
+modules/hosts/spectre.nix composes the laptop with the same shape and a leaner
+aspect set:
+  └─ 20 nixos aspects + _nixos.nix + _hardware.nix + _disko.nix + embedded HM
+     → nixosConfigurations.spectre
+
+The embedded Home Manager on legion composes 62 aspects (`embeddedHmAspects`:
+63 selected HM aspects minus the system-owned tailscale/syncthing/mosh/niks3,
+plus the NixOS-only cuda/libcamera/codex). Spectre's embedded Home Manager
+composes 44 lean aspects (phase-gated alongside its NixOS set).
 
 The Legion counts above include one enrollment-gated aspect in each class,
 selected by `sshIdentitiesEnrolled`:
-`legion-ssh-identities` delivers client keys through Home Manager and builder
-and server host keys through the system layer, from `secrets/hosts/legion/ssh.yaml`.
-Server host-key restoration applies only on NixOS; Arch sshd keeps its existing keys.
+`legion-ssh-identities` delivers client keys through Home Manager and the
+builder and server host keys through the NixOS layer, from
+`secrets/hosts/legion/ssh.yaml`.
 [Identity enrollment](docs/runbooks/enroll-legion-identities.md) records the
 one-time import and external age-key bootstrap required for a fresh install.
 
@@ -108,9 +104,8 @@ inventory — target system, tailnet hostname, SSH host key — and this reposit
 declares only its own scheduling policy over it: a build profile naming
 `home-forge`, and the dispatch account that builder currently authorizes. The
 host composition resolves that policy into normalized specs and hands them to
-the contract's pure projector, which renders native `nix.buildMachines` on
-both NixOS and the non-NixOS system-manager host. System-manager imports the
-upstream remote-build options, so no separate machines file or hand-written
+the contract's pure projector, which renders native `nix.buildMachines` on the
+NixOS host, so no separate machines file or hand-written
 builder definition is needed. Membership is the whole policy: a build hook
 ranks only the configured machines against each other, so a scheduled builder
 accepts everything and no weight or predicate expresses "prefer local". Slot
@@ -176,7 +171,7 @@ Dependency authority is explicit. `nix-fleet` owns the pins both repositories
 share — `nixpkgs`, `flake-parts`, `import-tree`, `treefmt-nix` — and this flake
 consumes them as _follows_ onto `nix-fleet/<input>` rather than carrying its own
 URLs, so a single nix-fleet update moves them together instead of letting two
-copies drift. Everything else — home-manager, system-manager, Noctalia, desktop
+copies drift. Everything else — home-manager, Noctalia, desktop
 and agent tooling — is this repository's own input, updating independently and
 converging on the inherited nixpkgs. `sops-nix` and `niks3` stay repository-owned
 deliberately: nix-fleet declares its copies for fixture evaluation only, not as
@@ -198,12 +193,12 @@ decrypted and rendered by whichever layer owns its consumer.
 `secrets/nixbuild.yaml`, and renders the token to
 `/run/secrets/rendered/nixbuild.net.env` as root-owned `0400`. Decryption uses
 a pre-generated root-owned age key at `/var/lib/sops-nix/key.txt`
-(`generateKey = false`; automatic generation is unsupported in
-system-manager). `nix-daemon` orders after and wants
+(`generateKey = false`, so a missing key cannot silently become a new identity).
+`nix-daemon` orders after and wants
 `sops-install-secrets.service`, and rotation restarts it declaratively via
 `restartUnits`. Canonical contract:
-[daemon-nix-config](openspec/specs/daemon-nix-config/spec.md). The NixOS
-target adds one more root secret: the `niks3` NixOS aspect decrypts
+[daemon-nix-config](openspec/specs/daemon-nix-config/spec.md). The `niks3` NixOS
+aspect adds one more root secret: it decrypts
 `NIKS3_AUTH_TOKEN` as a root-owned sops secret and feeds the rendered path
 straight to the root-scoped `services.niks3-auto-upload` — no
 user-runtime-socket hook on NixOS, and the embedded Home Manager drops the
@@ -246,11 +241,11 @@ service manager cannot model the work.
 
 Active user services: grist, qmd, mcp-nixos, web-catalog, moniqued, memex's
 hourly index timer, surge (the
-headless download daemon on port 1700), niks3-auto-upload (a socket-activated
-cache upload queue), and the weekly nh-clean timer — which is a user timer only on the non-NixOS host: on
-NixOS the fleet's `nh-gc` capability owns that unit and runs `nh clean all` as
-root, which covers user generations too, so GC has exactly one owner per host
-scope. Podman storage is pruned weekly through the platform's own
+headless download daemon on port 1700), and niks3-auto-upload (a socket-activated
+cache upload queue). Garbage collection has no user-scoped timer: the fleet's
+`nh-gc` capability owns the unit and runs `nh clean all` as
+root, which covers user generations too, so GC has exactly one owner.
+Podman storage is pruned weekly through the platform's own
 `virtualisation.podman.autoPrune` rather than nix-fleet's `podman-prune` aspect:
 nixpkgs defines the `podman-prune` unit unconditionally, so the two cannot
 coexist. Systemd failure notifications come from the fleet's `notify`
@@ -321,9 +316,9 @@ describes only machines that are always on.
   never implies trust, so naming a host for one cannot silently grant the other.
   Host keys land in the system known-hosts file rather than the user's, because
   ssh appends to the latter.
-- **System secrets stay out of user scope** — owned end to end by
-  system-manager on Arch and by the sops-nix OS module on NixOS; a root
-  credential is never rendered through user-scoped Home Manager state.
+- **System secrets stay out of user scope** — owned end to end by the sops-nix
+  OS module; a root credential is never rendered through user-scoped Home
+  Manager state.
 - **One durable document** — `ARCHITECTURE.md` records boundaries and
   rationale; the filesystem inventory duplicate was deleted because it
   diverged from implementation.
@@ -502,8 +497,7 @@ nix flake check --no-build --no-write-lock-file
 Nix, and prettier for Markdown, YAML and JSON. Flake checks cover Statix and Deadnix over all
 maintained Nix source (nvfetcher's `pkgs/_sources` is excluded at the
 source-set level, not via suppressions), the treefmt check, and full
-evaluation of the Home Manager activation package, the system-manager
-configuration, the NixOS toplevel, and the NixOS VM test derivations — a
+evaluation of both NixOS toplevels and the NixOS VM test derivations — a
 change that breaks any host output fails CI without switching anything.
 Lefthook runs fast formatting and lint checks at pre-commit and the canonical
 no-build check at pre-push; GitHub Actions runs the same check on pull

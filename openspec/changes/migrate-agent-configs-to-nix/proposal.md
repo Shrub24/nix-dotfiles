@@ -70,7 +70,7 @@ uses them only for the package override. The rendered-file options
 - Files: `modules/agents/herdr.nix`, `modules/agents/pi.nix`,
   `modules/agents/pi/agents/*.md`, the `modules/agents/pi/agents/**` exclusion
   in `modules/flake/tooling.nix`, and a durable decision in `ARCHITECTURE.md`.
-  No host-composition, system-manager, NixOS, or secrets change.
+  No host-composition, NixOS, or secrets change.
 - Blocks on nothing. Home Manager at the pinned revision already provides both
   modules, so no flake input update is required.
 - Deployment requires one directory move per application and must stop the

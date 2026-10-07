@@ -56,7 +56,7 @@ Deleting p1–p3 is not reversible on this machine. The GPT backup restores the 
 
 ### D5. The install runs from the running Arch system
 
-**Verdict: adopt.** `nixos-install` from nixpkgs, run on the running Arch host into a mounted target root, is the primary path; NixOS media is the documented fallback. nix is already installed on Arch, `nixos-install-tools` evaluates and builds there (`nixpkgs#nixos-install-tools` builds from cache), and the install is a chroot install either way — `nixos-install` runs the target's `switch-to-configuration boot` inside `nixos-enter`.
+**Verdict: adopt.** `nixos-install` from nixpkgs, run on the running pre-install system into a mounted target root, is the primary path; NixOS media is the documented fallback. nix is already installed, `nixos-install-tools` evaluates and builds there (`nixpkgs#nixos-install-tools` builds from cache), and the install is a chroot install either way — `nixos-install` runs the target's `switch-to-configuration boot` inside `nixos-enter`.
 
 Reasons it holds:
 

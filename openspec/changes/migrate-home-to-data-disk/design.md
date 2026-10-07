@@ -17,10 +17,9 @@ research venvs are full copies; `UV_LINK_MODE=clone` (reflink) already
 landed in `modules/shell/default.nix` and becomes effective once both sides
 share a filesystem.
 
-system-manager's module surface is `environment`, `etc`, `systemd`,
-`tmpfiles` — no `fileSystems`, no mounts. system-manager's own docs list
-`fileSystems` as a NixOS difference. Home Manager is user-scope and cannot
-mount anything.
+The mount and snapshot facts belong to one host class: NixOS declares
+`fileSystems`, disko renders the install target's mounts, and Home Manager is
+user-scope and cannot mount anything.
 
 ## Goals / Non-Goals
 
@@ -28,13 +27,13 @@ mount anything.
 
 - One typed declaration (`storage.dataDisk`) owns the data disk's facts;
   every consumer projects it.
-- `/home` and `/data` are declared on the NixOS target (`fileSystems`,
-  disko, snapper) from the same declaration.
+- `/home` and `/data` are declared on the NixOS target (`fileSystems`)
+  from the same declaration.
 - The churn subvolume set is explicit and extendable — new tools' state
   paths join the set instead of silently landing in snapshot paths.
-- NixOS target state is prewired: disko config for both disks, declarative
-  snapper timers/retention, `fileSystems` including the currently-undeclared
-  `/home`.
+- NixOS target state is prewired: the install-target disko declaration,
+  declarative snapper timers/retention, `fileSystems` including the
+  currently-undeclared `/home`.
 - The operator migration (runbook) and the install-day disko layout
   converge on the same subvolume set, so either can run first.
 
@@ -49,26 +48,23 @@ mount anything.
 
 ## Decisions
 
-### D1 — the Arch mount projection is deferred, not built
+### D1 — the data disk's mounts are projected by `fileSystems`
 
-The non-NixOS host is being replaced by NixOS (`nixos-dual-boot-install`),
-so its two data-disk mounts keep their hand-written fstab lines instead of
-gaining systemd mount units generated from the declaration. The
-declaration still owns the facts; only the Arch projection is deferred to
-a host with a known end-of-life. Arch's snapper configs stay imperative for
-the same reason.
+The data disk is declared once in `storage.dataDisk` and projected into the
+NixOS `fileSystems` entries for `/home` and `/data`. There is no second host
+to project it into.
 
-_Rejected_: `.mount` units plus `environment.etc."fstab"` — both were
-evaluation-visible ways to own two lines on a host that is leaving.
+_Rejected_: systemd `.mount` units plus `environment.etc."fstab"` — both are
+evaluation-visible ways to restate mounts that `fileSystems` already owns.
 
 ### D2 — `nodatacow` is realized where the path is created
 
-`chattr +C` has no declarative owner on either class: the nodatacow paths
+`chattr +C` has no declarative owner: the nodatacow paths
 are nested subvolumes inside the home mount, so `nodatacow` is not
 available as a per-subvolume mount option, and disko cannot set an
-attribute. The Arch host already carries the attribute from the imperative
-migration; the requirement survives in the declaration, and install day
-realizes it alongside the subvolume it applies to.
+attribute. The attribute was applied by the imperative migration; the
+requirement survives in the declaration for the next reorganization of the
+data disk.
 
 _Rejected_: a per-path creation oneshot — the only mechanism the format
 offers, and it would have to run `Before=home.mount` on a host whose
@@ -83,30 +79,29 @@ snapshot coverage for `fonts`/`wallpapers`/`nvim` state (regenerable or
 Nix-owned) but keeps working when a new index tool appears — the two
 existing misses (`aube`, `cortexkit`) prove per-tool lists rot.
 
-### D4 — disko written now, imported at install day
+### D4 — disko describes the install target only
 
-`_disko.nix` captures both disks' target layout as a disko config. It is
-not imported into any host composition yet (disko would try to manage a
-live system), but it must evaluate and render the same subvolume set the
-declaration names — checked by an eval assertion. Install-day changes
-(`nixos-dual-boot-install`, `add-spectre-host`) consume it.
+`_disko.nix` captures the install target's partition and subvolume layout and
+is imported by the NixOS host composition, so the installed root's mounts come
+from one declaration. The data disk stays outside it: it already holds the
+user's home and is never repartitioned, and a disko declaration naming it
+would invite exactly that.
 
 ### D5 — Snapper covers root and home, not the residual data mount
 
 NixOS: `services.snapper.configs` + `services.snapper.timers` (native
 module) declaratively from the runbook-captured root/home configs — retention
-values ported verbatim as the imperative truth. Arch: those two configs stay
-imperative (D1). `/data` remains mounted but has no Snapper config: it holds
-opaque rescue images plus package/cache residue, not user data whose
-snapshots provide value.
+values ported verbatim as the imperative truth. `/data` remains mounted but has
+no Snapper config: it holds opaque rescue images plus package/cache residue,
+not user data whose snapshots provide value.
 
 ## Migration / Compatibility
 
 Runbook: `docs/runbooks/migrate-home-to-data-disk.md` (operator-run, fish).
 Ordering between runbook and code is flexible — the runbook's Phase 1 and the
 disko layout create the same subvols — but `pi.nix`'s path rewrites must
-follow the cutover, not precede it. Rollback is reverting two fstab lines;
-the root disk's `@home` is untouched by everything here.
+follow the mount change, not precede it. Rollback is reverting two fstab
+lines; the root disk's `@home` is untouched by everything here.
 
 `modules/agents/pi.nix` moves its eleven `/mnt/LinuxData/Projects` paths
 to `home.homeDirectory`-derived ones only after `~/Projects` is a real
@@ -114,9 +109,9 @@ directory (Phase 3).
 
 ## Verification
 
-- `nix flake check --no-build` covers evaluation of all three host outputs.
+- `nix flake check --no-build` covers evaluation of both host outputs.
 - Eval assertions: `fileSystems."/home"` exists on the NixOS side and
-  derives from the declaration; the disko config renders exactly the
-  declaration's subvol set and churn paths.
+  derives from the declaration; the install-target disko declaration
+  renders the subvolume set the installed root carries.
 - Live checks land in the runbook's Phase 3 (`findmnt`, `btrfs subvolume
 list`, `snapper -c home list`).

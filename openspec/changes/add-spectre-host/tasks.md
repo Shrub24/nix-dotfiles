@@ -8,11 +8,10 @@
       `useGlobalPkgs`/`useUserPackages`) plus the NixOS aspect list in D2.
 
   - refs: design D1, D2; spec spectre-host "The portable host is a composed NixOS output"
-  - criteria: the laptop composes a NixOS configuration only — no
-    `systemConfigs` and no standalone `homeConfigurations` entry, since the
-    embedded Home Manager is its only configuration path
+  - criteria: the laptop composes a NixOS configuration only, with the
+    embedded Home Manager as its only configuration path
   - verify: `nix eval .#nixosConfigurations.spectre.config.networking.hostName`
-  - done: `.#nixosConfigurations.spectre` evaluates, `networking.hostName` is `spectre`, and no `systemConfigs` or standalone HM entry exists for it
+  - done: `.#nixosConfigurations.spectre` evaluates, `networking.hostName` is `spectre`, and the host composes a single NixOS configuration.
 
 - [x] 1.2 Add `modules/hosts/spectre/_nixos.nix` (hostname `spectre`, state
       version, `en_AU.UTF-8`, `Australia/Melbourne`, importing `_hardware.nix`) and
@@ -24,7 +23,7 @@
     and are imported only by the host composition
   - done: raw modules are `modules/hosts/spectre/_nixos.nix`, `_home.nix`, `_hardware.nix` (`_` prefix keeps them out of discovery)
 
-- [x] 1.3 Register the laptop in the fleet registry: `topology.hosts.spectre = { system; sshUser = "saurabhj"; primaryUser = { name = "saurabhj"; uid = 1000; gid = 1000; }; }`,
+- [x] 1.3 Register the laptop in the fleet registry: `topology.hosts.spectre = { sshUser = "saurabhj"; primaryUser = { name = "saurabhj"; uid = 1000; gid = 1000; }; }`,
       and give `topology.hosts.legion` its `sshUser = "saurabhj"` so peer aliases
       carry the right login.
 
@@ -65,20 +64,20 @@
   - refs: design D3
   - verify: `nix eval .#nixosConfigurations.spectre.config.nix.distributedBuilds` is false
 
-## Group 3 — Hardware profile (4)
+## Group 3 — Hardware profile (6)
 
 - done: `builders` is in the desktop's `nixosAspects`; the laptop's `nix.distributedBuilds` is false and `nix.buildMachines` is empty
 
 - [x] 3.1 Write the intended `modules/hosts/spectre/_hardware.nix` shape ahead of
-      install day: 1 GiB ESP, LUKS2 root with btrfs subvolumes, a 12 GiB swapfile
-      with `resume_offset`, Intel microcode, `boot.initrd.availableKernelModules` for
-      nvme/xhci/uas/i915/iwlwifi, zram, and the systemd-boot configuration limit.
+      install day: 2 GiB ESP, a disko-owned LUKS2 root with btrfs subvolumes, a
+      12 GiB swapfile with `resume_offset`, Intel microcode,
+      `boot.initrd.availableKernelModules` for nvme/xhci/uas/i915/iwlwifi, zram,
+      and the systemd-boot configuration limit.
 
   - refs: design D4, D5; spec spectre-host "Portable hardware is supported and probe-gated"
-  - criteria: file is a skeleton with placeholders for device UUIDs, replaced by
-    generated values on install day
-  - done: `modules/hosts/spectre/_hardware.nix` written with `REPLACE-ON-INSTALL` placeholders for disk identifiers and resume parameters
-  - note: `swapDevices` deliberately omits `size` — nixpkgs rewrites a swapfile whose size differs from a declared `size`, moving the extents `resume_offset` points at
+  - criteria: the file declares host policy and leaves the disk, its mounts and swap to the disko declaration
+  - done: `modules/hosts/spectre/_hardware.nix` holds boot policy, firmware, thermald, bolt, zram and the systemd-boot limit; the disk is in `_disko.nix`
+  - note: `boot.kernelParams` still carries `resume_offset=REPLACE-ON-INSTALL`, tracked in 5.6
 
 - [ ] 3.2 On the live ISO, confirm the three unknowns the model does not settle:
       the SSD's real capacity (`lsblk -o NAME,SIZE,MODEL`), the existing ESP's size,
@@ -105,6 +104,22 @@
 
   - refs: design D4; spec spectre-host "Portable hardware is supported and probe-gated"
   - criteria: no `services.fprintd` in the laptop configuration
+
+- [ ] 3.5 Reconcile the laptop's selected aspect set with design D2: `libreoffice`
+      and `monique` are selected in `modules/hosts/spectre.nix` although D2 and the
+      proposal place both on the desktop.
+
+  - refs: design D2; proposal "no local service tier"
+  - reason: still open — the code diverges from the stated product decision, and
+    the decision is not rewritten in the design to bless the divergence.
+  - note: which side is authoritative is an owner call.
+
+- [ ] 3.6 Replace the laptop disk's `/dev/nvme0n1` with a stable identity
+      (by-id or by-partuuid) in `modules/hosts/spectre/_disko.nix`.
+
+  - refs: spec spectre-host "Storage is a single encrypted container with hibernation support"
+  - reason: still open — the requirement ("no kernel-assigned device number SHALL
+    appear") stands, so the declaration is corrected rather than the requirement.
 
 ## Group 4 — Secrets bootstrap (4)
 
@@ -141,75 +156,84 @@
 
 ## Group 5 — Install day (7)
 
-- [ ] 5.1 Boot the official NixOS ISO, connect the network, and confirm disk
+- [x] 5.1 Boot the official NixOS ISO, connect the network, and confirm disk
       identity by serial/WWN before any write.
 
   - refs: design D5; spec spectre-host "Storage is a single encrypted container with hibernation support"
-  - criteria: serial/WWN recorded and matched against the machine's own hardware
-    report; no partition command run before that check
+  - criteria: serial/WWN recorded and matched against the machine's own hardware report; no partition command run before that check
+  - done: the machine is installed from that declaration, and `modules/hosts/spectre/facter.json` is the committed live-media hardware report
 
-- [ ] 5.2 Create the partition table: a 1 GiB ESP and one LUKS2 container for
+- [x] 5.2 Create the partition table: a 2 GiB ESP and one LUKS2 container for
       the remainder of the disk. No other partition, nothing unallocated.
 
   - refs: design D5, D6
-  - verify: `lsblk` shows exactly two partitions plus the encrypted container,
-    with no free space remaining
+  - verify: `lsblk` shows exactly two partitions plus the encrypted container, with no free space remaining
+  - done: `modules/hosts/spectre/_disko.nix` declares the 2 GiB ESP and the `100%` `cryptroot` container, and the installed disk was created from it
 
-- [ ] 5.3 `cryptsetup luksFormat`, open the container, create the `@`, `@nix`,
-      `@home`, `@swap` subvolumes, and the 12 GiB swapfile with NOCOW set.
+- [x] 5.3 `cryptsetup luksFormat`, open the container, create the btrfs
+      subvolumes, and the 12 GiB swapfile.
 
   - refs: design D5
-  - verify: `btrfs subvolume list` shows all four; `lsattr` shows `C` on the
-    swapfile
-  - note: create the file once with `btrfs filesystem mkswapfile --size 12G --uuid clear` (or a NOCOW `chattr +C` file) and never let NixOS resize it; record the offset from the same tooling
+  - done: `_disko.nix` creates `@`, `@nix`, `@home`, `@snapshots`, `@persist`,
+    `@log`, `@cache`, `@tmp` and `@swap` with its 12 GiB swapfile
 
-- [ ] 5.4 `nixos-generate-config --root /mnt`, hand-edit down to the minimal
+- [x] 5.4 `nixos-generate-config --root /mnt`, hand-edit down to the minimal
       `_hardware.nix`, and replace the placeholder device identifiers with the real
       ones.
 
   - refs: design D5; spec spectre-host "Storage is a single encrypted container with hibernation support"
-  - criteria: no `/dev/nvme*` numbering, no `/dev/sda*` path in the file —
-    `by-uuid`/`by-partuuid` only
+  - criteria: `_hardware.nix` declares policy only; the device tree lives in the disko declaration
+  - done: `_hardware.nix` carries no mount or disk identity; the LUKS initrd device derives from the disko partlabel
+  - note: `_disko.nix` still names `/dev/nvme0n1`, tracked in 3.6
 
-- [ ] 5.5 Clone the repository onto the target and run `nixos-install --flake .#spectre`.
+- [x] 5.5 Clone the repository onto the target and run `nixos-install --flake .#spectre`.
 
   - refs: design D7
   - verify: install completes and the machine reboots into the greeter
+  - done: `docs/runbooks/provision-spectre.md` Phase 1 installed the host from the desktop; the installed system is the current state
 
 - [ ] 5.6 Enrol TPM2 for the LUKS keyslot (`systemd-cryptenroll --tpm2-device=auto`)
       and confirm hibernation resumes.
 
   - refs: design D5; spec spectre-host "Storage is a single encrypted container with hibernation support"
-  - verify: boot with no passphrase prompt; `systemctl hibernate` followed by
-    power-on resumes the session
+  - verify: boot with no passphrase prompt; `systemctl hibernate` followed by power-on resumes the session
+  - reason: still open — `boot.kernelParams` still carries
+    `resume_offset=REPLACE-ON-INSTALL`, and the TPM2 enrolment is a post-install
+    step (`docs/runbooks/provision-spectre.md` Phase 3).
 
 - [ ] 5.7 Record the resolved partition identifiers and the fingerprint finding
       back into the change's task notes and the host file comments.
 
   - refs: design D4, D5
   - criteria: a future reader can identify this disk without re-deriving it
+  - reason: still open — `resume_offset` is still a placeholder, and no fingerprint
+    finding is recorded under `modules/hosts/spectre/`.
 
 ## Group 6 — Single boot and remote access (3)
 
-- [ ] 6.1 Confirm the machine is single-boot as designed: no unallocated region,
+- [x] 6.1 Confirm the machine is single-boot as designed: no unallocated region,
       no NTFS mount, and no Windows boot entry in the host's configuration.
 
   - refs: design D6; spec spectre-host "Storage is a single encrypted container with hibernation support"
-  - verify: `lsblk` shows the whole disk claimed; `nix eval .#nixosConfigurations.spectre.config.boot.loader.systemd-boot.extraEntries`
-    is empty
+  - verify: `lsblk` shows the whole disk claimed; `nix eval .#nixosConfigurations.spectre.config.boot.loader.systemd-boot.extraEntries` is empty
+  - done: `_disko.nix` claims the whole disk (ESP plus the `100%` container), the
+    host declares no NTFS mount, and `spectre.nix` declares no Windows boot entry
 
 - [ ] 6.2 Reach the laptop from the desktop by its registry name over ssh (key
       authentication, password authentication off) and over mosh.
 
   - refs: design D8; spec spectre-host "The portable host is reachable and validated before install day"
   - verify: `ssh spectre` and `mosh spectre` both connect as `saurabhj`
+  - reason: still open — provisioning used `root@<ip>`, and no registry-name ssh or
+    mosh session is recorded in the repository.
 
 - [ ] 6.3 Join the tailnet and confirm the laptop is reachable by tailnet name as
       well, with no inbound port opened on any other interface.
 
   - refs: design D8
-  - verify: `tailscale status` lists the machine; the firewall exposes ssh/mosh
-    on `tailscale0` only
+  - verify: `tailscale status` lists the machine; the firewall exposes ssh/mosh on `tailscale0` only
+  - reason: still open — the host selects the `tailscale` aspect, but secrets are
+    not enrolled and no tailnet identity is recorded.
 
 ## Group 7 — Validation and docs (4)
 
@@ -227,8 +251,8 @@
   - verify: command exit status 0
   - done: `nix flake check --no-build --no-write-lock-file` → exit 0, `all checks passed!` with `nixos-spectre` and `vm-spectre-boot` in the checks set
 
-- [x] 7.3 Confirm the desktop is unaffected: `.#legion` system-manager and
-      `.#saurabhj` Home Manager outputs still evaluate and the VM checks still boot.
+- [x] 7.3 Confirm the desktop is unaffected: `.#nixosConfigurations.legion` still
+      evaluates and the VM checks still boot.
 
   - refs: spec current-host-facts
   - verify: `nix flake check --no-build` plus the two existing VM checks

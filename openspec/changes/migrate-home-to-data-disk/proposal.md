@@ -27,14 +27,12 @@ duplicate venvs collapse).
   `~/.mozilla`; `chattr +C` on containers and browser profiles.
 - A typed storage-topology SSOT (`storage.dataDisk`) projected into its
   consumers: NixOS gets `fileSystems` from the SSOT (closing the gap where
-  `/home` is undeclared in `_hardware.nix`), plus the disko layout and
-  snapper retention. The Arch host keeps its hand-written fstab lines and
-  imperative snapper configs — it is being replaced by NixOS.
-- **NixOS prewiring, stated now even where Arch cannot realize it**: a
-  `_disko.nix` capturing both disks' target partition/subvolume layout as a
-  disko config (written but unimported until install day), and declarative
-  snapper timers/retention on the NixOS side so `snapper-snapshots` lands
-  fully declarative.
+  `/home` is undeclared in `_hardware.nix`), plus the install-target disko
+  declaration and snapper retention.
+- **NixOS prewiring**: a `_disko.nix` capturing the install target's
+  partition/subvolume layout as a disko config, imported by the host
+  composition, and declarative snapper timers/retention on the NixOS side so
+  `snapper-snapshots` lands fully declarative.
 - `modules/agents/pi.nix`'s eleven `/mnt/LinuxData/Projects` paths become
   home-relative once `~/Projects` exists.
 
@@ -57,7 +55,7 @@ duplicate venvs collapse).
 - Pros: root disk drops from 253G to ~136G used; home snapshots stop
   absorbing indices/caches; one declarative fact-base for install day.
 - Risks: a bad fstab edit is boot-affecting — mitigated by the untouched
-  root-disk `@home` rollback and the TTY cutover procedure.
+  root-disk `@home` rollback and the documented mount-change procedure.
 - Non-goals: impermanence (future), moving the root disk's other subvols,
   deleting the old `@home` (kept as rollback), any change to snapper's
   `root` config.

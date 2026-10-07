@@ -45,16 +45,12 @@ profile, storage layout, secrets bootstrap, and the install runbook.
 
 ## Decisions
 
-### D1. NixOS-only host, no system-manager counterpart
+### D1. NixOS-only host, one configuration path
 
-The laptop runs NixOS, so it contributes `flake.nixosConfigurations.spectre` and
-nothing else: no `systemConfigs` output, no standalone `homeConfigurations`
-output, and no `targets.genericLinux` — that discriminator and the standalone
-Home Manager output both exist for the Arch host, where there is no system to
-build. On a NixOS-only machine the embedded Home Manager is the only
-configuration path, so an update is one `nixos-rebuild` and there is no second
-activation route to keep in sync. The desktop keeps both classes until its
-cutover.
+The laptop runs NixOS, so it contributes `flake.nixosConfigurations.spectre`
+only. The embedded Home Manager is its sole configuration path, so an update is
+one `nixos-rebuild` and there is no second activation route to keep in sync.
+Every host in the fleet is built this way; the laptop was simply the first.
 
 ### D2. Lean aspect set: full environment, no local services
 
@@ -136,24 +132,27 @@ Partition plan, fixed before anything is written to disk:
 
 | #   | Size      | Purpose                                                       |
 | --- | --------- | ------------------------------------------------------------- |
-| 1   | 1 GiB     | ESP, vfat, mounted `/boot`                                    |
-| 2   | remainder | LUKS2 container holding btrfs (`@`, `@nix`, `@home`, `@swap`) |
+| 1   | 2 GiB     | ESP, vfat, mounted `/boot`                                    |
+| 2   | remainder | LUKS2 container holding btrfs (nine subvolumes, listed below) |
 
-Two partitions, nothing unallocated. The ESP is 1 GiB because kernels and
-initrds live on it, not because firmware wants the space: at roughly 50 MB per
-generation a 512 MiB ESP runs out once a few generations accumulate, and
+Two partitions, nothing unallocated. The ESP is 2 GiB because kernels and
+initrds live on it, not because firmware wants the space: at roughly 50–70 MB per
+generation a 1 GiB ESP fills once a few generations accumulate, and
 `boot.loader.systemd-boot.configurationLimit` is a worse answer than starting
 with room.
 
-Subvolume layout mirrors the desktop (`@` root, `@nix` separate, `@home`), plus
-`@swap`: a NOCOW subvolume holding one 12 GiB swapfile (8 GiB of memory plus
-4 GiB of headroom for hibernation). Hibernation on btrfs needs `resume_offset`
+Subvolume layout mirrors the desktop's root disk (`@` root, `@nix` separate,
+`@home`, `@snapshots` at `/.snapshots`, `@log`, `@cache`, `@tmp`), plus `@swap`
+holding one 12 GiB swapfile and `@persist` reserved for a later impermanence
+change. Hibernation on btrfs needs `resume_offset`
 from `btrfs inspect-internal map-swapfile -r <swapfile>` because the swapfile is
-not at a fixed physical offset. A `@snapshots` subvolume is created only if
-Snapper is adopted later; creating it afterwards costs nothing. The alternative —
+not at a fixed physical offset. The alternative —
 a second LUKS-encrypted swap partition — avoids the offset bookkeeping but adds a
 second device and a second TPM2 enrolment; it remains the fallback if resume
 proves unreliable on this firmware.
+
+The disk is declared with disko (`_disko.nix`), which renders the mounts, the
+LUKS initrd device and swap; `_hardware.nix` declares policy only.
 
 TPM2 is enrolled with `systemd-cryptenroll` alongside the passphrase, so boot is
 silent and a firmware reset or a changed PCR set degrades to a passphrase prompt
@@ -219,12 +218,14 @@ lifecycle section; the spec index gains `spectre-host`.
 
 - **Full desktop parity on the laptop.** Rejected: it puts always-on services on
   a machine that sleeps, travels, and will be wiped by its next owner.
-- **Arch + system-manager on the laptop for consistency with the desktop.**
+- **Keeping the laptop on the previous non-NixOS stack for consistency with
+  the desktop.**
   Rejected: a fresh install is the moment NixOS costs nothing, the NixOS aspects
   already exist, and the laptop is the cheapest place to prove them.
-- **disko for declarative partitioning.** Rejected for now: it adds an input and
-  a second source of truth for the same disk beside `_hardware.nix`, for an
-  install that happens once.
+- **Procedural partitioning without disko.** Rejected: it would put the mount
+  table, the LUKS initrd device and swap in three places beside the disk
+  declaration, and the install would no longer derive from the declaration the
+  install gate validates.
 - **Reserving space for a Windows install that may never happen.** Rejected: on
   a 256 GB disk the reservation idles a third of the storage to hedge a need the
   desktop can cover, and the cost of adding Windows later is a resize rather than

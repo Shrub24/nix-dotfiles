@@ -40,7 +40,7 @@ Automatic module discovery SHALL be limited to files that conform to the reposit
 
 - **WHEN** the flake evaluates the automatic discovery tree
 - **THEN** every discovered file SHALL be valid in that tree's module context
-- **AND** raw Home Manager modules, raw system-manager modules, package functions, generated files, and disabled support files SHALL remain outside the scan scope
+- **AND** raw Home Manager modules, package functions, generated files, and disabled support files SHALL remain outside the scan scope
 
 ### Requirement: Shared host and service data is typed and host-owned
 
@@ -107,27 +107,12 @@ The NixOS host SHALL embed Home Manager through `home-manager.nixosModules.home-
 - **THEN** Home Manager is embedded via the NixOS home-manager module with global pkgs and user packages enabled
 - **AND** no `specialArgs` or `extraSpecialArgs` argument bus is introduced
 
-### Requirement: Target mode is discriminated by targets.genericLinux
-
-The host composition SHALL set the native `targets.genericLinux.enable` option explicitly beside the shared raw home module in each evaluation; affected Home Manager modules SHALL branch on that normal `config` value rather than on an argument bus.
-
-#### Scenario: Arch evaluation enables generic Linux
-
-- **WHEN** the standalone Arch Home Manager configuration is evaluated
-- **THEN** `targets.genericLinux.enable` is true
-
-#### Scenario: NixOS evaluation disables generic Linux
-
-- **WHEN** the NixOS-embedded Home Manager configuration is evaluated
-- **THEN** `targets.genericLinux.enable` is false
-- **AND** affected modules read the target from `config` to select target-specific behavior
-
 ### Requirement: Unfree policy is host-owned
 
-The host composition SHALL define one unfree predicate lexically in `modules/hosts/legion.nix` and apply it to both the standalone Home Manager pkgs and the NixOS global pkgs; feature-owned Home Manager `nixpkgs.config` SHALL be removed so `useGlobalPkgs` is valid.
+The host composition SHALL define one unfree predicate lexically in `modules/hosts/legion.nix` and apply it to the NixOS global pkgs; feature-owned Home Manager `nixpkgs.config` SHALL be removed so `useGlobalPkgs` is valid.
 
-#### Scenario: One predicate covers both scopes
+#### Scenario: One predicate covers every host
 
-- **WHEN** either the standalone or the NixOS-embedded Home Manager configuration evaluates
-- **THEN** both use the same host-owned unfree predicate
+- **WHEN** a host composition evaluates
+- **THEN** it uses the host-owned unfree predicate for the global package set
 - **AND** no feature module declares its own `nixpkgs.config.allowUnfreePredicate`

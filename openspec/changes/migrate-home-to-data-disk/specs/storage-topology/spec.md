@@ -6,9 +6,11 @@
 
 Each host SHALL declare its storage topology — device UUID, subvolume
 names, mountpoints, and the churn/nodatacow path sets — in one typed
-declaration, and every projection that consumes it (`fileSystems`, disko,
-snapper) SHALL derive from it. A class-level module SHALL NOT restate a
-device UUID or subvolume name the declaration already carries.
+declaration, and every projection that consumes it SHALL derive from it. A
+class-level module SHALL NOT restate a device UUID or subvolume name the
+declaration already carries. The NixOS `fileSystems` for the data disk are
+that declaration's projection; the install target's root mounts derive from
+the separate disk declaration.
 
 #### Scenario: One fact, several projections
 
@@ -59,10 +61,10 @@ caches, indices, container storage, package stores) from preserved paths
 
 ### Requirement: Nodatacow applies where CoW harms
 
-Paths in the declaration's `nodatacow` set (container storage, browser
-profiles) SHALL be created with the `+C` attribute so random-write and
-SQLite workloads do not fragment under CoW. Paths whose payloads benefit
-from compression (caches) SHALL NOT be in the set.
+Paths in the declaration's `nodatacow` set SHALL be created with the `+C`
+attribute so random-write and SQLite workloads (container storage, browser
+profiles) do not fragment under CoW. Paths whose payloads benefit from
+compression (caches) SHALL NOT be in the set.
 
 #### Scenario: Attribute present at creation
 
@@ -72,7 +74,7 @@ from compression (caches) SHALL NOT be in the set.
 ### Requirement: NixOS-side timers and disk layout are prewired
 
 The NixOS projection SHALL carry declarative snapper timer and retention
-configuration and a disko configuration capturing both disks' target
+configuration and a disko configuration capturing the install target's
 partition/subvolume layout. These MAY exceed what the current host realizes
 today; they MUST match the target state so install day consumes them
 without redesign.
@@ -80,9 +82,9 @@ without redesign.
 #### Scenario: Install-day evaluation
 
 - **WHEN** the bare-metal NixOS configuration is evaluated against the
-  target disks
+  target disk
 - **THEN** the disko configuration builds without modification and renders
-  the same subvolume set the declaration names
+  the subvolume set the installed root carries
 
 ### Requirement: Home paths are home-relative after migration
 

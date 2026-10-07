@@ -11,8 +11,8 @@ Herdr runtime files remain Herdr-owned.
 
 The system SHALL enable Herdr through the native Home Manager
 `programs.herdr` module with its package supplied by `inputs.llm-agents`.
-The Arch host SHALL select the `herdr` Home Manager aspect. No
-system-manager or NixOS aspect SHALL be introduced for Herdr.
+A host that uses Herdr SHALL select the `herdr` Home Manager aspect. No
+NixOS aspect SHALL be introduced for Herdr.
 
 #### Scenario: Host composition enables Herdr
 
@@ -20,20 +20,30 @@ system-manager or NixOS aspect SHALL be introduced for Herdr.
 - **THEN** the `herdr` aspect is selected and `programs.herdr.enable = true` is set
 - **AND** the Herdr package resolves from `inputs.llm-agents`
 
-### Requirement: Herdr configuration file is rendered by Nix
+### Requirement: Herdr configuration file is seeded from Nix
 
 The system SHALL render Herdr's `config.toml` from `programs.herdr.settings`
-as a read-only Nix store path at `$XDG_CONFIG_HOME/herdr/config.toml`. The
-Herdr configuration directory SHALL NOT be a symlink into the repository
-working tree. The live `~/.config/herdr` directory SHALL hold no checked-in
-configuration after migration.
+and seed it at activation as a real writable file at
+`$XDG_CONFIG_HOME/herdr/config.toml`. The path SHALL NOT be a store symlink,
+because Herdr and its plugin persist settings by writing a temporary file and
+renaming it over the path, which a store symlink cannot serve. The activation
+SHALL replace the file with the declared settings, so every switch re-seeds
+the declared keys; the plugin's own blocks SHALL be re-applied after the seed.
+The live `~/.config/herdr` directory SHALL hold no checked-in configuration
+after migration.
 
-#### Scenario: Rendered configuration resolves to the store
+#### Scenario: Configuration is seeded at activation
 
 - **WHEN** the Home Manager configuration is applied with Herdr enabled
-- **THEN** `~/.config/herdr/config.toml` resolves to a read-only Nix store path
-- **AND** its content matches the user's declarative settings
+- **THEN** `~/.config/herdr/config.toml` is a real writable file whose
+  declared keys match the user's declarative settings
 - **AND** `~/.config/herdr` is a real directory, not a symlink
+
+#### Scenario: Herdr's own writes do not displace the declaration
+
+- **WHEN** Herdr persists a setting through its UI and the host switches again
+- **THEN** the declared keys are re-seeded and the file is still a real file
+- **AND** the plugin's blocks are re-applied after the seed
 
 ### Requirement: Herdr runtime state is not Nix-owned
 

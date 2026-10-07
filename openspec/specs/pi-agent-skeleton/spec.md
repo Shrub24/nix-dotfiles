@@ -8,11 +8,11 @@ Preserves a small, stable Pi package and settings integration that can be re-ena
 
 ### Requirement: Pi is disabled without runtime residue
 
-The Pi integration SHALL be disabled by default for the Arch host while retaining only the configuration needed for future declarative enablement.
+The Pi integration SHALL be disabled by default on a host that does not select it while retaining only the configuration needed for future declarative enablement.
 
 #### Scenario: Pi remains disabled
 
-- **WHEN** the Arch Home Manager configuration is applied with Pi disabled
+- **WHEN** a host evaluates the Pi aspect with Pi disabled
 - **THEN** Pi SHALL install no package or runtime configuration
 - **AND** Pi-specific activation hooks and secrets SHALL NOT be present
 

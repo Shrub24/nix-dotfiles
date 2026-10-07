@@ -29,7 +29,7 @@ The NixOS host SHALL enable redistributable firmware, the stable NVIDIA driver w
 
 ### Requirement: Live host identity is preserved
 
-The NixOS host SHALL reproduce the live Arch host identity: the primary user's primary group has GID 1000 as a private group, the default locale is `en_AU.UTF-8`, the kernel parameter `nvme_core.default_ps_max_latency_us=0` is present, swap is provided only by zram, and no hibernation is configured.
+The NixOS host SHALL reproduce the machine's established identity: the primary user's primary group has GID 1000 as a private group, the default locale is `en_AU.UTF-8`, the kernel parameter `nvme_core.default_ps_max_latency_us=0` is present, swap is provided only by zram, and no hibernation is configured.
 
 #### Scenario: Identity survives the target switch
 
@@ -70,12 +70,13 @@ The NixOS Syncthing service SHALL use the existing Home Manager state path `~/.l
 
 ### Requirement: Snapshot and mount policy matches the live host
 
-Snapper SHALL be configured for the root, home, and data btrfs volumes; the Shared NTFS mount SHALL use `nofail` and derive its ownership options from the topology primary user.
+Snapper SHALL be configured for the root and home btrfs volumes; the Shared NTFS mount SHALL use `nofail` and derive its ownership options from the topology primary user.
 
 #### Scenario: Snapshots cover the btrfs volumes
 
 - **WHEN** the NixOS host boots
-- **THEN** Snapper manages the root, home, and data volumes
+- **THEN** Snapper manages the root and home volumes
+- **AND** `/data` carries no Snapper config, because it holds rescue images and cache residue rather than snapshotted user data
 
 #### Scenario: Shared NTFS is non-fatal
 

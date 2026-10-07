@@ -37,7 +37,16 @@ Each item is a tracking checkbox for a follow-up change.
       (done: real btrfs/nvme/nvidia hardware hand-rolled 2026-08-18 in parent)
 - [ ] `C8.` Wire `checks-build` CI job to run `nix flake check` (without `--no-build`)
       so the VM test boots on PRs; today the workflow uses `--no-build`.
-- [ ] `C9.` Bare-metal install
+
+  - reason: still open — `.github/workflows/validate.yml` builds only the
+    statix/deadnix/treefmt checks, and the CI wiring is an independent
+    repository-validation item (see the `repository-validation` capability).
+
+- [x] `C9.` Bare-metal install
+
+  - done: `nixosConfigurations.legion` is installed and running NixOS (2 GiB
+    ESP plus a LUKS2/btrfs root, subvolumes, first boot verified); see
+    `openspec/changes/nixos-dual-boot-install/tasks.md`.
 
 ## Final Validation
 
