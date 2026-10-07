@@ -71,6 +71,7 @@ vim.g.maplocalleader = "\\"
 require("config.options-lazyvim")
 require("config.options")
 require("config.keymaps-core") -- LazyVim defaults; own maps override
+require("config.keymaps-picker") -- LazyVim's picker extra
 require("config.keymaps")
 require("config.autocmds")
 require("config.lsp")

@@ -53,13 +53,14 @@ local function set_default(option, value)
 	return true
 end
 
--- LazyVim's servers["*"].keys, verbatim (written positionally upstream).
+-- LazyVim's servers["*"].keys (written positionally upstream). The picker variants for
+-- gd/gr/gI/gy and ss/sS/gai/gao come from its editor.snacks_picker extra.
 local keys = {
 	{ lhs = "<leader>cl", rhs = function() Snacks.picker.lsp_config() end, desc = "Lsp Info" },
-	{ lhs = "gd", rhs = vim.lsp.buf.definition, desc = "Goto Definition", has = "definition" },
-	{ lhs = "gr", rhs = vim.lsp.buf.references, desc = "References", nowait = true },
-	{ lhs = "gI", rhs = vim.lsp.buf.implementation, desc = "Goto Implementation" },
-	{ lhs = "gy", rhs = vim.lsp.buf.type_definition, desc = "Goto T[y]pe Definition" },
+	{ lhs = "gd", rhs = function() Snacks.picker.lsp_definitions() end, desc = "Goto Definition", has = "definition" },
+	{ lhs = "gr", rhs = function() Snacks.picker.lsp_references() end, desc = "References", nowait = true },
+	{ lhs = "gI", rhs = function() Snacks.picker.lsp_implementations() end, desc = "Goto Implementation" },
+	{ lhs = "gy", rhs = function() Snacks.picker.lsp_type_definitions() end, desc = "Goto T[y]pe Definition" },
 	{ lhs = "gD", rhs = vim.lsp.buf.declaration, desc = "Goto Declaration" },
 	{ lhs = "K", rhs = function() return vim.lsp.buf.hover() end, desc = "Hover" },
 	{
@@ -132,6 +133,30 @@ local keys = {
 		has = "documentHighlight",
 		desc = "Prev Reference",
 		enabled = function() return Snacks.words.is_enabled() end,
+	},
+	{
+		lhs = "<leader>ss",
+		rhs = function() Snacks.picker.lsp_symbols() end,
+		desc = "LSP Symbols",
+		has = "documentSymbol",
+	},
+	{
+		lhs = "<leader>sS",
+		rhs = function() Snacks.picker.lsp_workspace_symbols() end,
+		desc = "LSP Workspace Symbols",
+		has = "workspace/symbols",
+	},
+	{
+		lhs = "gai",
+		rhs = function() Snacks.picker.lsp_incoming_calls() end,
+		desc = "Calls Incoming",
+		has = "callHierarchy/incomingCalls",
+	},
+	{
+		lhs = "gao",
+		rhs = function() Snacks.picker.lsp_outgoing_calls() end,
+		desc = "Calls Outgoing",
+		has = "callHierarchy/outgoingCalls",
 	},
 	{
 		lhs = "<leader>co",

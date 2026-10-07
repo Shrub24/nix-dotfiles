@@ -139,6 +139,21 @@ return {
             max_line_length = 500,
             ft = "txt",
           },
+          win = {
+            input = {
+              keys = { ["<a-c>"] = { "toggle_cwd", mode = { "n", "i" } } },
+            },
+          },
+          actions = {
+            -- LazyVim's toggle_cwd, without LazyVim.root().
+            toggle_cwd = function(p)
+              local root = vim.fs.normalize(vim.fs.root(p.input.filter.current_buf or 0, { ".git" }) or vim.uv.cwd())
+              local cwd = vim.fs.normalize(vim.uv.cwd())
+              local current = p:cwd()
+              p:set_cwd(current == root and cwd or root)
+              p:find()
+            end,
+          },
         },
         notifier = { enabled = true },
         quickfile = { enabled = true },
