@@ -79,7 +79,7 @@ modules/                 ← import-tree scan (the only discovery root)
 
 Host composition lives in modules/hosts/legion.nix and modules/hosts/spectre.nix,
 not flake.nix:
-  └─ 24 nixos aspects + _nixos.nix + _disko.nix + embedded HM → nixosConfigurations.legion
+  └─ 25 nixos aspects + _nixos.nix + _disko.nix + embedded HM → nixosConfigurations.legion
 
 modules/hosts/spectre.nix composes the laptop with the same shape and a leaner
 aspect set:

@@ -203,6 +203,7 @@ let
     "containers"
     "desktop-services"
     "kde-apps"
+    "wireshark"
     "syncthing"
     "niks3"
     "mosh"
