@@ -91,8 +91,9 @@
 
       # Importing is the enable — the fleet aspects declare no `enable`.
       services.nix-gc = {
-        dates = "weekly";
-        extraArgs = "--keep-since 7d";
+        implementation = "fast-nix-gc";
+        # btrfs, and auto-optimise-store already dedups each path as it is written.
+        optimise.enable = false;
       };
 
       nix.settings = {
