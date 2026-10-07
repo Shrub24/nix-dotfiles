@@ -16,6 +16,15 @@ _: {
       # a declared value; it persists in /etc/localtime between fixes.
       services.automatic-timezoned.enable = true;
 
+      # Root-side hardware and network tools: sudo resolves its own PATH, so these
+      # belong to the system profile rather than the user's.
+      environment.systemPackages = with pkgs; [
+        efibootmgr
+        gptfdisk
+        iw
+        tcpdump
+      ];
+
       # uv's CPython and the prebuilt rust/go/node binaries run against Nix's
       # glibc only through nix-ld; these append to the module's default set.
       programs.nix-ld = {

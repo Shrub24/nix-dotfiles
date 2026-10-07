@@ -47,6 +47,8 @@ _: {
         nano
         micro
         lsof
+        inotify-tools
+        xhost
 
         # DB
         sqlcipher
@@ -62,6 +64,7 @@ _: {
         wget
         ttyd
         # Archive / conversion
+        unzip
         p7zip
         unrar
         pandoc
