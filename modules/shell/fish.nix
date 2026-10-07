@@ -146,19 +146,13 @@
             }
           ];
 
-          shellInit = ''
-            if test -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
-              source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
-            end
-          '';
-
           interactiveShellInit = ''
             set -g fish_greeting ""
 
             set -g -x fish_autosuggestion_enabled 1
 
-            if test -f "$HOME/.config/sops-nix/secrets/rendered/agent-env.env"
-              replay "set -a; source $HOME/.config/sops-nix/secrets/rendered/agent-env.env; set +a"
+            if test -f "$HOME/.config/sops-nix/secrets/rendered/agent-env.fish"
+              source "$HOME/.config/sops-nix/secrets/rendered/agent-env.fish"
             end
 
             # fancy ctrl z + sudo

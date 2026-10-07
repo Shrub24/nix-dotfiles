@@ -2,7 +2,7 @@
 # YAML key (sops-nix defaults: yaml, ~/.config/sops-nix/secrets/<name>, 0400).
 _: {
   flake.modules.homeManager.credentials =
-    { config, ... }:
+    { config, lib, ... }:
 
     let
       secretsDir = ../../secrets;
@@ -53,17 +53,27 @@ _: {
           };
 
         # Env-only consumers; drop a line once its consumer gains a key mechanism.
-        templates."agent-env.env".content = ''
-          OMNIROUTE_API_KEY=${config.sops.placeholder.OMNIROUTE_API_KEY}
-          NEURALWATT_API_KEY=${config.sops.placeholder.NEURALWATT_API_KEY}
-          OPENROUTER_API_KEY=${config.sops.placeholder.OPENROUTER_API_KEY}
-          OPENCODE_API_KEY=${config.sops.placeholder.OPENCODE_API_KEY}
-          GITHUB_TOKEN=${config.sops.placeholder.GITHUB_TOKEN}
-          BRAVE_API_KEY=${config.sops.placeholder.BRAVE_API_KEY}
-          DATALAB_API_KEY=${config.sops.placeholder.DATALAB_API_KEY}
-          VOYAGE_API_KEY=${config.sops.placeholder.VOYAGE_API_KEY}
-          TYPESAFE_API_KEY=${config.sops.placeholder.TYPESAFE_API_KEY}
-        '';
+        # One key list, one file per shell dialect: each shell sources its own
+        # syntax directly instead of running a command to import the environment.
+        templates =
+          let
+            envOnly = {
+              OMNIROUTE_API_KEY = config.sops.placeholder.OMNIROUTE_API_KEY;
+              NEURALWATT_API_KEY = config.sops.placeholder.NEURALWATT_API_KEY;
+              OPENROUTER_API_KEY = config.sops.placeholder.OPENROUTER_API_KEY;
+              OPENCODE_API_KEY = config.sops.placeholder.OPENCODE_API_KEY;
+              GITHUB_TOKEN = config.sops.placeholder.GITHUB_TOKEN;
+              BRAVE_API_KEY = config.sops.placeholder.BRAVE_API_KEY;
+              DATALAB_API_KEY = config.sops.placeholder.DATALAB_API_KEY;
+              VOYAGE_API_KEY = config.sops.placeholder.VOYAGE_API_KEY;
+              TYPESAFE_API_KEY = config.sops.placeholder.TYPESAFE_API_KEY;
+            };
+            render = line: lib.concatStringsSep "\n" (lib.mapAttrsToList line envOnly) + "\n";
+          in
+          {
+            "agent-env.env".content = render (name: value: "${name}=${value}");
+            "agent-env.fish".content = render (name: value: "set -gx ${name} ${value}");
+          };
       };
     };
 }

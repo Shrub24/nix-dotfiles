@@ -48,7 +48,7 @@ A credential SHALL reach its consumer by the narrowest mechanism the consumer su
 #### Scenario: A key is exported to the environment
 
 - **WHEN** a key's consumer can read nothing but the environment
-- **THEN** it SHALL be listed in the shared `agent-env.env` template, one line per key
+- **THEN** it SHALL be listed in the shared env templates, one line per key, rendered once per shell dialect that sources them
 - **AND** every exported key SHALL have a named env-only consumer
 
 ### Requirement: Service-specific secrets and templates are owned by the service's feature module

@@ -77,7 +77,6 @@ in
         };
 
         sessionPath = [
-          "${config.home.homeDirectory}/.nix-profile/bin"
           "${config.home.homeDirectory}/.local/bin"
           "${config.home.homeDirectory}/.local/share/pnpm/bin"
           "${config.home.homeDirectory}/.bun/bin"

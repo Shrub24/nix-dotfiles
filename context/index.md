@@ -22,6 +22,7 @@
 
 ## A
 
+- [agent-env-templates.md](agent-env-templates.md) — why the shared env template is rendered once per shell dialect instead of replayed through bash
 - [arch-retirement.md](arch-retirement.md) — why NixOS is the only host class, what Arch-looking remnants were kept on purpose, and the session-variable and nvim-name choices
 
 ## B

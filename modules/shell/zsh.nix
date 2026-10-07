@@ -64,11 +64,6 @@ _: {
           ];
 
           envExtra = ''
-            case ":''${PATH}:" in
-              *:"$HOME/.nix-profile/bin":*) ;;
-              *) export PATH="$HOME/.nix-profile/bin:''${PATH}" ;;
-            esac
-
             export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=30
             export ZSH_AUTOSUGGEST_USE_ASYNC=1
             if [ -f "$HOME/.config/sops-nix/secrets/rendered/agent-env.env" ]; then
