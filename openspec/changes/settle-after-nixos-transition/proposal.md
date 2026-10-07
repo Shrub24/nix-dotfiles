@@ -8,8 +8,10 @@ modules whose shape was chosen for Arch or for an upstream that has since
 moved, open tasks on changes whose work already happened, and nix-fleet
 capabilities that landed after the local modules were written. This change
 maps all of it in one place so each item is either done, dropped, or
-deliberately kept. Nothing here is implemented yet, and all of it is phase 2:
-it starts after the soak and full error check, once Arch is decommissioned.
+deliberately kept. Completed items and deferred work are tracked in `tasks.md`.
+Hardware cleanup and Snapper failure registration precede the push; fleet
+telemetry adoption follows. The soak and full error check still gate Arch
+decommission. Other phase-2 capabilities stay deferred.
 
 ## What Changes
 
@@ -25,14 +27,12 @@ wrong is struck from the tasks with its reason.
   them again in `embeddedHmAspects`; with no standalone Home Manager output,
   the selection and the subtraction both go.
 - **Adopt nix-fleet capabilities the local modules predate.**
-  - `telemetry`: `modules/telemetry.nix` re-exports the fleet aspect but no
-    host selects it and nothing registers a scrape source or an OTLP producer.
-    Decide whether any host should run the collector (and where it sends),
-    or drop the pass-through.
+  - `telemetry`: adopt metrics and an explicit journal unit allowlist against
+    the published fleet observability contract; resolve the destinations from
+    its service inventory. Traces follow only once a producer exists.
   - `build-account`: drop the transitional `dev` dispatch account once
     nix-homelab selects it on home-forge (`policy/fleet.nix`).
-  - `notify` registration for the snapper timers (open task in
-    `migrate-home-to-data-disk`).
+  - `notify` registration for the timer-triggered Snapper services.
   - The `podman` aspect stays declined while nixpkgs defines `podman-prune`
     unconditionally; revisit if either side changes.
 - **Re-check local modules against their reason for existing.** `surge` is a
@@ -63,5 +63,7 @@ screen sharing.
 
 Mostly deletions and one-line option changes in `modules/hosts/`,
 `modules/telemetry.nix`, `modules/surge.nix` and the runbooks, plus task
-bookkeeping across five existing changes. Any adoption of `telemetry` adds a
-destination and a credential and needs its own design first.
+bookkeeping across five existing changes. Telemetry needs its own design and
+delivery checks; the current fleet routes use tailnet access, not a new
+credential. `docs/impermanence.md` inventories persistence, with home first
+and root retained while its state is mapped.

@@ -64,6 +64,8 @@ in
     "niks3-auto-upload".failure = { };
     "home-manager-${primaryUser.name}".failure.severity = "critical";
     syncthing.failure.severity = "warning";
+    "snapper-timeline".failure = { };
+    "snapper-cleanup".failure = { };
   };
 
   # /data deliberately has no snapshot config: it holds only rescue images

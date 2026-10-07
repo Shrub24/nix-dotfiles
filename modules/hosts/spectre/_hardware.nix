@@ -3,8 +3,7 @@
 _:
 { lib, pkgs, ... }:
 {
-  # nixos-facter sets every fact with `mkDefault`, so the policy below wins.
-  # Generate the report with:
+  # Generate the hardware report with:
   #   nix run nixpkgs#nixos-facter > modules/hosts/spectre/facter.json
   hardware.facter.reportPath = lib.mkIf (builtins.pathExists ./facter.json) ./facter.json;
 
@@ -17,20 +16,8 @@ _:
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot";
 
-  boot.initrd.availableKernelModules = [
-    "nvme"
-    "xhci_pci"
-    "usbhid"
-    "uas"
-    "sd_mod"
-    "btrfs"
-    "i915"
-  ];
-  boot.kernelModules = [
-    "kvm-intel"
-    "iwlwifi"
-  ];
-  boot.extraModulePackages = [ ];
+  # Wi-Fi loads only after switch-root: iwlmvm fails when iwlwifi sits in the initrd.
+  boot.kernelModules = [ "iwlwifi" ];
 
   # REPLACE-ON-INSTALL resume_offset: the swapfile's physical extent, which disko
   # cannot derive — `btrfs inspect-internal map-swapfile -r /swap/swapfile`.
@@ -38,12 +25,8 @@ _:
   boot.kernelParams = [ "resume_offset=REPLACE-ON-INSTALL" ];
   boot.resumeDevice = "/dev/mapper/cryptroot";
 
-  hardware.enableRedistributableFirmware = true;
   # ALC285: no Sound Open Firmware, no audio.
   hardware.firmware = [ pkgs.sof-firmware ];
-
-  # Ice Lake microcode.
-  hardware.cpu.intel.updateMicrocode = true;
 
   # Thunderbolt 3 dock authorisation for the two ports.
   services.hardware.bolt.enable = true;
@@ -60,6 +43,4 @@ _:
   };
 
   # No per-interface DHCP: NetworkManager owns interfaces via the network aspect.
-
-  nixpkgs.hostPlatform = "x86_64-linux";
 }

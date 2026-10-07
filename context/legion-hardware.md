@@ -10,8 +10,9 @@
 iwlwifi in the initrd
 
 With iwlwifi pulled into the initrd on legion, iwlmvm did not load after switch-root and
-Wi-Fi stayed down on the AX211. Wi-Fi loads after switch-root instead. The same list is
-kept clean on spectre.
+Wi-Fi stayed down on the AX211. Wi-Fi loads after switch-root instead. Spectre's
+facter report supplies its initrd drivers; an explicit stage-2 `iwlwifi` load and
+disabled initrd networking preserve the same boundary.
 
 ## Facter loads i915 early, never nvidia
 

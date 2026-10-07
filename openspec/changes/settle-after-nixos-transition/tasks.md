@@ -1,4 +1,4 @@
-Phasing. The soak and the full error check come first, then Arch is decommissioned once parity is established and every failure mode is covered. Everything below is phase 2 and starts after that; none of it gates the soak. Section 6 holds the capabilities that were evaluated and deliberately deferred.
+Phasing. Complete the hardware cleanup, Snapper failure registration and push first; telemetry adoption is next, starting with metrics and the explicit journal allowlist. The soak and full error check still gate Arch decommission: parity and failure-mode coverage must be established before the wipe. Other phase-2 items remain deferred. Track persistence discoveries in `docs/impermanence.md`, prioritising home while root stays persistent.
 
 ## 1. Gates and selection
 
@@ -12,7 +12,7 @@ Phasing. The soak and the full error check come first, then Arch is decommission
 - [ ] 2.5 Bind spectre's SSH host key in nix-fleet's inventory (`publicKey` is unbound, so legion's trust set omits it); needs the laptop online to harvest the key.
 - [x] 2.0 Select the fleet `nix-gc` with the `fast-nix-gc` collector on both hosts: hourly threshold collection (`ensureFree` 15%), daily root pruning, no optimise pass on btrfs.
 - [ ] 2.2 Drop the `dev` build account when home-forge selects `build-account` (`modules/policy/fleet.nix`).
-- [ ] 2.3 Register the snapper timer units with the fleet `notify` capability.
+- [x] 2.3 Register the timer-triggered `snapper-timeline` and `snapper-cleanup` services with the fleet `notify` capability; failures belong to the services, not their scheduling timers.
 - [ ] 2.4 Re-test the fleet `podman` aspect against the nixpkgs `podman-prune` unit; keep the local `autoPrune` if they still clash.
 
 ## 3. Local modules

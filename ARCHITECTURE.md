@@ -26,16 +26,15 @@ The split is along a privilege boundary, not a feature boundary:
   `nixosConfigurations.spectre` evaluate under `nix flake check`, composing
   native NixOS aspects plus the full Home Manager composition embedded via
   `home-manager.nixosModules.home-manager` (`useGlobalPkgs`/`useUserPackages`
-  over each host's HM aspect list; `specialArgs` stays empty). Legion's
-  `embeddedHmAspects` is its HM aspect set minus the system-owned
-  tailscale/syncthing/mosh/niks3 aspects, plus the NixOS-only
-  cuda/libcamera/codex aspects.
-  Hardware configuration follows the `nixos-generate-config` convention at
-  `modules/hosts/legion/_hardware.nix`: redistributable firmware, i2c,
-  fwupd (desktop-services aspect), stable + open NVIDIA with Prime offload,
-  `nvme_core.default_ps_max_latency_us=0`, the `en_AU.UTF-8` locale, snapper
-  configs over the btrfs volumes, and the Windows-shared NTFS volume
-  mounted `nofail` at `/mnt/Shared`.
+  over each host's HM aspect list; `specialArgs` stays empty). Legion's HM
+  aspect list includes cuda/libcamera/codex; tailscale/syncthing/mosh/niks3
+  appear only in its NixOS list.
+  Both hosts derive detected drivers, redistributable firmware and microcode
+  from committed nixos-facter reports. Their `_hardware.nix` files keep
+  explicit host policy. Legion's includes i2c, stable + open NVIDIA with
+  Prime offload, `nvme_core.default_ps_max_latency_us=0` and the shared NTFS
+  volume mounted `nofail` at `/mnt/Shared`. Snapper lives in its `_nixos.nix`;
+  fwupd and locale are shared aspects.
 
 Feature modules live in a single `modules/` tree — the only discovery
 root. `import-tree` scans it; every unmarked `.nix` there is a flake-parts
@@ -73,7 +72,7 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ nix.nix ssh.nix tailscale.nix   homeManager AND nixos
   ├─ hosts/legion.nix      selects explicit aspect lists → nixosConfigurations.legion
   ├─ hosts/spectre.nix   selects the lean NixOS laptop set → nixosConfigurations.spectre
-  ├─ hosts/legion/ssh-identities.nix  enrollment-gated HM/NixOS identities
+  ├─ hosts/legion/ssh-identities.nix  HM/NixOS identities
   ├─ hosts/legion/_*.nix   raw host files (_home, _nixos, _hardware, _disko, _storage) — ignored
   └─ hosts/spectre/_*.nix  raw host files (_home, _nixos, _hardware, _disko) — ignored
 
@@ -86,14 +85,12 @@ aspect set:
   └─ 20 nixos aspects + _nixos.nix + _hardware.nix + _disko.nix + embedded HM
      → nixosConfigurations.spectre
 
-The embedded Home Manager on legion composes 63 aspects (`embeddedHmAspects`:
-64 selected HM aspects minus the system-owned tailscale/syncthing/mosh/niks3,
-plus the NixOS-only cuda/libcamera/codex). Spectre's embedded Home Manager
-composes 45 lean aspects (phase-gated alongside its NixOS set).
+The embedded Home Manager on legion composes 63 aspects, the NixOS-only
+cuda/libcamera/codex among them; tailscale, syncthing, mosh and niks3 are
+system-owned and appear only as NixOS aspects. Spectre's embedded Home Manager
+composes 45 lean aspects.
 
-The Legion counts above include one enrollment-gated aspect in each class,
-selected by `sshIdentitiesEnrolled`:
-`legion-ssh-identities` delivers client keys through Home Manager and the
+The Legion counts above include `legion-ssh-identities` in each class: it delivers client keys through Home Manager and the
 builder and server host keys through the NixOS layer, from
 `secrets/hosts/legion/ssh.yaml`.
 [Identity enrollment](docs/runbooks/enroll-legion-identities.md) records the
