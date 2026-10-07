@@ -1,6 +1,6 @@
 _: {
   # Upstream rewrites greeter.toml on every boot; the native module owns greeter.toml
-  # and the greetd wiring, while the desktop entries stay hand-rolled here.
+  # and the greetd wiring.
   flake.modules.nixos.greeter =
     {
       config,
@@ -9,15 +9,6 @@ _: {
     }:
     let
       primaryUser = config.currentHost.primaryUser;
-
-      niriSession = pkgs.writeText "niri.desktop" ''
-        [Desktop Entry]
-        Name=Niri
-        Comment=A scrollable-tiling Wayland compositor
-        Exec=${pkgs.niri}/bin/niri-session
-        Type=Application
-        DesktopNames=niri
-      '';
     in
     {
       # extraArgs preserves the "--user" session arg; settings.user.default pins
@@ -34,6 +25,8 @@ _: {
         passwordlessSyncUsers = [ primaryUser.name ];
       };
 
+      # uwsm publishes the session entry; the greeter must not see a second one,
+      # because a hand-rolled niri.desktop sorts before it and wins the default.
       programs.uwsm.enable = true;
       programs.uwsm.waylandCompositors.niri = {
         prettyName = "Niri";
@@ -46,8 +39,6 @@ _: {
       security.pam.services.greetd.enableGnomeKeyring = true;
 
       systemd.tmpfiles.rules = [
-        "d /usr/share/wayland-sessions 0755 root root -"
-        "L+ /usr/share/wayland-sessions/niri.desktop 0644 root root - ${niriSession}"
         "f /var/lib/noctalia-greeter/greeter.log 0664 greeter greeter -"
       ];
     }
