@@ -79,20 +79,20 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ nix.nix ssh.nix tailscale.nix   homeManager AND systemManager AND nixos
   ├─ hosts/legion.nix      selects explicit aspect lists → host outputs (HM, system, NixOS)
   ├─ hosts/spectre.nix   selects the lean NixOS laptop set → nixosConfigurations.spectre
-  ├─ hosts/legion/_*.nix   raw host files (_home, _system, _nixos, _hardware) — ignored
-  └─ hosts/spectre/_*.nix  raw host files (_home, _nixos, _hardware) — ignored
+  ├─ hosts/legion/_*.nix   raw host files (_home, _system, _nixos, _hardware, _disko, _storage) — ignored
+  └─ hosts/spectre/_*.nix  raw host files (_home, _nixos, _hardware, _disko) — ignored
 
 Host composition lives in modules/hosts/legion.nix and modules/hosts/spectre.nix,
 not flake.nix:
-  ├─ 61 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
+  ├─ 62 homeManager aspects + _home.nix    → homeConfigurations.saurabhj
   ├─ 7 systemManager aspects + _system.nix → systemConfigs.legion
-  └─ 19 nixos aspects + _nixos.nix + embedded HM → nixosConfigurations.legion
+  └─ 23 nixos aspects + _nixos.nix + _disko.nix + embedded HM → nixosConfigurations.legion
 
 modules/hosts/spectre.nix composes the laptop as a NixOS-only host —
 no standalone HM output and no system-manager counterpart (the embedded
 Home Manager is its only configuration path):
-  └─ 43 lean HM aspects (phase-gated) + _home.nix, 15 nixos aspects +
-     _nixos.nix + _hardware.nix + embedded HM → nixosConfigurations.spectre
+  └─ 44 lean HM aspects (phase-gated) + _home.nix, 20 nixos aspects +
+     _nixos.nix + _hardware.nix + _disko.nix + embedded HM → nixosConfigurations.spectre
 
 Build dispatch is resolved, not restated. `nix-fleet` owns the canonical
 inventory — target system, tailnet hostname, SSH host key — and this repository

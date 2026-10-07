@@ -344,6 +344,12 @@ sudo install -d -m 0755 /mnt/etc/ssh
 sudo install -d -m 0700 /mnt/var/lib/sops-nix
 sudo bash -c 'cp -a /etc/ssh/ssh_host_* /mnt/etc/ssh/'
 sudo cp -a /var/lib/sops-nix/key.txt /mnt/var/lib/sops-nix/
+
+# The daemon's remote-builder identity. The NixOS host's nix.buildMachines names
+# this same path, and nothing on the target re-creates the key.
+sudo ls -l /root/.ssh/nix-remote
+sudo install -d -m 0700 /mnt/root/.ssh
+sudo install -m 0600 /root/.ssh/nix-remote /mnt/root/.ssh/nix-remote
 ```
 
 Copy mutable daemon state while its owner is stopped. **Use a local terminal, not
@@ -371,10 +377,30 @@ sudo cp -a \
 
 sudo cmp /etc/ssh/ssh_host_ed25519_key /mnt/etc/ssh/ssh_host_ed25519_key
 sudo cmp /var/lib/sops-nix/key.txt /mnt/var/lib/sops-nix/key.txt
+sudo cmp /root/.ssh/nix-remote /mnt/root/.ssh/nix-remote
 sudo ssh-keygen -lf /mnt/etc/ssh/ssh_host_ed25519_key.pub
 sudo ls -ld /mnt/var/lib/{tailscale,bluetooth,sops-nix}
 sudo ls -l /mnt/etc/NetworkManager/system-connections/
 ```
+
+### What the home already carries
+
+`@home` is remounted as it is, so user-scoped identity needs no copy:
+`~/.config/sops/age/keys.txt`, `~/.ssh/id_ed25519`, `~/.ssh/id_rsa`,
+`~/.config/gh/` and `~/.local/share/keyrings/` all remain available. Back up the age
+identity securely off-machine; the encrypted files in `secrets/` cannot replace a
+lost decryption key. Home Manager renders the user secrets again using that key;
+system secrets use `/var/lib/sops-nix/key.txt`, copied above.
+
+NixOS reads the carried `~/.ssh/authorized_keys` alongside its declared keys in
+`/etc/ssh/authorized_keys.d/saurabhj`; it neither replaces nor merges the home file.
+The existing client keys therefore remain authorized.
+
+The login keyring holds the stored GitHub credential. NixOS enables GNOME Keyring
+and greetd's PAM unlock, but an agent socket or unlocked keyring is runtime state,
+not something to copy. If the new login password differs from the old keyring
+password, unlock the existing keyring with its old password and change its password
+to match. Do not delete or reset the keyring to fix an unlock failure.
 
 ### Retire Arch's vdirsyncer
 
@@ -392,6 +418,35 @@ Revoke that OAuth client in the Google account's security settings; deleting the
 files does not.
 
 Never print private keys, tokens or network passwords into the execution record.
+
+### Retire Arch's git credential helper
+
+`~/.gitconfig` is unmanaged and carried. Its global helper names
+`/usr/lib/git-core/git-credential-libsecret`, an Arch path absent from the configured
+NixOS git. The GitHub-specific helpers also name the old `~/.nix-profile`, whereas
+embedded Home Manager installs packages under `/etc/profiles/per-user/saurabhj`.
+
+After booting NixOS, check both the environment token and the stored keyring login,
+then use the public `gh` command on PATH rather than its hidden wrapped binary:
+
+```sh
+gh auth status
+env -u GH_TOKEN -u GITHUB_TOKEN gh auth status
+
+git config --global --fixed-value --unset-all credential.helper \
+  /usr/lib/git-core/git-credential-libsecret
+for host in https://github.com https://gist.github.com; do
+  git config --global --replace-all "credential.$host.helper" ''
+  git config --global --add "credential.$host.helper" '!gh auth git-credential'
+done
+```
+
+The empty host-specific helper resets inherited helpers before invoking `gh`. These
+commands do not change or delete tokens. Other HTTPS hosts need a working helper
+selected separately; do not silently replace keyring storage with plaintext `store`.
+If the stored GitHub login fails, unlock the carried keyring first. If its token has
+been revoked, renew it with `gh auth login` rather than deleting unrelated keyring
+state.
 
 ## 8. Install and set the login password
 
@@ -480,6 +535,14 @@ for target in / /nix /boot /home /data /mnt/Shared /.snapshots /var/cache /var/l
 systemctl --failed
 systemctl status home-manager-saurabhj.service --no-pager
 sudo tailscale status
+systemctl status sops-install-secrets.service nix-daemon.service --no-pager
+sudo test -s /var/lib/sops-nix/key.txt
+sudo test -s /run/secrets/rendered/nixbuild.net.env
+sudo test -s /run/secrets/niks3.api_token
+test -r ~/.config/sops/age/keys.txt
+test -s ~/.config/sops-nix/secrets/GITHUB_TOKEN
+sudo ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+  -i /root/.ssh/nix-remote dev@home-forge true
 sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 bluetoothctl devices
 nmcli connection show
@@ -505,6 +568,15 @@ tailnet identity. Check Syncthing's identity before permitting unexpected
 resynchronisation. Confirm the lid is ignored on AC power (battery behaviour is
 unchanged), a ZMK board appears for keypeek with its `/dev/hidraw*` node at mode
 666, and a KDE Connect phone pairs over the LAN.
+
+Run the GitHub checks and helper repair from section 7 after logging in. If sops
+fails, verify the shared home is mounted and the copied root age key exists with
+root ownership and mode `0600`. Restore a missing key from its secured backup;
+do not generate a replacement, which cannot decrypt the existing secrets. Then
+restart the failed activation/service after correcting the key. If builder SSH
+fails, check `/root/.ssh/nix-remote` and its permissions against the section 7 copy,
+and verify Tailscale connectivity and the configured host key; do not bypass host
+key checking or rotate the builder identity to work around a missing local key.
 
 The carried imperative keyboard script may shadow the Nix version. On NixOS only:
 
