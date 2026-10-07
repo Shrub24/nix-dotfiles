@@ -1,45 +1,4 @@
 _: {
-  flake.modules.homeManager.syncthing = _: {
-    services.syncthing = {
-      enable = true;
-      settings = {
-        devices = {
-          # Peer IDs are long-lived opaque tokens, one per synced machine.
-          oci-melb-1.id = "FLMOZQR-YKNSVLV-44FOWVO-JAPWF6N-HEPM2GA-L4CCNFN-ETOWFEG-JPKYTQD";
-          legion.id = "L43OT2A-IULZ4LG-YRFMARJ-EX2CDF3-ZYTXGEX-UGWAYE6-K46I3BA-3KZF2AE";
-          home-forge.id = "MBPDSQR-VPJRSY7-MUP2YDM-MDVRFMQ-UMQTZCQ-GZBUQW6-LE65KVE-S2SCKAB";
-        };
-        folders = {
-          library = {
-            path = "~/Music/library";
-            devices = [
-              "oci-melb-1"
-              "legion"
-              "home-forge"
-            ];
-            versioning = {
-              type = "simple";
-              params.keep = "1";
-              params.cleanoutDays = "1";
-            };
-          };
-          quarantine = {
-            path = "~/Music/quarantine";
-            devices = [
-              "oci-melb-1"
-              "legion"
-            ];
-            versioning = {
-              type = "simple";
-              params.keep = "1";
-              params.cleanoutDays = "1";
-            };
-          };
-        };
-      };
-    };
-  };
-
   flake.modules.nixos.syncthing =
     { config, ... }:
     let
@@ -52,8 +11,8 @@ _: {
       services.syncthing = {
         enable = true;
         user = primaryUser.name;
-        # Reuses the live HM-rendered state (identity key + config.xml); a separate
-        # data dir would orphan the device identity and re-prompt every peer.
+        # Reuses the existing state (identity key + config.xml); a separate data
+        # dir would orphan the device identity and re-prompt every peer.
         dataDir = home;
         configDir = "${home}/.local/state/syncthing";
         # Ports are tailnet-scoped in the network aspect, not globally open.
