@@ -13,21 +13,21 @@ With iwlwifi pulled into the initrd on legion, iwlmvm did not load after switch-
 Wi-Fi stayed down on the AX211. Wi-Fi loads after switch-root instead. The same list is
 kept clean on spectre.
 
-## Facter does not load graphics modules in the initrd
+## Facter loads i915 early, never nvidia
 
 **Id:** 2829b198-1ae2-4eb5-8dae-3e79146203c5
 **Type:** decision
 **Status:** active
 **Evidence:** inferred
-**Revisit when:** early KMS is wanted for the LUKS prompt
+**Revisit when:** the proprietary nvidia module is wanted in the initrd, or early i915 KMS causes a boot problem
 
 Legion's nixos-facter report is wired through `reportPath` like spectre's, and
-`hardware.facter.detected.boot.graphics.kernelModules` is pinned to an empty list.
+`hardware.facter.detected.boot.graphics.kernelModules` is pinned to `[ "i915" ]`.
 
-**Reason:** facter would add `i915` and `nvidia` to the initrd's loaded modules.
-Loading the proprietary module that early is risky and the LUKS prompt has not needed
-early KMS, so the boot behaviour stays as before. The only other initrd change is
-`thunderbolt` and `usb_storage` as available modules.
+**Reason:** facter would also load `nvidia` in the initrd, and loading the
+proprietary module that early is risky. `i915` is loaded so the Plymouth passphrase
+screen starts at the panel's native mode instead of the firmware framebuffer. The only
+other initrd change from facter is `thunderbolt` and `usb_storage` as available modules.
 
-**Rejected alternative:** accept facter's defaults. Early `i915` KMS remains a separate,
-reversible choice.
+**Rejected alternative:** accept facter's defaults (early `nvidia`), or load no graphics
+module (the earlier pin, which left the splash on the firmware framebuffer).

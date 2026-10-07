@@ -16,9 +16,9 @@ in
   #   sudo nix run nixpkgs#nixos-facter -- -o modules/hosts/legion/facter.json
   hardware.facter.reportPath = lib.mkIf (builtins.pathExists ./facter.json) ./facter.json;
 
-  # Facter would load i915 and nvidia in the initrd; the proprietary module has no
-  # business there and the LUKS prompt has never needed early KMS on this machine.
-  hardware.facter.detected.boot.graphics.kernelModules = [ ];
+  # Early KMS for i915 gives the Plymouth prompt the panel's native mode; the
+  # proprietary nvidia module has no business in the initrd.
+  hardware.facter.detected.boot.graphics.kernelModules = [ "i915" ];
 
   # UEFI + systemd-boot; disko creates the ESP and its mount.
   boot.loader.systemd-boot = {

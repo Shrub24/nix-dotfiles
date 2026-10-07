@@ -40,10 +40,12 @@ in
             content = {
               type = "luks";
               name = "cryptroot";
-              # No TPM enrolment and no declared passphrase — it is set at format
-              # time. allowDiscards lets btrfs `discard=async` reach the SSD.
+              # No declared passphrase — it is set at format time; TPM enrolment is a
+              # post-install step and the passphrase stays as fallback. allowDiscards
+              # lets btrfs `discard=async` reach the SSD.
               settings = {
                 allowDiscards = true;
+                crypttabExtraOpts = [ "tpm2-device=auto" ];
               };
               content = {
                 type = "btrfs";
