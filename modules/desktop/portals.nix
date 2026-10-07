@@ -16,12 +16,7 @@ _: {
             "kde"
             "gtk"
           ];
-          # The frontend reads every Settings backend while it is still starting and
-          # the KDE backend's own startup calls back into the frontend, which is not
-          # on the bus yet: each waits on the other until D-Bus times out after 26 s
-          # (journal: "Settings portal not found ... Timeout was reached"), stalling
-          # every Qt app that starts alongside. The KDE backend stays the default for
-          # everything else and activates later, once the frontend is running.
+          # KDE and the frontend deadlock on each other's startup for 26 s; see context/legion-desktop.md.
           "org.freedesktop.impl.portal.Settings" = [ "gtk" ];
           "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
           "org.freedesktop.impl.portal.ScreenCast" = [

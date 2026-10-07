@@ -747,9 +747,7 @@
         # hook's PNG generation.
         pkgs.zip
         (pkgs.python3.withPackages (p: [ p.pillow ]))
-        # icefish/phone-connect reads every device property through `gdbus`; without
-        # it on the daemon's PATH the widget finds no device (nixpkgs keeps it in
-        # glib's bin output, which no other package here pulls into the profile).
+        # icefish/phone-connect shells out to gdbus.
         pkgs.glib.bin
         noctaliaGreeterPackage
         # auto_hide is what makes an action-bar instance start hidden
