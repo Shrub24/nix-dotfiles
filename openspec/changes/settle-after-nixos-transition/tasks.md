@@ -24,7 +24,7 @@ Phasing. The soak and the full error check come first, then Arch is decommission
 ## 4. Residual Arch traces
 
 - [ ] 4.1 Re-key or accept the `saurabhj@arch` comment on the authorized key.
-- [ ] 4.2 Remove `~/.config/uwsm/env`, `~/.config/uwsm/env-niri`, and the Arch-era lines in `~/.bash_profile` and `~/.profile`.
+- [x] 4.2 Removed `~/.config/uwsm/env`, `env-niri` and the Arch-era `~/.bash_profile`, `~/.profile`; bash startup files and broot are now Home Manager-owned.
 - [ ] 4.3 Revoke the Google OAuth client for vdirsyncer.
 
 ## 5. OpenSpec bookkeeping
