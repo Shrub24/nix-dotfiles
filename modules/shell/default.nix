@@ -108,7 +108,11 @@ in
       };
 
       programs = {
+        bash.enable = true;
+
         bat.enable = true;
+
+        broot.enable = true;
 
         fzf = {
           enable = true;
