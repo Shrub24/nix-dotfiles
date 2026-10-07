@@ -8,7 +8,8 @@ modules whose shape was chosen for Arch or for an upstream that has since
 moved, open tasks on changes whose work already happened, and nix-fleet
 capabilities that landed after the local modules were written. This change
 maps all of it in one place so each item is either done, dropped, or
-deliberately kept. Nothing here is implemented yet.
+deliberately kept. Nothing here is implemented yet, and all of it is phase 2:
+it starts after the soak and full error check, once Arch is decommissioned.
 
 ## What Changes
 
