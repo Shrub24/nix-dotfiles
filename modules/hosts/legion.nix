@@ -108,6 +108,7 @@ let
     "pi"
     "magic-context"
     "herdr"
+    "radar"
     "hermes"
     "tools"
     "memex"

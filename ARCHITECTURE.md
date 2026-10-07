@@ -86,10 +86,10 @@ aspect set:
   └─ 20 nixos aspects + _nixos.nix + _hardware.nix + _disko.nix + embedded HM
      → nixosConfigurations.spectre
 
-The embedded Home Manager on legion composes 62 aspects (`embeddedHmAspects`:
-63 selected HM aspects minus the system-owned tailscale/syncthing/mosh/niks3,
+The embedded Home Manager on legion composes 63 aspects (`embeddedHmAspects`:
+64 selected HM aspects minus the system-owned tailscale/syncthing/mosh/niks3,
 plus the NixOS-only cuda/libcamera/codex). Spectre's embedded Home Manager
-composes 44 lean aspects (phase-gated alongside its NixOS set).
+composes 45 lean aspects (phase-gated alongside its NixOS set).
 
 The Legion counts above include one enrollment-gated aspect in each class,
 selected by `sshIdentitiesEnrolled`:

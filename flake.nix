@@ -6,6 +6,10 @@
   outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
 
   inputs = {
+    agent-radar = {
+      url = "github:Shrub24/agent-radar";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     community-templates = {
       url = "github:noctalia-dev/community-templates";
       flake = false;

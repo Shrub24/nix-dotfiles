@@ -299,10 +299,11 @@
             post_hook = "${pkgs.procps}/bin/pkill -SIGUSR1 -x nvim || true";
           };
           # Radar's lifecycle roles mapped onto Noctalia's roles; local because
-          # the mapping is ours. No hook: Radar reads the file at startup.
+          # the mapping is ours. Rendered to a file of its own — Radar's
+          # config.toml is Nix-owned — for Radar to read once it accepts one.
           agent-radar = {
             input_path = "${localTemplates}/agent-radar.toml";
-            output_path = "$XDG_CONFIG_HOME/radar/config.toml";
+            output_path = "$XDG_CONFIG_HOME/radar/theme.toml";
           };
         };
 

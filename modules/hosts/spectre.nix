@@ -49,6 +49,7 @@ let
     "magic-context"
     "mcp-nixos"
     "herdr"
+    "radar"
     "dev-tools"
     "lsp"
     "nvim"

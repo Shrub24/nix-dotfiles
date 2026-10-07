@@ -16,6 +16,26 @@
         "type": "github"
       }
     },
+    "agent-radar": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791362655,
+        "narHash": "sha256-DIqX4S3JZ+qJ26Rps5T9p53/5af9jx1Zj2G0x9jDL+w=",
+        "owner": "Shrub24",
+        "repo": "agent-radar",
+        "rev": "8f2ef4377e339af9deb3549ed4e2387a3cc38ecd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Shrub24",
+        "repo": "agent-radar",
+        "type": "github"
+      }
+    },
     "bun2nix": {
       "inputs": {
         "flake-parts": [
@@ -722,11 +742,11 @@
     "pi-extensions": {
       "flake": false,
       "locked": {
-        "lastModified": 1791362002,
-        "narHash": "sha256-SCzUgCwHDV/JyZpxfJUB3ah/iwPAoa64L9rqjYF1SO4=",
+        "lastModified": 1791364232,
+        "narHash": "sha256-FWbDvuCLvbXd3l2K/onYgBdiOTfUw0z0E0k9iuba6kk=",
         "owner": "Shrub24",
         "repo": "pi-extensions",
-        "rev": "a2a69d51806ac2af698feaa1fb859f61b64065e1",
+        "rev": "305068ec75e3ef832a5bf46283966e233581b5d7",
         "type": "github"
       },
       "original": {
@@ -810,6 +830,7 @@
     },
     "root": {
       "inputs": {
+        "agent-radar": "agent-radar",
         "community-templates": "community-templates",
         "crane": "crane",
         "direnv-instant": "direnv-instant",
