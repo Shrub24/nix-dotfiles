@@ -47,7 +47,7 @@
 ## L
 
 - [legion-desktop.md](legion-desktop.md) — why the phone widget needs gdbus on the shell's PATH, and why the KDE portal backend is kept out of the frontend's startup Settings query
-- [legion-hardware.md](legion-hardware.md) — why iwlwifi stays out of the initrd and facter's graphics modules are pinned off
+- [legion-hardware.md](legion-hardware.md) — why iwlwifi stays out of the initrd, and which graphics modules facter loads early
 
 ## M
 
@@ -60,6 +60,7 @@
 ## P
 
 - [pi-bolt-compiled-plugins.md](pi-bolt-compiled-plugins.md) — how a compiled Pi-Bolt extension binds Pi's own modules, and why the build stages a tsconfig for the plugin files
+- [pi-bolt-entrypoints.md](pi-bolt-entrypoints.md) — why launch behaviour belongs to the package and the executable shares its store root
 - [pi-herdsman.md](pi-herdsman.md) — the incident where herdsman re-read session transcripts on a refresh pass, and what the fix leaves behind
 - [pi-plugin-sources.md](pi-plugin-sources.md) — why every Pi extension source is a pin rather than a live checkout, and what that costs
 

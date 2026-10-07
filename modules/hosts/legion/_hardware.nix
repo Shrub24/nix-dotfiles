@@ -28,28 +28,14 @@ in
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot";
 
-  boot.initrd.availableKernelModules = [
-    "nvme"
-    "xhci_pci"
-    "usbhid"
-    "uas"
-    "sd_mod"
-    "btrfs"
-    "i915"
-  ];
-  boot.kernelModules = [
-    "kvm-intel"
-    "i915"
-    "iwlwifi"
-  ];
-  boot.extraModulePackages = [ ];
+  # iwlwifi must load only after switch-root: iwlmvm fails when it sits in the initrd.
+  boot.kernelModules = [ "iwlwifi" ];
   boot.kernelParams = [
     "nvme_core.default_ps_max_latency_us=0"
     # zram is the only swap; zswap would stack a second compressed cache in front of it.
     "zswap.enabled=0"
   ];
 
-  hardware.enableRedistributableFirmware = true;
   hardware.i2c.enable = true;
 
   # Data-disk mounts, derived from _storage.nix.
@@ -83,9 +69,6 @@ in
   };
   # Disk-backed /tmp (large builds), but temporary files still end at reboot.
   boot.tmp.cleanOnBoot = true;
-
-  # CPU: 13th Gen Intel i7-13700H.
-  hardware.cpu.intel.updateMicrocode = true;
 
   # Hybrid Intel Iris Xe + NVIDIA RTX 4060 Max-Q; Prime offload renders on
   # the iGPU and exposes `nvidia-offload <cmd>` for the dGPU.

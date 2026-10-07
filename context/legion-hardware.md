@@ -27,7 +27,9 @@ Legion's nixos-facter report is wired through `reportPath` like spectre's, and
 **Reason:** facter would also load `nvidia` in the initrd, and loading the
 proprietary module that early is risky. `i915` is loaded so the Plymouth passphrase
 screen starts at the panel's native mode instead of the firmware framebuffer. The only
-other initrd change from facter is `thunderbolt` and `usb_storage` as available modules.
+other initrd modules facter contributes are available ones: `thunderbolt` and `xhci_pci`
+from its keyboard module, `nvme`, `sd_mod` and `usb_storage` from its disk module, so
+the host file lists no initrd modules of its own.
 
 **Rejected alternative:** accept facter's defaults (early `nvidia`), or load no graphics
 module (the earlier pin, which left the splash on the firmware framebuffer).
