@@ -23,6 +23,17 @@ _: {
         gptfdisk
         iw
         tcpdump
+
+        # chattr/lsattr and mkfs for external drives, NTFS repair for the Windows-shared
+        # volume (ntfs3 mounts it but cannot clear a dirty flag), and the rest of the
+        # Arch base tools that the NixOS core set lacks.
+        e2fsprogs
+        exfatprogs
+        ntfs3g
+        hdparm
+        alsa-utils
+        pciutils
+        man-pages
       ];
 
       # uv's CPython and the prebuilt rust/go/node binaries run against Nix's
