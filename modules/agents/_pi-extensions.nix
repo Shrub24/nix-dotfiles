@@ -76,6 +76,10 @@
   }
   {
     id = "herdsman";
+    compiled = [
+      "lead"
+      "child"
+    ];
     source = "@extensions@/pi-herdsman";
     path = "@extensions@/pi-herdsman";
   }
@@ -169,6 +173,14 @@
   {
     id = "vcc";
     compiled = [ "child" ];
+  }
+  {
+    id = "fork-in";
+    compiled = [
+      "lead"
+      "child"
+    ];
+    source = "@recipe@fork-in";
   }
   {
     id = "anthropic-auth";

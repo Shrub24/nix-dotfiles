@@ -758,11 +758,11 @@
     "pi-extensions": {
       "flake": false,
       "locked": {
-        "lastModified": 1791364232,
-        "narHash": "sha256-FWbDvuCLvbXd3l2K/onYgBdiOTfUw0z0E0k9iuba6kk=",
+        "lastModified": 1791369556,
+        "narHash": "sha256-uKTvi/gwuknw6CDtdNIm6jXtbYFOAsYrJrs3z1ETwC4=",
         "owner": "Shrub24",
         "repo": "pi-extensions",
-        "rev": "305068ec75e3ef832a5bf46283966e233581b5d7",
+        "rev": "f88fb369ac50c200cd6f5c8374d5b51ab11abcfd",
         "type": "github"
       },
       "original": {

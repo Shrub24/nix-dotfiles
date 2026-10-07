@@ -29,6 +29,27 @@
         },
         "version": "v0.72.0"
     },
+    "fork-in": {
+        "cargoLock": null,
+        "date": "2026-09-11",
+        "extract": null,
+        "name": "fork-in",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "onsails",
+            "repo": "fork-in",
+            "rev": "1f3465a4fe0993812fd460b6f1c60a34351c6058",
+            "sha256": "sha256-SAD0HKq1onzCexOGKgy3J+6/0tdmI9/IpQFxQtSz31M=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "1f3465a4fe0993812fd460b6f1c60a34351c6058"
+    },
     "omniroute": {
         "cargoLock": null,
         "date": "2026-10-07",

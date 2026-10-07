@@ -163,6 +163,21 @@ in
       };
       entry = "index.ts";
     };
+    herdsman = {
+      dir = checkout "pi-herdsman";
+      entry = "extension/index.ts";
+      # Children on stock Pi still need the extension path; bundled definitions
+      # must remain readable from disk rather than Bun's virtual filesystem.
+      patch = ''
+        substituteInPlace plugins/herdsman/extension/index.ts \
+          --replace-fail 'const HERDSMAN_EXTENSION_PATH = fileURLToPath(import.meta.url);' 'const HERDSMAN_EXTENSION_PATH = "${checkout "pi-herdsman"}/extension/index.ts";' \
+          --replace-fail '"../../pi-bash-processes/extensions/background-work.ts"' '"../../bash-processes/extensions/background-work.ts"'
+        substituteInPlace plugins/herdsman/extension/agent-definitions.ts \
+          --replace-fail 'const BUILTIN_AGENT_DIR = fileURLToPath(
+          new URL("./agent-definitions", import.meta.url),
+        );' 'const BUILTIN_AGENT_DIR = "${checkout "pi-herdsman"}/extension/agent-definitions";'
+      '';
+    };
     tool-renderer = {
       dir = checkout "pi-tool-renderer";
       entry = "extensions/tool-renderer.ts";
@@ -181,6 +196,8 @@ in
           plugins/bash-processes/extensions/background-tasks.ts \
           plugins/bash-processes/extensions/registrations.ts \
           --replace-fail '"@vanillagreen/pi-tool-renderer/intent"' '"../../tool-renderer/extensions/tool-renderer/intent.ts"'
+        substituteInPlace plugins/bash-processes/extensions/background-tasks.ts \
+          --replace-fail '"@vanillagreen/pi-tool-renderer/managed-bash"' '"../../tool-renderer/extensions/tool-renderer/managed-bash.ts"'
       '';
     };
     jev = {
@@ -210,6 +227,12 @@ in
     omniroute = {
       dir = "${generatedSources.omniroute.src}/@omniroute/pi-agent";
       entry = "src/index.ts";
+    };
+    # Its default entry sniffs the host from argv[0], which a binary named
+    # pi-bolt cannot answer; src/pi.ts registers the Pi commands outright.
+    fork-in = {
+      dir = generatedSources.fork-in.src;
+      entry = "src/pi.ts";
     };
   };
 

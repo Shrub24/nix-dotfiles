@@ -40,17 +40,17 @@ in
     let
       # The repository's own package set — the one modules/hosts/* extend pkgs
       # with — so the generated-source arguments stay in pkgs/default.nix and
-      # `.#pi-bolt` builds the same derivation the host does.
+      # `.#pi-bolt` compiles the same payload the host's build does.
       repoPkgs = pkgs.extend (import ../../pkgs { inherit inputs system; });
       registry = repoPkgs.pi-plugins;
       # The child build carries a whole child's surface; only the lead one adds
-      # the host's runtime extensions. `repoPkgs.pi-bolt` already carries
-      # `piPlugins` (pkgs/default.nix), so only the selection is set here.
+      # the host's runtime extensions, and those carry the operator's home, so
+      # the module rather than this output supplies them.
       package =
         variant:
         repoPkgs.pi-bolt.override {
+          inherit variant;
           plugins = compiledPlugins registry variant;
-          pname = if variant == "lead" then "pi-bolt" else "pi-bolt-${variant}";
         };
     in
     {
@@ -109,11 +109,6 @@ in
           row: (row.compiled or [ ]) != [ ] && !(pkgs.pi-plugins.plugins ? ${row.id})
         ) piExtensionRows
       );
-      # A child's -e list is written for upstream pi too, so the child launcher
-      # has to drop the extensions its own binary already contains.
-      childDuplicates = lib.concatMapStringsSep " | " (id: "*${id}*") (
-        map (row: row.id) (lib.filter (row: lib.elem "child" (row.compiled or [ ])) piExtensionRows)
-      );
       piBoltExtensions = map (row: rowPath row.path) (
         lib.filter (row: (row.path or null) != null) runtimeRows
       );
@@ -166,6 +161,7 @@ in
       # bundled roles whose vocabulary duplicates worker and delegate, and the
       # per-role model allow-lists. A scope only restricts.
       herdsmanConfig = builtins.toJSON {
+        retainWorkers = false;
         disabledDefinitions = [
           "generalist"
           "implementer"
@@ -198,84 +194,27 @@ in
           { source = rowPath row.source; } // row.overrides
       ) (lib.filter (row: row ? source) piExtensionRows);
 
-      # The operator's session: discovery off, the four built-ins named back, the
-      # host's extensions by path. Herdr's state file joins them only once Herdr
-      # has written it — a missing -e path is fatal.
-      piBoltLead = pkgs.pi-bolt.override { plugins = compiledPlugins pkgs.pi-plugins "lead"; };
-      piBoltChild = pkgs.pi-bolt.override {
-        plugins = compiledPlugins pkgs.pi-plugins "child";
-        pname = "pi-bolt-child";
+      # The package owns both entrypoints and the payload they sit beside; this
+      # module owns what varies with the operator — which plugins each build
+      # compiles, and the runtime extensions the lead passes by path.
+      piBolt = pkgs.pi-bolt.override {
+        variant = "lead";
+        plugins = compiledPlugins pkgs.pi-plugins "lead";
+        extensions = piBoltExtensions;
       };
-      piBolt = pkgs.writeShellScriptBin "pi-bolt" ''
-        flags=(${lib.concatMapStringsSep " " (arg: lib.escapeShellArg arg) piBoltFlags})
-        herdr="$HOME/.pi/agent/extensions/herdr-agent-state.ts"
-        if [ -f "$herdr" ]; then flags+=(-e "$herdr"); fi
-        # Herdsman reads this from its own environment and passes it into the
-        # child pane; a session variable would reach every operator shell.
-        export PI_HERDSMAN_CHILD_COMMAND=pi-bolt-child
-        exec ${piBoltLead}/bin/pi-bolt "''${flags[@]}" "$@"
-      '';
-      # `pi` is the lead launcher, not the stock binary, so scripts and non-fish
-      # shells reach Pi-Bolt too. hiPrio outranks the stock package's own `pi`,
-      # which stays reachable as `pi-stock`.
+      piBoltChild = pkgs.pi-bolt.override {
+        variant = "child";
+        plugins = compiledPlugins pkgs.pi-plugins "child";
+      };
+      # The lead package ships `bin/pi` beside `bin/pi-bolt`; hiPrio outranks the
+      # stock package's own `pi`, which stays reachable as `pi-stock`.
       alias =
         name: target:
         pkgs.runCommand name { } ''
           mkdir -p $out/bin
           ln -s ${target} $out/bin/${name}
         '';
-      piCommand = alias "pi" "${piBolt}/bin/pi-bolt";
       piStock = alias "pi-stock" "${stockPi}/bin/pi";
-      # A child's extension list is written for upstream pi, so this drops the
-      # paths the child binary already compiles in rather than registering them
-      # twice. Herdsman passes the long flag.
-      piBoltChildLauncher = pkgs.writeShellScriptBin "pi-bolt-child" ''
-        args=()
-        # Herdsman supplies both when it leads the launch; a launch without them
-        # would discover the settings packages the child compiles.
-        has_no_extensions=
-        for arg in "$@"; do
-          case "$arg" in -ne | --no-extensions) has_no_extensions=1 ;; esac
-        done
-        while [ $# -gt 0 ]; do
-          case "$1" in
-          -e | --extension)
-            if [ $# -lt 2 ]; then
-              echo "pi-bolt-child: $1 needs a path" >&2
-              exit 2
-            fi
-            case "''${2,,}" in
-            ${childDuplicates}) ;;
-            *) args+=("$1" "$2") ;;
-            esac
-            shift 2
-            ;;
-          *)
-            args+=("$1")
-            shift
-            ;;
-          esac
-        done
-        if [ -z "$has_no_extensions" ]; then
-          args=(--no-extensions -e builtin:mcp -e builtin:codemode "''${args[@]}")
-        fi
-        exec ${piBoltChild}/bin/pi-bolt "''${args[@]}"
-      '';
-      piBoltFlags = [
-        "--no-extensions"
-        "-e"
-        "builtin:mcp"
-        "-e"
-        "builtin:codemode"
-        "-e"
-        "builtin:tool-search"
-        "-e"
-        "builtin:llama.cpp"
-      ]
-      ++ lib.concatMap (path: [
-        "-e"
-        path
-      ]) piBoltExtensions;
 
     in
     {
@@ -408,10 +347,9 @@ in
 
       home.packages = [
         claudeCode
-        piBolt
-        piBoltChildLauncher
+        (lib.hiPrio piBolt)
+        piBoltChild
         piStock
-        (lib.hiPrio piCommand)
       ];
 
       # Session mode is chosen at launch: plain `pi` implements with the user

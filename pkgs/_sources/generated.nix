@@ -22,6 +22,18 @@
       sha256 = "sha256-F3K1ovTWi5Wc2WmomX5BQUdJWfXMia3/FbE00HW3i3A=";
     };
   };
+  fork-in = {
+    pname = "fork-in";
+    version = "1f3465a4fe0993812fd460b6f1c60a34351c6058";
+    src = fetchFromGitHub {
+      owner = "onsails";
+      repo = "fork-in";
+      rev = "1f3465a4fe0993812fd460b6f1c60a34351c6058";
+      fetchSubmodules = false;
+      sha256 = "sha256-SAD0HKq1onzCexOGKgy3J+6/0tdmI9/IpQFxQtSz31M=";
+    };
+    date = "2026-09-11";
+  };
   omniroute = {
     pname = "omniroute";
     version = "438930705452d2ce43d4e90fa1da91c1ac2e97d6";

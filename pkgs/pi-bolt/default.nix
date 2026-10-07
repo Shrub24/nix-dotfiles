@@ -14,7 +14,13 @@
   # which plugins a build contains is not this expression's business.
   piPlugins,
   plugins ? { },
-  pname ? "pi-bolt",
+  # Which entrypoint this output carries. The caller's plugin selection is what
+  # the payload compiles, so the variants' payloads differ when it does.
+  variant ? "lead",
+  # The extensions the lead entrypoint loads at runtime, as paths. The caller
+  # owns the list because its entries carry the operator's home directory.
+  extensions ? [ ],
+  runtimeShell,
   rsync,
   python3,
   patchelf,
@@ -23,12 +29,24 @@
   ripgrep,
   wl-clipboard,
 }:
+assert lib.elem variant [
+  "lead"
+  "child"
+];
 let
+  executable = if variant == "lead" then "pi-bolt" else "pi-bolt-child";
+  # The lead also publishes the primary name, so nothing outside this package
+  # has to route `pi`. A symlink keeps one script for both names.
+  extraBins = lib.optionals (variant == "lead") [ "pi" ];
+
   # bash-processes imports tool-renderer's intent helper, so the renderer's
   # source is staged whenever the former is built, registered or not.
   staged =
     plugins
     // lib.optionalAttrs (plugins ? bash-processes) { inherit (piPlugins.plugins) tool-renderer; }
+    // lib.optionalAttrs (plugins ? herdsman) {
+      inherit (piPlugins.plugins) bash-processes tool-renderer;
+    }
     // lib.optionalAttrs (plugins ? jev) { inherit (piPlugins.plugins) permission-system; };
 
   unpack = dir: tarball: ''
@@ -79,82 +97,192 @@ let
     url = "https://pi.dev/api/models/revisions/${catalogPin.revision}?types=chat,image,classifier";
     sha256 = lib.removePrefix "sha256-" catalogPin.revision;
   };
-in
-buildNpmPackage {
-  inherit pname version src;
 
-  npmDepsFetcherVersion = 2;
-  npmDepsHash = "sha256-8oNz19f9Eg9O5Jxvs8+06S9rfJRCoZ1+HKk+AOjwahw=";
-  # Skip the canvas test dependency's native build; runtime WASM is staged below.
-  npmRebuildFlags = [ "--ignore-scripts" ];
-  npmBuildScript = "build:offline";
-  nativeBuildInputs = [
-    rsync
-    python3
-    patchelf
-    makeBinaryWrapper
-  ];
+  # Compilation, and nothing a launcher chooses. A launcher-only change —
+  # another runtime -e path, a different filter — leaves this derivation alone,
+  # so its AOT build is reused instead of repeated.
+  payload = buildNpmPackage {
+    # Carries the package's own name: the npm dependency derivation is named
+    # after it, and a name of its own would re-fetch the same dependencies.
+    pname = executable;
+    inherit src version;
 
-  postPatch = ''
-    patchShebangs scripts
-  '';
-  preBuild = ''
-    node packages/ai/scripts/hydrate-model-catalog.ts ${catalog}
-  '';
-  postBuild = ''
-    export HOME="$TMPDIR"
-    # The archive beside the release tag is the Bun build the AOT step compiles
-    # with; only its binary is taken. nvfetcher yields the tarball, not a tree.
-    ${unpack ".work/runtime" runtime}
-    # Set the loader before compiling: rewriting the final ELF damages its AOT payload.
-    patchelf --set-interpreter ${stdenv.cc.bintools.dynamicLinker} .work/runtime/bun
+    npmDepsFetcherVersion = 2;
+    npmDepsHash = "sha256-8oNz19f9Eg9O5Jxvs8+06S9rfJRCoZ1+HKk+AOjwahw=";
+    # Skip the canvas test dependency's native build; runtime WASM is staged below.
+    npmRebuildFlags = [ "--ignore-scripts" ];
+    npmBuildScript = "build:offline";
+    nativeBuildInputs = [
+      rsync
+      python3
+      patchelf
+    ];
 
-    ${pluginDirs}
-    ${pluginPatches}
-    cp ${manifest} plugins/plugins.ts
-    # Pi's tsconfig maps the host packages to packages/*/src while the executable is
-    # bundled from packages/*/dist, so a compiled plugin would bind a second copy of
-    # the host's classes and its patches would land on a class the app never renders
-    # with. This tsconfig sits nearer the plugin files, so they resolve to the dist
-    # modules the app itself uses (context/pi-bolt-compiled-plugins.md).
-    cat > plugins/tsconfig.json <<'EOF'
-    {
-      "compilerOptions": {
-        "paths": {
-          "@earendil-works/pi-coding-agent": ["../../dist/index.js"],
-          "@earendil-works/pi-coding-agent/*": ["../../dist/*"],
-          "@earendil-works/pi-tui": ["../../../tui/src/index.ts"],
-          "@earendil-works/pi-tui/*": ["../../../tui/src/*"],
-          "@earendil-works/pi-ai": ["../../../ai/src/index.ts"],
-          "@earendil-works/pi-ai/*": ["../../../ai/src/*.ts", "../../../ai/src/providers/*.ts"],
-          "@earendil-works/pi-agent-core": ["../../../agent/src/index.ts"],
-          "@earendil-works/pi-telemetry": ["../../../telemetry/src/index.ts"],
-          "@earendil-works/pi-mcp": ["../../../mcp/src/index.ts"],
-          "@earendil-works/pi-mcp/*": ["../../../mcp/src/*"],
-          "@earendil-works/pi-codemode": ["../../../codemode/src/index.ts"],
-          "@earendil-works/pi-codemode/*": ["../../../codemode/src/*"],
-          "typebox": ["../../../../node_modules/typebox"]
+    postPatch = ''
+      patchShebangs scripts
+    '';
+    preBuild = ''
+      node packages/ai/scripts/hydrate-model-catalog.ts ${catalog}
+    '';
+    postBuild = ''
+      export HOME="$TMPDIR"
+      # The archive beside the release tag is the Bun build the AOT step compiles
+      # with; only its binary is taken. nvfetcher yields the tarball, not a tree.
+      ${unpack ".work/runtime" runtime}
+      # Set the loader before compiling: rewriting the final ELF damages its AOT payload.
+      patchelf --set-interpreter ${stdenv.cc.bintools.dynamicLinker} .work/runtime/bun
+
+      ${pluginDirs}
+      ${pluginPatches}
+      cp ${manifest} plugins/plugins.ts
+      # Pi's tsconfig maps the host packages to packages/*/src while the executable is
+      # bundled from packages/*/dist, so a compiled plugin would bind a second copy of
+      # the host's classes and its patches would land on a class the app never renders
+      # with. This tsconfig sits nearer the plugin files, so they resolve to the dist
+      # modules the app itself uses (context/pi-bolt-compiled-plugins.md).
+      cat > plugins/tsconfig.json <<'EOF'
+      {
+        "compilerOptions": {
+          "paths": {
+            "@earendil-works/pi-coding-agent": ["../../dist/index.js"],
+            "@earendil-works/pi-coding-agent/*": ["../../dist/*"],
+            "@earendil-works/pi-tui": ["../../../tui/src/index.ts"],
+            "@earendil-works/pi-tui/*": ["../../../tui/src/*"],
+            "@earendil-works/pi-ai": ["../../../ai/src/index.ts"],
+            "@earendil-works/pi-ai/*": ["../../../ai/src/*.ts", "../../../ai/src/providers/*.ts"],
+            "@earendil-works/pi-agent-core": ["../../../agent/src/index.ts"],
+            "@earendil-works/pi-telemetry": ["../../../telemetry/src/index.ts"],
+            "@earendil-works/pi-mcp": ["../../../mcp/src/index.ts"],
+            "@earendil-works/pi-mcp/*": ["../../../mcp/src/*"],
+            "@earendil-works/pi-codemode": ["../../../codemode/src/index.ts"],
+            "@earendil-works/pi-codemode/*": ["../../../codemode/src/*"],
+            "typebox": ["../../../../node_modules/typebox"]
+          }
         }
       }
-    }
-    EOF
-    chmod -R u+w plugins
-    # The largest single module's top-level bytecode, reported by the AOT step;
-    # re-measure when the plugin set or the pinned tree changes.
-    export BUN_JSC_maximumAOTCandidateBytecodeSize=357039
-    PIBOLT_BUILD_LOG=$TMPDIR/aot.log scripts/build-pi.sh --plugins "$PWD/plugins/plugins.ts" \
-      --cpu baseline --jit on --out out/pi-bolt || { tail -40 $TMPDIR/aot.log; exit 1; }
-  '';
+      EOF
+      chmod -R u+w plugins
+      # The largest single module's top-level bytecode, reported by the AOT step;
+      # re-measure when the plugin set or the pinned tree changes.
+      export BUN_JSC_maximumAOTCandidateBytecodeSize=370231
+      PIBOLT_BUILD_LOG=$TMPDIR/aot.log scripts/build-pi.sh --plugins "$PWD/plugins/plugins.ts" \
+        --cpu baseline --jit on --out out/pi-bolt || { tail -40 $TMPDIR/aot.log; exit 1; }
+    '';
+    installPhase = ''
+      runHook preInstall
+      # Assets and native helpers resolve relative to the executable.
+      mkdir -p $out/lib
+      cp -r out/pi-bolt $out/lib/pi-bolt
+      runHook postInstall
+    '';
+
+    dontStrip = true;
+    dontPatchELF = true;
+    doInstallCheck = true;
+    installCheckPhase = ''
+      runHook preInstallCheck
+      version=$(BUN_STATIC_HEAP_VERBOSE=1 $out/lib/pi-bolt/pi --version 2>&1)
+      printf '%s\n' "$version"
+      grep -q 'image registered: true' <<< "$version"
+      runHook postInstallCheck
+    '';
+  };
+
+  # The lead's argv. Denying discovery also denies Pi's built-ins, so the four
+  # it needs are named back, then the extensions the caller installed.
+  leadArgs = lib.concatMapStringsSep " " (arg: lib.escapeShellArg arg) (
+    [
+      "--no-extensions"
+      "-e"
+      "builtin:mcp"
+      "-e"
+      "builtin:codemode"
+      "-e"
+      "builtin:tool-search"
+      "-e"
+      "builtin:llama.cpp"
+    ]
+    ++ lib.concatMap (path: [
+      "-e"
+      path
+    ]) extensions
+  );
+
+  # What this binary already contains. A definition still naming one of them
+  # would register it a second time, which on the CLI is a startup failure.
+  duplicates = lib.concatMapStringsSep " | " (id: "*${id}*") (lib.attrNames plugins);
+
+  # The script is written inside the output, so the root it names is the one it
+  # is installed in: `placeholder` is the only way to say that before the build.
+  entrypoint =
+    if variant == "lead" then
+      ''
+        flags=(${leadArgs})
+        # Herdr's state file joins the launch only once Herdr has written it; a
+        # missing -e path is fatal.
+        herdr="$HOME/.pi/agent/extensions/herdr-agent-state.ts"
+        if [ -f "$herdr" ]; then flags+=(-e "$herdr"); fi
+        # Herdsman reads this from its own environment and passes it into the
+        # child pane; a session variable would reach every operator shell.
+        export PI_HERDSMAN_CHILD_COMMAND=pi-bolt-child
+        exec ${placeholder "out"}/lib/pi-bolt/bin/pi-bolt "''${flags[@]}" "$@"
+      ''
+    else
+      ''
+        args=()
+        # Herdsman supplies both when it leads the launch; a launch without them
+        # would discover the settings packages the child compiles.
+        has_no_extensions=
+        for arg in "$@"; do
+          case "$arg" in -ne | --no-extensions) has_no_extensions=1 ;; esac
+        done
+        while [ $# -gt 0 ]; do
+          case "$1" in
+          -e | --extension)
+            if [ $# -lt 2 ]; then
+              echo "pi-bolt-child: $1 needs a path" >&2
+              exit 2
+            fi
+            case "''${2,,}" in
+            ${duplicates}) ;;
+            *) args+=("$1" "$2") ;;
+            esac
+            shift 2
+            ;;
+          *)
+            args+=("$1")
+            shift
+            ;;
+          esac
+        done
+        if [ -z "$has_no_extensions" ]; then
+          args=(--no-extensions -e builtin:mcp -e builtin:codemode "''${args[@]}")
+        fi
+        exec ${placeholder "out"}/lib/pi-bolt/bin/pi-bolt "''${args[@]}"
+      '';
+in
+stdenv.mkDerivation {
+  pname = executable;
+  inherit version;
+
+  nativeBuildInputs = [ makeBinaryWrapper ];
+  dontUnpack = true;
+
   installPhase = ''
     runHook preInstall
-    # Assets and native helpers resolve relative to the executable.
+    # Copied, not linked: herdr-radar's identity comparison needs the entrypoint
+    # and the executable it runs in one store root, and the wrapper lands here.
+    # The payload derivation stays shared, so an extensions-only change reuses
+    # its AOT build.
     mkdir -p $out/lib $out/bin
-    cp -r out/pi-bolt $out/lib/pi-bolt
+    cp -r ${payload}/lib/pi-bolt $out/lib/pi-bolt
+    chmod -R u+w $out/lib/pi-bolt
     # Pi runs `rg` and `fd` for its grep and find tools and `wl-copy`/`wl-paste` for
     # the clipboard, looking each up in PATH first and only then downloading it. The
     # wrapper makes them findable; being a binary wrapper it costs one exec and does
     # not disturb process.execPath, so assets still resolve.
-    makeBinaryWrapper $out/lib/pi-bolt/pi $out/bin/pi-bolt \
+    mkdir -p $out/lib/pi-bolt/bin
+    makeBinaryWrapper $out/lib/pi-bolt/pi $out/lib/pi-bolt/bin/pi-bolt \
       --prefix PATH : ${
         lib.makeBinPath [
           fd
@@ -162,20 +290,35 @@ buildNpmPackage {
           wl-clipboard
         ]
       }
+    # A quoted heredoc: the shell keeps $HOME and the flag array for the launch,
+    # and the root is interpolated by Nix, which is the only place that knows it.
+    cat > $out/bin/${executable} <<'EOF'
+    #!${runtimeShell}
+    ${entrypoint}
+    EOF
+    chmod +x $out/bin/${executable}
+    ${lib.concatMapStringsSep "\n" (name: "ln -s ${executable} $out/bin/${name}") extraBins}
     runHook postInstall
   '';
 
+  # The copied payload is the AOT image the build produced: the same two skips
+  # its own derivation needs, since stripping it damages the payload.
   dontStrip = true;
   dontPatchELF = true;
+
   doInstallCheck = true;
   installCheckPhase = ''
     runHook preInstallCheck
-    version=$(BUN_STATIC_HEAP_VERBOSE=1 $out/bin/pi-bolt --version 2>&1)
+    # Every published name runs this output's payload, not another output's.
+    for name in ${executable} ${lib.concatStringsSep " " extraBins}; do
+      grep -q "$out/lib/pi-bolt/bin/pi-bolt" $out/bin/$name
+    done
+    version=$(BUN_STATIC_HEAP_VERBOSE=1 $out/bin/${executable} --version 2>&1)
     printf '%s\n' "$version"
     grep -q 'image registered: true' <<< "$version"
     # The wrapper is what puts rg, fd and wl-copy on Pi's PATH.
     for dir in ${fd}/bin ${ripgrep}/bin ${wl-clipboard}/bin; do
-      grep -a -q "$dir" $out/bin/pi-bolt
+      grep -a -q "$dir" $out/lib/pi-bolt/bin/pi-bolt
     done
     runHook postInstallCheck
   '';

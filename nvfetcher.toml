@@ -31,6 +31,13 @@ src.git = "https://github.com/Shrub24/OmniRoute"
 src.branch = "deploy/edge"
 fetch.github = "Shrub24/OmniRoute"
 
+# fork-in publishes no releases either, so its pin tracks the default branch's
+# commit — the fork entrypoint `/fork-in-herdr` is what we compile in.
+[fork-in]
+src.git = "https://github.com/onsails/fork-in"
+src.branch = "master"
+fetch.github = "onsails/fork-in"
+
 # Pi-Bolt ships the runtime its AOT build compiles with as a release asset
 # beside the tag, and upstream's release workflow asserts the tree's VERSION
 # equals that tag, so the tag is the only version the pair is published at.
