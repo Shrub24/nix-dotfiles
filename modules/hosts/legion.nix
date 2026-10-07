@@ -24,16 +24,13 @@ let
     endpoint = "api";
     via = "tailnet";
   };
-  # Flip after enrolling all six keys in secrets/hosts/legion/ssh.yaml.
-  sshIdentitiesEnrolled = true;
-  identityAspects = lib.optional sshIdentitiesEnrolled "legion-ssh-identities";
   # nix-fleet leaves the credential reference to this host's composition.
   dispatch = inputs.nix-fleet.lib.buildProfile;
   dispatchSpecs = map (
     spec:
     spec
     // {
-      sshKeyPath = if sshIdentitiesEnrolled then "/run/secrets/ssh-builder" else "/root/.ssh/nix-remote";
+      sshKeyPath = "/run/secrets/ssh-builder";
     }
   ) (dispatch.resolveBuildProfile config.fleet "workstations");
   # Which fleet hosts this machine trusts is host policy; trust is not use.
@@ -123,7 +120,6 @@ let
     "mise"
     "direnv"
     "monique"
-    "niks3"
     "niri"
     "nix"
     "noctalia"
@@ -138,12 +134,9 @@ let
     "media"
     "libreoffice"
     "util-apps"
-    "syncthing"
     "surge"
     "ssh"
     "mutagen"
-    "mosh"
-    "tailscale"
     "vicinae"
     "audio"
     "brave-origin"
@@ -167,21 +160,11 @@ let
     "wezterm"
     "kitty"
     "foot"
-  ]
-  ++ identityAspects;
-  # Full set minus the aspects NixOS itself provides, plus embedded-only ones.
-  embeddedHmAspects =
-    lib.subtractLists [
-      "tailscale"
-      "syncthing"
-      "mosh"
-      "niks3"
-    ] hmAspects
-    ++ [
-      "cuda"
-      "libcamera"
-      "codex"
-    ];
+    "legion-ssh-identities"
+    "cuda"
+    "libcamera"
+    "codex"
+  ];
   nixosAspects = [
     "current-host"
     "foundation"
@@ -207,8 +190,8 @@ let
     "syncthing"
     "niks3"
     "mosh"
-  ]
-  ++ identityAspects;
+    "legion-ssh-identities"
+  ];
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       currentHostModule
@@ -246,7 +229,7 @@ let
               sshTrustModule
               (import ./legion/_home.nix { inherit omniroute primaryUser; })
             ]
-            ++ map hmAspect embeddedHmAspects;
+            ++ map hmAspect hmAspects;
           };
         };
       }

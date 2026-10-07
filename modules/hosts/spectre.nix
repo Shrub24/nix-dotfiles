@@ -91,14 +91,6 @@ let
     "zathura"
   ];
 
-  # Phase 1: sops activation fails when no key can decrypt, so the
-  # secret-consuming aspects wait for the host's age key to be a recipient.
-  hmAspectsPhase1 = lib.subtractLists [
-    "sops-foundation"
-    "credentials"
-    "nix"
-  ] hmAspects;
-
   nixosAspects = [
     "current-host"
     "foundation"
@@ -121,12 +113,6 @@ let
     "wireshark"
     "mosh"
   ];
-
-  # notify registers a system secret, so phase 1 omits it too; beszel-agent
-  # is not gated — it holds only the hub's public key.
-  nixosAspectsPhase1 = lib.subtractLists [
-    "notify"
-  ] nixosAspects;
 
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
     modules = [
@@ -164,22 +150,15 @@ let
               sshTrustModule
               (import ./spectre/_home.nix { inherit primaryUser; })
             ]
-            ++ map hmAspect (if secretsEnrolled then hmAspects else hmAspectsPhase1);
+            ++ map hmAspect hmAspects;
           };
         };
       }
-    ]
-    ++ map nixosAspect (if secretsEnrolled then nixosAspects else nixosAspectsPhase1)
-    ++ lib.optionals secretsEnrolled [
       # The embedded Home Manager's activation unit; host evals only.
       { services.notify.events."home-manager-${primaryUser.name}".failure.severity = "critical"; }
-    ];
+    ]
+    ++ map nixosAspect nixosAspects;
   };
-
-  # Phase 1 → phase 2 flip: set true once `sops updatekeys` has run from the
-  # desktop and the host's age key is a recipient in .sops.yaml. This is the
-  # only edit install day makes to this file.
-  secretsEnrolled = false;
 in
 {
   config = {
@@ -199,11 +178,13 @@ in
       vm-spectre-boot = pkgsUnfree.testers.runNixOSTest {
         name = "vm-spectre-boot";
         nodes.spectre = {
-          imports = map nixosAspect nixosAspectsPhase1 ++ [
+          imports = map nixosAspect nixosAspects ++ [
             currentHostModule
             sshTrustModule
             inputs.home-manager.nixosModules.home-manager
           ];
+          # No age key inside the VM: keep the registration, drop the secret.
+          services.notify.secretFiles.hostSystem = lib.mkForce null;
           fileSystems."/" = {
             device = "/dev/vda";
             fsType = "ext4";
@@ -230,7 +211,13 @@ in
                 sshTrustModule
                 (import ./spectre/_home.nix { inherit primaryUser; })
               ]
-              ++ map hmAspect (if secretsEnrolled then hmAspects else hmAspectsPhase1);
+              ++ map hmAspect (
+                lib.subtractLists [
+                  "sops-foundation"
+                  "credentials"
+                  "nix"
+                ] hmAspects
+              );
               home.username = primaryUser.name;
               home.homeDirectory = "/home/${primaryUser.name}";
               home.stateVersion = "26.11";

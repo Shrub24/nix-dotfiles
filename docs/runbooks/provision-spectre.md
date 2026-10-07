@@ -174,14 +174,11 @@ would be needed for, while remaining an offline target in every other case.
 
 ## Phase 4 — secrets
 
-The laptop ships `secretsEnrolled = false`: the phase-1 aspect set omits
-`notify`, which registers a system secret. Enrolment is:
-
-1. Add the host's age key as a recipient in `secrets/hosts/spectre/`.
-2. Flip the phase gate in `modules/hosts/spectre.nix`.
-
-Without it the machine is fully usable; it just cannot decrypt system
-secrets.
+The laptop selects the full aspect set, including `notify` and the
+secret-consuming Home Manager aspects, so sops activation needs a key that can
+decrypt. Before the first switch of this revision, add the host's age key as a
+recipient in `.sops.yaml` and run `sops updatekeys` on each secret file from
+the desktop. Without it activation fails.
 
 ## Rollback
 

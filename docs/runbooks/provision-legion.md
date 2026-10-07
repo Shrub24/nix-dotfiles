@@ -349,8 +349,8 @@ sudo install -m 0600 /var/lib/sops-nix/key.txt /mnt/var/lib/sops-nix/key.txt
 sudo cmp /var/lib/sops-nix/key.txt /mnt/var/lib/sops-nix/key.txt
 ```
 
-**Only when installing an unenrolled revision** (`sshIdentitiesEnrolled = false`),
-also preserve the old server and builder key files. Skip this block for the current
+**Only when installing a revision that predates identity enrollment**, also
+preserve the old server and builder key files. Skip this block for the current
 configuration:
 
 ```sh

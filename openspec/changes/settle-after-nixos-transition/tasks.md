@@ -2,9 +2,9 @@ Phasing. The soak and the full error check come first, then Arch is decommission
 
 ## 1. Gates and selection
 
-- [ ] 1.1 Delete `sshIdentitiesEnrolled` and the unenrolled branches in `modules/hosts/legion.nix`, `legion/ssh-identities.nix` and both runbooks.
-- [ ] 1.2 After Spectre is enrolled, delete the `secretsEnrolled` phase lists in `modules/hosts/spectre.nix`.
-- [ ] 1.3 Drop the Home Manager `tailscale`, `syncthing`, `mosh` and `niks3` selections that `embeddedHmAspects` subtracts, and the subtraction.
+- [x] 1.1 Delete `sshIdentitiesEnrolled` and the unenrolled branches in `modules/hosts/legion.nix`, `legion/ssh-identities.nix` and both runbooks.
+- [x] 1.2 Delete the `secretsEnrolled` phase lists in `modules/hosts/spectre.nix`.
+- [x] 1.3 Drop the Home Manager `tailscale`, `syncthing`, `mosh` and `niks3` selections that `embeddedHmAspects` subtracts, and the subtraction.
 
 ## 2. Upstream adoption
 
