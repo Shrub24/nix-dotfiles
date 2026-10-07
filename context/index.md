@@ -22,6 +22,8 @@
 
 ## A
 
+- [arch-retirement.md](arch-retirement.md) — why NixOS is the only host class, what Arch-looking remnants were kept on purpose, and the session-variable and nvim-name choices
+
 ## B
 
 ## C
@@ -44,9 +46,13 @@
 
 ## L
 
+- [legion-hardware.md](legion-hardware.md) — why iwlwifi stays out of the initrd and facter's graphics modules are pinned off
+
 ## M
 
 ## N
+
+- [noctalia-greeter-sync.md](noctalia-greeter-sync.md) — how greeter sync becomes passwordless, and why the wrapper and sudoers routes lost
 
 ## O
 
@@ -65,6 +71,8 @@
 - [SSH identities](ssh-identities.md) — restore Legion client and builder keys without a surviving home; external age bootstrap.
 
 ## T
+
+- [timezone.md](timezone.md) — why automatic timezone is baseline for every host, and its Wi-Fi dependence
 
 ## U
 
