@@ -38,7 +38,7 @@ in its own file — a bare `fetchurl` inside a helper attrset, or a `src` passed
 in from another file, cannot be patched. The update-script path additionally
 builds `pkgs.mkShell { inputsFrom = [ pkg ]; }`, so a non-derivation cannot be
 registered at all. It evaluates the flake from a `nix flake metadata` copy of
-*tracked* files while the script edits the live tree: modified tracked files are
+_tracked_ files while the script edits the live tree: modified tracked files are
 visible, a newly created file is invisible until it is staged — and this
 repository is jj-colocated.
 
@@ -80,8 +80,9 @@ stay disjoint from the fleet's own outputs (`ci`, `ci-tailscale`,
 ## Decisions
 
 **D1. Four registered owners, one per pin set.** `pi-bolt` (source tree, AOT
-runtime asset, `npmDepsHash`), `pi-plugins` (25 npm tarballs and the OmniRoute
-branch checkout), `xberg-cli`, `codexbar`. Derived outputs stay unregistered:
+runtime asset, `npmDepsHash`), `pi-plugins` (25 npm tarballs and two
+branch-head checkouts, OmniRoute and fork-in), `xberg-cli`, `codexbar`. Derived
+outputs stay unregistered:
 `pi-bolt-child`, the compiled plugin manifests, and the model catalog that is
 read out of the Pi-Bolt tree. Rejected: registering `pi-bolt` alone and letting
 its script bump the plugin pins too — two unrelated upstreams under one owner,
@@ -110,12 +111,12 @@ updatable — recorded as a trade-off, not settled here.
 passthrough, so any pin needing a URL, a tag family, a branch target or a
 coupled set gets a `passthru.updateScript`:
 
-| owner | path | why |
-| --- | --- | --- |
-| `pi-bolt` | script | the runtime asset URL is keyed to the tag, and `version` is that tag minus its prefix; the dependency hash is refreshed by a nested `nix-update --version=skip --no-src`, the pattern nix-fleet's own `bifrost` uses |
-| `pi-plugins` | script | npm registry discovery is exact per tarball, and the OmniRoute pin is a branch head that must fail loudly rather than resolve to a release |
-| `xberg-cli` | script | the repository publishes per-component tags alongside release tags, so the release family must be selected explicitly |
-| `codexbar` | standard | a single tag family, discovery returns the next version cleanly |
+| owner        | path     | why                                                                                                                                                                                                                  |
+| ------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pi-bolt`    | script   | the runtime asset URL is keyed to the tag, and `version` is that tag minus its prefix; the dependency hash is refreshed by a nested `nix-update --version=skip --no-src`, the pattern nix-fleet's own `bifrost` uses |
+| `pi-plugins` | script   | npm registry discovery is exact per tarball, and the OmniRoute and fork-in pins are branch heads that must fail loudly rather than resolve to a release                                                              |
+| `xberg-cli`  | script   | the repository publishes per-component tags alongside release tags, so the release family must be selected explicitly                                                                                                |
+| `codexbar`   | standard | a single tag family, discovery returns the next version cleanly                                                                                                                                                      |
 
 Rejected: forking or patching the fleet app to accept flags — the contract is
 published and authoritative, and a consumer-side variant would be a second
@@ -152,8 +153,8 @@ its pin, package and formatter exclusion go first, independently of the rest.
   files; anything new must be staged before the following evaluation, and a
   failed run leaves a partial candidate in the working-copy commit to review.
 - [A script resolving a branch head or a tag family can silently pick the wrong
-  revision] → OmniRoute's resolve fails loudly on a bad target, xberg-cli
-  selects the release family explicitly, and both are checked by a
+  revision] → OmniRoute's and fork-in's resolves fail loudly on a bad target,
+  xberg-cli selects the release family explicitly, and both are checked by a
   recorded-target re-run.
 - [A registered derivation that exists only to own pins is surface] → the staged
   source set is real, and if it gains no consumer the owner folds into
@@ -170,7 +171,7 @@ its pin, package and formatter exclusion go first, independently of the rest.
 Five phases, in dependency order: byterover removal; pin inlining (no revision
 changes); registry and scripts; nvfetcher deletion and the recorded
 supersession; acceptance. Phases two and three must leave every build producing
-the same upstream content, so a revert reverts the pin *shape*, not a revision.
+the same upstream content, so a revert reverts the pin _shape_, not a revision.
 The mechanism is adopted only once `nix run .#update-packages` has run as a
 candidate at recorded targets and the canonical validation has passed on the
 result. The CI half is not part of this change: it consumes the registered

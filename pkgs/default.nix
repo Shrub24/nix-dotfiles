@@ -30,9 +30,6 @@ in
   xberg-cli = final.callPackage ./xberg-cli {
     inherit (generatedSources.xberg-cli) version src;
   };
-  byterover-cli = final.callPackage ./byterover {
-    inherit (generatedSources.byterover-cli) version src;
-  };
   codexbar = final.callPackage ./codexbar {
     inherit (generatedSources.codexbar) version src;
   };

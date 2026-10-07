@@ -1,19 +1,4 @@
 {
-    "byterover-cli": {
-        "cargoLock": null,
-        "date": null,
-        "extract": null,
-        "name": "byterover-cli",
-        "passthru": null,
-        "pinned": false,
-        "src": {
-            "name": null,
-            "sha256": "sha256-V3EVPa6XGqFFJ5FtI486lwtbAKULVHwZw1Tz+oRbRu4=",
-            "type": "url",
-            "url": "https://storage.googleapis.com/brv-releases/channels/stable/brv-linux-x64.tar.gz"
-        },
-        "version": "3.16.1"
-    },
     "codexbar": {
         "cargoLock": null,
         "date": null,

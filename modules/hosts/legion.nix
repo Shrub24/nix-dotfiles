@@ -52,7 +52,6 @@ let
     (lib.hasPrefix "nvidia" (lib.getName pkg))
     || builtins.elem (lib.getName pkg) [
       "zsh-abbr"
-      "byterover-cli"
       "vscode"
       "code"
       "unrar"

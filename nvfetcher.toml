@@ -18,12 +18,6 @@ fetch.url = "https://github.com/xberg-io/xberg/releases/download/$ver/xberg-cli-
 src.github = "steipete/CodeXBar"
 fetch.url = "https://github.com/steipete/CodeXBar/releases/download/$ver/CodexBarCLI-$ver-linux-x86_64.tar.gz"
 
-# Upstream ships only a rolling stable URL; the version file pins the number.
-[byterover-cli]
-src.webpage = "https://storage.googleapis.com/brv-releases/channels/stable/version"
-src.regex = "[0-9.]+"
-fetch.url = "https://storage.googleapis.com/brv-releases/channels/stable/brv-linux-x64.tar.gz"
-
 # OmniRoute publishes no releases, so the pin tracks the deploy/edge branch's
 # commit — the line that carries @omniroute/pi-agent.
 [omniroute]

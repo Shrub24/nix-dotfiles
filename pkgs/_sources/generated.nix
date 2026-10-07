@@ -6,14 +6,6 @@
   dockerTools,
 }:
 {
-  byterover-cli = {
-    pname = "byterover-cli";
-    version = "3.16.1";
-    src = fetchurl {
-      url = "https://storage.googleapis.com/brv-releases/channels/stable/brv-linux-x64.tar.gz";
-      sha256 = "sha256-V3EVPa6XGqFFJ5FtI486lwtbAKULVHwZw1Tz+oRbRu4=";
-    };
-  };
   codexbar = {
     pname = "codexbar";
     version = "v0.72.0";

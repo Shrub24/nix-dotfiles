@@ -18,6 +18,3 @@ result-*
 # Pix Agent
 .pi/
 .pi-lens/
-
-# ByteRover context tree: regenerable index data, not configuration
-.brv/

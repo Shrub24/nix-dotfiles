@@ -20,7 +20,6 @@
         # ordered lists.
         "modules/agents/pi/agents/**"
         "secrets/**"
-        ".brv/**"
         ".qmd/**"
         ".direnv/**"
         ".opencode/**"
