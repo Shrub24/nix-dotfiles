@@ -1,6 +1,6 @@
 _: {
   # The official Palo Alto agent is unpackaged on NixOS; openconnect's `gp`
-  # protocol backs this declarative profile. On Arch the profile is imperative.
+  # protocol backs this declarative profile.
   flake.modules.nixos.globalprotect = _: {
     networking.networkmanager.ensureProfiles.profiles.globalprotect = {
       connection = {

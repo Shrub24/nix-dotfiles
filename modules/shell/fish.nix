@@ -150,8 +150,6 @@
             if test -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
               source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
             end
-
-            fish_add_path --append /usr/local/bin /usr/bin /bin /usr/sbin /sbin
           '';
 
           interactiveShellInit = ''

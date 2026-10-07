@@ -22,7 +22,6 @@ _: {
         "x-scheme-handler/discord" = [ "vesktop.desktop" ];
         "x-scheme-handler/geo" = [ "google-maps-geo-handler.desktop" ];
 
-        # nvim is a pacman package; its desktop file lives outside Nix, so referenced, not owned.
         "text/plain" = [ "nvim.desktop" ];
 
         "application/pdf" = [ "okularApplication_pdf.desktop" ];

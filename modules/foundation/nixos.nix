@@ -10,6 +10,12 @@ _: {
       # Home Manager owns user configuration; Git is also available to root.
       programs.git.enable = true;
 
+      i18n.defaultLocale = "en_AU.UTF-8";
+
+      # Both hosts are laptops, so the zone follows geoclue's Wi-Fi fix rather than
+      # a declared value; it persists in /etc/localtime between fixes.
+      services.automatic-timezoned.enable = true;
+
       # uv's CPython and the prebuilt rust/go/node binaries run against Nix's
       # glibc only through nix-ld; these append to the module's default set.
       programs.nix-ld = {
@@ -44,7 +50,7 @@ _: {
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICtAJ/Vgep5XISOIcE+bY/4jOyA4Qi6yihLPn1VJa/Xr whip"
         ];
       };
-      # Private primary group (matches Arch user-private-groups, GID == UID).
+      # Private primary group (user-private-groups: GID == UID).
       users.groups.${primaryUser.name} = {
         inherit (primaryUser) gid;
       };

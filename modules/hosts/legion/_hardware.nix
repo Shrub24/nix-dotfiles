@@ -1,7 +1,7 @@
 # What no layer provisions: the data disk's mounts (from _storage.nix) and
 # the Windows-shared NTFS volume. Disko renders root mounts — do not add one.
 { primaryUser }:
-{ config, ... }:
+{ config, lib, ... }:
 let
   dataDisk = (import ./_storage.nix { inherit primaryUser; }).storage.dataDisk;
   btrfsOf = subvol: uuid: opts: {
@@ -11,6 +11,15 @@ let
   };
 in
 {
+  # nixos-facter sets every fact with `mkDefault`, so the policy below wins.
+  # Regenerate on the machine with:
+  #   sudo nix run nixpkgs#nixos-facter -- -o modules/hosts/legion/facter.json
+  hardware.facter.reportPath = lib.mkIf (builtins.pathExists ./facter.json) ./facter.json;
+
+  # Facter would load i915 and nvidia in the initrd; the proprietary module has no
+  # business there and the LUKS prompt has never needed early KMS on this machine.
+  hardware.facter.detected.boot.graphics.kernelModules = [ ];
+
   # UEFI + systemd-boot; disko creates the ESP and its mount.
   boot.loader.systemd-boot = {
     enable = true;
@@ -27,16 +36,18 @@ in
     "sd_mod"
     "btrfs"
     "i915"
-    "iwlwifi"
   ];
-  boot.initrd.kernelModules = [ "iwlwifi" ];
   boot.kernelModules = [
     "kvm-intel"
     "i915"
     "iwlwifi"
   ];
   boot.extraModulePackages = [ ];
-  boot.kernelParams = [ "nvme_core.default_ps_max_latency_us=0" ];
+  boot.kernelParams = [
+    "nvme_core.default_ps_max_latency_us=0"
+    # zram is the only swap; zswap would stack a second compressed cache in front of it.
+    "zswap.enabled=0"
+  ];
 
   hardware.enableRedistributableFirmware = true;
   hardware.i2c.enable = true;
@@ -65,6 +76,13 @@ in
     enable = true;
     memoryPercent = 100;
   };
+  # Swap is RAM, not disk: reclaim anonymous pages eagerly and skip readahead.
+  boot.kernel.sysctl = {
+    "vm.swappiness" = 180;
+    "vm.page-cluster" = 0;
+  };
+  # Disk-backed /tmp (large builds), but temporary files still end at reboot.
+  boot.tmp.cleanOnBoot = true;
 
   # CPU: 13th Gen Intel i7-13700H.
   hardware.cpu.intel.updateMicrocode = true;

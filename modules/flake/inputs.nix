@@ -15,12 +15,6 @@ _: {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    system-manager = {
-      url = "github:numtide/system-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-      # userborn sits two deep and carries its own flake-parts.
-      inputs.userborn.inputs.flake-parts.follows = "flake-parts";
-    };
 
     # Package layer: consumed by pkgs/ recipes rather than by one feature.
     pi-extensions = {

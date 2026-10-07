@@ -49,7 +49,7 @@ let
   };
   sshTrustModule = { inherit sshTrust; };
   overlay = import ../../pkgs { inherit inputs system; };
-  # Applied to both the standalone HM pkgs and the NixOS global pkgs.
+  # Applied to the NixOS global pkgs and the VM-test pkgs.
   unfreePredicate =
     pkg:
     (lib.hasPrefix "nvidia" (lib.getName pkg))
@@ -102,7 +102,6 @@ let
     inherit (pkgs) lib;
   };
   hmAspect = name: config.flake.modules.homeManager.${name};
-  systemAspect = name: config.flake.modules.systemManager.${name};
   nixosAspect = name: config.flake.modules.nixos.${name};
   hmAspects = [
     "current-host"
@@ -182,18 +181,6 @@ let
       "libcamera"
       "codex"
     ];
-  # No shared systemManager boot aspect: the Arch boot config is
-  # machine-specific (modules/hosts/legion/_system.nix).
-  systemAspects = [
-    "current-host"
-    "network"
-    "ssh"
-    "tailscale"
-    "greeter"
-    "nix"
-    "nixbuild"
-  ]
-  ++ identityAspects;
   nixosAspects = [
     "current-host"
     "foundation"
@@ -220,39 +207,6 @@ let
     "mosh"
   ]
   ++ identityAspects;
-  homeConfiguration = inputs.home-manager.lib.homeManagerConfiguration {
-    inherit pkgs;
-    modules = [
-      currentHostModule
-      sshTrustModule
-      (import ./legion/_home.nix { inherit omniroute primaryUser; })
-      # Standalone-only: the embedded NixOS eval must not see these.
-      {
-        targets.genericLinux.gpu.nvidia = {
-          enable = true;
-          version = "615.71.09";
-          sha256 = "sha256-zc7tIrvrYSSNGm3qvCWWZz46ZQFpjucayNL9wo87cP4=";
-        };
-        targets.genericLinux.enable = true;
-        programs.niks3.enableAutoUploadService = true;
-      }
-    ]
-    ++ map hmAspect hmAspects;
-  };
-  systemConfiguration = inputs.system-manager.lib.makeSystemConfig {
-    modules = [
-      currentHostModule
-      sshTrustModule
-      # system-manager's native remote-build options, as on the NixOS host.
-      {
-        nix.distributedBuilds = true;
-        nix.buildMachines = dispatch.buildMachines dispatchSpecs;
-      }
-      ./legion/_system.nix
-    ]
-    ++ map systemAspect systemAspects;
-    overlays = [ overlay ];
-  };
   nixosConfiguration = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       currentHostModule
@@ -289,7 +243,6 @@ let
               currentHostModule
               sshTrustModule
               (import ./legion/_home.nix { inherit omniroute primaryUser; })
-              { targets.genericLinux.enable = false; }
             ]
             ++ map hmAspect embeddedHmAspects;
           };
@@ -307,14 +260,9 @@ in
       sshUser = primaryUser.name;
     };
 
-    flake.homeConfigurations.${primaryUser.name} = homeConfiguration;
-
-    flake.systemConfigs.legion = systemConfiguration;
     flake.nixosConfigurations.legion = nixosConfiguration;
 
     flake.checks.${system} = {
-      home-manager-activation = homeConfiguration.activationPackage;
-      system-manager-config = systemConfiguration;
       nixos-system = nixosConfiguration.config.system.build.toplevel;
 
       # VM boot gate: catches module-system conflicts that eval-only misses.

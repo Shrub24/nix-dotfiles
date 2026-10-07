@@ -20,7 +20,6 @@
 
     packages = with pkgs; [
       marp-cli
-      (lib.mkIf config.targets.genericLinux.enable system-manager)
       byterover-cli
     ];
   };

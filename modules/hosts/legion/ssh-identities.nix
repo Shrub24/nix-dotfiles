@@ -33,7 +33,6 @@ in
         };
       };
     };
-    systemManager.legion-ssh-identities = systemIdentity;
     nixos.legion-ssh-identities = { config, ... }: {
       imports = [ systemIdentity ];
       sops.secrets = {

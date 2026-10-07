@@ -306,29 +306,12 @@
           };
         };
 
-      # Specialized at the feature use site: uid from the projected account.
-      primaryUser = config.currentHost.primaryUser;
-
-      noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
-        inherit (primaryUser) uid;
-      };
-
       # Packaged seed for the mutable wallpaper. Copied into the user home only
       # when absent (tmpfiles `C`, not `C+`), so a runtime-edited wallpaper survives
       # switches. The packaged source is PNG where the destination ends in `.jpg`;
       # Qt inspects content, so no conversion dependency is added.
       wallpaperSeed = pkgs.nixos-artwork.wallpapers.nineish-dark-gray.gnomeFilePath;
 
-      noctaliaGreeterSyncPkexec = pkgs.writeShellApplication {
-        name = "noctalia-greeter-sync-pkexec";
-        # NixOS resolves the security.wrappers pkexec; generic-Linux hosts use
-        # the distro pkexec.
-        text = ''
-          exec ${
-            if config.targets.genericLinux.enable then "/usr/bin/pkexec" else "/run/wrappers/bin/pkexec"
-          } ${noctaliaGreeterSync}/bin/noctalia-greeter-sync
-        '';
-      };
     in
     {
       imports = [
@@ -469,7 +452,6 @@
             corner_radius_scale = 1.5;
             polkit_agent = true;
             greeter_sync.auto_sync = true;
-            greeter_sync.privilege_command = "${noctaliaGreeterSyncPkexec}/bin/noctalia-greeter-sync-pkexec";
             external_ip_enabled = true;
             font_family = "Exo 2";
             password_style = "random";
@@ -722,7 +704,7 @@
           };
 
           plugin_settings = {
-            "icefish/phone-connect".device_alias = "S23 Ultra";
+            "icefish/phone-connect".device_alias = "OnePlus 15";
             "kenn/keybind-cheatsheet" = {
               columns = 4;
               compositor = "niri";
@@ -759,9 +741,9 @@
 
       home.packages = [
         pkgs.codexbar
-        # Template hook dependencies, resolved through the noctalia daemon's PATH
-        # (~/.nix-profile/bin precedes /usr/bin): `zip` for the libreoffice hook,
-        # python3 with Pillow for the brave-origin hook's PNG generation.
+        # Template hook dependencies, resolved through the noctalia daemon's PATH:
+        # `zip` for the libreoffice hook, python3 with Pillow for the brave-origin
+        # hook's PNG generation.
         pkgs.zip
         (pkgs.python3.withPackages (p: [ p.pillow ]))
         noctaliaGreeterPackage

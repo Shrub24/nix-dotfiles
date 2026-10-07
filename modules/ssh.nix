@@ -67,41 +67,6 @@ in
 
   ;
 
-  flake.modules.systemManager.ssh =
-    {
-      config,
-      lib,
-      ...
-    }:
-    {
-      imports = [ sshTrustAspect ];
-
-      config = {
-        environment.etc."ssh/ssh_known_hosts" = {
-          text = resolve.knownHostsText config.sshTrust;
-          mode = "0644";
-        };
-
-        environment.etc."ssh/ssh_config.d/30-remote-hosts.conf" = {
-          text = ''
-            # Remote build/managed hosts — ControlMaster enabled for multiplexing
-            Host ${lib.concatStringsSep " " (builtins.attrNames config.currentHost.peers)}
-              ControlMaster auto
-              ControlPersist 600
-              ControlPath /run/ssh-%r@%h:%p
-              ServerAliveInterval 60
-              ServerAliveCountMax 3
-              TCPKeepAlive no
-              Compression no
-              
-          '';
-          mode = "0644";
-        };
-      };
-    }
-
-  ;
-
   flake.modules.nixos.ssh =
     {
       config,

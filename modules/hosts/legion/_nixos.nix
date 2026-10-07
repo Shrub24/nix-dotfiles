@@ -44,7 +44,6 @@ in
   nixpkgs.hostPlatform = "x86_64-linux";
   system.stateVersion = "26.11";
   networking.hostName = "legion";
-  i18n.defaultLocale = "en_AU.UTF-8";
 
   # Lid close on AC is a no-op; on battery logind keeps its suspend default.
   services.logind.settings.Login.HandleLidSwitchExternalPower = "ignore";
@@ -57,11 +56,7 @@ in
     "w /sys/bus/platform/drivers/ideapad_acpi/VPC2004:00/conservation_mode - - - - 1"
   ];
 
-  # automatic-timezoned sets time.timeZone itself.
-  services.automatic-timezoned.enable = true;
-
-  # The open NVIDIA and openrazer modules must build against the kernel
-  # Arch runs (mainline); NixOS would evaluate the 6.18 LTS default.
+  # The open NVIDIA and openrazer modules must build against the kernel.
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
   # Units only this host runs; the shared set is in notify.
@@ -75,7 +70,7 @@ in
   # and cache residue, which gain nothing from CoW snapshots.
   services.snapper = {
     snapshotInterval = "hourly";
-    cleanupInterval = "hourly";
+    cleanupInterval = "1h";
     configs = {
       root = snapperRoot;
       home = snapperHome;

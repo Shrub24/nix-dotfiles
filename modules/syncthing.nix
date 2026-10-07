@@ -6,7 +6,7 @@ _: {
         devices = {
           # Peer IDs are long-lived opaque tokens, one per synced machine.
           oci-melb-1.id = "FLMOZQR-YKNSVLV-44FOWVO-JAPWF6N-HEPM2GA-L4CCNFN-ETOWFEG-JPKYTQD";
-          arch.id = "L43OT2A-IULZ4LG-YRFMARJ-EX2CDF3-ZYTXGEX-UGWAYE6-K46I3BA-3KZF2AE";
+          legion.id = "L43OT2A-IULZ4LG-YRFMARJ-EX2CDF3-ZYTXGEX-UGWAYE6-K46I3BA-3KZF2AE";
           home-forge.id = "MBPDSQR-VPJRSY7-MUP2YDM-MDVRFMQ-UMQTZCQ-GZBUQW6-LE65KVE-S2SCKAB";
         };
         folders = {
@@ -14,7 +14,7 @@ _: {
             path = "~/Music/library";
             devices = [
               "oci-melb-1"
-              "arch"
+              "legion"
               "home-forge"
             ];
             versioning = {
@@ -27,7 +27,7 @@ _: {
             path = "~/Music/quarantine";
             devices = [
               "oci-melb-1"
-              "arch"
+              "legion"
             ];
             versioning = {
               type = "simple";

@@ -1,7 +1,6 @@
 { inputs, ... }:
 {
-  # Arch gets codex from the AUR, so this package aspect is NixOS-only and rides
-  # embeddedHmAspects rather than the shared hmAspects list.
+  # NixOS-only package aspect: it rides embeddedHmAspects, not the shared list.
   flake.modules.homeManager.codex =
     { pkgs, ... }:
     {

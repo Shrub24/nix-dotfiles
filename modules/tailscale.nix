@@ -9,18 +9,6 @@
 
   ;
 
-  flake.modules.systemManager.tailscale =
-    { pkgs, ... }:
-    {
-      systemd.packages = [ pkgs.tailscale ];
-      systemd.services.tailscaled = {
-        wantedBy = [ "multi-user.target" ];
-        environment.PORT = "41641";
-      };
-    }
-
-  ;
-
   # The fleet aspect owns the whole NixOS daemon side.
   flake.modules.nixos.tailscale = _: {
     imports = [

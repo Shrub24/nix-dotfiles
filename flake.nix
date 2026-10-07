@@ -98,13 +98,6 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    system-manager = {
-      url = "github:numtide/system-manager";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        userborn.inputs.flake-parts.follows = "flake-parts";
-      };
-    };
     treefmt-nix.follows = "nix-fleet/treefmt-nix";
     vicinae = {
       url = "github:vicinaehq/vicinae";

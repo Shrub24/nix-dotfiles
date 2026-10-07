@@ -85,6 +85,5 @@ in
 
     flake.modules.nixos.current-host = currentHostAspect;
     flake.modules.homeManager.current-host = currentHostAspect;
-    flake.modules.systemManager.current-host = currentHostAspect;
   };
 }

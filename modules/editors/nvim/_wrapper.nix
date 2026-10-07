@@ -6,7 +6,6 @@
 {
   imports = [ wlib.wrapperModules.neovim ];
 
-  # nvim-nix, not nvim: the pacman nvim at /usr/bin/nvim keeps working.
   config.binName = "nvim-nix";
   config.settings.aliases = [ ];
   config.settings.dont_link = true;

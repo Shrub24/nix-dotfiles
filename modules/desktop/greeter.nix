@@ -1,113 +1,6 @@
 _: {
-  flake.modules.systemManager.greeter =
-    {
-      config,
-      pkgs,
-      ...
-    }:
-    let
-      primaryUser = config.currentHost.primaryUser;
-
-      noctaliaGreeterPackage = pkgs.noctalia-greeter;
-
-      noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
-        inherit (primaryUser) uid;
-      };
-
-      polkitSyncRule = pkgs.writeText "50-noctalia-greeter-sync.rules" ''
-        polkit.addRule(function (action, subject) {
-          if (
-            action.id == "org.freedesktop.policykit.exec" &&
-            action.lookup("program") == "${noctaliaGreeterSync}/bin/noctalia-greeter-sync" &&
-            subject.user == "${primaryUser.name}" &&
-            subject.local &&
-            subject.active
-          ) {
-            return polkit.Result.YES;
-          }
-        });
-      '';
-
-      dbusRunSession = pkgs.writeShellApplication {
-        name = "dbus-run-session";
-        text = ''
-          exec ${pkgs.dbus}/bin/dbus-run-session \
-            --config-file=${pkgs.dbus}/share/dbus-1/session.conf "$@"
-        '';
-      };
-
-      noctaliaGreeterSession = pkgs.writeShellApplication {
-        name = "greetd-noctalia-session";
-        runtimeInputs = [
-          pkgs.cage
-          dbusRunSession
-          pkgs.wlr-randr
-        ];
-        text = ''exec ${noctaliaGreeterPackage}/bin/noctalia-greeter-session "$@"'';
-      };
-
-      niriSession = pkgs.writeText "niri.desktop" ''
-        [Desktop Entry]
-        Name=Niri
-        Comment=A scrollable-tiling Wayland compositor
-        Exec=${pkgs.niri}/bin/niri-session
-        Type=Application
-        DesktopNames=niri
-      '';
-
-      niriUwsmLauncher = pkgs.writeShellApplication {
-        name = "niri-uwsm-session";
-        # HACK: uwsm stays on pacman until NixOS day — on Arch the bare-name spawn fails
-        # (no /etc/profiles/per-user PATH), so /usr/bin/uwsm is pinned.
-        text = ''
-          UWSM_SILENT_START=2 exec ${pkgs.systemd}/bin/systemd-cat --identifier=niri-uwsm \
-            /usr/bin/uwsm start -N "Niri (UWSM)" -D niri -e -- ${pkgs.niri}/bin/niri
-        '';
-      };
-
-      niriUwsmSession = pkgs.writeText "niri-uwsm.desktop" ''
-        [Desktop Entry]
-        Name=Niri (UWSM)
-        Comment=A scrollable-tiling Wayland compositor
-        Exec=${niriUwsmLauncher}/bin/niri-uwsm-session
-        Type=Application
-        DesktopNames=niri;
-        TryExec=/usr/bin/uwsm
-      '';
-
-      greeterToml = pkgs.writeText "greeter.toml" ''
-        [user]
-        default = "${primaryUser.name}"
-      '';
-    in
-    {
-      systemd.tmpfiles.rules = [
-        "d /usr/share/wayland-sessions 0755 root root -"
-        "L+ /usr/share/wayland-sessions/niri.desktop 0644 root root - ${niriSession}"
-        "L+ /usr/share/wayland-sessions/niri-uwsm.desktop 0644 root root - ${niriUwsmSession}"
-        "d /var/lib/noctalia-greeter 0755 greeter greeter -"
-        "f /var/lib/noctalia-greeter/greeter.log 0664 greeter greeter -"
-        "L+ /var/lib/noctalia-greeter/greeter.toml 0644 root root - ${greeterToml}"
-        "L+ /usr/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy 0644 root root - ${noctaliaGreeterPackage}/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy"
-      ];
-
-      environment.etc."polkit-1/rules.d/50-noctalia-greeter-sync.rules".source = polkitSyncRule;
-
-      environment.etc."greetd/config.toml".text = ''
-        [terminal]
-        vt = "next"
-
-        [default_session]
-        command = "${noctaliaGreeterSession}/bin/greetd-noctalia-session -- --user ${primaryUser.name}"
-        user = "greeter"
-      '';
-
-    }
-
-  ;
-
   # Upstream rewrites greeter.toml on every boot; the native module owns greeter.toml
-  # and the greetd wiring, while the polkit rule and desktop entries stay hand-rolled here.
+  # and the greetd wiring, while the desktop entries stay hand-rolled here.
   flake.modules.nixos.greeter =
     {
       config,
@@ -116,26 +9,6 @@ _: {
     }:
     let
       primaryUser = config.currentHost.primaryUser;
-
-      noctaliaGreeterPackage = pkgs.noctalia-greeter;
-
-      noctaliaGreeterSync = pkgs.callPackage ../../pkgs/noctalia-greeter-sync {
-        inherit (primaryUser) uid;
-      };
-
-      polkitSyncRule = pkgs.writeText "50-noctalia-greeter-sync.rules" ''
-        polkit.addRule(function (action, subject) {
-          if (
-            action.id == "org.freedesktop.policykit.exec" &&
-            action.lookup("program") == "${noctaliaGreeterSync}/bin/noctalia-greeter-sync" &&
-            subject.user == "${primaryUser.name}" &&
-            subject.local &&
-            subject.active
-          ) {
-            return polkit.Result.YES;
-          }
-        });
-      '';
 
       niriSession = pkgs.writeText "niri.desktop" ''
         [Desktop Entry]
@@ -156,6 +29,9 @@ _: {
           primaryUser.name
         ];
         settings.user.default = primaryUser.name;
+        # Appearance-only sync through the greeter's own polkit action; the
+        # module renders the rule and enables the pkexec wrapper.
+        passwordlessSyncUsers = [ primaryUser.name ];
       };
 
       programs.uwsm.enable = true;
@@ -165,9 +41,6 @@ _: {
         binPath = "${pkgs.niri}/bin/niri";
       };
 
-      # pkexec wrapper lands at /run/wrappers/bin/pkexec on NixOS.
-      security.polkit.enablePkexecWrapper = true;
-
       # greetd is the login session, so its PAM stack must unlock gnome-keyring
       # or the desktop session starts with the login keyring locked.
       security.pam.services.greetd.enableGnomeKeyring = true;
@@ -176,10 +49,7 @@ _: {
         "d /usr/share/wayland-sessions 0755 root root -"
         "L+ /usr/share/wayland-sessions/niri.desktop 0644 root root - ${niriSession}"
         "f /var/lib/noctalia-greeter/greeter.log 0664 greeter greeter -"
-        "L+ /usr/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy 0644 root root - ${noctaliaGreeterPackage}/share/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy"
       ];
-
-      environment.etc."polkit-1/rules.d/50-noctalia-greeter-sync.rules".source = polkitSyncRule;
     }
 
   ;

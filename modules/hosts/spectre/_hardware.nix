@@ -25,10 +25,11 @@ _:
     "sd_mod"
     "btrfs"
     "i915"
+  ];
+  boot.kernelModules = [
+    "kvm-intel"
     "iwlwifi"
   ];
-  boot.initrd.kernelModules = [ "iwlwifi" ];
-  boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
   # REPLACE-ON-INSTALL resume_offset: the swapfile's physical extent, which disko

@@ -1,16 +1,4 @@
 { inputs, ... }:
-let
-  # nix-fleet's nix-baseline is NixOS-only; this is the non-NixOS policy.
-  substitutionSettings = {
-    "connect-timeout" = 5;
-    "stalled-download-timeout" = 30;
-    "download-attempts" = 2;
-    "http-connections" = 50;
-    "max-substitution-jobs" = 8;
-    # Misses are cheap; the built-in one-hour negative cache is not.
-    "narinfo-cache-negative-ttl" = 60;
-  };
-in
 {
   flake-file.inputs.nix-index-database = {
     url = "github:nix-community/nix-index-database";
@@ -86,81 +74,6 @@ in
 
       programs.nh = {
         enable = true;
-        # GC has one owner per host: the user timer here, the fleet's root
-        # `nh-gc` capability on NixOS.
-        clean = {
-          enable = config.targets.genericLinux.enable;
-          dates = "weekly";
-          extraArgs = "--keep-since 7d";
-        };
-      };
-    }
-
-  ;
-
-  flake.modules.systemManager.nix =
-    {
-      config,
-      pkgs,
-      lib,
-      ...
-    }:
-    let
-      primaryUser = config.currentHost.primaryUser;
-      inherit (primaryUser) uid;
-
-      niks3UploadHook = pkgs.writeShellScriptBin "niks3-upload-hook" ''
-        exec ${lib.getExe' pkgs.niks3 "niks3-hook"} send --socket /run/user/${toString uid}/niks3-upload-to-cache.sock
-      '';
-    in
-    {
-      nix.enable = true;
-      # The upstream remote-build module otherwise sets builders = null.
-      nix.distributedBuilds = true;
-
-      nix.settings = substitutionSettings // {
-        # "root" is already the module default and this list concatenates.
-        "trusted-users" = [ primaryUser.name ];
-        "extra-substituters" = [
-          "https://nix-community.cachix.org"
-          "https://cache.numtide.com"
-          "https://cache.shrublab.xyz"
-        ];
-        "trusted-substituters" = [
-          "ssh-ng://eu.nixbuild.net"
-        ];
-        "extra-trusted-public-keys" = [
-          "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
-          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-          "nix-cache-1:FW0bJll9BP5ch0mHI+bXOImcD0RKLrH117WfQC+CU4A="
-          "nixbuild.net/HWWKWC-1:dnSfpPDHQN/U9wexkK6r3GTaYrwqNwKS70SNGXistKg="
-        ];
-        "experimental-features" = [
-          "nix-command"
-          "flakes"
-        ];
-        "auto-optimise-store" = true;
-        "always-allow-substitutes" = true;
-        "builders-use-substitutes" = true;
-        # Local builds are the overflow path; `cores` bounds each build's own
-        # parallelism so one long build cannot take the whole machine.
-        "max-jobs" = 4;
-        "cores" = 4;
-        "keep-derivations" = true;
-        "warn-dirty" = false;
-        "accept-flake-config" = true;
-        "download-buffer-size" = 268435456;
-        "post-build-hook" = lib.getExe niks3UploadHook;
-        "nix-path" = [ "nixpkgs=flake:nixpkgs" ];
-      };
-
-      # Builds are children of the daemon here, so the unit's cgroup bounds them;
-      # system-manager has no `nix.daemon*Policy` options.
-      systemd.services.nix-daemon.serviceConfig = {
-        CPUSchedulingPolicy = "batch";
-        IOSchedulingClass = "idle";
-        CPUWeight = 50;
-        MemoryHigh = "8G";
       };
     }
 
