@@ -12,7 +12,7 @@ in
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  # Aspect `nvim`: the nix-wrapped editor, installed as nvim-nix.
+  # Aspect `nvim`: the nix-wrapped editor, installed as nvim.
   flake.modules.homeManager.nvim =
     { pkgs, ... }:
     {

@@ -6,7 +6,7 @@
 {
   imports = [ wlib.wrapperModules.neovim ];
 
-  config.binName = "nvim-nix";
+  config.binName = "nvim";
   config.settings.aliases = [ ];
   config.settings.dont_link = true;
 
