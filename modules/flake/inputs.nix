@@ -22,6 +22,12 @@ _: {
       flake = false;
     };
 
+    # Plymouth theme source built by pkgs/nixos-boot (boot.nix selects it).
+    nixos-boot = {
+      url = "github:Melkor333/nixos-boot";
+      flake = false;
+    };
+
     # Disk layout capture for install day (written but unimported until the
     # bare-metal install; see modules/hosts/legion/_disko.nix).
     disko = {

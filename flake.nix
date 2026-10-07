@@ -89,6 +89,10 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixos-boot = {
+      url = "github:Melkor333/nixos-boot";
+      flake = false;
+    };
     nixpkgs.follows = "nix-fleet/nixpkgs";
     noctalia = {
       url = "github:noctalia-dev/noctalia";

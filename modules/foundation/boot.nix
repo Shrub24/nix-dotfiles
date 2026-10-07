@@ -5,10 +5,8 @@ _: {
     {
       boot.plymouth = {
         enable = true;
-        theme = "colorful_loop";
-        themePackages = [
-          (pkgs.adi1090x-plymouth-themes.override { selected_themes = [ "colorful_loop" ]; })
-        ];
+        theme = "load_unload";
+        themePackages = [ pkgs.nixos-boot ];
       };
 
       boot.loader.timeout = 1;

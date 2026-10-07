@@ -26,6 +26,7 @@ in
     piPlugins = final.pi-plugins;
   };
   nix-search-tv-fzf = final.callPackage ./nix-search-tv-fzf { };
+  nixos-boot = final.callPackage ./nixos-boot { src = inputs.nixos-boot; };
   xberg-cli = final.callPackage ./xberg-cli {
     inherit (generatedSources.xberg-cli) version src;
   };
