@@ -55,6 +55,7 @@ let
       "vscode"
       "code"
       "unrar"
+      "bws"
       "cuda_cuobjdump"
       "cuda_gdb"
       "cuda_nvcc"

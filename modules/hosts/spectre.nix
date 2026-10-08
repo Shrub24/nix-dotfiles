@@ -128,9 +128,9 @@ let
       (import ./spectre/_disko.nix { })
       { nixpkgs.overlays = [ overlay ]; }
       {
-        # The lean set's only unfree package (unrar, via cli); the desktop's
-        # NVIDIA predicate list is deliberately not inherited.
-        nixpkgs.config.allowUnfreePredicate = pkg: lib.getName pkg == "unrar";
+        # The lean set's unfree packages (unrar and bws, both via cli); the
+        # desktop's NVIDIA predicate list is deliberately not inherited.
+        nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "unrar" "bws" ];
       }
       inputs.home-manager.nixosModules.home-manager
       {

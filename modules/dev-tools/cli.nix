@@ -63,6 +63,7 @@ _: {
         whois
         wget
         ttyd
+        bws
         # Archive / conversion
         unzip
         p7zip
