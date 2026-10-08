@@ -17,7 +17,7 @@ Traces are out of scope for both. Items 1 and 3 touch the metrics change; the re
 
 ### 1. Notification registrations can evaluate without a dispatcher
 
-> Update: reported to the fleet owner, which is already reworking this area — `providers.*`, the `realized` flag and the orphan guards are being removed in favour of selectable bundles and realisation aspects, where a dormant registration never enables a service. Treat this item as reported; confirm the replacement fails at evaluation time rather than merely not enabling, since an inert-but-silent hook still reads as coverage.
+> Update: reported to the fleet owner. It has answered: there is intentionally **no** replacement orphan evaluation error. Dormant registrations are the approved design — an event declaration without notify is inert, with no hooks and no dispatch — and coverage is a consumer-side assertion that notify is selected and the hooks render. This is a guarantee change, not the old defect failing closed, so no guard should be expected here; the consumer-side hook assertion is the required evidence.
 
 **Classification:** confirmed mechanism/documentation contradiction; locally mitigated, not an adoption blocker.
 
@@ -110,6 +110,17 @@ The contract assigns store access, retention, deletion and backups to consumers 
 4. **Queue identity and catalogue moves:** document what survives destination URL changes, source/exporter renames and root-snapshot rollback. A stable Nix attribute name is not proof of queue migration. Who coordinates drain/migration when canonical coordinates move?
 5. **Tailnet route assurance:** the resolver constructs a hostname URL (`lib/service-endpoints.nix:24–46`). Does runtime resolution stay tailnet-bound when MagicDNS/Tailscale is unavailable? No fallback misrouting was reproduced; this is a hardening question, not an established vulnerability.
 6. **Portable-host budgets:** are fixed queue budgets plus documented eviction/blocking adequate, or should minimal consumer tuning be part of the public contract? Avoid knobs without a demonstrated need.
+
+## Dispositions received
+
+The fleet owner is reworking the telemetry API and has answered the items above. Recorded here so the brief stays a faithful record of the exchange rather than a live request:
+
+- **Item 1 — answered, no fix:** dormant registrations are intentional; no replacement orphan error. Consumers must assert notify selection and rendered hooks.
+- **Item 3 — partly answered:** `destinations.*`, `pipelines.*` and `scrape.*` keep their shapes; `providers.*` and `realized` disappear; `telemetry` becomes contract-only, with `telemetry-metrics` selecting the default scraper; `node-exporter` stays separate. The vmagent realisation will own and publish the vmagent-health scrape and its loopback 8429 listener, so consumers must drop their hand-registration; the listener stays the provider's `-httpListenAddr`.
+- **Items 2, 4 and the limitation notes — still open.**
+- **Failure events are unchanged:** `services.notify.events.<unit>.failure`, with notify co-selection attaching the hooks; no new marker or gate.
+
+Realisation names: `telemetry-vmagent`, `telemetry-vector`, `telemetry-otel-collector-scrape`, `telemetry-otel-collector-otlp`. Bundles: `telemetry-metrics`, `telemetry-logs`, `telemetry-otlp`. The final revision, exact options and validation evidence follow integration; nothing here is adopted until then.
 
 ## Requested response
 
