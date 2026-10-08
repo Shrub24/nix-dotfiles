@@ -11,21 +11,11 @@ Defines the canonical requirements for nvfetcher-managed package sources.
 
 ## Requirements
 
-### Requirement: Selected package sources are managed through nvfetcher metadata
+### Requirement: nvfetcher is retired
 
-The repository SHALL define committed nvfetcher source metadata only for the active custom package set that consumes it.
+This capability is superseded. The repository no longer carries nvfetcher configuration, a generated source set, or an nvfetcher update app; every package pin is declared by the package that owns it and updated through the package-update contract. While the capability remains superseded, the repository SHALL NOT add nvfetcher metadata, a generated source set, or a second pin-update path.
 
-#### Scenario: Maintainer inspects nvfetcher configuration
+#### Scenario: Repository is inspected after the transition
 
-- **WHEN** a maintainer reviews the repository source-update configuration
-- **THEN** every declared nvfetcher source SHALL be consumed by an active custom package
-- **AND** inactive Snip source records SHALL be absent
-
-### Requirement: Target derivations consume generated nvfetcher metadata
-
-Each package selected for nvfetcher management SHALL consume its generated upstream version and source fetch metadata rather than duplicating those fields in its derivation.
-
-#### Scenario: Maintainer updates a target package source
-
-- **WHEN** nvfetcher-generated metadata changes for an active selected package
-- **THEN** the corresponding derivation SHALL consume the updated generated fields
+- **WHEN** the package layer is inspected after the transition
+- **THEN** no nvfetcher configuration, generated source set or nvfetcher update app exists

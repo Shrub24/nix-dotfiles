@@ -4,7 +4,7 @@
 | ---------------------------- | ---------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `daemon-nix-config`          | active     | `archive/2026-06-17-add-system-manager`               | `openspec/changes/archive/2026-06-17-add-system-manager/specs/daemon-nix-config/spec.md`                  |
 | `nvfetcher-package-sources`  | superseded | `archive/2026-06-19-add-nvfetcher-for-packages`       | `openspec/changes/archive/2026-06-19-add-nvfetcher-for-packages/specs/nvfetcher-package-sources/spec.md`  |
-| `package-updates`            | pending    | `adopt-fleet-package-updates`                         | `openspec/changes/adopt-fleet-package-updates/specs/package-updates/spec.md`                              |
+| `package-updates`            | active     | `archive/2026-10-08-adopt-fleet-package-updates`      | `openspec/changes/archive/2026-10-08-adopt-fleet-package-updates/specs/package-updates/spec.md`           |
 | `opencode-snip-integration`  | active     | `archive/2026-08-09-migrate-tokf-to-snip`             | `openspec/changes/archive/2026-08-09-migrate-tokf-to-snip/specs/opencode-snip-integration/spec.md`        |
 | `snip-package`               | active     | `archive/2026-08-09-migrate-tokf-to-snip`             | `openspec/changes/archive/2026-08-09-migrate-tokf-to-snip/specs/snip-package/spec.md`                     |
 | `mutagen`                    | active     | `archive/2026-08-09-tmux-ssh-mutagen-modules`         | `openspec/changes/archive/2026-08-09-tmux-ssh-mutagen-modules/specs/mutagen/spec.md`                      |
