@@ -11,10 +11,14 @@
     source = "npm:pi-web-access";
     path = "@home@/.pi/agent/npm/node_modules/pi-web-access";
   }
+  # The only row that reads a live checkout instead of an installed copy: the
+  # fork at ~/Projects/dev/custom/magic-context is what the lead loads, so it is
+  # developed here. Replace with a @recipe@ source once the fork has a recipe,
+  # which is what every other row does.
   {
     id = "magic-context";
     source = "npm:@cortexkit/pi-magic-context";
-    path = "@home@/.pi/agent/npm/node_modules/@cortexkit/pi-magic-context";
+    path = "@home@/Projects/dev/custom/magic-context/packages/pi-plugin";
   }
   # pi-recap writes its own config (temp file + rename), so its model and
   # multiplexer template stay a one-time `/recap-config` pass.
@@ -38,7 +42,10 @@
   }
   {
     id = "tool";
-    compiled = [ "lead" ];
+    compiled = [
+      "lead"
+      "child"
+    ];
     source = "npm:@narumitw/pi-tool";
   }
   {
@@ -178,7 +185,6 @@
     id = "fork-in";
     compiled = [
       "lead"
-      "child"
     ];
     source = "@recipe@fork-in";
   }

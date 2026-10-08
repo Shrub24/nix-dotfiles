@@ -38,9 +38,7 @@ in
       ...
     }:
     let
-      # The repository's own package set — the one modules/hosts/* extend pkgs
-      # with — so the generated-source arguments stay in pkgs/default.nix and
-      # `.#pi-bolt` compiles the same payload the host's build does.
+      # Use the same package overlay as the hosts.
       repoPkgs = pkgs.extend (import ../../pkgs { inherit inputs system; });
       registry = repoPkgs.pi-plugins;
       # The child build carries a whole child's surface; only the lead one adds
@@ -76,6 +74,9 @@ in
 
       # Pi agent dir; referenced by rendered settings and out-of-store symlinks.
       piAgentDir = "${config.home.homeDirectory}/.pi/agent";
+      # The magic-context fork is a live checkout, not an installed package; see
+      # the note on its row in _pi-extensions.nix.
+      magicContextDir = "${config.home.homeDirectory}/Projects/dev/custom/magic-context";
 
       # Rows are the single list of extensions: the settings list and the
       # launcher both read them, so nothing can be installed for one and dropped
@@ -123,7 +124,7 @@ in
         "${inputs.pi-extensions}/pi-cbmem/extensions/cbmem.ts"
         "${inputs.pi-extensions}/pi-output-policy/extensions/output-policy.ts"
         "${inputs.pi-extensions}/pi-bash-processes/extensions/background-tasks.ts"
-        "${piAgentDir}/npm/node_modules/@cortexkit/pi-magic-context/dist/subagent-entry.js"
+        "${magicContextDir}/packages/pi-plugin/dist/subagent-entry.js"
         "${piAgentDir}/npm/node_modules/pi-tool-repair/tool-repair.ts"
         "${piAgentDir}/npm/node_modules/@gotgenes/pi-permission-system/src/index.ts"
       ];
