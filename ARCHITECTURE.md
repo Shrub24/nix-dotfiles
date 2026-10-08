@@ -265,6 +265,16 @@ hub's own _public_ half, so it is policy data bound by the contributor rather
 than a sops secret, and there is no enrollment gate. The contributor aspects
 inject host policy — the hub key and tailnet exposure — while the fleet aspect
 owns the unit and its notify registration.
+Prometheus-lane host metrics go through the fleet's `telemetry` and
+`node-exporter` aspects: the node exporter binds loopback on 9100 and vmagent
+forwards it to the one declared `fleet-metrics` destination, resolved from the
+fleet inventory (`lib.serviceEndpoints`, `victoriametrics/remote-write` over the
+tailnet) in `modules/telemetry.nix` and pinned by
+`services.telemetry.pipelines.metrics`. vmagent's own loopback health scrape
+(8429) rides that same pipeline — which is also the blind spot, since a total
+transport outage hides its own health samples, leaving silence detection to the
+backend. Journal shipping and OTLP admission stay off
+(`adopt-fleet-journals`), and Beszel keeps its dashboard lane alongside.
 LLM traffic goes to the OmniRoute gateway on the builder host, an endpoint the
 fleet service inventory carries (`lib.serviceEndpoints`).
 Service ports and display metadata are owned by `lib/web-services.nix`
