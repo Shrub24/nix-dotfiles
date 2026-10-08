@@ -1,6 +1,8 @@
 # Tasks
 
-Implementation begins after approval. Switches and live outage exercises need separate operator approval. Keep unrelated working-copy changes (package-update work) out of this change. `upstream-review.md` requests assessment only and does not gate these tasks.
+Implementation begins after approval. Switches and live outage exercises need separate operator approval.
+
+> Pin note: tasks 1.1-1.3 and 2.1 were implemented against nix-fleet `23411143` (commit `a4114685`). Nix-fleet is replacing that API — `telemetry` becomes vocabulary only and selectable `telemetry-metrics`/`-logs`/`-otlp` bundles plus realisation aspects carry enablement, with `providers.*` and the orphan guards removed. Migrate the contributor, aspect selection and policy check to the published revision before any export leaves a host, and re-run 1.1-1.3 and 2.1 against it. Keep unrelated working-copy changes (package-update work) out of this change. `upstream-review.md` requests assessment only and does not gate these tasks.
 
 ## 1. Metrics contributor and forwarding health
 

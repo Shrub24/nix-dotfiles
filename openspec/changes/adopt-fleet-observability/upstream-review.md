@@ -17,6 +17,8 @@ Traces are out of scope for both. Items 1 and 3 touch the metrics change; the re
 
 ### 1. Notification registrations can evaluate without a dispatcher
 
+> Update: reported to the fleet owner, which is already reworking this area — `providers.*`, the `realized` flag and the orphan guards are being removed in favour of selectable bundles and realisation aspects, where a dormant registration never enables a service. Treat this item as reported; confirm the replacement fails at evaluation time rather than merely not enabling, since an inert-but-silent hook still reads as coverage.
+
 **Classification:** confirmed mechanism/documentation contradiction; locally mitigated, not an adoption blocker.
 
 `modules/notifications/notify/_notify-events.nix:8–10` says registrations without notify fail as unknown options. The fragment declares `services.notify.events` at `:69–108`, and telemetry providers import it. The notify aspect alone attaches hooks (`modules/notifications/notify.nix:335–369`).
