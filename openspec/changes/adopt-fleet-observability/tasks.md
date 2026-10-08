@@ -1,35 +1,30 @@
 # Tasks
 
-Implementation begins only after this proposal is approved. Switches and live failure/outage exercises require separate operator approval. Keep unrelated working-copy changes out of this change.
+Implementation begins after approval. Switches and live outage exercises need separate operator approval. Keep unrelated working-copy changes (package-update work) out of this change. `upstream-review.md` requests assessment only and does not gate these tasks.
 
-## 1. Metrics contributor and host selection
+## 1. Metrics contributor and forwarding health
 
-- [ ] 1.1 Extend `modules/telemetry.nix` with flake-level canonical metrics/journal endpoint resolution and the metrics-only `fleet-metrics` destination; add `modules/node-exporter.nix` as a thin fleet import. Verify evaluated destination protocol/signals and the fleet-owned local scrape registration, without hardcoded backend coordinates or new packages.
-- [ ] 1.2 Select `telemetry` and `node-exporter` in both NixOS host aspect lists. Add focused evaluation checks for provider activation, loopback-only exporter binding, distinct host instance labels and no OTLP listeners/destinations; execute the checks against both host configurations.
-- [ ] 1.3 Document the metrics lane and its coexistence with Beszel in `ARCHITECTURE.md` and add the metrics/query section of `docs/runbooks/verify-workstation-observability.md`. Verify the documentation uses canonical selectors and distinguishes fresh backend samples from endpoint reachability.
+- [ ] 1.1 Extend `modules/telemetry.nix` with canonical metrics endpoint resolution and the metrics-only `fleet-metrics` destination, pinned by `pipelines.metrics`. Add `modules/node-exporter.nix` as a thin fleet import and select both aspects on both hosts. Verify canonical URL, local scraping, no implicit fan-out, and that Vector is not enabled.
+- [ ] 1.2 Register vmagent's loopback health scrape with an explicit host instance label. Validate port availability and the pinned version's actual backlog, error and drop series; record any missing signal as an upstream gap.
+- [ ] 1.3 Add evaluation-time policy checks for both hosts as designed, including the registrations-without-notify negative case. Verify a deliberately invalid policy fails the canonical no-build path.
+- [ ] 1.4 Document the metrics and health lanes, Beszel coexistence and the shared-transport blind spot in `ARCHITECTURE.md` and the runbook. Reference backend-owner alert coverage or record it as an owned gap.
+- [ ] 1.5 Update `docs/impermanence.md` with the realised vmagent path, permissions/DynamicUser backing, budget and loss modes. No new home path or mount; Vector and OTel paths remain planned.
 
-## 2. System journals, failure hooks and state
+## 2. Integration gate and Legion rollout
 
-- [ ] 2.1 Implement the shared allowlist and Legion-only additions from `design.md`, with `journald.enable = true`, 512 MiB buffering and `whenFull = "block"`. Verify full unit names exist in each evaluated system configuration, lists are non-empty, and user managers, desktop/user services and the unsettled NikS3 unit are not included.
-- [ ] 2.2 Extend the evaluation checks to cover journal sink resolution, allowlist membership and effective fleet failure hooks for `prometheus-node-exporter`, `vmagent` and `vector` through the existing notify dispatcher/topic. Execute the check and verify registrations are not duplicated locally.
-- [ ] 2.3 Add journal privacy, trusted-unit marker procedures and queue/recovery sections to the runbook. Document possible sensitive unit output, current-boot replay limits and finite retention; verify the positive/negative test restores the production allowlist and leaves no test units or overrides.
-- [ ] 2.4 Update `docs/impermanence.md` with the configured vmagent/Vector paths, DynamicUser/permission caveat, 1 GiB-per-destination and 512 MiB limits, and their loss modes. Verify there is no new home persistence path or reset/mount change, and the OTel collector path remains planned rather than active.
+- [ ] 2.1 Format owned files, run the policy checks and the canonical flake check against the exact proposed tree, and build Legion's toplevel.
+- [ ] 2.2 After explicit approval, deploy Legion; record provider units, loopback listeners, queue directory and effective hooks. Mark the persistence path active only after verification.
+- [ ] 2.3 Verify fresh host-labelled node and vmagent-health samples; have the backend owner check for duplicate remote scrapes.
+- [ ] 2.4 With approval, run a short destination outage and agent restart below capacity; observe local signals, eventual receipt and queue drainage.
+- [ ] 2.5 Obtain owner evidence for allowed/denied route access, a controlled registered-unit failure and applicable delivery-health alert coverage; mark absent items pending with owners.
 
-## 3. Integration gate and Legion rollout
+## 3. Spectre rollout and acceptance
 
-- [ ] 3.1 Format only owned files, execute the focused checks, and run `nix flake check --no-build --no-write-lock-file` against the exact proposed commit tree. Build Legion's toplevel; record command outcomes and review the proposed allowlist before requesting a switch.
-- [ ] 3.2 After explicit switch approval, deploy Legion and record configured/deployed status, running provider units, loopback listeners, realised queue directories/permissions and effective failure hooks. Mark persistence paths active only when deployment is verified.
-- [ ] 3.3 Verify Legion delivery with fresh host-labelled node metrics, an allowed system marker, and excluded-system/user markers. Have the backend owner check for duplicate remote scrapes; record uniquely identifiable evidence and clean up probes before marking these categories passed.
-- [ ] 3.4 With operator approval, exercise a short destination outage plus forwarding-agent restart below capacity. Verify queued data reaches the backend after reconnection, queues drain and limits remain bounded; do not disrupt SSH/the whole tailnet or saturate production queues.
-- [ ] 3.5 Obtain fleet-operator evidence for allowed/denied access to the selected backend routes, a controlled registered-unit failure and the existing alert-to-system-topic route. Record categories that cannot yet be exercised as pending; mark trace delivery not applicable, not passed.
-
-## 4. Spectre rollout and acceptance record
-
-- [ ] 4.1 When Spectre is reachable and its existing switch prerequisites are satisfied, build/deploy its configuration with explicit approval. Verify its own instance, smaller allowlist, provider units, storage and failure hooks; otherwise retain configured-only status without claiming deployment.
-- [ ] 4.2 Repeat the positive/negative journal, fresh metrics, short-outage/restart and applicable network/notification checks on Spectre. Record per-host evidence and remove all temporary probes; Legion results do not count as Spectre results.
-- [ ] 4.3 Reconcile the per-host acceptance ledger and `settle-after-nixos-transition` task 2.1. Verify both hosts satisfy the applicable categories, or record an explicitly accepted host deferral rather than silently checking off delivery. Keep future trace producer/relay adoption separate.
+- [ ] 3.1 When reachable and enrolled, build and deploy Spectre with approval; verify its own instance, storage and hooks. Otherwise retain configured-only status.
+- [ ] 3.2 Repeat metrics, outage/restart and applicable checks on Spectre; Legion results do not count.
+- [ ] 3.3 Reconcile the ledger and `settle-after-nixos-transition` task 2.1 (metrics part). Do not check off unperformed delivery. Journals and traces stay separate.
 
 ## Workflow follow-up
 
-- Review the final diff and persistence inventory before committing or pushing implementation.
-- Archive only after acceptance is complete or remaining external/host deferrals have been explicitly accepted.
+- Review the diff and persistence inventory before committing or pushing.
+- Archive after applicable acceptance is complete or deferrals are explicit and owned.

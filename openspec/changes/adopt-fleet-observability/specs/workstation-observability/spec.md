@@ -2,32 +2,38 @@
 
 ## Purpose
 
-Define host-local metrics and selected system-service journal export for the managed workstations, including privacy, offline behaviour and evidence required to establish delivery.
+Define host-local metrics export for the managed workstations, including identity, offline behaviour, forwarder health and the evidence required to establish delivery. Journal export is specified separately.
 
 ## ADDED Requirements
 
-### Requirement: Both workstation configurations select the approved lanes
+### Requirement: Both workstation configurations select the metrics lane
 
-Legion and Spectre SHALL select host metrics and system-service journal export through the fleet aspects. Trace ingestion, trace destinations and remote telemetry ingress SHALL remain disabled in this change. Existing Beszel monitoring and notify dispatch SHALL remain selected.
+Legion and Spectre SHALL select host metrics export through the fleet `telemetry` and `node-exporter` aspects. Trace ingestion, trace destinations, remote telemetry ingress and journal shipping SHALL remain disabled by this capability. Existing Beszel monitoring and notify dispatch SHALL remain selected.
 
 #### Scenario: A workstation configuration is evaluated
 
 - **WHEN** either workstation configuration is evaluated
-- **THEN** the metrics exporter, metrics forwarder and journal shipper are configured
-- **AND** no OTLP listener or trace relay is configured
+- **THEN** the metrics exporter and metrics forwarder are configured
+- **AND** no OTLP listener, trace relay or journal shipper is configured
 
-### Requirement: Destinations come from the fleet service inventory
+### Requirement: The destination comes from the fleet service inventory
 
-Metrics SHALL resolve `victoriametrics/remote-write` and journals SHALL resolve `victorialogs/jsonline` through the fleet's tailnet route. Consumers SHALL NOT duplicate their host, port or URL or route these lanes through the trace gateway.
+Metrics SHALL resolve `victoriametrics/remote-write` through the fleet's tailnet route and flow through one explicitly selected metrics destination. Consumers SHALL NOT duplicate its host, port or URL or route metrics through the trace gateway.
 
 #### Scenario: The fleet publishes new backend coordinates
 
 - **WHEN** a fleet pin carrying changed backend coordinates is evaluated
-- **THEN** both export destinations follow the canonical inventory without a local address edit
+- **THEN** the destination follows the canonical inventory without a local address edit
+- **AND** queue continuity for the changed destination is reviewed before rollout
+
+#### Scenario: A second metrics destination is later declared
+
+- **WHEN** another destination is added to the configuration
+- **THEN** host metrics still flow only to the explicitly selected pipeline until it is changed deliberately
 
 ### Requirement: Metrics are scraped locally with distinct host identity
 
-The node exporter SHALL bind only to loopback and be scraped on its own host. Remote-write samples SHALL retain a stable instance identifying that host rather than its loopback address. Journal stream identity SHALL retain the origin hostname and system unit.
+The node exporter SHALL bind only to loopback and be scraped on its own host. Remote-write samples SHALL carry a stable instance identifying that host rather than its loopback address.
 
 #### Scenario: Both machines export node metrics
 
@@ -35,76 +41,45 @@ The node exporter SHALL bind only to loopback and be scraped on its own host. Re
 - **THEN** their instance labels are distinct and correspond to their hostnames and exporter ports
 - **AND** neither exporter is exposed on a LAN or tailnet interface
 
-#### Scenario: Journals arrive at the backend
-
-- **WHEN** an allowed system unit emits a journal entry
-- **THEN** the exported entry retains its origin hostname and system-unit identity
-
-### Requirement: Journal export is explicitly allowlisted
-
-Each host SHALL use an explicit, non-empty allowlist of operational system-unit names matched against trusted journal unit metadata. Host-specific additions SHALL name actual enabled system services. An empty allowlist SHALL NOT qualify as an accepted configuration.
-
-#### Scenario: An allowed system service emits a marker
-
-- **WHEN** a unique marker is emitted from a genuinely allowlisted system unit
-- **THEN** the marker is observable in the journal backend with that unit identity
-
-#### Scenario: A logger tag imitates an allowed unit
-
-- **WHEN** an excluded unit emits an entry whose message or logger tag names an allowed unit
-- **THEN** that entry is not exported on the strength of its text or tag
-
-### Requirement: User-session logs and secrets have no blanket export path
-
-The initial allowlist SHALL exclude user-manager units, desktop/session units and blanket kernel or whole-journal selection. Allowlisting SHALL NOT be described as redaction. The selected units' potential sensitive output and disk-buffer copies SHALL be documented before deployment.
-
-#### Scenario: A user service emits a marker
-
-- **WHEN** an interactive session or Home Manager user service emits a unique marker
-- **THEN** it is not exported by the system-service journal policy
-
-#### Scenario: An excluded system unit emits a marker
-
-- **WHEN** a system unit outside the allowlist emits a unique marker during the verification window
-- **THEN** that marker is absent from the backend after positive allowed-unit delivery has been established
-
 ### Requirement: Offline buffering is bounded and persistent
 
-The metrics forwarder SHALL use the fleet's 1 GiB disk budget per destination and oldest-data eviction. The journal shipper SHALL use a 512 MiB disk buffer with blocking overflow. Queue state SHALL survive agent restart on the persistent root. No guarantee of lossless export beyond queue capacity or journal retention SHALL be made.
+The metrics forwarder SHALL use the fleet's 1 GiB disk budget per destination with oldest-data eviction. Queue state SHALL survive agent restart on the persistent root. No guarantee of lossless export beyond queue capacity SHALL be made, and queues SHALL NOT be purged or restored as routine cleanup.
 
-#### Scenario: A destination is unavailable below the buffer limit
+#### Scenario: The destination is unavailable below the buffer limit
 
-- **WHEN** a destination is unavailable, data is buffered below capacity, and its forwarding agent restarts
-- **THEN** buffered data remains available for export when connectivity returns
-- **AND** verification demonstrates eventual backend receipt rather than merely a running agent
+- **WHEN** the destination is unavailable, data is buffered below capacity and the forwarder restarts
+- **THEN** buffered data is exported when connectivity returns
 
-#### Scenario: An offline workstation exhausts its budget
+### Requirement: Forwarding health is continuously observable
 
-- **WHEN** the metrics queue reaches its limit or the journal buffer fills
-- **THEN** metrics evict oldest buffered data and journal reading blocks
-- **AND** documentation states that journal rotation and boot boundaries can still cause loss
+Both hosts SHALL export host-distinct forwarder delivery-health metrics through the selected pipeline, with a loopback-only health listener. Backlog, send-error and dropped-data visibility and applicable availability-aware central alert coverage SHALL be verified or recorded as owned acceptance gaps. Invented metric names and process-active-only claims SHALL NOT substitute for evidence.
+
+#### Scenario: The forwarder stays active while delivery fails
+
+- **WHEN** a destination outage leaves the forwarding process running
+- **THEN** local error and backlog signals remain observable
+- **AND** health samples reach the backend after connectivity returns
+
+#### Scenario: A laptop is intentionally asleep
+
+- **WHEN** the host suspends
+- **THEN** acceptance does not rely on an unreviewed always-online server alert rule
 
 ### Requirement: Exporter failures use existing notify dispatch
 
-The node exporter, metrics forwarder and journal shipper SHALL have effective failure hooks through the selected fleet notify capability and its existing system topic. Declaring event registrations without an active dispatcher SHALL NOT satisfy this requirement.
+Failure events for the exporter and forwarder SHALL render through the already-selected notify dispatcher to the existing system topic, without duplicate local registration.
 
-#### Scenario: A registered exporter unit fails under a controlled test
+#### Scenario: Registrations exist without a dispatcher
 
-- **WHEN** the verification procedure exercises a registered-unit failure
-- **THEN** a notification reaches the existing system topic
-- **AND** the unit is restored without retaining a test failure or configuration override
+- **WHEN** a composition registers failure events but does not select notify
+- **THEN** the policy check fails rather than accepting inert hooks
 
-### Requirement: Acceptance distinguishes configuration from delivery per host
+### Requirement: Acceptance evidence is per host and end to end
 
-Evidence SHALL distinguish configured, deployed and delivering for each host. Delivery requires fresh host metrics, positive and negative journal markers, offline/restart recovery and applicable fleet network/notification checks. HTTP reachability and offline derivation checks SHALL NOT be reported as end-to-end delivery.
+Evidence SHALL distinguish configured, deployed and delivering per host. Acceptance requires fresh host and forwarder metrics, offline/restart recovery and applicable network, notification and alert checks. Policy regressions SHALL fail the canonical evaluation path. Missing external evidence SHALL remain an owned gap, not a pass. HTTP reachability or unbuilt checks SHALL NOT count as delivery.
 
-#### Scenario: Spectre is unavailable for deployment
+#### Scenario: Spectre is offline during Legion acceptance
 
-- **WHEN** Spectre evaluates successfully but cannot undergo live deployment and verification
-- **THEN** its state is recorded as configured only
-- **AND** Legion can be independently deployed and accepted without claiming Spectre delivery
-
-#### Scenario: Backend reachability succeeds
-
-- **WHEN** a GET request reaches a backend listener
-- **THEN** that result alone does not satisfy delivery acceptance
+- **WHEN** Legion's applicable categories pass and Spectre is unreachable
+- **THEN** Spectre is recorded as configured only
+- **AND** adoption is not reported as fully accepted

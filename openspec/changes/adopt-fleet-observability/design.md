@@ -2,109 +2,68 @@
 
 ## Context
 
-See `proposal.md` for scope and motivation. The source of truth is nix-fleet revision `23411143acdacf676e49ce7d68bd5fd6d57ec47d`, especially `docs/contracts/observability.md`, `docs/contracts/telemetry.md`, `lib/telemetry-contract.nix` and the provider modules.
+See `proposal.md`. The source of truth is nix-fleet `23411143acdacf676e49ce7d68bd5fd6d57ec47d`: `docs/contracts/observability.md`, `docs/contracts/telemetry.md`, `lib/telemetry-contract.nix` and the provider modules.
 
-`modules/telemetry.nix` currently only imports the fleet aspect; neither host selects it. Both hosts already select notify and Beszel. The node-exporter aspect owns a loopback listener, a local scrape registration and its failure hook. Telemetry supplies vmagent for remote write and Vector for journals. Selection and declared work activate providers; a destination alone does not.
+`modules/telemetry.nix` only imports the fleet aspect and no host selects it. Both hosts already select notify and Beszel. The node-exporter aspect owns a loopback listener, a local scrape registration and its failure hook; vmagent is activated by the declared scrape work plus a destination. With journald unset, Vector is not activated.
 
-Both hosts can be portable. Root remains persistent; this change must not add impermanence mounts or move home state. Spectre is installed, despite the fleet inventory's stale lifecycle description. Its current availability and secret enrollment are separate deployment prerequisites, not reasons to omit it from configuration.
-
-## Goals / Non-Goals
-
-**Goals:** one shared contributor, thin host selection, canonical destinations, a reviewed system-unit allowlist, and independently verifiable delivery per host.
-
-**Non-goals:** a new transport implementation, user-service journal matching, OTLP admission, remote node scraping or changes to fleet backends/ACLs. No new credential is needed for the current tailnet routes.
+Root stays persistent; this change adds no impermanence mounts or home state. Spectre is installed despite the fleet inventory's stale lifecycle text; its availability and secret enrollment are deployment prerequisites, not reasons to omit configuration.
 
 ## Decisions
 
-### 1. Resolve destinations in the contributor's flake-parts scope
+### 1. Resolve the destination in the contributor's flake-parts scope
 
-Extend `modules/telemetry.nix` to resolve these selectors through `inputs.nix-fleet.lib.serviceEndpoints.url config.fleet`:
+Resolve `victoriametrics/remote-write` over the `tailnet` route with `inputs.nix-fleet.lib.serviceEndpoints.url config.fleet` in `modules/telemetry.nix` and pass it into the NixOS aspect by lexical closure, as `modules/notify.nix` does. Aspects read native `networking.hostName`, never a registry key.
 
-| Lane     | Service           | Endpoint       | Route     | Consumer setting                                         |
-| -------- | ----------------- | -------------- | --------- | -------------------------------------------------------- |
-| Metrics  | `victoriametrics` | `remote-write` | `tailnet` | `services.telemetry.destinations.fleet-metrics.endpoint` |
-| Journals | `victorialogs`    | `jsonline`     | `tailnet` | `services.telemetry.journald.sink.endpoint`              |
+Declare `services.telemetry.destinations.fleet-metrics` with `protocol = "prometheus-remote-write"` and `signals = [ "metrics" ]`, and pin `services.telemetry.pipelines.metrics = [ "fleet-metrics" ]` so a later destination cannot silently fan out. Keep the destination name stable. vmagent receives endpoint URLs, so a catalogue URL change or destination rename needs an explicit queue-continuity review; canonical resolution is not automatic backlog migration.
 
-Pass the resolved values into its NixOS aspect through lexical closure, following `modules/notify.nix`. The reusable aspect reads native `networking.hostName` and `config.currentHost.primaryUser`, not a named registry entry. No argument bus or new per-host telemetry URL option is needed.
+**Alternative:** resolving in both host files repeats identical policy; the contributor pattern is the existing module boundary.
 
-The metrics destination uses `protocol = "prometheus-remote-write"` and `signals = [ "metrics" ]`. It is the only metrics destination. Keep the destination name stable because it identifies on-disk queue state. Journals use their own sink, not a telemetry destination or the trace gateway.
+### 2. Reuse the fleet providers
 
-**Alternative:** resolving separately in both host files repeats identical service policy. The existing contributor pattern already provides the correct module boundary.
+Add `modules/node-exporter.nix` importing the fleet aspect and select it with `telemetry` in both NixOS aspect lists. No Home Manager aspect. Keep `otlp.signals` empty, ingress unset and trace destinations absent. The node aspect supplies `127.0.0.1:9100` and the `hostName:port` instance label; do not replace the target with a fleet hostname. Failure events for node-exporter and vmagent come from their fleet owners and render through the already-selected notify dispatcher; do not register them again.
 
-### 2. Use the fleet providers and exporter registration unchanged
+**Alternative:** OTel for metrics now. The native remote-write lane already owns this path; OTel adds a receiver and a different queue model with no producer.
 
-Publish a thin `node-exporter` contributor in `modules/node-exporter.nix`, importing the fleet aspect. Both hosts select it alongside `telemetry` in their NixOS aspect lists. No Home Manager aspect is added.
+### 3. Bounded offline policy
 
-Use vmagent for `providers.prometheusScrape` and Vector for `providers.journaldIngest`. Keep `otlp.signals` empty, ingress unset and trace destinations absent; do not read the disabled OTLP URL. The node aspect supplies `127.0.0.1:9100` and the `hostName:port` instance label. Do not replace its target with a fleet hostname.
+vmagent persists to `/var/lib/vmagent` with the fleet's 1 GiB per-destination budget, dropping the oldest samples at capacity. Its disk budget is provider-owned; do not invent a tuning namespace. Inspect the realised `StateDirectory`/DynamicUser mapping before treating a visible path as a persistence target. Metrics do not exist during suspend, so there is nothing to buffer; long outages evict. Disk budgets do not bound memory. Root-snapshot rollback can rewind queue state; do not purge or restore queues as routine cleanup. Make no lossless-delivery claim.
 
-The node-exporter, vmagent and Vector failure events come from their fleet owners. Verify that they render through the already-selected notify dispatcher; do not register them a second time. Preserve the existing system topic.
+Update `docs/impermanence.md` with the evaluated path and loss modes. No new home path. `/var/lib/vector` and `/var/lib/opentelemetry-collector` stay planned, not active.
 
-**Alternative:** use OTel for metrics and logs now. The fleet's native remote-write and JSON-line lanes already own these paths, while OTel would introduce an unnecessary receiver and a different queue model before a trace producer exists.
+### 4. Observe forwarding health
 
-### 3. Start with a concrete system-unit policy
+Register vmagent's loopback metrics on `127.0.0.1:8429` through `services.telemetry.scrape.vmagent-health`, with `labels.instance` set explicitly from `networking.hostName` and the port, because the node aspect's label default does not apply to other registrations. Route it through the same pipeline. Inventory the pinned version's backlog, send/error and dropped-data series and require fresh backend samples. If a needed signal is missing, record the gap for the fleet owner rather than inventing a metric name. No watchdog process; no health endpoint off loopback.
 
-Set `journald.enable = true` and a non-empty `includeUnits` using full system-unit names. Proposed shared list:
+The backend owner identifies existing delivery-health alert rules and the system-topic route; missing coverage is an owned acceptance gap. This repository invents no thresholds. Laptop suspend must not read as a server outage under an unreviewed always-online rule. Self-health shares the metrics transport, so a total transport outage needs central missing-data detection.
 
-- `sshd.service`: remote access failures.
-- `NetworkManager.service`, `systemd-resolved.service`, `tailscaled.service`: connectivity and tailnet diagnostics.
-- `nix-daemon.service`, `fast-nix-gc.service`, `nix-gc-roots.service`: build and store-maintenance failures.
-- `beszel-agent.service`, `notify.service`, `prometheus-node-exporter.service`: monitoring and dispatch health.
-- `greetd.service`: login service health, not the user's desktop session.
-- `home-manager-${primaryUser.name}.service`: system-owned activation failures, using the current-host projection.
+### 5. Verify delivery, not just configuration
 
-Legion additionally selects `snapper-timeline.service`, `snapper-cleanup.service` and `syncthing.service`. These additions remain in the host policy beside the services it owns. Spectre gets no Legion-only units. Verify membership against each evaluated configuration; do not silently filter missing names, which would conceal drift.
+Add an evaluation-time policy check owned by the telemetry contributor, failing within `nix flake check --no-build --no-write-lock-file`. For both hosts: exact destination and pipeline, signal scope, loopback node and health listeners, distinct instance labels, effective failure hooks through notify, disabled trace ingress, and Vector not enabled. Include a negative case for an ineffective notify composition (registrations without notify). Validate built unit files for package-provided units.
 
-Forwarders' own logs remain local initially; notify still covers vmagent/Vector failures. NikS3 units remain outside this initial list until the in-flight uploader-to-publisher migration has settled its unit names. No wildcard or whole notify-event registry is copied into the allowlist.
+Runbook `docs/runbooks/verify-workstation-observability.md` keeps a per-host configured/deployed/delivering ledger over the applicable fleet acceptance categories:
 
-The trusted match is `_SYSTEMD_UNIT`, not a logger tag. Do not include `user@<uid>.service`, desktop units or a Home Manager user service name: selecting the user manager would sweep in unrelated user logs, and this fleet interface does not express an individual `_SYSTEMD_USER_UNIT` filter. Grist, QMD, MCP, Surge, Pi and desktop journals therefore stay local.
+1. Evaluated configuration, effective units/hooks and the realised queue path.
+2. Fresh node and vmagent-health metrics with distinct host/job labels; the backend owner removes any obsolete remote-scrape job so the exporter is not collected twice.
+3. Journals: not applicable here (see `adopt-fleet-journals`).
+4. Traces: not applicable.
+5. Fleet operator confirms allowed/denied access to the metrics route. No workstation ingress exists to test.
+6. An existing registered-unit failure and existing alert route exercised under operator control.
+7. A short controlled destination outage and agent restart below capacity: eventual receipt, queue drainage, observable error/backlog signals. No whole-tailnet or SSH disruption, no saturation of the real disk.
 
-An allowlist is not redaction. Networking and activation logs can contain usernames, addresses, SSIDs, VPN coordinates, paths or application error output. Pending journal buffers contain copies too. Review this proposed list before the first journal-enabled switch; if a selected unit can print credentials, narrow the list rather than promise generic scrubbing.
-
-**Alternative:** ship all journals or derive the list from notify registrations. Both let future unrelated services expand collection without a deliberate privacy decision.
-
-### 4. Keep the fleet's bounded offline policy
-
-| Agent   | Persistent state   | Budget                | Full-buffer behaviour         |
-| ------- | ------------------ | --------------------- | ----------------------------- |
-| vmagent | `/var/lib/vmagent` | 1 GiB per destination | Drops oldest buffered samples |
-| Vector  | `/var/lib/vector`  | 512 MiB               | Blocks journal reading        |
-
-Set the journal budget and `whenFull = "block"` explicitly. Do not tune vmagent by inventing a public namespace; its disk budget is provider-owned. Preserve service-managed permissions and inspect the realised `StateDirectory`/DynamicUser mapping before treating a visible path as a persistence mount target.
-
-Queue data survives agent restart because root stays persistent. Metrics during suspend do not exist to buffer. Long outages can evict metrics or rotate unread journals; the reader's current-boot policy also limits historical replay after reboot. Do not claim exactly-once or unlimited lossless recovery. Preserve destination identity during rollback/reconfiguration.
-
-Update `docs/impermanence.md` with evaluated state paths and these loss modes. No new durable home paths are introduced. `/var/lib/opentelemetry-collector` remains planned, not active, because no collector is needed for this change.
-
-**Alternative:** discard newest journals at capacity. Blocking preserves the pending buffer and lets journald absorb a short outage, but only within its retention window. The chosen limits bound storage use on both laptops.
-
-### 5. Verify delivery, not merely the configuration
-
-Add a focused evaluation regression check owned by the telemetry contributor. Check both host configurations for aspect selection, exact destinations, signal scope, exporter loopback binding, distinct instance labels, non-empty unit membership, effective failure hooks and disabled trace ingress. Execute that check as well as `nix flake check --no-build --no-write-lock-file`; the latter evaluates derivations rather than running delivery tests.
-
-Create `docs/runbooks/verify-workstation-observability.md` with a per-host configured/deployed/delivering ledger and the fleet's seven acceptance categories:
-
-1. Inspect evaluated configuration, effective units/hooks and actual queue storage. Persistent root satisfies present storage retention; no reset-root mounts are required.
-2. Query fresh node metrics with the expected instance. The backend owner checks/removes obsolete remote-scrape jobs if any exist, so the local exporter is not collected twice.
-3. Observe a unique marker from an allowed system unit; verify distinct excluded-system and user-service markers are absent after the positive path delivers. Use a temporary, explicitly allowlisted system probe if needed, restore the production list afterward, and never substitute `logger -t` for trusted unit metadata.
-4. Mark trace delivery not applicable: no producer, receiver or destination is enabled.
-5. Have the fleet operator confirm allowed/denied access to the selected backend routes. Consumer listeners are loopback-only; do not test a nonexistent workstation ingress or alter fleet ACLs here.
-6. Exercise an existing registered-unit failure and existing backend alert route under operator control. Verify the existing system topic; do not add an alert rule merely for this rollout.
-7. Exercise a short, controlled destination outage and agent restart with tagged data below capacity. Verify eventual receipt, queue drainage and unchanged limits. Restrict the outage to the forwarding process/test lane: do not disconnect the whole tailnet, stop SSH or fill production queues to capacity.
-
-Record external checks as pending until their owner supplies evidence. Existing fleet offline tests cover OTLP, not runtime vmagent/Vector recovery, so they are not substitutes for categories 2, 3 or 7.
+External checks stay pending until their owner supplies evidence. Fleet's offline tests cover OTLP, not vmagent recovery.
 
 ## Risks / Trade-offs
 
-- **Sensitive payloads** → narrow system-unit collection, exclude user-session wrappers, review before deployment and document buffer copies. No redaction guarantee.
-- **Bounded loss during long offline periods** → retain provider budgets, document eviction/rotation/boot-boundary loss, and test short outages without saturating the real disk.
-- **Silent unit-name mismatch** → evaluation checks require listed services to exist; apply after concurrent unit migrations settle or leave affected units excluded.
-- **Backend-dependent acceptance** → obtain query and network/alert evidence from the fleet operator. Pending external evidence stays pending.
-- **Spectre unavailable or not enrolled** → evaluate both, deploy Legion first, and record Spectre as configured until independently checked. Its unbound SSH inventory key is not itself a metrics/journal enrollment mechanism.
+- **Bounded loss on long outages** → provider budgets, documented eviction, short-outage tests only.
+- **Backend-dependent acceptance** → evidence from the fleet operator; pending stays pending.
+- **Duplicate collection** → local scrape plus any central scrape of the same exporter; backend owner checks.
+- **Queue identity on URL changes** → continuity review before relock moves coordinates.
+- **Spectre unavailable or unenrolled** → evaluate both, deploy Legion first, record Spectre as configured until independently checked.
 
 ## Migration Plan
 
-1. Implement contributor policy, host selection, evaluation checks and the runbook without changing input pins or unrelated pending work.
-2. Build Legion's configuration and review the effective allowlist before an explicitly authorised switch. Complete its delivery categories and persistence inventory.
-3. Deploy Spectre only when reachable and its existing switch prerequisites are met; repeat the same checks with its own instance and smaller unit set.
-4. Roll back a host through its prior NixOS generation, or remove both new aspect selections and switch. Keep queued state until delivery or disposal is a deliberate decision; do not delete it as cleanup.
-5. Mark the transition telemetry item complete only when both hosts' applicable acceptance categories are satisfied or a remaining host deferral is explicitly accepted. Trace adoption stays separate.
+1. Implement contributor, host selection, checks and runbook without touching pins or unrelated work.
+2. Build Legion; after explicit approval switch and complete its categories and persistence inventory.
+3. Deploy Spectre when reachable and enrolled; repeat with its own instance.
+4. Roll back via the prior generation or by removing both selections. Keep queued state until delivery or disposal is a deliberate decision.
+5. Mark metrics adoption accepted when both hosts' applicable categories pass, or an explicit, owned deferral is recorded.

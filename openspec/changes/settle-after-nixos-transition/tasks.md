@@ -8,7 +8,7 @@ Phasing. Complete the hardware cleanup, Snapper failure registration and push fi
 
 ## 2. Upstream adoption
 
-- [ ] 2.1 Implement [adopt-fleet-observability](../adopt-fleet-observability/proposal.md): metrics and explicit system-service journal allowlists on both hosts, with per-host delivery evidence and state recorded in `docs/impermanence.md`. Its design and tasks own the rollout. Trace producer/relay adoption remains separate until a producer exists; no `pi-otel` or OTLP ingress is enabled by this change.
+- [ ] 2.1 Implement [adopt-fleet-observability](../adopt-fleet-observability/proposal.md): host metrics (node-exporter and vmagent remote-write, plus vmagent health) on both hosts, with per-host delivery evidence and the queue path recorded in `docs/impermanence.md`. Journals are the gated follow-on [adopt-fleet-journals](../adopt-fleet-journals/proposal.md), which waits on accepted metrics adoption and upstream dispositions in `upstream-review.md`. Trace producer/relay adoption remains separate; no `pi-otel` or OTLP ingress is enabled.
 - [ ] 2.5 Bind spectre's SSH host key in nix-fleet's inventory (`publicKey` is unbound, so legion's trust set omits it); needs the laptop online to harvest the key.
 - [x] 2.0 Select the fleet `nix-gc` with the `fast-nix-gc` collector on both hosts: hourly threshold collection (`ensureFree` 15%), daily root pruning, no optimise pass on btrfs.
 - [ ] 2.2 Drop the `dev` build account when home-forge selects `build-account` (`modules/policy/fleet.nix`).
