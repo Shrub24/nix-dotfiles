@@ -7,8 +7,8 @@
 **Status:** active
 **Evidence:** confirmed
 **Source:** measurement in this repository — the built generation's rendered `settings.json` and child-extension list, the deployed launcher script, and the two Pi-Bolt binaries
-**Verification:** corroborated — every local plugin in the rendered settings is a store path from the `pi-extensions` input, OmniRoute's is the nvfetcher-pinned checkout, no row references `~/Projects`, and the out-of-store symlink is gone from the generation
-**Revisit when:** a plugin needs live-edit iteration badly enough to outweigh reproducibility, or a plugin's source moves outside the `pi-extensions` input and the nvfetcher pins
+**Verification:** corroborated — every local plugin in the rendered settings is a store path from the `pi-extensions` input, OmniRoute's is a pinned checkout, no row references `~/Projects`, and the out-of-store symlink is gone from the generation
+**Revisit when:** a plugin needs live-edit iteration badly enough to outweigh reproducibility, or its source moves outside the `pi-extensions` input and the package pins
 
 Rows in `modules/agents/_pi-extensions.nix` named
 `~/Projects/dev/custom/pi-extensions/<plugin>` for every plugin kept in a local
@@ -19,7 +19,7 @@ paths could disagree about the same plugin — a fix landed locally was live for
 one and absent from the other. Rows now carry a placeholder resolved by
 `rowPath`: `@extensions@` for the pinned input, `@recipe@<id>` for the source a
 `pkgs/pi-plugins` recipe resolves (which is how OmniRoute reaches its
-nvfetcher-pinned `deploy/edge` checkout), and `@home@` only for the npm and git
+pinned `deploy/edge` checkout), and `@home@` only for the npm and git
 installs that genuinely live in the home tree.
 
 **Reason:** the same commit has to produce the same running configuration. With
@@ -36,5 +36,5 @@ deployment moves the pin with `nix flake update pi-extensions`.
 
 **Consequence:** editing a plugin no longer reaches a running session by itself;
 it takes a pin bump and a switch, or an override-input build for a trial.
-OmniRoute keeps its own route through nvfetcher, so a source that is not an npm
+OmniRoute keeps its own literal checkout pin, so a source that is not an npm
 tarball and not in the `pi-extensions` input still has a home.

@@ -1,6 +1,6 @@
 <!--
 canonical-spec: nvfetcher-package-sources
-status: active
+status: superseded
 source-change: archive/2026-06-19-add-nvfetcher-for-packages
 source-spec: openspec/changes/archive/2026-06-19-add-nvfetcher-for-packages/specs/nvfetcher-package-sources/spec.md
 -->

@@ -11,7 +11,6 @@
     { pkgs, ... }:
     {
       treefmt.settings.global.excludes = [
-        "pkgs/_sources/**"
         # nixos-facter output: a machine-generated capture, so prettier would
         # reformat it here and churn it again on every regeneration.
         "modules/hosts/*/facter.json"
@@ -35,25 +34,10 @@
           deadnix
           nixfmt
           nix-output-monitor
-          nvfetcher
           lefthook
         ];
         NIX_CONFIG = "experimental-features = nix-command flakes";
       };
 
-      apps.nvfetcher-update = {
-        type = "app";
-        program =
-          let
-            nvfu = pkgs.writeShellScriptBin "nvfetcher-update" ''
-              exec ${pkgs.nvfetcher}/bin/nvfetcher \
-                -c nvfetcher.toml \
-                -o pkgs/_sources \
-                "$@"
-            '';
-          in
-          "${nvfu}/bin/nvfetcher-update";
-        meta.description = "Run nvfetcher to update pkgs/_sources/generated.nix and generated.json";
-      };
     };
 }

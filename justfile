@@ -10,13 +10,11 @@ vm-desktop:
       cat
     end | env -u DISPLAY SDL_VIDEODRIVER=wayland QEMU_OPTS="-display sdl,gl=on" ./result/bin/nixos-test-driver
 
-# Update all nvfetcher sources (pkgs/_sources).
-nvfetcher:
-    nix run .#nvfetcher-update
+update-packages:
+    nix run .#update-packages
 
-# Update one nvfetcher source, leaving the rest pinned.
-nvfetcher-one pkg:
-    nix run .#nvfetcher-update -- --filter '^{{pkg}}$'
+update-package pkg:
+    nix run .#update-packages -- {{pkg}}
 
 # Point the nix-fleet input at a local checkout (default ../nix-fleet) so a
 # dotfiles change can be tested against a coordinated nix-fleet change.

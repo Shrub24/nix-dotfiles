@@ -1,15 +1,13 @@
 {
   lib,
   stdenv,
+  fetchFromGitHub,
   fetchurl,
   writeText,
   buildNpmPackage,
-  # Source, version and the runtime the AOT step compiles with all come from
-  # pkgs/_sources (nvfetcher.toml): one release tag carries the tree and the
-  # runtime archive together.
-  src,
-  version,
-  runtime,
+  writeShellApplication,
+  nix-update,
+  nix,
   # The plugin recipes (pkgs/pi-plugins) and the caller's selection of them;
   # which plugins a build contains is not this expression's business.
   piPlugins,
@@ -34,6 +32,26 @@ assert lib.elem variant [
   "child"
 ];
 let
+  # The upstream release pin. This package owns it: a tag is the only version
+  # the tree and the runtime archive are published at together, upstream's
+  # release workflow asserting the tree's VERSION equals the tag, so the
+  # derivation's version is that tag minus upstream's prefix.
+  tag = "bolt-v0.7.1";
+  version = lib.removePrefix "bolt-v" tag;
+  src = fetchFromGitHub {
+    owner = "opensec-git";
+    repo = "Pi-Bolt";
+    rev = tag;
+    fetchSubmodules = false;
+    sha256 = "sha256-dmverQ+DPLhTU9HNOdRvmnNsJvaHXBE5r0TMi+w3Cz4=";
+  };
+  # The archive beside the tag is the Bun build the AOT step compiles with, so
+  # the tag keys its URL.
+  runtime = fetchurl {
+    url = "https://github.com/opensec-git/Pi-Bolt/releases/download/${tag}/pi-bolt-runtime-linux-x64.tar.gz";
+    sha256 = "sha256-npAz0e3feU89wxUs0MR4k6KnJH0032OihcE47lUHKy4=";
+  };
+
   executable = if variant == "lead" then "pi-bolt" else "pi-bolt-child";
   # The lead also publishes the primary name, so nothing outside this package
   # has to route `pi`. A symlink keeps one script for both names.
@@ -127,7 +145,7 @@ let
     postBuild = ''
       export HOME="$TMPDIR"
       # The archive beside the release tag is the Bun build the AOT step compiles
-      # with; only its binary is taken. nvfetcher yields the tarball, not a tree.
+      # with; only its binary is taken.
       ${unpack ".work/runtime" runtime}
       # Set the loader before compiling: rewriting the final ELF damages its AOT payload.
       patchelf --set-interpreter ${stdenv.cc.bintools.dynamicLinker} .work/runtime/bun
@@ -164,7 +182,7 @@ let
       chmod -R u+w plugins
       # The largest single module's top-level bytecode, reported by the AOT step;
       # re-measure when the plugin set or the pinned tree changes.
-      export BUN_JSC_maximumAOTCandidateBytecodeSize=370231
+      export BUN_JSC_maximumAOTCandidateBytecodeSize=400000
       PIBOLT_BUILD_LOG=$TMPDIR/aot.log scripts/build-pi.sh --plugins "$PWD/plugins/plugins.ts" \
         --cpu baseline --jit on --out out/pi-bolt || { tail -40 $TMPDIR/aot.log; exit 1; }
     '';
@@ -264,6 +282,22 @@ in
 stdenv.mkDerivation {
   pname = executable;
   inherit version;
+  meta.position = "${__curPos.file}:${toString __curPos.line}";
+
+  passthru = {
+    inherit payload;
+    updateScript = lib.getExe (writeShellApplication {
+      name = "pi-bolt-update";
+      runtimeInputs = [
+        python3
+        nix-update
+        nix
+      ];
+      text = ''
+        exec python3 ${./update.py}
+      '';
+    });
+  };
 
   nativeBuildInputs = [ makeBinaryWrapper ];
   dontUnpack = true;

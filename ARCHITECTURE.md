@@ -392,9 +392,9 @@ describes only machines that are always on.
   file exports its factory, and the patch its compile-time assumptions need,
   applied with `--replace-fail` so a moved upstream fails loudly. Every source
   here is a pin: the npm tarballs by hand, the local plugins from the
-  `pi-extensions` input, and OmniRoute's `deploy/edge` checkout through
-  nvfetcher like the rest of `pkgs/_sources` — so the running configuration
-  never reads a live checkout, and `nix flake update pi-extensions` is what
+  `pi-extensions` input, and OmniRoute's `deploy/edge` checkout pinned by
+  `pkgs/pi-plugins` — so the running configuration never reads a live checkout,
+  and `nix flake update pi-extensions` is what
   moves the local plugins' code. The launcher disables extension discovery, so
   compiled plugins need not be removed from the normal Pi `packages` list. Loop Police's mutable config lives in the agent directory;
   Ask User Question keeps its built-in English fallback in the compiled build.
@@ -499,8 +499,7 @@ nix flake check --no-build --no-write-lock-file
 
 `nix fmt` (treefmt-nix) is both formatter and formatting check — nixfmt for
 Nix, and prettier for Markdown, YAML and JSON. Flake checks cover Statix and Deadnix over all
-maintained Nix source (nvfetcher's `pkgs/_sources` is excluded at the
-source-set level, not via suppressions), the treefmt check, and full
+maintained Nix source, the treefmt check, and full
 evaluation of both NixOS toplevels and the NixOS VM test derivations — a
 change that breaks any host output fails CI without switching anything.
 Lefthook runs fast formatting and lint checks at pre-commit and the canonical

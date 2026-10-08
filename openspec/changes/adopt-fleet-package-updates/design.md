@@ -10,7 +10,7 @@ layer today and the mechanics of the two contracts.
 injects into five packages: `pi-bolt` (the source tree), `pi-bolt-runtime` (the
 AOT runtime asset), `xberg-cli`, `byterover-cli` and `codexbar`.
 `pkgs/pi-plugins` imports the same generated set for one more pin (the
-OmniRoute checkout) and carries 25 npm tarball pins written by hand, because
+OmniRoute checkout) and carries 24 npm tarball pins written by hand, because
 nvfetcher has no npm-tarball source type. `modules/flake/tooling.nix` puts
 nvfetcher in the dev shell and publishes `apps.nvfetcher-update`; `justfile`
 wraps it as `nvfetcher` and `nvfetcher-one <pkg>`. Only `pi-bolt` and
@@ -80,7 +80,7 @@ stay disjoint from the fleet's own outputs (`ci`, `ci-tailscale`,
 ## Decisions
 
 **D1. Four registered owners, one per pin set.** `pi-bolt` (source tree, AOT
-runtime asset, `npmDepsHash`), `pi-plugins` (25 npm tarballs and two
+runtime asset, `npmDepsHash`), `pi-plugins` (24 npm tarballs and two
 branch-head checkouts, OmniRoute and fork-in), `xberg-cli`, `codexbar`. Derived
 outputs stay unregistered:
 `pi-bolt-child`, the compiled plugin manifests, and the model catalog that is
@@ -111,16 +111,22 @@ updatable — recorded as a trade-off, not settled here.
 passthrough, so any pin needing a URL, a tag family, a branch target or a
 coupled set gets a `passthru.updateScript`:
 
-| owner        | path     | why                                                                                                                                                                                                                  |
-| ------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pi-bolt`    | script   | the runtime asset URL is keyed to the tag, and `version` is that tag minus its prefix; the dependency hash is refreshed by a nested `nix-update --version=skip --no-src`, the pattern nix-fleet's own `bifrost` uses |
-| `pi-plugins` | script   | npm registry discovery is exact per tarball, and the OmniRoute and fork-in pins are branch heads that must fail loudly rather than resolve to a release                                                              |
-| `xberg-cli`  | script   | the repository publishes per-component tags alongside release tags, so the release family must be selected explicitly                                                                                                |
-| `codexbar`   | standard | a single tag family, discovery returns the next version cleanly                                                                                                                                                      |
+| owner        | path                | why                                                                                                                                                                                                                  |
+| ------------ | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pi-bolt`    | script              | the runtime asset URL is keyed to the tag, and `version` is that tag minus its prefix; the dependency hash is refreshed by a nested `nix-update --version=skip --no-src`, the pattern nix-fleet's own `bifrost` uses |
+| `pi-plugins` | script              | npm registry discovery is exact per tarball, and the OmniRoute and fork-in pins are branch heads that must fail loudly rather than resolve to a release                                                              |
+| `xberg-cli`  | script              | the repository publishes per-component tags alongside release tags, so the release family must be selected explicitly                                                                                                |
+| `codexbar`   | thin script wrapper | a single tag family uses standard nix-update discovery; the wrapper only adds the recorded-target input needed for deterministic acceptance                                                                          |
 
 Rejected: forking or patching the fleet app to accept flags — the contract is
 published and authoritative, and a consumer-side variant would be a second
 mechanism.
+
+The codexbar wrapper defaults to `--version=stable`, preserving standard
+release discovery, and accepts `CODEXBAR_UPDATE_VERSION` for an exact
+recorded-target run. This keeps it on the standard policy while allowing the
+fleet app's `--use-update-script` path to satisfy D6 without command-line flag
+passthrough.
 
 **D5. Acceptance is the canonical validation, and CI-shaped.** A run edits pins
 only; acceptance is `nix fmt` (no changes), `nix flake check --no-build
@@ -143,6 +149,15 @@ provenance instead of disappearing.
 **D8. byterover is removed, not migrated.** Its consumer is being retired, so
 its pin, package and formatter exclusion go first, independently of the rest.
 
+**D9. Source URLs are templated on the version attribute.** nix-update's
+rewrite is a substitution of the version inside the URL, so a version-less
+literal URL cannot be retargeted: bumping `version` leaves `src` stale with no
+error. CLI recipes use the modern `finalAttrs` + version-in-URL pattern, and
+their acceptance is a real rewrite round-trip, not recorded-target idempotence
+(which passes without ever rewriting). The same code path makes a capture group
+mandatory in `--version-regex`: the extracted version is the joined groups, so
+a group-less pattern filters out every tag and fails the run.
+
 ## Risks / Trade-offs
 
 - [A pin that is not a literal in its own file cannot be located] → the
@@ -157,8 +172,7 @@ its pin, package and formatter exclusion go first, independently of the rest.
   xberg-cli selects the release family explicitly, and both are checked by a
   recorded-target re-run.
 - [A registered derivation that exists only to own pins is surface] → the staged
-  source set is real, and if it gains no consumer the owner folds into
-  `pi-bolt` (D3).
+  source set is consumed by Pi-Bolt (D3).
 - [Losing nvfetcher's operator ergonomics] → the app's package argument replaces
   `--filter`, and `justfile` keeps a two-recipe surface; the generated JSON and
   its recorded date are accepted losses.
