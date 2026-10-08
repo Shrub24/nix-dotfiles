@@ -63,6 +63,7 @@
 - [package-updates.md](package-updates.md) — why each pin set has one registered owner, why update scripts edit tracked package files in place, and why a source URL has to carry the version attribute
 - [pi-bolt-compiled-plugins.md](pi-bolt-compiled-plugins.md) — how a compiled Pi-Bolt extension binds Pi's own modules, and why the build stages a tsconfig for the plugin files
 - [pi-bolt-entrypoints.md](pi-bolt-entrypoints.md) — why launch behaviour belongs to the package and the executable shares its store root
+- [pi-bolt-fork-release.md](pi-bolt-fork-release.md) — why a Pi-Bolt tag's runtime is a separate release asset, and what a fork release has to carry before the pin can move
 - [pi-herdsman.md](pi-herdsman.md) — the incident where herdsman re-read session transcripts on a refresh pass, and what the fix leaves behind
 - [pi-plugin-sources.md](pi-plugin-sources.md) — why every Pi extension source is a pin rather than a live checkout, and what that costs
 
