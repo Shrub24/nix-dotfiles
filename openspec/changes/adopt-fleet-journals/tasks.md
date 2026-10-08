@@ -1,13 +1,13 @@
 # Tasks
 
-Blocked until `adopt-fleet-observability` is accepted on Legion and upstream has dispositioned replay policy and Vector health. Re-verify the fleet pin first. Switches and live exercises need separate approval.
+Blocked until `adopt-fleet-observability` is accepted on Legion and upstream has dispositioned replay policy and Vector health. Re-verify the fleet pin first — the metrics lane is at `fb5ac7e3ac51`, where `telemetry` is contract-only and the journal lane composes `telemetry-logs` with `telemetry-vector`. Switches and live exercises need separate approval.
 
 ## 1. Policy and configuration
 
 - [ ] 1.1 Resolve `victorialogs/jsonline` in `modules/telemetry.nix` and set the sink. Verify canonical URL and no trace-gateway use.
 - [ ] 1.2 Implement the exact shared and Legion-only allowlists. Verify against built units, non-empty, and exclusions (user managers, `init.scope`, greeter/HM activation, NikS3).
 - [ ] 1.3 Set `current_boot_only`/`since_now` (typed option if available, else native merge validated with the pinned Vector) and the 512 MiB blocking buffer. Preserve fleet-owned source, sink and permissions.
-- [ ] 1.4 Register Vector health on loopback with explicit instance label; validate series and port.
+- [ ] 1.4 Confirm whether `telemetry-vector` contributes a loopback health registration. If it does, read it as shared option data, assert the registry entry, its loopback target and its host-distinct instance label, and declare nothing; if it does not, declare it and record the gap upstream. Validate the pinned series and port either way.
 - [ ] 1.5 Extend policy checks with negative cases (empty list, missing unit, template pattern, user-manager inclusion) and Vector failure hooks through notify.
 
 ## 2. Privacy and documentation

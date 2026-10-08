@@ -6,9 +6,9 @@ Journals from the workstations are not shipped. The fleet's JSON-line lane exist
 
 ## What Changes
 
-- Select fleet journal shipping on both hosts with an explicit, non-empty, exact system-unit allowlist; resolve `victorialogs/jsonline` from the canonical inventory.
+- Compose the fleet `telemetry-logs` bundle with the `telemetry-vector` realisation, with an explicit, non-empty, exact system-unit allowlist; resolve `victorialogs/jsonline` from the canonical inventory.
 - Set the reader to current-boot-only with no first-enable backfill (checkpoint resume preserved), preferring a typed fleet binding if one lands.
-- Register Vector's loopback health metrics alongside vmagent's.
+- Rely on Vector's provider-owned health registration if the realisation supplies one, and assert the registry entry; declare it locally only if it does not.
 - Gate the first journal-enabled switch on reviewed backend access, retention, deletion and backup policy and on notify's journal-excerpt content.
 - Verify positive and negative delivery markers, history/reboot semantics and short outages, per host.
 
@@ -28,4 +28,4 @@ None.
 
 ## Impact
 
-Extends `modules/telemetry.nix` and host policy, adds journal sections to the verification runbook and `docs/impermanence.md`. Depends on `adopt-fleet-observability` being implemented and on upstream dispositions for replay policy and Vector health. Do not start implementation before both.
+Extends `modules/telemetry.nix` and host policy, adds journal sections to the verification runbook and `docs/impermanence.md`. Depends on `adopt-fleet-observability` being implemented — the metrics lane is in place at nix-fleet `fb5ac7e3ac51` — and on upstream dispositions for replay policy and Vector health. Do not start implementation before both.

@@ -2,7 +2,7 @@
 
 ## Context
 
-See `proposal.md`. Baseline: nix-fleet `23411143` and Vector 0.58.0. Nothing here is implemented; re-verify against whatever fleet revision is pinned when this change starts. The metrics change supplies the contributor, destination resolution pattern, notify checks and runbook this change extends.
+See `proposal.md`. Baseline: nix-fleet `fb5ac7e3ac51` and Vector 0.58.0. Nothing here is implemented; re-verify against whatever fleet revision is pinned when this change starts. Under that revision `telemetry` is contract-only, so the journal lane composes the `telemetry-logs` bundle with the `telemetry-vector` realisation; enablement comes from aspect composition, not a registry flag. The metrics change supplies the contributor, destination resolution pattern, notify checks and runbook this change extends, and it establishes the precedent that health registrations belong to the provider that owns the listener.
 
 ## Decisions
 
@@ -16,7 +16,7 @@ Set `journald.enable = true` with full unit names:
 
 - `sshd.service`
 - `NetworkManager.service`, `systemd-resolved.service`, `tailscaled.service`
-- `nix-daemon.service`, `fast-nix-gc.service`, `nix-gc-roots.service`
+- `nix-daemon.service`, `fast-nix-gc.service`, `nh-clean.service`
 - `beszel-agent.service`, `notify.service`, `prometheus-node-exporter.service`
 
 Legion adds `snapper-timeline.service`, `snapper-cleanup.service`, `syncthing.service` in its host policy. Verify membership against built units; do not silently filter missing names.
@@ -37,7 +37,7 @@ Buffer: `/var/lib/vector`, 512 MiB, `whenFull = "block"`, which stops reading an
 
 ### 5. Vector health
 
-Use Vector's native `internal_metrics` source with a loopback `prometheus_exporter` sink on `127.0.0.1:9598`, registered as `services.telemetry.scrape.vector-health` with explicit host instance label, through the metrics pipeline. Check port collisions and the pinned series for backlog, errors and drops. Prefer a provider-owned registration if upstream supplies one.
+Vector's native `internal_metrics` source with a loopback `prometheus_exporter` sink on `127.0.0.1:9598`, through the metrics pipeline. Prefer the provider's own registration if `telemetry-vector` supplies one — vmagent's health registration is now contributed by its provider, and duplicating it would repeat the mistake corrected in the metrics lane. Where a registration exists, read `services.telemetry.scrape.vector-health` and the rendered listener as shared option data and assert those rather than generated unit internals. Where it does not, declare it with an explicit host instance label and record the gap upstream. Check port collisions and the pinned series for backlog, errors and drops.
 
 ### 6. Verification
 

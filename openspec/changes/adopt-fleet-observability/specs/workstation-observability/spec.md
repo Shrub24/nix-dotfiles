@@ -8,13 +8,18 @@ Define host-local metrics export for the managed workstations, including identit
 
 ### Requirement: Both workstation configurations select the metrics lane
 
-Legion and Spectre SHALL select host metrics export through the fleet `telemetry` and `node-exporter` aspects. Trace ingestion, trace destinations, remote telemetry ingress and journal shipping SHALL remain disabled by this capability. Existing Beszel monitoring and notify dispatch SHALL remain selected.
+Legion and Spectre SHALL select host metrics export through the fleet `telemetry-metrics` bundle and the `node-exporter` aspect. Enablement SHALL come from aspect composition, not from a provider registry flag, and consumers SHALL NOT re-declare registrations their providers contribute. Journal shipping SHALL remain disabled by this capability. Existing Beszel monitoring and notify dispatch SHALL remain selected.
 
 #### Scenario: A workstation configuration is evaluated
 
 - **WHEN** either workstation configuration is evaluated
 - **THEN** the metrics exporter and metrics forwarder are configured
-- **AND** no OTLP listener, trace relay or journal shipper is configured
+- **AND** no journal shipper is configured
+
+#### Scenario: A provider-contributed registration exists
+
+- **WHEN** a provider contributes a scrape registration such as the vmagent health source
+- **THEN** the consumer reads it as shared option data and does not declare a second one
 
 ### Requirement: The destination comes from the fleet service inventory
 
@@ -83,3 +88,19 @@ Evidence SHALL distinguish configured, deployed and delivering per host. Accepta
 - **WHEN** Legion's applicable categories pass and Spectre is unreachable
 - **THEN** Spectre is recorded as configured only
 - **AND** adoption is not reported as fully accepted
+
+### Requirement: Trace admission is local and the fleet destination is contract-resolved
+
+Both hosts SHALL admit traces only through a local OTLP listener, and the fleet trace destination SHALL resolve from the canonical service inventory rather than from a locally written URL. The choice among the published general ingress, the AI ingress and a separate shaped route SHALL NOT be made by inference, and no port SHALL be guessed.
+
+#### Scenario: The trace producer exports spans
+
+- **WHEN** Pi exports spans on either host
+- **THEN** they are admitted on the local listener and forwarded to the destination the inventory resolves
+- **AND** no backend-specific URL appears in the configuration
+
+#### Scenario: The AI ingress coordinate is unpublished
+
+- **WHEN** the inventory carries no AI ingress record
+- **THEN** the destination stays on the published general record, which is store-only
+- **AND** the rebind and the backend-selection decision are recorded as deferred rather than improvised
