@@ -14,7 +14,7 @@ def release():
     target = os.environ.get("PI_BOLT_UPDATE_VERSION")
     if target and not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", target):
         raise ValueError("PI_BOLT_UPDATE_VERSION must be a stable X.Y.Z version")
-    url = "https://api.github.com/repos/opensec-git/Pi-Bolt/tags?per_page=100"
+    url = "https://api.github.com/repos/Shrub24/Pi-Bolt/tags?per_page=100"
     tags = []
     while url:
         headers = {"User-Agent": "nix-dotfiles-pi-bolt-update"}
@@ -49,7 +49,7 @@ def replace(text, pattern, value):
 
 def main():
     tag = f"bolt-v{release()}"
-    root = "https://github.com/opensec-git/Pi-Bolt"
+    root = "https://github.com/Shrub24/Pi-Bolt"
     source_hash = prefetch(f"{root}/archive/{tag}.tar.gz", unpack=True)
     runtime_hash = prefetch(f"{root}/releases/download/{tag}/pi-bolt-runtime-linux-x64.tar.gz")
     filename = Path("pkgs/pi-bolt/default.nix")

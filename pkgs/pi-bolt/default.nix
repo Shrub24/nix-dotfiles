@@ -36,19 +36,19 @@ let
   # the tree and the runtime archive are published at together, upstream's
   # release workflow asserting the tree's VERSION equals the tag, so the
   # derivation's version is that tag minus upstream's prefix.
-  tag = "bolt-v0.7.1";
+  tag = "bolt-v0.7.2";
   version = lib.removePrefix "bolt-v" tag;
   src = fetchFromGitHub {
-    owner = "opensec-git";
+    owner = "Shrub24";
     repo = "Pi-Bolt";
     rev = tag;
     fetchSubmodules = false;
-    sha256 = "sha256-dmverQ+DPLhTU9HNOdRvmnNsJvaHXBE5r0TMi+w3Cz4=";
+    sha256 = "sha256-xyGbUZCO1FrwZ7Q2W2MRSlHI8sBNxGg41O9pbZYqlIs=";
   };
   # The archive beside the tag is the Bun build the AOT step compiles with, so
   # the tag keys its URL.
   runtime = fetchurl {
-    url = "https://github.com/opensec-git/Pi-Bolt/releases/download/${tag}/pi-bolt-runtime-linux-x64.tar.gz";
+    url = "https://github.com/Shrub24/Pi-Bolt/releases/download/${tag}/pi-bolt-runtime-linux-x64.tar.gz";
     sha256 = "sha256-npAz0e3feU89wxUs0MR4k6KnJH0032OihcE47lUHKy4=";
   };
 
@@ -126,7 +126,7 @@ let
     inherit src version;
 
     npmDepsFetcherVersion = 2;
-    npmDepsHash = "sha256-8oNz19f9Eg9O5Jxvs8+06S9rfJRCoZ1+HKk+AOjwahw=";
+    npmDepsHash = "sha256-jYN2ro3Pd2fUMWNH7Aq1h2adUrOMGODuqOB4o4uCrBg=";
     # Skip the canvas test dependency's native build; runtime WASM is staged below.
     npmRebuildFlags = [ "--ignore-scripts" ];
     npmBuildScript = "build:offline";
