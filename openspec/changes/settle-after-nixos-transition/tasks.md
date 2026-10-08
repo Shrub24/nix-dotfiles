@@ -9,8 +9,9 @@ Phasing. Complete the hardware cleanup, Snapper failure registration and push fi
 ## 2. Upstream adoption
 
 - [ ] 2.1 Implement [adopt-fleet-observability](../adopt-fleet-observability/proposal.md): host metrics (node-exporter and vmagent remote-write, plus vmagent health) on both hosts, with per-host delivery evidence and the queue path recorded in `docs/impermanence.md`. Journals are the gated follow-on [adopt-fleet-journals](../adopt-fleet-journals/proposal.md), which waits on accepted metrics adoption and upstream dispositions in `upstream-review.md`. Trace producer/relay adoption remains separate; no `pi-otel` or OTLP ingress is enabled.
-- [ ] 2.5 Bind spectre's SSH host key in nix-fleet's inventory (`publicKey` is unbound, so legion's trust set omits it); needs the laptop online to harvest the key.
-- [x] 2.0 Select the fleet `nix-gc` with the `fast-nix-gc` collector on both hosts: hourly threshold collection (`ensureFree` 15%), daily root pruning, no optimise pass on btrfs.
+- [x] 2.2 Dropped the `dev` dispatch override (`modules/policy/fleet.nix`): nix-homelab selected the build-account aspect on home-forge, the contract's default account now resolves (`user=nixbuild`), and `nixbuild@home-forge` authenticates with the builder key.
+- [ ] 2.5 Bind spectre's SSH host key in nix-fleet's inventory (`publicKey` is unbound, so legion's trust set omits it); needs the laptop online to harvest the key. Deferred with the rest of the Spectre work until the laptop is online and enrolled.
+- [x] 2.0 Select the fleet `nix-gc` on both hosts: hourly unconditional collection with a one-day freshness window, daily root pruning, no optimise pass on btrfs.
 - [ ] 2.2 Drop the `dev` build account when home-forge selects `build-account` (`modules/policy/fleet.nix`).
 - [x] 2.3 Register the timer-triggered `snapper-timeline` and `snapper-cleanup` services with the fleet `notify` capability; failures belong to the services, not their scheduling timers.
 - [ ] 2.4 Re-test the fleet `podman` aspect against the nixpkgs `podman-prune` unit; keep the local `autoPrune` if they still clash.
@@ -40,6 +41,6 @@ Phasing. Complete the hardware cleanup, Snapper failure registration and push fi
 
 - [ ] 6.1 Evaluate nix-fleet's `bifrost` gateway against the OmniRoute gateway legion's LLM traffic uses today; decide whether workstations consume it or it stays server-side.
 - [ ] 6.2 Adopt the fleet build-and-cache path: the reusable `build-push-cache` workflow in place of `validate.yml`'s hand-written jobs, and the niks3 publisher, once the owner calls for it.
-- [ ] 6.4 Report to nix-fleet that the `tailscale` aspect declares `systemd.services.tailscaled-autoconnect` (ordering only) even when `secretFiles.auth` is unbound, so systemd refuses the unit every boot ("Service has no ExecStart=") and the `sops-install-secrets.service` it orders after does not exist here; the declaration belongs under the same condition as `authKeyFile`.
+- [x] 6.4 Closed: nix-fleet fixed the `tailscale` aspect upstream — `tailscaled-autoconnect.service` is no longer declared here at all (`systemctl status` reports the unit does not exist), so the boot-time "no ExecStart" refusal is gone.
 - [ ] 6.5 KDE Connect screen sharing (needs pipewire at runtime in kdeconnectd) and Avahi `publish.userServices`, weighed against the single-mDNS-responder arrangement in `modules/foundation/network.nix` before any change.
 - [ ] 6.6 Optional: `sops-bootstrap` for creating new secret files from templates, if the owner wants that workflow.

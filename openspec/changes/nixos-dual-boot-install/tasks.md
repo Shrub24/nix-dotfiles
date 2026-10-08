@@ -156,9 +156,10 @@ cryptroot`, then `btrfs filesystem resize max /` from the booted system, and
   - reason: still open — blocked on 8.1; strict OpenSpec validation itself is green.
 
 - [ ] 8.3 Record deferred scope explicitly: the eventual Windows reinstall into the
-      freed SK hynix extent, LinuxData's trailing ~27.3 GiB, and TPM enrolment for
-      the LUKS root. No task in this change partitions, mounts or writes into that
-      freed extent.
+      freed SK hynix extent and LinuxData's trailing ~27.3 GiB. No task in this
+      change partitions, mounts or writes into that freed extent. TPM enrolment for
+      the LUKS root is done (2026-10-09: PCR 7 token added, passphrase retained as
+      fallback), so it is no longer deferred scope.
 
   - criteria: the deferred items are stated where the follow-up work will look for them
   - verify: docs state them; no task above touches the freed extent

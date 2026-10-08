@@ -10,8 +10,4 @@
   fleet.buildProfiles.workstations.hosts.home-forge = {
     maxJobs = 8;
   };
-
-  # TODO: drop once nix-homelab selects the build-account aspect on home-forge —
-  # the dispatch account the contract defaults to does not exist there yet.
-  fleet.hosts.home-forge.capabilities.nixBuilder.endpoint.user = "dev";
 }
