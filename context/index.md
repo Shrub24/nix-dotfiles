@@ -77,6 +77,7 @@
 
 ## T
 
+- [telemetry-metrics.md](telemetry-metrics.md) — why the fleet metrics lane is adopted now while journals wait, and why forwarder health cannot see a total transport outage
 - [timezone.md](timezone.md) — why automatic timezone is baseline for every host, and its Wi-Fi dependence
 
 ## U

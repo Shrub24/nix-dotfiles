@@ -4,15 +4,15 @@ Implementation begins after approval. Switches and live outage exercises need se
 
 ## 1. Metrics contributor and forwarding health
 
-- [ ] 1.1 Extend `modules/telemetry.nix` with canonical metrics endpoint resolution and the metrics-only `fleet-metrics` destination, pinned by `pipelines.metrics`. Add `modules/node-exporter.nix` as a thin fleet import and select both aspects on both hosts. Verify canonical URL, local scraping, no implicit fan-out, and that Vector is not enabled.
-- [ ] 1.2 Register vmagent's loopback health scrape with an explicit host instance label. Validate port availability and the pinned version's actual backlog, error and drop series; record any missing signal as an upstream gap.
-- [ ] 1.3 Add evaluation-time policy checks for both hosts as designed, including the registrations-without-notify negative case. Verify a deliberately invalid policy fails the canonical no-build path.
+- [x] 1.1 Extend `modules/telemetry.nix` with canonical metrics endpoint resolution and the metrics-only `fleet-metrics` destination, pinned by `pipelines.metrics`. Add `modules/node-exporter.nix` as a thin fleet import and select both aspects on both hosts. Verify canonical URL, local scraping, no implicit fan-out, and that Vector is not enabled.
+- [x] 1.2 Register vmagent's loopback health scrape with an explicit host instance label. Validate port availability and the pinned version's actual backlog, error and drop series; record any missing signal as an upstream gap.
+- [x] 1.3 Add evaluation-time policy checks for both hosts as designed, including the registrations-without-notify negative case. Verify a deliberately invalid policy fails the canonical no-build path.
 - [ ] 1.4 Document the metrics and health lanes, Beszel coexistence and the shared-transport blind spot in `ARCHITECTURE.md` and the runbook. Reference backend-owner alert coverage or record it as an owned gap.
-- [ ] 1.5 Update `docs/impermanence.md` with the realised vmagent path, permissions/DynamicUser backing, budget and loss modes. No new home path or mount; Vector and OTel paths remain planned.
+- [x] 1.5 Update `docs/impermanence.md` with the realised vmagent path, permissions/DynamicUser backing, budget and loss modes. No new home path or mount; Vector and OTel paths remain planned.
 
 ## 2. Integration gate and Legion rollout
 
-- [ ] 2.1 Format owned files, run the policy checks and the canonical flake check against the exact proposed tree, and build Legion's toplevel.
+- [x] 2.1 Format owned files, run the policy checks and the canonical flake check against the exact proposed tree, and build Legion's toplevel.
 - [ ] 2.2 After explicit approval, deploy Legion; record provider units, loopback listeners, queue directory and effective hooks. Mark the persistence path active only after verification.
 - [ ] 2.3 Verify fresh host-labelled node and vmagent-health samples; have the backend owner check for duplicate remote scrapes.
 - [ ] 2.4 With approval, run a short destination outage and agent restart below capacity; observe local signals, eventual receipt and queue drainage.

@@ -176,6 +176,8 @@ let
     "greeter"
     "nix"
     "notify"
+    "telemetry"
+    "node-exporter"
     "beszel-agent"
     "nixbuild"
     "audio"
