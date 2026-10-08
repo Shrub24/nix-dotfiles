@@ -2,7 +2,7 @@
 
 ## Context
 
-See `proposal.md`. The source of truth is nix-fleet `fb5ac7e3ac51` (the lanes-and-routes revision): `docs/contracts/observability.md`, `docs/contracts/telemetry.md`, `lib/telemetry-contract.nix`, `lib/service-inventory.nix` and the provider modules. Enablement is expressed by composing aspects: `telemetry` is contract-only, `telemetry-metrics`/`-logs`/`-otlp` are the selectable bundles and `telemetry-vmagent`/`-vector`/`-otel-collector-*` are the realisations. `providers.*` and `realized` no longer exist.
+See `proposal.md`. The source of truth is nix-fleet `6f74d9a2` (the revision publishing the AI ingress): `docs/contracts/observability.md`, `docs/contracts/telemetry.md`, `lib/telemetry-contract.nix`, `lib/service-inventory.nix` and the provider modules. Enablement is expressed by composing aspects: `telemetry` is contract-only, `telemetry-metrics`/`-logs`/`-otlp` are the selectable bundles and `telemetry-vmagent`/`-vector`/`-otel-collector-*` are the realisations. `providers.*` and `realized` no longer exist.
 
 `modules/telemetry.nix` only imports the fleet aspect and no host selects it. Both hosts already select notify and Beszel. The node-exporter aspect owns a loopback listener, a local scrape registration and its failure hook; vmagent is activated by the declared scrape work plus a destination. With journald unset, Vector is not activated.
 
@@ -58,13 +58,21 @@ Runbook `docs/runbooks/verify-workstation-observability.md` keeps a per-host con
 
 External checks stay pending until their owner supplies evidence. Fleet's offline tests cover OTLP, not vmagent recovery.
 
-### 6. The trace destination is deferred, and nothing is guessed
+### 6. The trace destination is the AI ingress
 
-Pi's `pi-otel` producer admits traces locally and the contributor resolves the fleet destination through the inventory. That destination currently resolves to the published general record, `otel-collector/otlp` over tailnet — `http://home-forge:4318`. Runtime evidence from the fleet owner (2026-10-09, collector 0.155.0 on the gateway host) shows that ingress is store-only: a synthetic trace posted to 4318 appeared in VictoriaTraces and in neither Langfuse nor Latitude, while one posted to 4319 appeared in all three.
+Pi's `pi-otel` producer admits traces locally and the contributor resolves the fleet destination through the inventory. That destination is the AI ingress — `otel-collector/ai-otlp` over tailnet, published at nix-fleet `6f74d9a2` as `http://home-forge:4319` — not the general record, which resolves to `http://home-forge:4318` and is store-only. Runtime evidence from the fleet owner (2026-10-09, collector 0.155.0 on the gateway host): a synthetic trace posted to 4318 appeared in VictoriaTraces and in neither Langfuse nor Latitude; one posted to 4319 appeared in all three.
 
-The AI lane is therefore live but unaddressable from here: its canonical selection is `service = "otel-collector"`, `endpoint = "ai-otlp"`, `via = "tailnet"` (`http://home-forge:4319`), and that inventory record is not yet published. Three stable states exist and the choice among them is deferred to its own decision once the record lands: stay on the general ingress (trace store only), rebind to the AI lane (full sessions in VictoriaTraces, Langfuse and Latitude), or ask the fleet owner for a second route with its own destination set if the shaping need becomes concrete. The third is a design change on their side, not a URL edit.
+**Why the AI ingress.** Pi sessions belong in the LLM-observability backends: Latitude is the failure-triage console and Langfuse the LLM-observability view, and both read best when tool and agent spans travel with the LLM calls. Sending only the LLM calls would hand them a fragment, and the lane exists (fleet D-083) for full agent sessions. Full capture means prompts, completions and tool I/O.
 
-Until then: hardcode no URL, do not infer AI eligibility from backend presence, and treat 4319 as routing separation rather than an authenticated boundary — it has no admission check, so anything on the tailnet can post to it. `ARCHITECTURE.md` currently states that Pi's traces reach the fleet gateway "which owns Langfuse/Latitude fanout", which is not true of the general ingress; that sentence is corrected with the decision, not before it.
+**Accepted consequence.** The AI ingress has no admission check, so it is routing separation rather than an authenticated boundary — anything on the tailnet can post to it. That is a statement about who can post, not about whether these sessions belong there.
+
+**Rejected alternative:** staying on the general ingress. It would leave the traces in the trace store and out of both LLM backends, contradicting what `ARCHITECTURE.md` already claimed.
+
+**Deferred alternative:** a per-session split, with some sessions kept out of Langfuse and Latitude. This is not a destination toggle — Pi has one host-wide destination, so it would need the extension to choose an endpoint per session. Until a concrete shaping need exists, the general ingress remains the place for traffic that must not reach those backends.
+
+**If payload shaping is ever wanted**, the fleet's own mechanism is sibling trace pipelines on one route receiver rather than a second route: destination-specific output views let a mixed producer send a lean operational copy to the trace store and rich copies to its AI backends from the same route. Two obligations come with it — every destination must be declared in the route so the fleet renders its exporter, credentials and delivery state, and the rendered receiver/processor/exporter assignments must be inspected afterwards, because a native `settings` override makes the pipelines rather than the route declaration decide effective routing. Nothing here needs it: one destination on the AI route, with the gateway's own fanout, already delivers the rich stream to all three backends and gives each selected destination exactly one output path.
+
+Until the switch: hardcode no URL, do not infer AI eligibility from backend presence, and treat 4319 as routing rather than access control.
 
 ## Risks / Trade-offs
 
@@ -72,7 +80,7 @@ Until then: hardcode no URL, do not infer AI eligibility from backend presence, 
 - **Backend-dependent acceptance** → evidence from the fleet operator; pending stays pending.
 - **Duplicate collection** → local scrape plus any central scrape of the same exporter; backend owner checks.
 - **Queue identity on URL changes** → continuity review before relock moves coordinates.
-- **Trace destination is general-lane today** → Pi spans reach the trace store only, while `ARCHITECTURE.md` claims AI fanout; the gap is recorded, not papered over, and the rebind waits for the published AI coordinate.
+- **Trace destination was general-lane** → resolved: the lane now resolves to the AI ingress, so Pi spans reach Langfuse and Latitude as `ARCHITECTURE.md` claims. The residual risk is the reverse substitution — pointing it back at the general ingress would silently stop the LLM backends receiving anything, so the policy check pins the expected endpoint.
 - **Spectre unavailable or unenrolled** → evaluate both, deploy Legion first, record Spectre as configured until independently checked.
 
 ## Migration Plan

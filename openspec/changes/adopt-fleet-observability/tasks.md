@@ -27,13 +27,14 @@ Implementation begins after approval. Switches and live outage exercises need se
 - [ ] 3.2 Repeat metrics, outage/restart and applicable checks on Spectre; Legion results do not count.
 - [ ] 3.3 Reconcile the ledger and `settle-after-nixos-transition` task 2.1 (metrics part). Do not check off unperformed delivery. Journals stay in `adopt-fleet-journals`; traces stay recorded-but-undecided.
 
-## 4. Trace lane (recorded, decision deferred)
+## 4. Trace lane (decided and implemented)
 
-The producer exists and the lane is wired; only the destination choice is open. Nothing here runs before the fleet publishes the AI ingress coordinate.
+The producer exists, the lane is wired, and the audience is decided: full sessions to the fleet AI ingress. Only the post-switch evidence remains.
 
-- [ ] 4.1 Rebind the trace destination to `otel-collector/ai-otlp` after relocking to the revision that publishes it, changing the endpoint selection and nothing else — never a hardcoded URL, and never a guessed port.
-- [ ] 4.2 Decide the backend selection: general ingress only (trace store), AI fanout (VictoriaTraces + Langfuse + Latitude, full sessions including tool and agent spans), or a separate shaped route requested from the fleet owner. Deferred until the coordinate is published; the third option is a fleet design change, not a local edit.
-- [ ] 4.3 Correct the `ARCHITECTURE.md` sentence claiming Pi's traces reach the gateway's Langfuse/Latitude fanout, in the same change as 4.1/4.2. Today they reach the trace store only, which runtime evidence confirms.
+- [x] 4.1 Rebound the trace destination to `otel-collector/ai-otlp` after relocking nix-fleet to the revision carrying it (published at `6f74d9a2`, pinned at `e2a4ac5d`), changing the endpoint name and nothing else — no hardcoded URL, no guessed port.
+- [x] 4.2 Decided: AI fanout. Full sessions — prompts, completions and tool and agent spans — reach VictoriaTraces, Langfuse and Latitude. The general ingress stays store-only and is not used for this lane. Rationale and rejected alternatives are in `design.md` decision 6, including the fleet's sibling-pipeline mechanism for payload shaping if that is ever wanted — which is the first thing to reach for, not a second route.
+- [x] 4.3 Resolved by the rebind: `ARCHITECTURE.md`'s claim that Pi's traces reach the gateway's Langfuse/Latitude fanout is now true, so it needs no correction. The general-ingress substitution it would have required is recorded in the runbook instead.
+- [ ] 4.4 Evidence after the switch: run a Pi session on Legion and confirm one trace id in all three stores. The fleet owner's ingress verification is evidence about the ingress, not about this host.
 
 ## Workflow follow-up
 

@@ -46,6 +46,7 @@ let
   hmAspects = [
     "current-host"
     "pi"
+    "pi-otel"
     "magic-context"
     "mcp-nixos"
     "herdr"

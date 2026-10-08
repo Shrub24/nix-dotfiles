@@ -23,11 +23,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791362655,
-        "narHash": "sha256-DIqX4S3JZ+qJ26Rps5T9p53/5af9jx1Zj2G0x9jDL+w=",
+        "lastModified": 1791393155,
+        "narHash": "sha256-GABkA7HUr1155/d2Unnjch3jb+Msbm1X3pTtEsMkohY=",
         "owner": "Shrub24",
         "repo": "agent-radar",
-        "rev": "8f2ef4377e339af9deb3549ed4e2387a3cc38ecd",
+        "rev": "cbc9adc02a9ba3b9ee5611b2d050a0a57d81bb2d",
         "type": "github"
       },
       "original": {
@@ -595,11 +595,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1791428969,
-        "narHash": "sha256-04qNH0ao0xsC1+4z0fAjHiD/USrb3WCA2beHEHrWIdQ=",
+        "lastModified": 1791532869,
+        "narHash": "sha256-gdijmvY3qcHEfqzuIxzi06EFhj4VDUyXJjJ+V7KvZcI=",
         "owner": "Shrub24",
         "repo": "nix-fleet",
-        "rev": "6a9148595b560caaa6b43d1f285a189075b4e6f7",
+        "rev": "e2a4ac5d35371b05847019d04ecb2c07f5d610b2",
         "type": "github"
       },
       "original": {
@@ -758,11 +758,11 @@
     "pi-extensions": {
       "flake": false,
       "locked": {
-        "lastModified": 1791392575,
-        "narHash": "sha256-qooJQqGJSW20iDbeWJCVgduutzxE1oaEgWXjkZejl3E=",
+        "lastModified": 1791451354,
+        "narHash": "sha256-+iFiVRHr0v2tz/utnkJ+jvv2YvammhTpfEQYe/37nCA=",
         "owner": "Shrub24",
         "repo": "pi-extensions",
-        "rev": "5f1dd7622e17decf6600ed2e86411a8e84a08e78",
+        "rev": "b27bf1dfd36eb9f8ecd344678eb592ccfb35f2d7",
         "type": "github"
       },
       "original": {

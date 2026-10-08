@@ -9,12 +9,22 @@ let
     endpoint = "remote-write";
     via = "tailnet";
   };
+  # The AI ingress, not the general one: Pi's sessions belong in the
+  # LLM-observability backends, which the general ingress does not fan out to.
+  tracesGatewayUrl = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
+    service = "otel-collector";
+    endpoint = "ai-otlp";
+    via = "tailnet";
+  };
 in
 {
   flake.modules.nixos.telemetry =
-    { config, ... }:
+    { ... }:
     {
-      imports = [ inputs.nix-fleet.modules.nixos.telemetry ];
+      imports = [
+        inputs.nix-fleet.modules.nixos.telemetry-metrics
+        inputs.nix-fleet.modules.nixos.telemetry-otlp
+      ];
 
       services.telemetry = {
         # The one explicitly selected metrics destination. The backend
@@ -27,17 +37,13 @@ in
         };
         # Pinned so a later destination cannot silently fan host metrics out.
         pipelines.metrics = [ "fleet-metrics" ];
-
-        # Forwarder delivery health: vmagent's own loopback metrics, through
-        # the same pipeline. The port is the fleet vmagent provider's own
-        # `-httpListenAddr` (its telemetry contributor names no contract
-        # option for it); `labels.instance` is explicit because the node
-        # aspect's hostName:port default applies to its own registration only.
-        scrape.vmagent-health = {
-          target = "127.0.0.1";
-          port = 8429;
-          labels.instance = "${config.networking.hostName}:8429";
+        destinations.fleet-traces = {
+          protocol = "otlp-http";
+          endpoint = tracesGatewayUrl;
+          signals = [ "traces" ];
         };
+        pipelines.traces = [ "fleet-traces" ];
+        otlp.signals = [ "traces" ];
       };
     };
 }

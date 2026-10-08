@@ -160,25 +160,30 @@ not yet a complete reset-root manifest.
   `modules/hosts/legion/_disko.nix`, but no libvirt service is configured:
   decide whether to keep the mount or drop the declaration.
 
-## Telemetry: metrics configured, journal and trace paths planned
+## Telemetry: metrics and traces configured, journal path planned
 
-The metrics lane is selected on both workstations; the paths below are what a
-later reset of root would need to account for. An inventory entry is not
-evidence that a lane is delivering, and a path is only active once the host has
-deployed it and delivery has been verified (`adopt-fleet-observability`).
+The metrics and trace lanes are selected on both workstations; the paths below
+are what a later reset of root would need to account for. An inventory entry is
+not evidence that a lane is delivering, and a path is only active once the host
+has deployed it and delivery has been verified (`adopt-fleet-observability`).
 
 | Path                                                     | Owner / loss on reset                                                                                                                                                                                                              | Basis                                                  |
 | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | `/var/lib/vmagent`, backed by `/var/lib/private/vmagent` | Pending remote-write samples for the `fleet-metrics` destination; may hold the only copy of undelivered metrics. Configured, not yet deployed: record the realised directory, ownership and queue layout at Legion's first switch. | `modules/telemetry.nix`; nix-fleet vmagent contributor |
 | `/var/lib/vector` (planned)                              | Journal shipper state and buffers once the gated journals change lands.                                                                                                                                                            | `adopt-fleet-journals`                                 |
-| `/var/lib/opentelemetry-collector` (planned)             | Persistent OTLP queue; may hold the only copy of undelivered traces. No trace producer exists on these hosts.                                                                                                                      | Fleet contract; traces out of scope                    |
+| `/var/lib/opentelemetry-collector`                       | Local OTLP collector state: the trace queue holding samples Pi produced and the AI ingress has not yet accepted. May hold the only copy of undelivered traces. Configured, not yet deployed.                                       | Fleet `telemetry-otlp` bundle; `modules/telemetry.nix` |
 
-The queue lives on the persistent root, so nothing new is mounted. It is a
+The queues live on the persistent root, so nothing new is mounted. Both are
 systemd `StateDirectory` under `DynamicUser=`: `/var/lib/vmagent` is a symlink
 to `/var/lib/private/vmagent` (systemd's dynamic-user layout), so a future reset
 must preserve the backing directory, not the symlink, and keep service-owned
-permissions. The queue is bounded at 1 GiB per destination and evicts the
+permissions. The vmagent queue is bounded at 1 GiB per destination and evicts the
 **oldest** data at capacity, so a long outage past the bound loses samples — not
 a lossless-delivery claim. The queue's identity is its destination URL: a
 catalogue move is a continuity review, and root-snapshot rollback can rewind
 queue state, which is not routine cleanup to purge or restore.
+
+The collector keeps one exporter instance per route under
+`/var/lib/opentelemetry-collector/queue`, with the send queue sized in memory
+and its WAL on disk. It carries traces only, and a route's identity is its
+destination, so the same continuity rule applies.

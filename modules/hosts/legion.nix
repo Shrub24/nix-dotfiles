@@ -102,6 +102,7 @@ let
   hmAspects = [
     "current-host"
     "pi"
+    "pi-otel"
     "magic-context"
     "herdr"
     "radar"

@@ -1,5 +1,5 @@
-# Evaluation-time policy for the metrics adoption
-# (`adopt-fleet-observability`): what both workstation compositions must hold
+# Evaluation-time policy for the workstation metrics and Pi trace lanes:
+# what both workstation compositions must hold
 # once `telemetry` and `node-exporter` are selected. Failing assertions throw
 # while the check attribute is evaluated, so the failures surface under the
 # canonical `nix flake check --no-build --no-write-lock-file` path, not in a
@@ -20,6 +20,12 @@ let
   expectedDestination = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
     service = "victoriametrics";
     endpoint = "remote-write";
+    via = "tailnet";
+  };
+
+  expectedTraceGateway = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
+    service = "otel-collector";
+    endpoint = "ai-otlp";
     via = "tailnet";
   };
 
@@ -66,8 +72,18 @@ let
       telemetry.pipelines.metrics != [ "fleet-metrics" ]
     ) "${hostName}: pipelines.metrics is not pinned to [ \"fleet-metrics\" ]"
     ++ lib.optional (
-      telemetry.otlp.signals != [ ] || telemetry.otlp.ingress != null
-    ) "${hostName}: OTLP admission or gateway ingress is configured; this change is metrics-only"
+      telemetry.otlp.signals != [ "traces" ] || telemetry.otlp.ingress != null
+    ) "${hostName}: OTLP admission is not local traces-only"
+    ++ lib.optional (
+      !(telemetry.destinations ? fleet-traces)
+      || telemetry.destinations.fleet-traces.protocol != "otlp-http"
+      || telemetry.destinations.fleet-traces.signals != [ "traces" ]
+      || telemetry.destinations.fleet-traces.endpoint != expectedTraceGateway
+      || telemetry.pipelines.traces != [ "fleet-traces" ]
+    ) "${hostName}: traces are not pinned to the canonical AI ingress"
+    ++ lib.optional (
+      telemetry.routes != { }
+    ) "${hostName}: a telemetry route is bound; pin its ingress and destinations here"
     ++ lib.optional telemetry.journald.enable "${hostName}: journald shipping is enabled; journals are the separate gated change"
     ++ lib.optional (cfg.services.vector.enable or false
     ) "${hostName}: Vector is enabled; journals are the separate gated change"
@@ -86,10 +102,10 @@ let
           !(
             healthScrape != null
             && healthScrape.target == "127.0.0.1"
-            && healthScrape.labels.instance == "${cfg.networking.hostName}:${toString healthScrape.port}"
+            && healthScrape.labels.instance == "${cfg.networking.hostName}:vmagent"
           )
         )
-        "${hostName}: vmagent-health scrape is not a loopback source with an explicit <hostName>:port instance label"
+        "${hostName}: vmagent-health scrape is not the provider's loopback registration with its <hostName>:vmagent identity"
     ++ lib.optional (
       nodeScrape != null
       && healthScrape != null

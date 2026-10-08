@@ -91,7 +91,7 @@ Evidence SHALL distinguish configured, deployed and delivering per host. Accepta
 
 ### Requirement: Trace admission is local and the fleet destination is contract-resolved
 
-Both hosts SHALL admit traces only through a local OTLP listener, and the fleet trace destination SHALL resolve from the canonical service inventory rather than from a locally written URL. The choice among the published general ingress, the AI ingress and a separate shaped route SHALL NOT be made by inference, and no port SHALL be guessed.
+Both hosts SHALL admit traces only through a local OTLP listener, and the fleet trace destination SHALL resolve from the canonical service inventory to the AI ingress rather than the general store-only ingress, never from a locally written URL. No host or port SHALL be written locally, and the audience SHALL NOT be changed by substituting a different inventory record.
 
 #### Scenario: The trace producer exports spans
 
@@ -99,8 +99,13 @@ Both hosts SHALL admit traces only through a local OTLP listener, and the fleet 
 - **THEN** they are admitted on the local listener and forwarded to the destination the inventory resolves
 - **AND** no backend-specific URL appears in the configuration
 
-#### Scenario: The AI ingress coordinate is unpublished
+#### Scenario: The trace destination is selected
 
-- **WHEN** the inventory carries no AI ingress record
-- **THEN** the destination stays on the published general record, which is store-only
-- **AND** the rebind and the backend-selection decision are recorded as deferred rather than improvised
+- **WHEN** the trace destination resolves from the inventory
+- **THEN** it is the AI ingress, not the general store-only ingress
+- **AND** the selection is by endpoint name, with no host or port written locally
+
+#### Scenario: The general ingress is substituted
+
+- **WHEN** the trace destination resolves to the general record
+- **THEN** the policy check fails, because Pi spans would silently stop reaching Langfuse and Latitude

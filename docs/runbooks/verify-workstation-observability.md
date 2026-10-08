@@ -1,9 +1,10 @@
-# Verify workstation observability (metrics)
+# Verify workstation observability
 
-Metrics-only adoption of the fleet `telemetry` and `node-exporter` aspects on
-Legion and Spectre. Journals and traces are separate changes: on these hosts
-there is no OTLP listener, no gateway ingress, no Vector unit and no trace
-destination to check. Use `adopt-fleet-journals` for the journal lane.
+Adoption of the fleet telemetry bundles on Legion and Spectre: `telemetry-metrics`
+and `node-exporter` for host metrics, `telemetry-otlp` for the local trace
+admission point that Pi's producer exports to. Journals are a separate change:
+on these hosts there is no Vector unit and no journal shipper to check. Use
+`adopt-fleet-journals` for the journal lane.
 
 The fleet acceptance categories live in the fleet observability contract
 (`docs/contracts/observability.md`, "Adoption acceptance"). This runbook keeps a
@@ -13,16 +14,18 @@ delivery evidence.
 
 ## What is configured where
 
-| Piece            | Value                                                                                        | Owner                                |
-| ---------------- | -------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Aspects          | `telemetry` + `node-exporter` in both aspect lists                                           | `modules/hosts/*.nix`                |
-| Destination      | `fleet-metrics`, `prometheus-remote-write`, `victoriametrics/remote-write` over `tailnet`    | `modules/telemetry.nix`              |
-| Pipeline         | `pipelines.metrics = [ "fleet-metrics" ]`, pinned                                            | `modules/telemetry.nix`              |
-| Node exporter    | nixpkgs node exporter on `127.0.0.1:9100`, scrape job `node`, instance `<hostName>:9100`     | fleet node-exporter aspect           |
-| Forwarder health | vmagent metrics on `127.0.0.1:8429`, scrape job `vmagent-health`, instance `<hostName>:8429` | `modules/telemetry.nix`              |
-| Queue            | `StateDirectory=vmagent` (`/var/lib/vmagent` → `/var/lib/private/vmagent`), 1 GiB per URL    | fleet vmagent contributor            |
-| Failure hooks    | `vmagent` and `prometheus-node-exporter` → `notify-event@<unit>.service`, topic `system`     | fleet aspects + `modules/notify.nix` |
-| Off, by design   | OTLP admission, `otlp.ingress`, journald shipping, Vector, OTel collector                    | this change                          |
+| Piece             | Value                                                                                           | Owner                                |
+| ----------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Aspects           | `telemetry-metrics` + `telemetry-otlp` + `node-exporter` in both aspect lists                   | `modules/hosts/*.nix`                |
+| Destination       | `fleet-metrics`, `prometheus-remote-write`, `victoriametrics/remote-write` over `tailnet`       | `modules/telemetry.nix`              |
+| Pipeline          | `pipelines.metrics = [ "fleet-metrics" ]`, pinned                                               | `modules/telemetry.nix`              |
+| Node exporter     | nixpkgs node exporter on `127.0.0.1:9100`, scrape job `node`, instance `<hostName>:9100`        | fleet node-exporter aspect           |
+| Forwarder health  | vmagent metrics on `127.0.0.1:8429`, scrape job `vmagent-health`, instance `<hostName>:vmagent` | fleet vmagent realisation            |
+| Trace admission   | local OTLP/HTTP listener, `otlp.signals = [ "traces" ]`                                         | fleet `telemetry-otlp` bundle        |
+| Trace destination | `fleet-traces`, `otlp-http`, `otel-collector/ai-otlp` over `tailnet`                            | `modules/telemetry.nix`              |
+| Queue             | `StateDirectory=vmagent` (`/var/lib/vmagent` → `/var/lib/private/vmagent`), 1 GiB per URL       | fleet vmagent contributor            |
+| Failure hooks     | `vmagent` and `prometheus-node-exporter` → `notify-event@<unit>.service`, topic `system`        | fleet aspects + `modules/notify.nix` |
+| Off, by design    | journald shipping, Vector, OTel collector                                                       | this change                          |
 
 The policy check enforces this shape: `nix flake check --no-build --no-write-lock-file`
 evaluates `checks.x86_64-linux.telemetry-policy` (`modules/flake/telemetry-policy.nix`).
@@ -48,7 +51,7 @@ running on the host), **delivering** (evidence at the backend), **pending**
 | 1   | Evaluated configuration, units, queue path | configured | configured | this repository                 |
 | 2   | Fresh node and vmagent-health samples      | pending    | pending    | this repository + backend owner |
 | 3   | Journals                                   | n/a        | n/a        | `adopt-fleet-journals`          |
-| 4   | Traces                                     | n/a        | n/a        | no producer                     |
+| 4   | Traces                                     | configured | configured | this repository + fleet owner   |
 | 5   | Allowed/denied access to the metrics route | pending    | pending    | fleet operator                  |
 | 6   | Registered-unit failure and alert route    | pending    | pending    | this repository + backend owner |
 | 7   | Short destination outage and agent restart | pending    | pending    | this repository                 |
@@ -70,6 +73,17 @@ these exporters over the network (the local scrape must be the only one).
 
 Category 5 has no workstation ingress to test: the only question is whether the
 metrics route accepts these two hosts.
+
+Category 4: the destination is the fleet **AI** ingress
+(`otel-collector/ai-otlp` → `home-forge:4319`), not the general one, so Pi
+sessions land in VictoriaTraces, Langfuse and Latitude. That is the deliberate
+choice — the LLM-observability backends read best with tool and agent spans
+travelling alongside the LLM calls — and it is why the general ingress
+(`…/otlp` → `4318`, trace store only) must not be substituted. The AI ingress
+has no admission check: it is routing separation, not access control. Evidence:
+run a Pi session on the host after the switch and confirm the same trace id in
+all three stores; the fleet owner's runtime verification of the ingress itself
+(2026-10-09) is not evidence about this host.
 
 Category 6: exercise an already registered unit failure and, separately, an
 existing delivery-health alert rule under operator control, and observe delivery
