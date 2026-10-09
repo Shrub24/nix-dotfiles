@@ -18,8 +18,9 @@ priority, so a second user-scoped evaluation had no consumer and every compatibi
 branch was dead weight that could mask a real NixOS defect.
 
 **Rejected alternative:** keep the standalone Home Manager output and the Arch branches
-as a rollback path during the soak. Rejected by the owner; the Arch partitions stay
-bootable in the firmware menu, but nothing in this repository serves them.
+as a rollback path during the soak. Rejected by the owner; nothing in this
+repository serves Arch, and the post-soak consolidation deleted its partitions
+and its firmware entries, so booting it is no longer possible.
 
 ## Left in place on purpose
 

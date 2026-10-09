@@ -90,58 +90,25 @@ user approval required immediately before execution`), and every disk target
 
   - refs: design D13
 
-## Group 7 — Post-soak consolidation (5)
+## Group 7 — Post-soak consolidation (delivered)
 
-- [ ] 7.1 Confirm the soak is being ended deliberately — NixOS has been the daily
-      system through the soak, Arch is still bootable, and the operator accepts
-      that the next group destroys it.
+- [x] 7.1–7.5 Delivered. The operator ended the soak deliberately and approved the
+      consolidation on 2026-10-10. `01-preflight.sh` and `02-stage.sh` ran read-only
+      with respect to the disk; `03-apply.sh` made the single GPT write, retiring
+      p4/p5/p6 and growing `disk-samsung-cryptroot` from sector 4196352 to the GPT
+      last usable sector; `04-grow.sh` grew the container and then the filesystem.
+      The `Limine` entry and a duplicate `EFI Hard Drive 1` entry — both addressing
+      the Arch ESP — were removed, leaving the NixOS entry as the only one for this
+      disk.
 
-  - criteria: explicit operator decision recorded; not triggered by a failure
-  - verify: Execution Record holds the decision
-  - depends: 6.4
-  - notes: explicit user approval required immediately before execution
+  - criteria met: the ESP and the root's start, PARTUUID, type, label and attributes
+    are unchanged; the new end is the last usable sector; the mapper and the btrfs
+    both match the partition; all seven subvolumes intact
+  - evidence: the Execution Record below; `docs/runbooks/grow-legion-root.md`
   - refs: design D12, D13
-  - reason: still open — destructive; the soak has not been ended deliberately.
-
-- [ ] 7.2 Re-assert the Samsung serial/WWN and the Arch root, Arch ESP and WinRE
-      PARTUUIDs (`e33cb524-…`, `1a2c5601-…`, `b5c0d8da-…`), then delete p5, p6
-      and p4, and re-read the table with `partx -u`.
-
-  - criteria: fresh identity assertion before each deletion; the ESP and LUKS partitions make no other change
-  - verify: `sgdisk --print` recorded; only the ESP and the LUKS partition remain
-  - depends: 7.1
-  - notes: explicit user approval required immediately before execution
-  - reason: still open — destructive; blocked on 7.1.
-
-- [ ] 7.3 Grow the LUKS partition from sector 4196352 to the GPT last usable sector
-      (`sgdisk --print`) and re-read the table.
-
-  - criteria: the partition's end equals the GPT last usable sector, never the disk's
-    final sector — the secondary GPT header lives there; the ESP is unchanged
-  - verify: `sgdisk --print` plus `blockdev --getsz` comparison recorded
-  - depends: 7.2
-  - refs: docs/runbooks/grow-legion-root.md
-  - reason: still open — destructive; blocked on 7.2.
-
-- [ ] 7.4 Grow the container and the filesystem it holds: `cryptsetup resize
-cryptroot`, then `btrfs filesystem resize max /` from the booted system, and
-      verify the root filesystem reports the grown size with all seven subvolumes
-      intact.
-
-  - criteria: the mapper and the btrfs both match the partition; subvolumes and their data unchanged
-  - verify: `cryptsetup status cryptroot`, `btrfs filesystem usage /`, `btrfs subvolume list /`
-  - depends: 7.3
-  - refs: docs/runbooks/grow-legion-root.md
-  - reason: still open — destructive; blocked on 7.3.
-
-- [ ] 7.5 Remove the `Limine` firmware entry, verify the new NixOS entry is the only
-      one left for this disk, and record the final layout.
-
-  - criteria: Limine entry gone; NixOS entry intact
-  - verify: `efibootmgr` listing recorded
-  - depends: 7.4
-  - refs: design D13
-  - reason: still open — destructive; blocked on 7.4.
+  - note: 7.5 ran before the reboot rather than after it, because 7.3 had already
+    deleted the ESP both entries pointed at — a systemd-boot failure could otherwise
+    have fallen through into dead entries.
 
 ## Group 8 — Handoff and deferred scope (3)
 
@@ -222,11 +189,51 @@ not guessed.
 ### Not captured (do not guess)
 
 - The Windows C: backup's location and date, and the baseline capture checksums.
-- The LUKS header UUID and the btrfs filesystem UUID.
 - The NetworkManager keep-list filenames.
 
-### Consolidation
+### Post-soak consolidation (2026-10-10)
 
-- Not started. Group 7 is destructive and requires explicit operator approval.
+- Backups: GPT and LUKS header written to `/root/arch-retirement-20261009-143304/`,
+  checksums verified, then copied off-machine to `home-forge:/root/luks-backups/legion`
+  (directory 0700, files 0600), where both checksums verify. The first copy landed
+  world-readable in `/home/dev` and was corrected.
+- Applied: p4/p5/p6 deleted; `disk-samsung-cryptroot` grew from 173,491,093,504 to
+  509,961,641,472 bytes — sector 4196352 to the GPT last usable sector, +313 GiB —
+  with its start, PARTUUID, type, label and attributes unchanged and the ESP
+  untouched.
+- Container: `cryptsetup resize cryptroot` → 509,944,864,256 bytes, the partition less
+  the 16 MiB data offset. Root filesystem: 162 G → 475 G, 36 G used, 433 G free.
+- Reboot verification: TPM unlock in 1 s (`systemd-cryptsetup@cryptroot` starting
+  03:58:52, finished 03:58:53), initrd 2.93 s, all seven subvolumes mounted (`@`,
+  `@nix`, `@cache`, `@log`, `@tmp`, `@images`, `@snapshots`), `/home`, `/data` and
+  `/mnt/Shared` present, no failed units, and 135 error-priority journal lines — the
+  same benign set as the pre-consolidation boot, so the operation added none.
+- `btrfs device stats`: read, write, flush, corruption and generation errors all zero.
+- Firmware: `BootOrder: 0005,0000,2001,2002,2003`, with only the systemd-boot entry
+  for this disk.
+- NVMe enumeration is not stable across boots: the Samsung was `nvme1n1` before the
+  reboot and `nvme0n1` after it, the SK hynix swapping the other way. Nothing depends
+  on it — the configuration addresses disks by by-id, partlabel and PARTUUID.
+- No secondary-header work was needed. LUKS2 keeps both metadata copies inside the
+  first 16 MiB header area (offsets 4096 and 20480), so growing the partition cannot
+  disturb them; the end-of-device backup header is LUKS1 behaviour, and the growth
+  created none.
+
+### Identifiers
+
+- LUKS2 container: UUID `4cdc2701-dfa3-4bee-87b6-ea85b0e772c3`, no header label
+  (`luksDump` reports `(no label)`; the `nixos-root` label lsblk shows on the mapper
+  is the btrfs filesystem's).
+- Root filesystem: btrfs UUID `1ca6a2d8-4597-44f8-bfa9-764df4c66044`, label `nixos-root`.
+- ESP: vfat UUID `21F0-3462`, PARTUUID `5725c8a7-eb37-41e1-b3b3-7475c3a32e06`.
+- Root partition: PARTUUID `5e3c5ade-3810-4499-83be-d47a53dc0a10`, partlabel
+  `disk-samsung-cryptroot`.
+- LinuxData: btrfs UUID `47fa5ee2-addd-466b-b7fc-4e7d92968234`; Shared NTFS:
+  `2EBA15A2BA15681B`.
+
+### Remaining
+
+- Group 8 only. The consolidation above is complete; nothing else in this change
+  touches the disk.
 
 Never record secret values.

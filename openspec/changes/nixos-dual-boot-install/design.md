@@ -122,7 +122,7 @@ Every destructive task carries four gates: precondition (identity and state asse
 
 ### D13. Soak, then consolidation
 
-The soak is a period of ordinary use with three things true: NixOS boots and is the daily system, Arch still boots through Limine, and the freed SK hynix extent stays free. It ends when the operator says so — verified rollback to Arch is the escape hatch throughout, not an exit from the plan. Consolidation then deletes p5 (Arch root), p6 (Arch ESP) and p4 (WinRE), grows the LUKS partition from 4196352 to the last sector of the disk (474.94 GiB), and runs `cryptsetup resize cryptroot` with `btrfs filesystem resize max /`. The final layout is a 2 GiB ESP and a root that owns the rest of the disk, with a single NixOS firmware entry.
+The soak is a period of ordinary use with three things true: NixOS boots and is the daily system, Arch still boots through Limine, and the freed SK hynix extent stays free. It ends when the operator says so — verified rollback to Arch is the escape hatch throughout, not an exit from the plan. Consolidation then deletes p5 (Arch root), p6 (Arch ESP) and p4 (WinRE), grows the LUKS partition from 4196352 to the GPT last usable sector, and runs `cryptsetup resize cryptroot` with `btrfs filesystem resize max /`. The final layout is a 2 GiB ESP and a root that owns the rest of the disk, with a single NixOS firmware entry.
 
 ## Risks / Trade-offs
 
