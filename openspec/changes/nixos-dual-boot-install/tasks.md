@@ -194,6 +194,28 @@ not guessed.
 - Rollback: selecting Limine returns to the pre-install system. No post-soak work
   has run, so nothing outside the new root has been destroyed.
 
+### Post-soak error check (2026-10-09)
+
+- Failed units: none, on the boot that follows generation `system-16` (built 16:36,
+  rebooted 20:43).
+- Error-priority journal: 135 lines and no faults among them — 73 kernel ACPI firmware
+  complaints (Lenovo `_UPC`/`_PLD` `AE_ALREADY_EXISTS`), 25 dbus-broker-launch
+  duplicate-name notices for packages also reachable through `system-path`, 14 Grist lines
+  (it logs its own info to stderr), 4 JSON-schema strict-mode warnings, 2 Bluetooth SDP
+  "Host is down", 1 greetd. The previous boot held 1,299 lines across roughly two days.
+- Boot timing: firmware 5.8 s, loader 1.6 s, kernel 1.7 s, initrd 2.8 s, userspace 14.5 s.
+  The initrd figure is the evidence that no passphrase was typed: TPM unlock is in effect.
+- Timezone: `Australia/Melbourne` (AEDT), NTP synced, geoclue active, on a boot whose
+  Wi-Fi came up (`wlp0s20f3`, `iwlmvm` loaded) — the iwlwifi-out-of-initrd change holds.
+- Greeter: `pkexec … noctalia-greeter-apply-appearance --sync` ran at 20:43:45 with no
+  prompt, and the passwordless rule is live in `/etc/polkit-1/rules.d/10-nixos.rules`.
+- Portal: the 26 s startup deadlock between the frontend and the KDE backend is
+  root-caused and changed in `modules/desktop/portals.nix`; the next switch verifies it.
+- `/boot` is mode 0700 root, so the ESP's loader configuration (menu timeout, console
+  mode, Plymouth theme) cannot be read as the login user; ESP use is 139 MiB of 2 GiB.
+- Not yet confirmed by eye: the boot menu and splash, and the phone widget listing the
+  paired phone.
+
 ### Not captured (do not guess)
 
 - The Windows C: backup's location and date, and the baseline capture checksums.
