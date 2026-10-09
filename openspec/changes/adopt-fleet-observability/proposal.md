@@ -32,7 +32,7 @@ None.
 
 ## Impact
 
-Extends `modules/telemetry.nix`, adds `modules/node-exporter.nix`, selects the metrics bundle in both host compositions, adds a verification runbook and updates `ARCHITECTURE.md`, `docs/impermanence.md` and the transition task map. The fleet pin moved to `e2a4ac5d` — the revision that carries the AI ingress published at `6f74d9a2` — with no other lock node touched; no new credential or dependency.
+Extends `modules/telemetry.nix`, adds `modules/node-exporter.nix`, selects the metrics bundle in both host compositions, adds a verification runbook and updates `ARCHITECTURE.md`, `docs/impermanence.md` and the transition task map. The fleet pin moved to `a48a1dcf`, the host-observability revision that appends the node-exporter systemd collector and registers the tailscale daemon's local metrics; the earlier move to `e2a4ac5d` carried the AI ingress published at `6f74d9a2`. Each move touched no other lock node; no new credential or dependency.
 
 Spectre can be configured and evaluated here, but deployment and delivery wait until it is online and its secret enrollment is complete. That does not block independent Legion acceptance.
 

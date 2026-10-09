@@ -2,7 +2,7 @@
 
 ## Context
 
-See `proposal.md`. The source of truth is nix-fleet `6f74d9a2` (the revision publishing the AI ingress): `docs/contracts/observability.md`, `docs/contracts/telemetry.md`, `lib/telemetry-contract.nix`, `lib/service-inventory.nix` and the provider modules. Enablement is expressed by composing aspects: `telemetry` is contract-only, `telemetry-metrics`/`-logs`/`-otlp` are the selectable bundles and `telemetry-vmagent`/`-vector`/`-otel-collector-*` are the realisations. `providers.*` and `realized` no longer exist.
+See `proposal.md`. The source of truth is the adopted nix-fleet revision `a48a1dcf`: `docs/contracts/observability.md`, `docs/contracts/telemetry.md`, `lib/telemetry-contract.nix`, `lib/service-inventory.nix` and the provider modules. Enablement is expressed by composing aspects: `telemetry` is contract-only, `telemetry-metrics`/`-logs`/`-otlp` are the selectable bundles and `telemetry-vmagent`/`-vector`/`-otel-collector-*` are the realisations. `providers.*` and `realized` no longer exist.
 
 `modules/telemetry.nix` only imports the fleet aspect and no host selects it. Both hosts already select notify and Beszel. The node-exporter aspect owns a loopback listener, a local scrape registration and its failure hook; vmagent is activated by the declared scrape work plus a destination. With journald unset, Vector is not activated.
 
