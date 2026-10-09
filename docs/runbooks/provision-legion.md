@@ -616,10 +616,10 @@ rather than starting a large build in the ISO's tmpfs.
 Stop here for the soak: the freed SK hynix extent stays unpartitioned and Arch stays
 bootable through Limine. Arch retirement, LUKS growth, TPM enrolment and the Windows
 reinstallation are separate operations.
-Before retiring Arch, capture fresh partition identities and prepare a separate
-growth procedure preserving the LUKS partition's start and identity and respecting
-the GPT last usable sector. Do not use the physical disk's final sector as a
-partition end.
+Before retiring Arch, capture fresh partition identities and take the backups and
+assertions in [grow-legion-root.md](grow-legion-root.md), which preserves the LUKS
+partition's start and identity and respects the GPT last usable sector rather than the
+physical disk's final sector.
 
 Record the installed revision, system path, backup location, filesystem identifiers,
 selected network filenames, boot verification and remaining issues in the change's

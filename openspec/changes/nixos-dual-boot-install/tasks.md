@@ -113,12 +113,14 @@ user approval required immediately before execution`), and every disk target
   - notes: explicit user approval required immediately before execution
   - reason: still open — destructive; blocked on 7.1.
 
-- [ ] 7.3 Grow the LUKS partition from sector 4196352 to the last sector of the disk
-      (474.94 GiB) and re-read the table.
+- [ ] 7.3 Grow the LUKS partition from sector 4196352 to the GPT last usable sector
+      (`sgdisk --print`) and re-read the table.
 
-  - criteria: the partition's end equals the disk's last sector; the ESP is unchanged
+  - criteria: the partition's end equals the GPT last usable sector, never the disk's
+    final sector — the secondary GPT header lives there; the ESP is unchanged
   - verify: `sgdisk --print` plus `blockdev --getsz` comparison recorded
   - depends: 7.2
+  - refs: docs/runbooks/grow-legion-root.md
   - reason: still open — destructive; blocked on 7.2.
 
 - [ ] 7.4 Grow the container and the filesystem it holds: `cryptsetup resize
@@ -129,6 +131,7 @@ cryptroot`, then `btrfs filesystem resize max /` from the booted system, and
   - criteria: the mapper and the btrfs both match the partition; subvolumes and their data unchanged
   - verify: `cryptsetup status cryptroot`, `btrfs filesystem usage /`, `btrfs subvolume list /`
   - depends: 7.3
+  - refs: docs/runbooks/grow-legion-root.md
   - reason: still open — destructive; blocked on 7.3.
 
 - [ ] 7.5 Remove the `Limine` firmware entry, verify the new NixOS entry is the only
