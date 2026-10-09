@@ -12,11 +12,12 @@ _: {
           xdg-desktop-portal-wlr
         ];
         config.common = {
-          default = [
-            "kde"
-            "gtk"
-          ];
-          # KDE and the frontend deadlock on each other's startup for 26 s; see context/legion-desktop.md.
+          default = [ "gtk" ];
+          # The KDE backend and the portal frontend deadlock on each other's
+          # startup for 26 s while KDE sits in the default set; it serves file
+          # dialogs only, so the frontend never starts it at boot.
+          # See context/legion-desktop.md.
+          "org.freedesktop.impl.portal.FileChooser" = [ "kde" ];
           "org.freedesktop.impl.portal.Settings" = [ "gtk" ];
           "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
           "org.freedesktop.impl.portal.ScreenCast" = [
