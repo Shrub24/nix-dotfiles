@@ -36,20 +36,20 @@ let
   # the tree and the runtime archive are published at together, upstream's
   # release workflow asserting the tree's VERSION equals the tag, so the
   # derivation's version is that tag minus upstream's prefix.
-  tag = "bolt-v0.7.2";
+  tag = "bolt-v0.8.5";
   version = lib.removePrefix "bolt-v" tag;
   src = fetchFromGitHub {
-    owner = "Shrub24";
+    owner = "opensec-git";
     repo = "Pi-Bolt";
     rev = tag;
     fetchSubmodules = false;
-    sha256 = "sha256-xyGbUZCO1FrwZ7Q2W2MRSlHI8sBNxGg41O9pbZYqlIs=";
+    sha256 = "sha256-x0+akIO6YwiOsxb1YNk/paw6zjwcpionFaiLGf5latM=";
   };
   # The archive beside the tag is the Bun build the AOT step compiles with, so
   # the tag keys its URL.
   runtime = fetchurl {
-    url = "https://github.com/Shrub24/Pi-Bolt/releases/download/${tag}/pi-bolt-runtime-linux-x64.tar.gz";
-    sha256 = "sha256-npAz0e3feU89wxUs0MR4k6KnJH0032OihcE47lUHKy4=";
+    url = "https://github.com/opensec-git/Pi-Bolt/releases/download/${tag}/pi-bolt-runtime-linux-x64.tar.gz";
+    sha256 = "sha256-gv8bT+37MesNfAVHuenMGfhkzZBnEl8Cy1eUz8GyB5Y=";
   };
 
   executable = if variant == "lead" then "pi-bolt" else "pi-bolt-child";
@@ -182,7 +182,7 @@ let
       chmod -R u+w plugins
       # The largest single module's top-level bytecode, reported by the AOT step;
       # re-measure when the plugin set or the pinned tree changes.
-      export BUN_JSC_maximumAOTCandidateBytecodeSize=400000
+      export BUN_JSC_maximumAOTCandidateBytecodeSize=500000
       PIBOLT_BUILD_LOG=$TMPDIR/aot.log scripts/build-pi.sh --plugins "$PWD/plugins/plugins.ts" \
         --cpu baseline --jit on --out out/pi-bolt || { tail -40 $TMPDIR/aot.log; exit 1; }
     '';
@@ -206,8 +206,15 @@ let
     '';
   };
 
-  # The lead's argv. Denying discovery also denies Pi's built-ins, so the four
-  # it needs are named back, then the extensions the caller installed.
+  # Named compiled plugins are builtins upstream; --no-extensions suppresses
+  # them along with discovery, so both entrypoints opt their selected set back in.
+  compiledArgs = lib.concatMap (id: [
+    "-e"
+    "builtin:${id}"
+  ]) (lib.attrNames plugins);
+  compiledFlags = lib.concatMapStringsSep " " lib.escapeShellArg compiledArgs;
+
+  # The lead opts in to Pi's builtins, compiled plugins and runtime extensions.
   leadArgs = lib.concatMapStringsSep " " (arg: lib.escapeShellArg arg) (
     [
       "--no-extensions"
@@ -220,6 +227,7 @@ let
       "-e"
       "builtin:llama.cpp"
     ]
+    ++ compiledArgs
     ++ lib.concatMap (path: [
       "-e"
       path
@@ -236,9 +244,11 @@ let
     if variant == "lead" then
       ''
         flags=(${leadArgs})
-        # Herdr's state file joins the launch only once Herdr has written it; a
+        # Herdr's reporter joins the launch as the shim, not as the path Herdr
+        # installs it at: Pi-Bolt skips that file by name and header marker.
+        # The shim exists once Herdr has written the file it links to; a
         # missing -e path is fatal.
-        herdr="$HOME/.pi/agent/extensions/herdr-agent-state.ts"
+        herdr="$HOME/.pi/agent/herdr-pi-state.ts"
         if [ -f "$herdr" ]; then flags+=(-e "$herdr"); fi
         # Herdsman reads this from its own environment and passes it into the
         # child pane; a session variable would reach every operator shell.
@@ -276,7 +286,7 @@ let
         if [ -z "$has_no_extensions" ]; then
           args=(--no-extensions -e builtin:mcp -e builtin:codemode "''${args[@]}")
         fi
-        exec ${placeholder "out"}/lib/pi-bolt/bin/pi-bolt "''${args[@]}"
+        exec ${placeholder "out"}/lib/pi-bolt/bin/pi-bolt ${compiledFlags} "''${args[@]}"
       '';
 in
 stdenv.mkDerivation {
@@ -297,6 +307,13 @@ stdenv.mkDerivation {
         exec python3 ${./update.py}
       '';
     });
+    checkUpdate = writeShellApplication {
+      name = "pi-bolt-check-update";
+      runtimeInputs = [ python3 ];
+      text = ''
+        exec python3 ${./update.py} --latest
+      '';
+    };
   };
 
   nativeBuildInputs = [ makeBinaryWrapper ];
@@ -354,6 +371,9 @@ stdenv.mkDerivation {
     for dir in ${fd}/bin ${ripgrep}/bin ${wl-clipboard}/bin; do
       grep -a -q "$dir" $out/lib/pi-bolt/bin/pi-bolt
     done
+    ${lib.optionalString (plugins ? omniroute) ''
+      ${python3}/bin/python3 ${./test_entrypoints.py} "$out/bin/${executable}"
+    ''}
     runHook postInstallCheck
   '';
 }

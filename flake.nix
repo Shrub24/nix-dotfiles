@@ -69,9 +69,12 @@
       url = "github:numtide/llm-agents.nix";
       inputs = {
         flake-parts.follows = "flake-parts";
-        nixpkgs.follows = "nixpkgs";
         treefmt-nix.follows = "treefmt-nix";
       };
+    };
+    magic-context = {
+      url = "github:Shrub24/magic-context/master";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     memex = {
       url = "github:Shrub24/memex/deploy/live";
@@ -100,6 +103,10 @@
     };
     pi-extensions = {
       url = "github:Shrub24/pi-extensions";
+      flake = false;
+    };
+    pi-powerline-footer = {
+      url = "github:Shrub24/pi-powerline-footer";
       flake = false;
     };
     sops-nix = {

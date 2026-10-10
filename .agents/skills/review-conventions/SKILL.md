@@ -7,8 +7,9 @@ description: Review a diff, a path, or the whole tree of this Nix repository aga
 
 Rules live in `CONVENTIONS.md` (pattern rules and its Review Checklist) and
 `ARCHITECTURE.md` (boundaries and Durable Decisions). Read both first; this
-skill adds only how to hunt and how to report. The generic standard for
-minimality and test value is the `lean-implementation` skill.
+skill adds only how to hunt and how to report. Load `lean-implementation` when
+assessing implementation scope or minimality, and `testing-discipline` when
+assessing validation or test value.
 
 ## Target
 

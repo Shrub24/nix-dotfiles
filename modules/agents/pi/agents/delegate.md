@@ -1,8 +1,9 @@
 ---
 name: delegate
 description: Lightweight subagent for well-scoped edits and lookups; explores via codebase-explore when the task needs code discovery
-model: omniroute/coder-high
-thinking: high
+model: route/coder
+thinking: medium
+enabled: false
 briefProfile: common
 systemPromptMode: append
 inheritProjectContext: true
@@ -13,6 +14,7 @@ extensions:
 @childExtensions@
 skills:
   - "@home@/.pi/agent/skills/codebase-explore/SKILL.md"
+  - "@home@/.pi/agent/skills/testing-discipline/SKILL.md"
 preloadedSkills:
   - "@home@/.pi/agent/skills/lean-implementation/SKILL.md"
 tools:

@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Autonomous web researcher; runs web-research + evidence-discipline skills and persists a handoff-artifact brief
-model: omniroute/coder-high
+model: route/coder
 thinking: medium
 briefProfile: research
 systemPromptMode: replace

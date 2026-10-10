@@ -78,17 +78,17 @@ modules/                 ← import-tree scan (the only discovery root)
 
 Host composition lives in modules/hosts/legion.nix and modules/hosts/spectre.nix,
 not flake.nix:
-  └─ 25 nixos aspects + _nixos.nix + _disko.nix + embedded HM → nixosConfigurations.legion
+  └─ 28 nixos aspects + _nixos.nix + _disko.nix + embedded HM → nixosConfigurations.legion
 
 modules/hosts/spectre.nix composes the laptop with the same shape and a leaner
 aspect set:
-  └─ 20 nixos aspects + _nixos.nix + _hardware.nix + _disko.nix + embedded HM
+  └─ 23 nixos aspects + _nixos.nix + _hardware.nix + _disko.nix + embedded HM
      → nixosConfigurations.spectre
 
-The embedded Home Manager on legion composes 63 aspects, the NixOS-only
+The embedded Home Manager on legion composes 65 aspects, the NixOS-only
 cuda/libcamera/codex among them; tailscale, syncthing, mosh and niks3 are
 system-owned and appear only as NixOS aspects. Spectre's embedded Home Manager
-composes 45 lean aspects.
+composes 47 lean aspects.
 
 The Legion counts above include `legion-ssh-identities` in each class: it delivers client keys through Home Manager and the
 builder and server host keys through the NixOS layer, from
@@ -273,7 +273,13 @@ tailnet) in `modules/telemetry.nix` and pinned by
 `services.telemetry.pipelines.metrics`. vmagent's own loopback health scrape
 (8429) rides that same pipeline — which is also the blind spot, since a total
 transport outage hides its own health samples, leaving silence detection to the
-backend. Journal shipping and OTLP admission stay off
+backend. Pi's `pi-otel` fork exports through the local OTLP collector
+(`127.0.0.1:4318`): traces reach the fleet's canonical home-forge gateway, which
+owns Langfuse/Latitude fanout and credentials, while metrics reach the metrics
+store — the only pipeline that carries them. Both workstations admit traces and
+metrics locally and keep logs off. Full capture includes prompts, completions
+and tool I/O. The extension compiles into both Pi-Bolt binaries; the pinned runtime
+package with its npm dependencies remains available to stock Pi. Journal shipping stays off
 (`adopt-fleet-journals`), and Beszel keeps its dashboard lane alongside.
 LLM traffic goes to the OmniRoute gateway on the builder host, an endpoint the
 fleet service inventory carries (`lib.serviceEndpoints`).
@@ -340,7 +346,11 @@ describes only machines that are always on.
   because its failed write is a caught `EACCES` that reports loudly; the
   extension settings files `pi-tool.json` and `pi-stamp.json` are not, because they save through a
   temporary file plus `rename()`, which replaces a store symlink with a real
-  file instead of failing, and diverges silently.
+  file instead of failing, and diverges silently. The same write path is
+  accepted for `gtk.gtk3.bookmarks`: GTK saves a bookmark edited in a chooser
+  that way too, but the file holds only the directories `xdg.userDirs`
+  declares — policy rather than app-owned settings — and the next switch moves
+  the edit aside as a backup.
 - **Delegation is herdsman; pane state is Herdr's own integration** —
   `pi-herdsman` replaces `pi-subagents`, which is gone outright: no extension
   row, no `subagents` settings block and no rendered config remain. What that
@@ -358,7 +368,10 @@ describes only machines that are always on.
   advertisement lets the model skip the read. That is `lean-implementation`
   for worker and delegate, `review-policy` and `lean-implementation` for
   reviewer, and `evidence-discipline` for researcher and evidence-auditor;
-  every other skill stays advertised and is read when its work needs it. Two
+  `testing-discipline` is also preloaded for worker; delegate and reviewer
+  receive it as an advertised skill and load it when validation or test work
+  needs it;
+  every other skill also stays advertised and is read when its work needs it. Two
   publishers of pane metadata never run at once: the swap is one change.
 
 - **Herdsman's config is seeded, not linked** — `pi-herdsman/config.json` is
@@ -396,26 +409,30 @@ describes only machines that are always on.
   of hardcoded home directories.
 - **Pi-Bolt plugin sources are flake inputs** — its local extensions come from
   the `pi-extensions` input, advanced by `nix flake update pi-extensions` and
-  replaceable for a local build with `--override-input`. `pkgs/pi-plugins` is
+  replaceable for a local build with `--override-input`; the Powerline footer
+  fork is an input of its own, pinned in the declaration at the commit its
+  branch was pushed at rather than advanced by an update. `pkgs/pi-plugins` is
   the one place a compiled plugin's recipe lives: where its source comes from
-  (an npm pin, a path in that input, or a pinned upstream checkout), which
+  (an npm pin, a path in an input, or a pinned upstream checkout), which
   file exports its factory, and the patch its compile-time assumptions need,
   applied with `--replace-fail` so a moved upstream fails loudly. Every source
   here is a pin: the npm tarballs by hand, the local plugins from the
-  `pi-extensions` input, and OmniRoute's `deploy/edge` checkout pinned by
+  `pi-extensions` input, the footer fork's revision, and OmniRoute's
+  `deploy/edge` checkout pinned by
   `pkgs/pi-plugins` — so the running configuration never reads a live checkout,
   and `nix flake update pi-extensions` is what
   moves the local plugins' code. The launcher disables extension discovery, so
   compiled plugins need not be removed from the normal Pi `packages` list. Loop Police's mutable config lives in the agent directory;
   Ask User Question keeps its built-in English fallback in the compiled build.
 
-  A compiled factory is unconditional: `--no-extensions` disables discovery and
-  Pi's built-ins, not the factories baked into the binary, so which plugins are
-  compiled is a build-time decision with two answers — `pkgs/pi-bolt` builds the
+  Named compiled plugins are builtins: `--no-extensions` disables them along
+  with discovery, so each launcher explicitly enables its compiled set through
+  `-e builtin:<id>`. Which plugins are compiled is a build-time decision with
+  two answers — `pkgs/pi-bolt` builds the
   recipes it is handed and carries no selection of its own. The lead build is
   the operator's session; the child build is what a delegated child launches
-  with, which is why it leaves out the renderer, starship, vim and recap the
-  operator wants and the child does not. Both are derived from one row table:
+  with, which is why it leaves out the renderer, the Powerline footer and recap
+  the operator wants and the child does not. Both are derived from one row table:
   a row's `compiled` list names the builds that contain it. Two plugins need
   help being compiled: Loop Police and Ask User Question read a file beside
   their own source, which no longer exists once the source is bytes in the
@@ -446,8 +463,9 @@ describes only machines that are always on.
   is load-bearing rather than hygiene: on the CLI a duplicate is a startup
   failure, so a definition still naming a compiled plugin presents as a pane
   that never comes up. The launchers pass `--no-extensions` for the same reason
-  — it suppresses the settings `packages` set, though not the compiled
-  factories — and the child launcher supplies it with the two builtins a child
+  — it suppresses the settings `packages` set — and both launchers explicitly
+  enable their compiled builtins. The child launcher supplies it with the two
+  Pi builtins a child
   needs when the launch does not, so a child started without herdsman's own flag
   list is still complete. These entrypoints belong to `pkgs/pi-bolt`, not
   separate Home Manager launcher derivations. The lead package publishes `pi`
@@ -493,11 +511,12 @@ describes only machines that are always on.
   `realpath` upstream is the prerequisite; until then the thin definitions are
   the whole child-side TUI reduction.
 
-- **Implementation discipline has one source** — the `lean-implementation`
-  skill. Agent definitions that write or review code list it and tell the agent
-  to read it; the global `AGENTS.md` points at it. `CONVENTIONS.md` only applies it to
-  this repository's boundaries, and role definitions keep only role mechanics (escalation, report shape),
-  so a change to the discipline is a one-file edit that every role picks up.
+- **Each discipline has one source** — `lean-implementation` owns implementation
+  scope, robustness and completion; `testing-discipline` owns validation choice
+  and test value. Agent definitions and the global `AGENTS.md` point to those
+  skills rather than repeating their rules. `CONVENTIONS.md` applies them to
+  this repository's boundaries, and role definitions keep role mechanics
+  (escalation, report shape), so each rule changes in one place.
 
 ## Verification
 

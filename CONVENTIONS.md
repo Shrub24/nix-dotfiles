@@ -4,7 +4,8 @@ Rules that no tool enforces. `nix fmt` owns formatting and statix/deadnix own
 mechanical lint — neither is restated here. Boundaries and rationale live in
 [ARCHITECTURE.md](ARCHITECTURE.md); the pattern rules live in the
 `dendritic-nix` agent skill. General implementation discipline (minimality,
-test value, scope, done) lives in the `lean-implementation` skill; the
+scope, done) lives in `lean-implementation`; validation choice and test value
+live in `testing-discipline`. The
 `review-conventions` skill reviews against this document. This document covers
 what none of them does.
 

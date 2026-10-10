@@ -98,3 +98,37 @@ keeping at hand: `--version-regex` values need at least one capture group,
 because the extracted version is the joined groups, and with no group every tag
 is filtered out as unmatched; and a tag family that shares a repository with
 component tags needs an anchored, grouped pattern so only the release tags pass.
+
+## An update only adopts a release that carries the archive
+
+**Id:** 21b55157-4327-4918-badd-a0c430cfd40c
+**Type:** workaround
+**Status:** active
+**Evidence:** confirmed
+**Source:** failed package-update runs for xberg-cli and codexbar after upstream tags/releases lacked the required Linux archive
+**Verification:** corroborated — both updaters select only settled releases carrying their package's exact Linux archive; explicit unusable targets refuse before nix-update runs
+**Revisit when:** upstream stops publishing releases before their assets, or another owner shows the same failure
+
+xberg publishes a release before its build assets finish uploading — one release
+exists with zero assets — and a release can be left that way entirely. CodexBar
+has a related failure mode: its `v0.74.0` tag exists, but the release record is
+absent and the expected `CodexBarCLI-v0.74.0-linux-x86_64.tar.gz` returns 404.
+nix-update rewrites the version attribute before it prefetches the source, so
+following such a tag leaves the pin on a URL that does not resolve, with a
+version and hash that disagree. Both owners therefore select only releases
+settled for a day and carrying their exact Linux CLI archive, falling back to
+the previous eligible release instead of failing or adopting the newest tag.
+
+**Reason:** the newest version is not evidence that a release is usable, and the
+failure lands after the pin file has already been rewritten.
+
+**Rejected alternative:** let the run fail and repeat it later. That leaves a
+mismatched version and hash in the tree, so the next evaluation or build fails
+for a reason unrelated to the pin's content.
+
+**Consequence:** `XBERG_UPDATE_VERSION=vX.Y.Z` and
+`CODEXBAR_UPDATE_VERSION=vX.Y.Z` select exact recorded targets, but refuse a tag
+without its archive — an explicit target bypasses only the settling window.
+`XBERG_UPDATE_SETTLING_HOURS` and `CODEXBAR_UPDATE_SETTLING_HOURS` move the
+respective windows. Pi-Bolt keeps its separate policy: it prefetches its coupled
+runtime asset before rewriting anything, so it cannot half-write.

@@ -22,6 +22,7 @@ _: {
         curlie
         lazydocker
         lazyjj
+        jj-hunk-tool
         just
         go-task
         mold

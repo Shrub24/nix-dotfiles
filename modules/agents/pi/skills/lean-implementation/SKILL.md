@@ -1,6 +1,6 @@
 ---
 name: lean-implementation
-description: Implementation discipline — smallest coherent change, working behaviour before hardening, validation at real boundaries, tests that catch plausible regressions, comments only for what code cannot say, and a firm definition of done. Use before writing or changing code, when deciding what to validate or test, and when deciding whether a slice is finished.
+description: Implement significant code changes as the smallest coherent slice of working behaviour. Use before adding features, fixing bugs, refactoring, or changing configuration that affects behaviour; when briefing an implementation agent; and when reviewing implementation scope, robustness, or completion. Pure formatting and prose-only edits do not need this skill.
 ---
 
 # Lean implementation
@@ -21,7 +21,10 @@ Build a _vertical slice_:
    whether the obvious change is safe.
 2. **Make it work.** Get the smallest production behaviour running end to end
    through that seam.
-3. **Verify it** with the cheapest check that would fail if the behaviour broke.
+3. **Verify it** with the cheapest faithful check that would fail if the behaviour
+   broke. Load `testing-discipline` when choosing validation or adding, changing,
+   or reviewing tests. A failing behavioural example may precede implementation;
+   this order is not a ban on TDD.
 4. **Simplify the diff.** Remove scaffolding, debug output, dead branches and
    anything the final shape no longer needs.
 5. **Harden** only where a concrete risk calls for it.
@@ -56,35 +59,23 @@ Messiness while solving the problem is fine. The delivered diff is clean.
 - Validate at boundaries: external or untrusted input, persistence and wire
   formats, public APIs, security boundaries, and places where invalid state does
   real damage.
-- Inside typed or internal flows, state an invariant once, where it is
-  established (a type, a constructor, one assertion), and let a broken invariant
-  fail loudly. A guard at every use site hides the bug it suspects.
-- Let programming errors surface. A fallback belongs only where recovery is part
-  of the contract.
+- Establish internal invariants once, with types, construction or an assertion
+  at their source. If internal logic breaks one, fail fast at the point of
+  violation; fix the logic rather than adding guards, defaults or catch-and-continue
+  handling that turns a programming error into apparent success.
+- Recover only from failures the contract expects and defines recovery for.
 - Trust boundaries, data-loss handling and security are never what gets
   trimmed.
 - Scale robustness to real risk, not to the number of invalid states you can
   imagine.
 
-## Tests
-
-A test earns its place when a plausible wrong implementation would fail it.
-Aim tests at observable contracts, important invariants, plausible regressions,
-meaningful state transitions and real failure or recovery boundaries.
-
-Spend tests on behaviour, once: one test per invariant at the layer that owns
-it, rather than every permutation, implementation details, structurally
-impossible states, or the same invariant again at each layer.
-
-The main behaviour exists end to end before the suite grows. Exhaustive
-matrices belong where exhaustiveness is itself the requirement — parsers, wire
-formats, security checks.
-
 ## Comments
 
-Code carries control flow and obvious choices. Comments carry what code cannot:
-non-obvious invariants, structural constraints, compatibility footguns,
-surprising lifecycle behaviour, API docstrings, and the known ceiling of a
+Prefer self-documenting code: clear names, types and straightforward control
+flow. Add a comment only for meaning the code cannot express, and keep it as
+short as that meaning allows. Do not narrate operations or repeat names.
+Comments explain non-obvious invariants, structural constraints, compatibility
+footguns, surprising lifecycle behaviour, API contracts, and the known ceiling of a
 deliberate shortcut, written as a `HACK:` (the limit and the upgrade path).
 Deferred work is a `TODO:` and known-wrong behaviour a `FIXME:`, each naming
 what retires it. Longer rationale belongs in

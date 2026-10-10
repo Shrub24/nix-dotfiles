@@ -3,22 +3,35 @@
 # passes as -e, and `id` names the recipe in pkgs/pi-plugins. `compiled` names
 # the builds that bake it in — a compiled factory loads unconditionally, so such
 # a row is filtered from that build's -e list. A source or path may carry one
-# placeholder: `@home@`, `@extensions@` (the pinned pi-extensions input) or
-# `@recipe@<id>` (the source a pkgs/pi-plugins recipe resolves).
+# placeholder: `@home@`, `@extensions@` (the pinned pi-extensions input),
+# `@package@<name>[/subpath]` (an installed extension package), or `@recipe@<id>`
+# (the source a pkgs/pi-plugins recipe resolves).
 [
+  {
+    id = "otel";
+    compiled = [
+      "lead"
+      "child"
+    ];
+    source = "@package@pi-otel";
+    path = "@package@pi-otel";
+  }
   {
     id = "web-access";
     source = "npm:pi-web-access";
     path = "@home@/.pi/agent/npm/node_modules/pi-web-access";
   }
-  # The only row that reads a live checkout instead of an installed copy: the
-  # fork at ~/Projects/dev/custom/magic-context is what the lead loads, so it is
-  # developed here. Replace with a @recipe@ source once the fork has a recipe,
-  # which is what every other row does.
+  # Routes `route/<role>` virtual models over native physical candidates. Lead and
+  # child both load it so delegated workers resolve the same routes.
+  {
+    id = "native-router";
+    source = "@extensions@/pi-native-router";
+    path = "@extensions@/pi-native-router";
+  }
   {
     id = "magic-context";
-    source = "npm:@cortexkit/pi-magic-context";
-    path = "@home@/Projects/dev/custom/magic-context/packages/pi-plugin";
+    source = "@package@pi-magic-context";
+    path = "@package@pi-magic-context";
   }
   # pi-recap writes its own config (temp file + rename), so its model and
   # multiplexer template stay a one-time `/recap-config` pass.
@@ -53,15 +66,15 @@
     compiled = [ "lead" ];
     source = "npm:pi-context-view";
   }
+  # The footer's status line and Vim editor backend, which replace the dropped
+  # vim and starship rows.
   {
-    id = "vim";
-    compiled = [ "lead" ];
-    source = "npm:pi-vim";
-  }
-  {
-    id = "starship";
-    compiled = [ "lead" ];
-    source = "npm:@narumitw/pi-starship";
+    id = "powerline-footer";
+    compiled = [
+      "lead"
+      "child"
+    ];
+    source = "@recipe@powerline-footer";
   }
   {
     id = "omniroute";
@@ -72,14 +85,23 @@
     source = "@recipe@omniroute";
   }
   {
-    id = "fff";
-    source = "npm:@ff-labs/pi-fff";
-    path = "@home@/.pi/agent/npm/node_modules/@ff-labs/pi-fff";
+    id = "commandcode-provider";
+    source = "npm:pi-commandcode-provider";
+    path = "@home@/.pi/agent/npm/node_modules/pi-commandcode-provider";
   }
+  # OpenSec's Bun build of pi-fff: same engine, config file and flags, without
+  # needing the JIT for the native path. The two builds are alternatives — the
+  # official installer offers this one only where @ff-labs/pi-fff is absent.
   {
-    id = "draft-history";
-    compiled = [ "lead" ];
-    source = "npm:pi-draft-history";
+    id = "fff";
+    source = "npm:opensec-pi-fff";
+    path = "@home@/.pi/agent/npm/node_modules/opensec-pi-fff";
+  }
+  # The model's task list as a live panel, on the `todo` tool. Bun only.
+  {
+    id = "todo";
+    source = "npm:opensec-pi-todo";
+    path = "@home@/.pi/agent/npm/node_modules/opensec-pi-todo";
   }
   {
     id = "herdsman";
@@ -105,7 +127,10 @@
   }
   {
     id = "cache-optimizer";
-    compiled = [ "lead" ];
+    compiled = [
+      "lead"
+      "child"
+    ];
     source = "npm:pi-cache-optimizer";
   }
   {
@@ -136,7 +161,10 @@
   }
   {
     id = "reqcap";
-    compiled = [ "lead" ];
+    compiled = [
+      "lead"
+      "child"
+    ];
     source = "@extensions@/pi-reqcap";
   }
   {
@@ -148,13 +176,11 @@
     source = "npm:@gotgenes/pi-permission-system";
   }
   {
-    id = "intercom";
-    source = "npm:pi-intercom";
-    path = "@home@/.pi/agent/npm/node_modules/pi-intercom";
-  }
-  {
     id = "loop-police";
-    compiled = [ "lead" ];
+    compiled = [
+      "lead"
+      "child"
+    ];
     source = "npm:pi-loop-police";
   }
   # Package dir, not entry files — a file path fails with "package source not
@@ -176,11 +202,6 @@
     ];
     source = "npm:pi-tool-repair";
   }
-  # pi-vcc is the children's compaction path; it has no settings entry.
-  {
-    id = "vcc";
-    compiled = [ "child" ];
-  }
   {
     id = "fork-in";
     compiled = [
@@ -190,7 +211,10 @@
   }
   {
     id = "anthropic-auth";
-    compiled = [ "lead" ];
+    compiled = [
+      "lead"
+      "child"
+    ];
     source = "npm:@gotgenes/pi-anthropic-auth";
   }
 ]

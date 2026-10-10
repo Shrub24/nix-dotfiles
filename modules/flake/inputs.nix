@@ -21,6 +21,14 @@ _: {
       url = "github:Shrub24/pi-extensions";
       flake = false;
     };
+    pi-powerline-footer = {
+      url = "github:Shrub24/pi-powerline-footer";
+      flake = false;
+    };
+    magic-context = {
+      url = "github:Shrub24/magic-context/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Plymouth theme source built by pkgs/nixos-boot (boot.nix selects it).
     nixos-boot = {
@@ -48,7 +56,6 @@ _: {
     };
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-parts.follows = "flake-parts";
       inputs.treefmt-nix.follows = "treefmt-nix";
     };

@@ -12,6 +12,10 @@
   python3,
   nix,
   piExtensions,
+  # The footer fork's repository, an input like pi-extensions: the whole tree is
+  # the plugin directory its recipe stages.
+  piPowerlineFooter,
+  pi-otel,
 }:
 let
   # One updater owns this set; nix-update cannot locate individual helper calls.
@@ -49,17 +53,10 @@ let
     plugins = {
       tool-repair = {
         tarball = npmTarball "pi-tool-repair" {
-          version = "0.3.6";
-          hash = "sha512-9q1rdNdkrz5UB48MtqI0eqEQ8ydmhHldDfceIZUyZi5DVwcLvZYFOvQyi/9xyY12FDyeqKpv6y930avX4Lkrxg==";
+          version = "0.3.7";
+          hash = "sha512-1tnZ/TgAQqLf3eGU8cf1AV9Tug1WcR2GcKrtV7wRq2xgNfh1RCy0/DS2QZB1Z1azrvBuffO3Utu5FTfOeSaorw==";
         };
         entry = "tool-repair.ts";
-      };
-      draft-history = {
-        tarball = npmTarball "pi-draft-history" {
-          version = "0.1.2";
-          hash = "sha512-JQim9ijOxbCYqIiCE+smSLg+4LVtxP4xtHtUnzhaQ9k+5gtD8gImkH0n1oXzgM0BBBecc8lWrk2rd8OKtMMMsw==";
-        };
-        entry = "src/index.ts";
       };
       recap = {
         tarball = npmTarball "@zhcsyncer/pi-recap" {
@@ -77,8 +74,8 @@ let
       };
       cache-optimizer = {
         tarball = npmTarball "pi-cache-optimizer" {
-          version = "2.8.21";
-          hash = "sha512-x1MAQ5bXi6v1xFsMXVqyLDPpSV2q6W0EdOQ8O6NJJLf5yCxcVME2QuOMSSFjf+8GPa3YdoaZCfFWyLPa2JqDjg==";
+          version = "2.8.24";
+          hash = "sha512-a++KD9YEMn4bwlPiR7dKmHvNtv97ZZ/l+RCdOrwRSn4gUrGSU6QKwW77T+y2tYbszdhF0S6vyeL79Jy4Q1u3vA==";
         };
         entry = "index.ts";
       };
@@ -89,11 +86,10 @@ let
         };
         entry = "src/index.ts";
       };
-      vim = {
-        tarball = npmTarball "pi-vim" {
-          version = "0.14.2";
-          hash = "sha512-CFSKJvOCNToueIMyBgsujT+gHa4sAlLOnT4VYZ6iCGKJ7M24eCVWFKKnnMt6tmP1rDE6T7k/AqBrb6LWzCzRaQ==";
-        };
+      # The footer and the Vim editor backend in one plugin, which is what
+      # retires the separate vim, starship and draft-history extensions.
+      powerline-footer = {
+        dir = piPowerlineFooter;
         entry = "index.ts";
       };
       anthropic-auth = {
@@ -102,18 +98,39 @@ let
           hash = "sha512-xNbI8eYKZmfk2PRqNoogULF69mjKeCnX/ZQJo50mkG6ibu+asYNTZaBWYpAW1RQVyprPfFoBBgNhha+jxRluZg==";
         };
         entry = "src/index.ts";
+        # Pi-Bolt replaces Pi's default preamble with its own, which detection
+        # here never matched: the verbose preamble then reached Anthropic OAuth
+        # unshaped. Accept either preamble.
+        patch = ''
+          substituteInPlace plugins/anthropic-auth/src/constants.ts \
+            --replace-fail \
+              '  "You are an expert coding assistant operating inside pi, a coding agent harness.";' \
+              '  "You are an expert coding assistant operating inside pi, a coding agent harness.";
+
+          export const PI_BOLT_DEFAULT_PROMPT_PREFIX =
+            "You are an expert coding assistant operating inside Pi-Bolt, a build of pi (a coding agent harness) compiled ahead of time.";
+
+          export const PI_DEFAULT_PROMPT_PREFIXES = [
+            PI_DEFAULT_PROMPT_PREFIX,
+            PI_BOLT_DEFAULT_PROMPT_PREFIX,
+          ] as const;'
+
+          substituteInPlace plugins/anthropic-auth/src/system-prompt-shaping.ts \
+            --replace-fail \
+              '  PI_DEFAULT_PROMPT_PREFIX,' \
+              '  PI_DEFAULT_PROMPT_PREFIXES,' \
+            --replace-fail \
+              'text.startsWith(PI_DEFAULT_PROMPT_PREFIX)' \
+              'PI_DEFAULT_PROMPT_PREFIXES.some((prefix) => text.startsWith(prefix))' \
+            --replace-fail \
+              '!block.text.includes(PI_DEFAULT_PROMPT_PREFIX)' \
+              '!PI_DEFAULT_PROMPT_PREFIXES.some((prefix) => block.text.includes(prefix))'
+        '';
       };
       tool = {
         tarball = npmTarball "@narumitw/pi-tool" {
           version = "0.3.2";
           hash = "sha512-6pRKKRmYF7otun14utUtbxOEkWEPz/GfENyJj15pGblNKWUh8S74v8WO2w+3WecldY+QDG/i1BWlK1MmlvDIRg==";
-        };
-        entry = "dist/index.ts";
-      };
-      starship = {
-        tarball = npmTarball "@narumitw/pi-starship" {
-          version = "0.58.0";
-          hash = "sha512-bj4nLFq3GA0xJ80xHd0WNsV+a4jHnthOz5egcadPhEYG2iRNq/e9EyBehxwFtOL95grqz6y120oJiDIS26bsqw==";
         };
         entry = "dist/index.ts";
       };
@@ -136,8 +153,8 @@ let
       };
       ask-user-question = {
         tarball = npmTarball "@juicesharp/rpiv-ask-user-question" {
-          version = "2.12.0";
-          hash = "sha512-DilWc7u25SwnK6ytuAWOTerP0AmOEfK4HXpgS1oEzkgv9d5g5T+PbLG+zcLn18M3B/J3poMG14iydG5O6iBsnw==";
+          version = "2.13.5";
+          hash = "sha512-D4j32b/JWiNEb2JK9nxWr13aVn/Md1ylRIPzreSzmcJWV6oKjyquBswEg830hPky4W6V65TbKs2mJXywbqYRPg==";
         };
         entry = "index.ts";
         # The locale files are source-relative; keep its built-in English fallback
@@ -150,8 +167,8 @@ let
       };
       permission-system = {
         tarball = npmTarball "@gotgenes/pi-permission-system" {
-          version = "40.1.1";
-          hash = "sha512-ySm2TUjWR3/Nowcb2inhhDBMmwvaEaBSquQiPEJaULLlBkLj6LJ+qx2ceSPyflfzABgW3osq7Ze3hVLQh5eGlw==";
+          version = "40.2.0";
+          hash = "sha512-ZImCyaLTNlHZAA0c5utndLW0HaAwt2UjmN3jeslABlRmgXP0GTXbWPeAehX7amUlf70M5IbrWM9nxfzFnlWgkA==";
         };
         entry = "src/index.ts";
         # Embed the parser's wasm instead of resolving it next to the source, and
@@ -169,8 +186,8 @@ let
       };
       vcc = {
         tarball = npmTarball "@sting8k/pi-vcc" {
-          version = "0.10.0";
-          hash = "sha512-tlh9NzM6pt4eMvww0OcmDhF400qpr85DNVJchPaQ1fXaErr7dt587akK7XjM2ZnCFhtsVo872pkuCla7/nsSLw==";
+          version = "0.10.1";
+          hash = "sha512-GyA+0mS49naR4oruvlNCwsHb11HDt8ete+HeC89R5VtStXNBNmoPEKgmLGfxMDKQuaqQjxt2sejuwZLDnoZP2A==";
         };
         entry = "index.ts";
       };
@@ -183,6 +200,8 @@ let
           substituteInPlace plugins/herdsman/extension/index.ts \
             --replace-fail 'const HERDSMAN_EXTENSION_PATH = fileURLToPath(import.meta.url);' 'const HERDSMAN_EXTENSION_PATH = "${checkout "pi-herdsman"}/extension/index.ts";' \
             --replace-fail '"../../pi-bash-processes/extensions/background-work.ts"' '"../../bash-processes/extensions/background-work.ts"'
+          substituteInPlace plugins/herdsman/extension/advisory-wake.ts \
+            --replace-fail '"../../pi-bash-processes/extensions/wake-consumer.ts"' '"../../bash-processes/extensions/wake-consumer.ts"'
           substituteInPlace plugins/herdsman/extension/agent-definitions.ts \
             --replace-fail 'const BUILTIN_AGENT_DIR = fileURLToPath(
             new URL("./agent-definitions", import.meta.url),
@@ -245,16 +264,30 @@ let
         dir = forkInSrc;
         entry = "src/pi.ts";
       };
+      # Reuse the runtime package's lock-derived dependency closure.
+      otel = {
+        dir = "${pi-otel}";
+        entry = "src/index.ts";
+        # AOT has no source-relative package.json; keep the stock version.
+        patch = ''
+          substituteInPlace plugins/otel/src/version.ts \
+            --replace-fail 'import { readFileSync } from "node:fs";' "" \
+            --replace-fail 'const url = new URL("../package.json", import.meta.url);
+              const pkg = JSON.parse(readFileSync(url, "utf8")) as { version?: string };
+              cached = typeof pkg.version === "string" && pkg.version.length > 0 ? pkg.version : "0.0.0";' \
+            'cached = "${pi-otel.version}";'
+        '';
+      };
     };
 
-    # Runtime dependencies of pi-tool and pi-starship, resolved from the plugin
+    # Runtime dependencies the compiled plugins import, resolved from the plugin
     # tree's own node_modules.
     libraries = {
       # Resolved from the plugin tree's own node_modules.
       # (dir name) = tarball
       "@narumitw/pi-tui-kit" = npmTarball "@narumitw/pi-tui-kit" {
-        version = "0.65.3";
-        hash = "sha512-0kx0ZSHHyHOI4jLCd8GBuXlwrycuTZ1DWz5zmLshz6ol7xf8SxkI9lNoNvPs73VU+NL+ARN/YkOwlyFeL78gFA==";
+        version = "0.65.5";
+        hash = "sha512-F6TiSz7igl8SVRllOJnw8cXdN2lveoD6E3UBNTmBVob1+OlPoWRRYgWSBAlLm3ZYeg75uuEZqYZd4Fg7+LsQ4A==";
       };
       "grok-mermaid" = npmTarball "grok-mermaid" {
         version = "0.2.3";
@@ -264,25 +297,21 @@ let
         version = "11.12.0";
         hash = "sha512-nbfWpyRMcMrPMmDwJB+dhX/eiaPKtc2RB+0QZskqJ3WjRA/FDS0e9hZrx8EC/lbEv8gXy98FcDbNa/dspAaJMg==";
       };
-      "smol-toml" = npmTarball "smol-toml" {
-        version = "1.9.0";
-        hash = "sha512-hpd+HLON7HdZXqYchMM/+LaTTbdK0AU3NngIJ4KVyWbY9bfQqdL9cD+4yf6dUoU2Ap4VsU0JkQi6FxAI1B2mXQ==";
-      };
       "yaml" = npmTarball "yaml" {
         version = "2.9.1";
         hash = "sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==";
       };
       "@juicesharp/rpiv-config" = npmTarball "@juicesharp/rpiv-config" {
-        version = "2.12.0";
-        hash = "sha512-eGjoCDCKz2JtKIUIpZ2y8CAVjxZYXCKa2D64ByozhkAWVblXsgyFLrQMk5k5Bv5RXRrA3GY66XNG5ExtEuGASA==";
+        version = "2.13.5";
+        hash = "sha512-TDXhRomYM3PdBxiWkLoaLHhQP+qerr/OxZ7DQt4k2GHeMDPW7z9RT92tXOFjMJHgxRV3Lk86UyY4b8KmGjjDNw==";
       };
       "zod" = npmTarball "zod" {
-        version = "4.6.5";
-        hash = "sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==";
+        version = "4.6.6";
+        hash = "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==";
       };
       "web-tree-sitter" = npmTarball "web-tree-sitter" {
-        version = "0.27.0";
-        hash = "sha512-XK08gj6RwTMQatAG7uVRP8MunqotL/XC19vHgkSPKmELgbGPBj4ECvB8haHOUnyj6ls2B8t42UTro14zxGgAHg==";
+        version = "0.27.1";
+        hash = "sha512-qtx0VyUyNRHtL3ze7+v0hCKB/sLcAmY7ZAVp/ZK/bCj0yED8ptvNrr7Vd7DwDyKDWN9baqcUx4uaD2r2ql+6IA==";
       };
       "tree-sitter-bash" = npmTarball "tree-sitter-bash" {
         version = "0.25.1";

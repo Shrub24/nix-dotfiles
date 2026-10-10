@@ -4,17 +4,19 @@
   fetchurl,
   autoPatchelfHook,
   libheif,
-  writeShellScript,
+  python3,
+  nix-update,
+  writeShellApplication,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "xberg-cli";
-  version = "1.3.6";
+  version = "1.3.8";
   # The version has to appear in the URL for nix-update to rewrite the source
   # when it bumps the version attribute.
   src = fetchurl {
     url = "https://github.com/xberg-io/xberg/releases/download/v${finalAttrs.version}/xberg-cli-x86_64-unknown-linux-gnu.tar.gz";
-    sha256 = "sha256-fakh+dL4FH3LbnOie0hwJpStNlZwPkB/AO/YZZhbx3A=";
+    sha256 = "sha256-XfQChc1/u3GOgWDCHjzDjhHnrrolOkzyBsy2Nj/8LSA=";
   };
 
   sourceRoot = "xberg-cli-x86_64-unknown-linux-gnu";
@@ -32,17 +34,25 @@ stdenv.mkDerivation (finalAttrs: {
     chmod +x $out/bin/xberg
   '';
 
-  passthru.updateScript = writeShellScript "update-xberg-cli" ''
-    set -euo pipefail
-    version="''${XBERG_UPDATE_VERSION:-stable}"
-    if [[ "$version" != stable && ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-      echo "xberg-cli: expected stable or an exact stable vX.Y.Z tag, got: $version" >&2
-      exit 2
-    fi
-    # The capture groups are load-bearing: extract_version only accepts a tag
-    # when the regex matches with groups, and joins the groups as the version.
-    exec nix-update --flake --version "$version" --version-regex '^v([0-9]+)\.([0-9]+)\.([0-9]+)$' xberg-cli
-  '';
+  passthru = {
+    updateScript = lib.getExe (writeShellApplication {
+      name = "xberg-cli-update";
+      runtimeInputs = [
+        python3
+        nix-update
+      ];
+      text = ''
+        exec python3 ${./update.py}
+      '';
+    });
+    checkUpdate = writeShellApplication {
+      name = "xberg-cli-check-update";
+      runtimeInputs = [ python3 ];
+      text = ''
+        exec python3 ${./update.py} --latest
+      '';
+    };
+  };
 
   meta = {
     description = "CLI for document extraction (PDF, Office, images)";

@@ -2,17 +2,19 @@
   lib,
   stdenvNoCC,
   fetchurl,
-  writeShellScript,
+  python3,
+  nix-update,
+  writeShellApplication,
 }:
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "codexbar";
-  version = "0.73.0";
+  version = "0.74.0-cc";
   # The version has to appear in the URL for nix-update to rewrite the source
   # when it bumps the version attribute.
   src = fetchurl {
-    url = "https://github.com/steipete/CodeXBar/releases/download/v${finalAttrs.version}/CodexBarCLI-v${finalAttrs.version}-linux-x86_64.tar.gz";
-    sha256 = "sha256-qE9VbH7OvI5gbgo07g0SFib3LXr8HjrfV0ZBC8EPlhE=";
+    url = "https://github.com/Shrub24/CodexBar/releases/download/v${finalAttrs.version}/CodexBarCLI-v${finalAttrs.version}-linux-x86_64.tar.gz";
+    sha256 = "sha256-xYhZk0gwhwL+gR1wR7unYBKnFD5V2eo0YJ7oT3DmoZc=";
   };
 
   # nixpkgs' codexbar is macOS-only; upstream's Linux tarball has no top-level dir.
@@ -31,11 +33,16 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   # Preserve nix-update's standard discovery; the recorded target is an
   # opt-in for reproducible acceptance because the fleet app has no flag passthrough.
-  passthru.updateScript = writeShellScript "update-codexbar" ''
-    set -euo pipefail
-    version="''${CODEXBAR_UPDATE_VERSION:-stable}"
-    exec nix-update --flake --version "$version" codexbar
-  '';
+  passthru.updateScript = lib.getExe (writeShellApplication {
+    name = "codexbar-update";
+    runtimeInputs = [
+      python3
+      nix-update
+    ];
+    text = ''
+      exec python3 ${./update.py}
+    '';
+  });
 
   meta = {
     description = "Show usage stats for AI coding-provider limits";

@@ -14,21 +14,27 @@ def release():
     target = os.environ.get("PI_BOLT_UPDATE_VERSION")
     if target and not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", target):
         raise ValueError("PI_BOLT_UPDATE_VERSION must be a stable X.Y.Z version")
-    url = "https://api.github.com/repos/Shrub24/Pi-Bolt/tags?per_page=100"
-    tags = []
+    url = "https://api.github.com/repos/opensec-git/Pi-Bolt/releases?per_page=100"
+    releases = []
     while url:
         headers = {"User-Agent": "nix-dotfiles-pi-bolt-update"}
         if token := os.environ.get("GITHUB_TOKEN"):
             headers["Authorization"] = f"Bearer {token}"
         with urlopen(Request(url, headers=headers), timeout=60) as response:
-            tags.extend(tag["name"] for tag in json.load(response))
+            releases.extend(json.load(response))
             next_page = re.search(r'<([^>]+)>;\s*rel="next"', response.headers.get("Link", ""))
             url = next_page[1] if next_page else None
-    versions = [tag.removeprefix("bolt-v") for tag in tags if re.fullmatch(r"bolt-v[0-9]+\.[0-9]+\.[0-9]+", tag)]
+    versions = [
+        item["tag_name"].removeprefix("bolt-v")
+        for item in releases
+        if not item["draft"] and not item["prerelease"]
+        and re.fullmatch(r"bolt-v[0-9]+\.[0-9]+\.[0-9]+", item["tag_name"])
+        and any(asset["name"] == "pi-bolt-runtime-linux-x64.tar.gz" for asset in item["assets"])
+    ]
     if target:
         versions = [version for version in versions if version == target]
     if not versions:
-        raise ValueError("no matching stable Pi-Bolt release")
+        raise ValueError("no matching stable Pi-Bolt release carrying the Linux runtime archive")
     return max(versions, key=lambda version: tuple(map(int, version.split("."))))
 
 
@@ -48,8 +54,11 @@ def replace(text, pattern, value):
 
 
 def main():
+    if "--latest" in sys.argv:
+        print(release())
+        return
     tag = f"bolt-v{release()}"
-    root = "https://github.com/Shrub24/Pi-Bolt"
+    root = "https://github.com/opensec-git/Pi-Bolt"
     source_hash = prefetch(f"{root}/archive/{tag}.tar.gz", unpack=True)
     runtime_hash = prefetch(f"{root}/releases/download/{tag}/pi-bolt-runtime-linux-x64.tar.gz")
     filename = Path("pkgs/pi-bolt/default.nix")

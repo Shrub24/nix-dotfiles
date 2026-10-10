@@ -17,9 +17,10 @@ docs-mcp-server library for external library docs before web-fetching.
 
 ## Implementation
 
-When writing or changing code, or briefing an agent who will, follow the
-`lean-implementation` skill. It is the single source of implementation
-discipline.
+Before significant code changes, or when briefing an agent who will make them,
+follow `lean-implementation`. When choosing validation or writing, changing or
+reviewing tests, load `testing-discipline`. These skills own implementation and
+testing discipline respectively.
 
 Before changing or removing something non-obvious, check the repository's
 `context/` for entries on it. Land a worker's `Decisions to record` through the

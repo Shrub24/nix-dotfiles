@@ -1,6 +1,10 @@
-_: {
+{ inputs, ... }: {
   flake.modules.homeManager.magic-context =
-    { pkgs, ... }:
+    {
+      config,
+      pkgs,
+      ...
+    }:
 
     {
       # Shared CortexKit config: Pi and OpenCode read the same file. The
@@ -22,7 +26,7 @@ _: {
               pi = {
                 model = "omniroute/neural/deepseek-v4.1-flash";
                 fallback_models = [
-                  "omniroute/neural/glm-5.3-flash"
+                  "anthropic/claude-haiku-5-5"
                   "openai-codex/gpt-6-luna"
                 ];
                 thinking_level = "low";
@@ -46,10 +50,24 @@ _: {
             toast_duration_ms = 500;
             execute_threshold_tokens.default = 200000;
             smart_drops = true;
-            todowrite.enabled = true;
 
+            profiles.subagent.memory.read_only = true;
+            profiles.subagent.pi.subagent_prompt = true;
+            pi.cache_ttl = "never";
+            # Children are spawned as the bare pi-bolt binary with
+            # --no-extensions, so they inherit none of the pi wrapper's -e list:
+            # every extension they need has to be named here. Providers first —
+            # the historian resolves its own models inside this child. Compiled
+            # extensions load by their builtin: name, the way the wrapper names
+            # them; the rest are runtime paths.
             pi.subagent_extensions = [
-              "npm/node_modules/pi-tool-repair/tool-repair.ts"
+              "builtin:omniroute"
+              "builtin:anthropic-auth"
+              "builtin:tool-repair"
+              "${inputs.pi-extensions}/pi-native-router"
+              "${config.home.homeDirectory}/.pi/agent/npm/node_modules/pi-commandcode-provider"
+              "${config.home.homeDirectory}/.pi/agent/npm/node_modules/opensec-pi-todo"
+              "${config.home.homeDirectory}/.pi/agent/npm/node_modules/opensec-pi-fff"
             ];
           };
     };

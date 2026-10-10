@@ -74,25 +74,26 @@ in
 
       # Pi agent dir; referenced by rendered settings and out-of-store symlinks.
       piAgentDir = "${config.home.homeDirectory}/.pi/agent";
-      # The magic-context fork is a live checkout, not an installed package; see
-      # the note on its row in _pi-extensions.nix.
-      magicContextDir = "${config.home.homeDirectory}/Projects/dev/custom/magic-context";
-
       # Rows are the single list of extensions: the settings list and the
       # launcher both read them, so nothing can be installed for one and dropped
       # by the other.
       piExtensionRows = import ./_pi-extensions.nix;
       # A row's source or path carries one placeholder: `@home@` for the
-      # operator's home, `@extensions@` for the pinned pi-extensions input, or
-      # `@package@<name>` for an extension package, or `@recipe@<id>` for a
-      # source a pkgs/pi-plugins recipe resolves — so the
+      # operator's home, `@extensions@` for the pinned pi-extensions input,
+      # `@package@<name>[/subpath]` for an extension package, or `@recipe@<id>`
+      # for a source a pkgs/pi-plugins recipe resolves — so the
       # running configuration never reads a live checkout.
       rowPath =
         value:
         if lib.hasPrefix "@recipe@" value then
           pkgs.pi-plugins.plugins.${lib.removePrefix "@recipe@" value}.dir
         else if lib.hasPrefix "@package@" value then
-          toString pkgs.${lib.removePrefix "@package@" value}
+          let
+            parts = lib.splitString "/" (lib.removePrefix "@package@" value);
+            package = toString pkgs.${builtins.head parts};
+            suffix = lib.concatStringsSep "/" (builtins.tail parts);
+          in
+          if suffix == "" then package else "${package}/${suffix}"
         else
           lib.replaceStrings
             [ "@home@" "@extensions@" ]
@@ -101,8 +102,8 @@ in
       # A row with no settings source is compiled-only (pi-vcc), so it is neither
       # installed nor passed as -e.
       loadable = row: (row.load or true) && row ? source;
-      # What the operator's build does not contain: a compiled factory loads
-      # unconditionally, so these are exactly the extensions to pass as -e.
+      # Compiled plugins are enabled as builtins by the launcher; only these
+      # remaining extensions need a runtime path passed as -e.
       runtimeRows = lib.filter (
         row: loadable row && !(lib.elem "lead" (row.compiled or [ ]))
       ) piExtensionRows;
@@ -128,7 +129,8 @@ in
         "${inputs.pi-extensions}/pi-cbmem/extensions/cbmem.ts"
         "${inputs.pi-extensions}/pi-output-policy/extensions/output-policy.ts"
         "${inputs.pi-extensions}/pi-bash-processes/extensions/background-tasks.ts"
-        "${magicContextDir}/packages/pi-plugin/dist/subagent-entry.js"
+        "${pkgs.pi-magic-context}/dist/index.js"
+        "${inputs.pi-extensions}/pi-native-router/src/index.ts"
         "${piAgentDir}/npm/node_modules/pi-tool-repair/tool-repair.ts"
         "${piAgentDir}/npm/node_modules/@gotgenes/pi-permission-system/src/index.ts"
       ];
@@ -156,6 +158,8 @@ in
       # Each definition's frontmatter picks one of these; the list is a ceiling,
       # not a preference order.
       workhorseModels = [
+        "route/coder"
+        "route/budget"
         "openai-codex/gpt-6-luna"
         "omniroute/coder-high"
         "omniroute/budget"
@@ -167,6 +171,8 @@ in
       # per-role model allow-lists. A scope only restricts.
       herdsmanConfig = builtins.toJSON {
         retainWorkers = false;
+        softTimeoutMs = 1800000;
+        workerCompaction = false;
         disabledDefinitions = [
           "generalist"
           "implementer"
@@ -181,9 +187,18 @@ in
             delegate.allow = workhorseModels;
             researcher.allow = workhorseModels;
             "evidence-auditor".allow = workhorseModels;
-            scout.allow = [ "omniroute/explorer" ];
-            oracle.allow = [ "openai-codex/gpt-6.1-sol" ];
-            reviewer.allow = [ "openai-codex/gpt-6.1-sol" ];
+            scout.allow = [
+              "omniroute/explorer"
+              "route/explorer"
+            ];
+            oracle.allow = [
+              "openai-codex/gpt-6.1-sol"
+              "route/smart"
+            ];
+            reviewer.allow = [
+              "openai-codex/gpt-6.1-sol"
+              "route/smart"
+            ];
           };
         };
       };
@@ -252,6 +267,10 @@ in
           defaultModel = "coder-high";
 
           enabledModels = [
+            "anthropic/claude-haiku-5-5"
+            "route/coder"
+            "route/budget"
+            "route/smart"
             "anthropic/claude-opus-5-5"
             "anthropic/claude-sonnet-5-5"
             "openai-codex/gpt-6-luna"
@@ -275,7 +294,7 @@ in
           enableInstallTelemetry = false;
           doubleEscapeAction = "tree";
           followUpMode = "all";
-          tuiMode = "regular";
+          steeringMode = "all";
           hideThinkingBlock = false;
 
           kendex.extensionManager.config."@vanillagreen/pi-background-tasks" = {
@@ -284,6 +303,8 @@ in
             wakeMessageStyle = "line";
             forcedBackgroundNotifyOnOutput = false;
             defaultTimeoutSeconds = 0;
+            defaultSoftTimeoutMs = 1800000;
+            exitWakeBatchMs = 1000;
             outputSettleMs = 400;
             outputAlertMaxChars = 2048;
             toolRenderMode = "stacked";
@@ -329,9 +350,154 @@ in
             maxLineWidth = 400;
           };
 
+          # Native router: virtual route/<role> models over ordered physical candidates.
+          # Shared settings sit on each provider; accounts are only for providers with several
+          # keys (OpenCode Go). Keys are sops-decrypted files; a missing key fails closed.
+          kendex.extensionManager.config."@vanillagreen/pi-native-router" = {
+            providers = {
+              opencode-go = {
+                name = "OpenCode Go";
+                accounts = {
+                  go-a = {
+                    apiKeyFile = sopsSecrets.OPENCODE_API_KEY.path;
+                    quota = {
+                      source = "codexbar";
+                      provider = "opencodego";
+                      account = "main";
+                      enforce = true;
+                    };
+                  };
+                  go-b = {
+                    apiKeyFile = sopsSecrets.OPENCODE_API_KEY_HOMELAB.path;
+                    quota = {
+                      source = "codexbar";
+                      provider = "opencodego";
+                      account = "homelab";
+                      enforce = true;
+                    };
+                  };
+                  go-c = {
+                    apiKeyFile = sopsSecrets.OPENCODE_API_KEY_UNI.path;
+                    quota = {
+                      source = "codexbar";
+                      provider = "opencodego";
+                      account = "uni";
+                      enforce = true;
+                    };
+                  };
+                };
+              };
+              commandcode = {
+                name = "Command Code";
+                apiKeyFile = sopsSecrets.COMMANDCODE_API_KEY.path;
+                quota = {
+                  source = "codexbar";
+                  provider = "commandcode";
+                  enforce = true;
+                };
+              };
+              "openai-codex" = {
+                name = "Codex";
+                quota = {
+                  source = "codexbar";
+                  provider = "codex";
+                  enforce = true;
+                };
+              };
+              anthropic = {
+                name = "Claude";
+                quota = {
+                  source = "codexbar";
+                  provider = "claude";
+                  enforce = true;
+                };
+              };
+            };
+            routes = {
+              coder.candidates = [
+                {
+                  provider = "anthropic";
+                  id = "claude-haiku-5-5";
+                  cacheTtlMs = 3600000;
+                  thinkingLevel = "high";
+                }
+                {
+                  provider = "commandcode";
+                  id = "deepseek/deepseek-v4.1-flash";
+                  cacheTtlMs = 10800000;
+                  thinkingLevel = "medium";
+                }
+                {
+                  provider = "opencode-go";
+                  id = "deepseek-v4.1-flash";
+                  cacheTtlMs = 10800000;
+                  thinkingLevel = "medium";
+                }
+                {
+                  provider = "openai-codex";
+                  id = "gpt-6-luna";
+                  cacheTtlMs = 600000;
+                  thinkingLevel = "high";
+                }
+
+              ];
+              smart.candidates = [
+                {
+                  provider = "anthropic";
+                  id = "claude-opus-5-5";
+                  cacheTtlMs = 3600000;
+                  thinkingLevel = "medium";
+                }
+                {
+                  provider = "openai-codex";
+                  id = "gpt-6.1-sol";
+                  cacheTtlMs = 600000;
+                  thinkingLevel = "medium";
+                }
+              ];
+              # A bare opencode-go candidate expands to every Go account, in declaration order.
+              explorer.candidates = [
+                {
+                  provider = "opencode-go";
+                  id = "deepseek-v4.1-flash";
+                  cacheTtlMs = 10800000;
+                  thinkingLevel = "medium";
+                }
+                {
+                  provider = "commandcode";
+                  id = "deepseek/deepseek-v4.1-flash";
+                  cacheTtlMs = 10800000;
+                  thinkingLevel = "medium";
+                }
+              ];
+              cheap.candidates = [
+                {
+                  provider = "anthropic";
+                  id = "claude-haiku-5-5";
+                  cacheTtlMs = 3600000;
+                  thinkingLevel = "high";
+                }
+                {
+                  provider = "opencode-go";
+                  id = "mimo-v2.6-flash";
+                  cacheTtlMs = 600000;
+                  thinkingLevel = "medium";
+                }
+                {
+                  provider = "opencode-go";
+                  id = "deepseek-v4.1-flash";
+                  cacheTtlMs = 10800000;
+                  thinkingLevel = "medium";
+                }
+              ];
+            };
+          };
+
           # pi-jev: advisory mode steers instead of gating; only material harm refuses.
           kendex.extensionManager.config."@vanillagreen/pi-jev" = {
             mode = "advisory";
+            # Collect readings without suppressing producer reminders.
+            watcherMode = "shadow";
             deliverNudges = false;
             deliverIntentNudges = false;
             deliverSubagentNudges = false;
@@ -346,6 +512,126 @@ in
             maxSnapshots = 2000;
             maxAgeDays = 30;
             pinLabeledEntries = true;
+          };
+
+          # The compiled footer owns the editor, and `vim` selects its vendored
+          # Vim backend; every other setting keeps the extension's default.
+          powerline.editor.mode = "vim";
+          powerline.editor.frame = "rounded";
+          powerline.welcome = false;
+          powerline.customItems = [
+            {
+              id = "provider";
+              statusKey = "native-router-provider";
+              position = "left";
+            }
+            {
+              id = "model";
+              statusKey = "native-router-model";
+              position = "left";
+            }
+            {
+              id = "peak";
+              statusKey = "native-router-peak";
+              position = "left";
+              color = "warning";
+            }
+            {
+              id = "thinking";
+              statusKey = "native-router-thinking";
+              position = "left";
+              icon = "󰧑";
+              thinkingTint = true;
+              color = "accent";
+            }
+          ];
+          # Explicit layout, with no preset dependence. Rounded frame: `left` and
+          # `right` share the top border (project/session), `secondary` fills the
+          # bottom border (model) before `vim_mode`, `footer` is the stats line
+          # under the frame, ahead of the extension statuses.
+          # Thinking comes only from the router's custom:thinking item, which shows the
+          # level that will run for every model; Pi's built-in thinking segment is omitted.
+          powerline.layout = {
+            left = [
+              "path"
+              "git"
+              "nix"
+            ];
+            right = [ "session" ];
+            secondary = [
+              "model"
+              "custom:provider"
+              "custom:model"
+              "custom:peak"
+              "custom:thinking"
+              "shell_mode"
+              "queue"
+              "subagents"
+              "vim_mode"
+            ];
+            footer = [
+              [
+                "tokens"
+                "status:pi-cache-stats"
+                "status:reqcap"
+              ]
+              [
+                "cost"
+                "context_pct"
+              ]
+              [ "messages" ]
+              [ "tool" ]
+              [ "speed" ]
+            ];
+            footerRight = [ "time" ];
+          };
+          # Statuses other extensions publish, compacted on the footer line.
+          powerline.statusOrder = [ "pi-permission-system" ];
+          powerline.statusStyle = "pills";
+          powerline.statusFormats = {
+            # Context size comes from Powerline's own segment, which has the window.
+            magic-context.hide = true;
+            rewind.hide = true;
+            pi-cache-stats = {
+              color = "success";
+              replace = [
+                [
+                  "^.*?cache (\\d+)/(\\d+).*?\\s(\\d+\\.\\d)%(?:·write \\S+)?(.*)$"
+                  "󰃨 $1/$2 $3%$4"
+                ]
+                # Hides the ⚠️ compat marker only: the model's missing compat keys are still there.
+                [
+                  " ⚠️ compat$"
+                  ""
+                ]
+              ];
+            };
+            # "reqcap: 1 busts · 125.9k tok" -> "1 bust · 125.9k"; the idle "watching" state is dropped.
+            reqcap = {
+              icon = "";
+              replace = [
+                [
+                  "^reqcap: watching$"
+                  ""
+                ]
+                [
+                  "^reqcap: (\\d+) busts? · (\\S+) tok$"
+                  "$1 · $2"
+                ]
+              ];
+            };
+            pi-permission-system.replace = [
+              [
+                "^yolo$"
+                ""
+              ]
+            ];
+          };
+          powerline.model.showThinkingLevel = false;
+          powerline.path.mode = "basename";
+          powerline.time = {
+            format = "24h";
+            showSeconds = true;
           };
         };
       };
@@ -363,6 +649,9 @@ in
 
       home.sessionVariables = {
         HINDSIGHT_BASE_URL = hindsightUrl;
+        # Powerline guesses Nerd Font support from TERM_PROGRAM, which herdr
+        # overrides, so the terminal's Nerd Font is declared here.
+        POWERLINE_NERD_FONTS = "1";
       };
 
       # Files whose writer renames over the path (pi-tool.json, pi-stamp.json)
@@ -474,7 +763,14 @@ in
 
         };
         #
-        ".pi/agent/pi-starship.toml".source = ./pi/pi-starship.toml;
+        # Pi-Bolt skips the extension Herdr installs for Pi by name and header
+        # marker, so the pane would go unreported. The shim is a link to that
+        # same file under a name Pi-Bolt does not recognise: Herdr's own
+        # reporter runs again, keeps reporting as `pi`, and follows the file
+        # Herdr rewrites on an upgrade. It sits outside the extensions
+        # directory so stock Pi's discovery does not load it twice.
+        ".pi/agent/herdr-pi-state.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.pi/agent/extensions/herdr-agent-state.ts";
 
         # Herdsman passes `skills` and `extensions` values to Pi unchanged, so
         # the definitions carry @home@ placeholders instead of a hardcoded home

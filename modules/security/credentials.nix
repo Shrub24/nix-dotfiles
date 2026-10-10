@@ -27,6 +27,9 @@ _: {
             NEURALWATT_API_KEY = "neuralwatt_api_key";
             OPENROUTER_API_KEY = "openrouter_api_key";
             OPENCODE_API_KEY = "opencode_api_key";
+            OPENCODE_API_KEY_HOMELAB = "opencode_api_key_homelab";
+            OPENCODE_API_KEY_UNI = "opencode_api_key_uni";
+            COMMANDCODE_API_KEY = "commandcode_api_key";
             DEEPSEEK_API_KEY = "deepseek_api_key";
             CURSOR_API_KEY = "cursor_api_key";
             VOLCENGINE_API_KEY = "volcengine_api_key";

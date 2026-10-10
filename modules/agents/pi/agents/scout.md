@@ -1,7 +1,7 @@
 ---
 name: scout
 description: Fast codebase recon via codebase-explore + handoff-artifact skills; returns compressed context for handoff
-model: omniroute/explorer
+model: route/explorer
 thinking: medium
 briefProfile: investigation
 systemPromptMode: replace

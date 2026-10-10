@@ -1,7 +1,7 @@
 ---
 name: evidence-auditor
 description: Independent evidence reviewer; audits research claims via web-research + evidence-discipline skills
-model: omniroute/coder-high
+model: route/coder
 thinking: high
 briefProfile: research
 enabled: false
