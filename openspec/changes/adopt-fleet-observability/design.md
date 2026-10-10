@@ -44,7 +44,7 @@ The backend owner identifies existing delivery-health alert rules and the system
 
 ### 5. Verify delivery, not just configuration
 
-Add an evaluation-time policy check owned by the telemetry contributor, failing within `nix flake check --no-build --no-write-lock-file`. For both hosts: exact destination and pipeline, signal scope, loopback node and health listeners, distinct instance labels, effective failure hooks through notify, trace admission that is local and traces-only, the trace destination resolved from the inventory rather than written locally, and Vector not enabled. Include a negative case for an ineffective notify composition (registrations without notify). Validate built unit files for package-provided units.
+Add an evaluation-time policy check owned by the telemetry contributor, failing within `nix flake check --no-build --no-write-lock-file`. For both hosts: exact destination and pipeline, signal scope, loopback node and health listeners, the tailscale source pinned to the daemon's local `100.100.100.100:80` rather than any other address, distinct instance labels, the host identity bound to the configured name, effective failure hooks through notify, trace admission that is local and traces-only, the trace destination resolved from the inventory rather than written locally, and Vector not enabled. Include a negative case for an ineffective notify composition (registrations without notify). Validate built unit files for package-provided units.
 
 Runbook `docs/runbooks/verify-workstation-observability.md` keeps a per-host configured/deployed/delivering ledger over the applicable fleet acceptance categories:
 

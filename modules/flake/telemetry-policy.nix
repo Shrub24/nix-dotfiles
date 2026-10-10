@@ -39,6 +39,7 @@ let
       scrapeFor = job: telemetry.scrape.${job} or null;
       nodeScrape = scrapeFor "node";
       healthScrape = scrapeFor "vmagent-health";
+      tailscaleScrape = scrapeFor "tailscale";
       # `unitConfig.OnFailure` is the rendered unit-file value (a string), not the
       # option-level list, and the notify aspect attaches its handler there.
       onFailure =
@@ -84,6 +85,9 @@ let
     ++ lib.optional (
       telemetry.routes != { }
     ) "${hostName}: a telemetry route is bound; pin its ingress and destinations here"
+    ++
+      lib.optional (telemetry.identity.hostName != cfg.networking.hostName)
+        "${hostName}: identity.hostName is not the host's configured name; locally collected telemetry would be mislabelled"
     ++ lib.optional telemetry.journald.enable "${hostName}: journald shipping is enabled; journals are the separate gated change"
     ++ lib.optional (cfg.services.vector.enable or false
     ) "${hostName}: Vector is enabled; journals are the separate gated change"
@@ -111,6 +115,15 @@ let
       && healthScrape != null
       && nodeScrape.labels.instance == healthScrape.labels.instance
     ) "${hostName}: node and vmagent-health instance labels are not distinct"
+    ++
+      lib.optional
+        (
+          (cfg.services.tailscale.enable or false)
+          && !(
+            tailscaleScrape != null && tailscaleScrape.target == "100.100.100.100" && tailscaleScrape.port == 80
+          )
+        )
+        "${hostName}: the tailscale metrics source is not the daemon's local 100.100.100.100:80 registration"
     ++ lib.optional (
       !cfg.services.vmagent.enable
     ) "${hostName}: vmagent is not enabled for the declared scrape work"
