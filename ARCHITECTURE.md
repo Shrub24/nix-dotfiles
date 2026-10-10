@@ -242,10 +242,10 @@ Active user services: grist, qmd, mcp-nixos, web-catalog, moniqued, memex's
 hourly index timer, surge (the
 headless download daemon on port 1700), and niks3-auto-upload (a socket-activated
 cache upload queue). Garbage collection has no user-scoped timer: the fleet's
-`nix-gc` capability owns the units, and this repo selects the `fast-nix-gc`
-implementation — hourly threshold collection, daily root pruning through
-`nh clean all --no-gc`, no optimise pass on btrfs — all run as root, which
-covers user generations too, so GC has exactly one owner.
+`nix-gc` capability owns the units — hourly unconditional collection, daily
+root pruning through `nh clean all --no-gc`, and a weekly optimise pass this
+repo switches off because btrfs dedups as paths are written. All run as root,
+which covers user generations too, so GC has exactly one owner.
 Podman storage is pruned weekly through the platform's own
 `virtualisation.podman.autoPrune` rather than nix-fleet's `podman-prune` aspect:
 nixpkgs defines the `podman-prune` unit unconditionally, so the two cannot
