@@ -14,11 +14,46 @@ return {
 		auto_enable = true,
 		event = { "BufReadPost", "BufNewFile", "BufWritePre", "DeferredUIEnter" },
 		keys = {
-			{ "s", mode = { "n", "x", "o" }, function() require("flash").jump() end, desc = "Flash" },
-			{ "S", mode = { "n", "o", "x" }, function() require("flash").treesitter() end, desc = "Flash Treesitter" },
-			{ "r", mode = "o", function() require("flash").remote() end, desc = "Remote Flash" },
-			{ "R", mode = { "o", "x" }, function() require("flash").treesitter_search() end, desc = "Treesitter Search" },
-			{ "<c-s>", mode = { "c" }, function() require("flash").toggle() end, desc = "Toggle Flash Search" },
+			{
+				"s",
+				mode = { "n", "x", "o" },
+				function()
+					require("flash").jump()
+				end,
+				desc = "Flash",
+			},
+			{
+				"S",
+				mode = { "n", "o", "x" },
+				function()
+					require("flash").treesitter()
+				end,
+				desc = "Flash Treesitter",
+			},
+			{
+				"r",
+				mode = "o",
+				function()
+					require("flash").remote()
+				end,
+				desc = "Remote Flash",
+			},
+			{
+				"R",
+				mode = { "o", "x" },
+				function()
+					require("flash").treesitter_search()
+				end,
+				desc = "Treesitter Search",
+			},
+			{
+				"<c-s>",
+				mode = { "c" },
+				function()
+					require("flash").toggle()
+				end,
+				desc = "Toggle Flash Search",
+			},
 			{
 				"<c-space>",
 				mode = { "n", "o", "x" },
@@ -107,12 +142,49 @@ return {
 		event = { "BufReadPost", "BufNewFile", "BufWritePre", "DeferredUIEnter" },
 		keys = {
 			{ "<leader>sn", "", desc = "+noice" },
-			{ "<S-Enter>", function() require("noice").redirect(vim.fn.getcmdline()) end, mode = "c", desc = "Redirect Cmdline" },
-			{ "<leader>snl", function() require("noice").cmd("last") end, desc = "Noice Last Message" },
-			{ "<leader>snh", function() require("noice").cmd("history") end, desc = "Noice History" },
-			{ "<leader>sna", function() require("noice").cmd("all") end, desc = "Noice All" },
-			{ "<leader>snd", function() require("noice").cmd("dismiss") end, desc = "Dismiss All" },
-			{ "<leader>snt", function() require("noice").cmd("pick") end, desc = "Noice Picker (Telescope/FzfLua)" },
+			{
+				"<S-Enter>",
+				function()
+					require("noice").redirect(vim.fn.getcmdline())
+				end,
+				mode = "c",
+				desc = "Redirect Cmdline",
+			},
+			{
+				"<leader>snl",
+				function()
+					require("noice").cmd("last")
+				end,
+				desc = "Noice Last Message",
+			},
+			{
+				"<leader>snh",
+				function()
+					require("noice").cmd("history")
+				end,
+				desc = "Noice History",
+			},
+			{
+				"<leader>sna",
+				function()
+					require("noice").cmd("all")
+				end,
+				desc = "Noice All",
+			},
+			{
+				"<leader>snd",
+				function()
+					require("noice").cmd("dismiss")
+				end,
+				desc = "Dismiss All",
+			},
+			{
+				"<leader>snt",
+				function()
+					require("noice").cmd("pick")
+				end,
+				desc = "Noice Picker (Telescope/FzfLua)",
+			},
 			{
 				"<c-f>",
 				function()
@@ -226,14 +298,38 @@ return {
 		cmd = { "TodoTrouble", "TodoTelescope" },
 		event = { "BufReadPost", "BufNewFile", "BufWritePre" },
 		keys = {
-			{ "]t", function() require("todo-comments").jump_next() end, desc = "Next Todo Comment" },
-			{ "[t", function() require("todo-comments").jump_prev() end, desc = "Previous Todo Comment" },
+			{
+				"]t",
+				function()
+					require("todo-comments").jump_next()
+				end,
+				desc = "Next Todo Comment",
+			},
+			{
+				"[t",
+				function()
+					require("todo-comments").jump_prev()
+				end,
+				desc = "Previous Todo Comment",
+			},
 			{ "<leader>xt", "<cmd>Trouble todo toggle<cr>", desc = "Todo (Trouble)" },
-			{ "<leader>xT", "<cmd>Trouble todo toggle filter = {tag = {TODO,FIX,FIXME}}<cr>", desc = "Todo/Fix/Fixme (Trouble)" },
-			{ "<leader>st", function() require("snacks").picker.todo_comments() end, desc = "Todo" },
+			{
+				"<leader>xT",
+				"<cmd>Trouble todo toggle filter = {tag = {TODO,FIX,FIXME}}<cr>",
+				desc = "Todo/Fix/Fixme (Trouble)",
+			},
+			{
+				"<leader>st",
+				function()
+					require("snacks").picker.todo_comments()
+				end,
+				desc = "Todo",
+			},
 			{
 				"<leader>sT",
-				function() require("snacks").picker.todo_comments({ keywords = { "TODO", "FIX", "FIXME" } }) end,
+				function()
+					require("snacks").picker.todo_comments({ keywords = { "TODO", "FIX", "FIXME" } })
+				end,
 				desc = "Todo/Fix/Fixme",
 			},
 		},
@@ -296,7 +392,12 @@ return {
 					t = { "<([%p%w]-)%f[^<%w][^<>]->.-</%1>", "^<.->().*()</[^/]->$" },
 					d = { "%f[%d]%d+" },
 					e = {
-						{ "%u[%l%d]+%f[^%l%d]", "%f[%S][%l%d]+%f[^%l%d]", "%f[%P][%l%d]+%f[^%l%d]", "^[%l%d]+%f[^%l%d]" },
+						{
+							"%u[%l%d]+%f[^%l%d]",
+							"%f[%S][%l%d]+%f[^%l%d]",
+							"%f[%P][%l%d]+%f[^%l%d]",
+							"^[%l%d]+%f[^%l%d]",
+						},
 						"^().*()$",
 					},
 					g = function()
@@ -317,11 +418,133 @@ return {
 		"dial.nvim",
 		auto_enable = true,
 		keys = {
-			{ "<C-a>", function() return dial(true) end, expr = true, desc = "Increment", mode = { "n", "v" } },
-			{ "<C-x>", function() return dial(false) end, expr = true, desc = "Decrement", mode = { "n", "v" } },
-			{ "g<C-a>", function() return dial(true, true) end, expr = true, desc = "Increment", mode = { "n", "x" } },
-			{ "g<C-x>", function() return dial(false, true) end, expr = true, desc = "Decrement", mode = { "n", "x" } },
+			{
+				"<C-a>",
+				function()
+					return dial(true)
+				end,
+				expr = true,
+				desc = "Increment",
+				mode = { "n", "v" },
+			},
+			{
+				"<C-x>",
+				function()
+					return dial(false)
+				end,
+				expr = true,
+				desc = "Decrement",
+				mode = { "n", "v" },
+			},
+			{
+				"g<C-a>",
+				function()
+					return dial(true, true)
+				end,
+				expr = true,
+				desc = "Increment",
+				mode = { "n", "x" },
+			},
+			{
+				"g<C-x>",
+				function()
+					return dial(false, true)
+				end,
+				expr = true,
+				desc = "Decrement",
+				mode = { "n", "x" },
+			},
 		},
+		after = function()
+			local augend = require("dial.augend")
+			local logical_alias = augend.constant.new({ elements = { "&&", "||" }, word = false, cyclic = true })
+			local ordinal_numbers = augend.constant.new({
+				elements = {
+					"first",
+					"second",
+					"third",
+					"fourth",
+					"fifth",
+					"sixth",
+					"seventh",
+					"eighth",
+					"ninth",
+					"tenth",
+				},
+				word = false,
+				cyclic = true,
+			})
+			local months = augend.constant.new({
+				elements = {
+					"January",
+					"February",
+					"March",
+					"April",
+					"May",
+					"June",
+					"July",
+					"August",
+					"September",
+					"October",
+					"November",
+					"December",
+				},
+				word = true,
+				cyclic = true,
+			})
+			local groups = {
+				default = {
+					augend.integer.alias.decimal,
+					augend.integer.alias.decimal_int,
+					augend.integer.alias.hex,
+					augend.date.alias["%Y/%m/%d"],
+					augend.constant.alias.en_weekday,
+					augend.constant.alias.en_weekday_full,
+					ordinal_numbers,
+					months,
+					augend.constant.alias.bool,
+					augend.constant.alias.Bool,
+					logical_alias,
+				},
+				vue = {
+					augend.constant.new({ elements = { "let", "const" } }),
+					augend.hexcolor.new({ case = "lower" }),
+					augend.hexcolor.new({ case = "upper" }),
+				},
+				typescript = { augend.constant.new({ elements = { "let", "const" } }) },
+				css = {
+					augend.hexcolor.new({ case = "lower" }),
+					augend.hexcolor.new({ case = "upper" }),
+				},
+				markdown = {
+					augend.constant.new({ elements = { "[ ]", "[x]" }, word = false, cyclic = true }),
+					augend.misc.alias.markdown_header,
+				},
+				json = { augend.semver.alias.semver },
+				lua = { augend.constant.new({ elements = { "and", "or" }, word = true, cyclic = true }) },
+				python = { augend.constant.new({ elements = { "and", "or" } }) },
+			}
+			for name, group in pairs(groups) do
+				if name ~= "default" then
+					vim.list_extend(group, groups.default)
+				end
+			end
+			require("dial.config").augends:register_group(groups)
+			vim.g.dials_by_ft = {
+				css = "css",
+				vue = "vue",
+				javascript = "typescript",
+				typescript = "typescript",
+				typescriptreact = "typescript",
+				javascriptreact = "typescript",
+				json = "json",
+				lua = "lua",
+				markdown = "markdown",
+				sass = "css",
+				scss = "css",
+				python = "python",
+			}
+		end,
 	},
 
 	-- yanky.nvim, from LazyVim's coding.yanky extra; the history picker uses Snacks.
@@ -333,7 +556,7 @@ return {
 			{
 				"<leader>p",
 				function()
-					Snacks.picker.yanky_history()
+					Snacks.picker.yanky()
 				end,
 				mode = { "n", "x" },
 				desc = "Open Yank History",
@@ -363,6 +586,30 @@ return {
 				},
 				highlight = { timer = 150 },
 			})
+		end,
+	},
+
+	-- grug-far.nvim: search and replace, from LazyVim's core editor.lua.
+	{
+		"grug-far.nvim",
+		auto_enable = true,
+		cmd = { "GrugFar", "GrugFarWithin" },
+		keys = {
+			{
+				"<leader>sr",
+				function()
+					local ext = vim.bo.buftype == "" and vim.fn.expand("%:e")
+					require("grug-far").open({
+						transient = true,
+						prefills = { filesFilter = ext and ext ~= "" and "*." .. ext or nil },
+					})
+				end,
+				mode = { "n", "x" },
+				desc = "Search and Replace",
+			},
+		},
+		after = function()
+			require("grug-far").setup({ headerMaxWidth = 80 })
 		end,
 	},
 

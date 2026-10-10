@@ -94,6 +94,7 @@ with pkgs'.vimPlugins;
           python
           r
           rust
+          ron
           sql
           latex
           bibtex
@@ -107,9 +108,8 @@ with pkgs'.vimPlugins;
           tsx
           typescript
 
-          # the config's own ftplugins
+          # the config's own ftplugin
           matlab
-          agda
           c
           cpp
           cmake
@@ -268,6 +268,7 @@ with pkgs'.vimPlugins;
     data = [
       noice-nvim
       render-markdown-nvim
+      markdown-preview-nvim
       litee-nvim
       SchemaStore-nvim
       ts-comments-nvim

@@ -58,7 +58,7 @@ local function resession_config()
         end
 
         local formatted = path:gsub(" __", ""):gsub("_", "/")
-        local breadcrumb = formatted:gsub(vim.env.HOME, ""):gsub("mnt/LinuxData/", ""):gsub("^/", "")
+        local breadcrumb = formatted:gsub(vim.env.HOME, ""):gsub("^/", "")
         breadcrumb = breadcrumb:gsub("/", "")
 
         table.insert(sessions, {

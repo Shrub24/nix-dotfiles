@@ -35,12 +35,12 @@ opt.confirm = true
 opt.cursorline = true
 opt.expandtab = true
 opt.fillchars = {
-  foldopen = "",
-  foldclose = "",
-  fold = " ",
-  foldsep = " ",
-  diff = "╱",
-  eob = " ",
+	foldopen = "",
+	foldclose = "",
+	fold = " ",
+	foldsep = " ",
+	diff = "╱",
+	eob = " ",
 }
 opt.foldlevel = 99
 opt.foldmethod = "indent"
@@ -87,3 +87,4 @@ opt.winminwidth = 5
 opt.wrap = false
 
 vim.g.markdown_recommended_style = 0
+vim.g.autoformat = true

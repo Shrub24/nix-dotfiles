@@ -28,6 +28,7 @@ _: {
           [
             ast-grep
             tree-sitter
+            texliveSmall
           ]
           ++ cfg.treeSitterGrammars;
 

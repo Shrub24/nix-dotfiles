@@ -42,5 +42,10 @@
     # formatters and linters driven by conform / nvim-lint
     stylua
     shellcheck
+    yamlfmt
+    prettierd
+    prettier
+    markdownlint-cli2
+    markdown-toc
   ];
 }
