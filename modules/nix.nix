@@ -82,19 +82,17 @@
   flake.modules.nixos.nix =
     { config, ... }:
     {
-      # nix-fleet owns the daemon baseline and the GC unit; this selects them and
-      # binds what is host-specific (identity, I/O class, memory, evaluation knobs).
+      # nix-fleet owns the daemon baseline and the cleanup units; this selects
+      # them and binds what is host-specific (identity, I/O class, memory,
+      # evaluation knobs).
       imports = [
         inputs.nix-fleet.modules.nixos.nix-baseline
         inputs.nix-fleet.modules.nixos.nix-gc
       ];
 
-      # Importing is the enable — the fleet aspects declare no `enable`.
-      services.nix-gc = {
-        implementation = "fast-nix-gc";
-        # btrfs, and auto-optimise-store already dedups each path as it is written.
-        optimise.enable = false;
-      };
+      # btrfs, and auto-optimise-store already dedups each path as it is written,
+      # so the pass has nothing to find.
+      services.fast-nix-optimise.enable = false;
 
       nix.settings = {
         # nixpkgs already lists "root" and this list concatenates, so naming it
