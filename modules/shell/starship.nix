@@ -2,8 +2,9 @@
   # This aspect must be imported after `fish`: the integration installs a `\r`
   # binding for the transient prompt, which `fish_vi_key_bindings` would clobber.
   flake.modules.homeManager.starship =
-    _:
+    { pkgs, lib, ... }:
     let
+      jjStarship = lib.getExe pkgs.jj-starship;
       # Private-use glyphs are invisible in source, so glyphs are built from codepoints.
       glyph = cp: builtins.fromJSON "\"\\u${cp}\"";
       glyphs = {
@@ -25,7 +26,7 @@
           scan_timeout = 10;
           command_timeout = 200;
 
-          format = "$username$hostname$directory$git_branch\${custom.vcs}$line_break$character";
+          format = "$username$hostname$directory\${custom.jj}$line_break$character";
           right_format = "$nix_shell$direnv$cmd_duration$status$jobs$time";
 
           username = {
@@ -51,13 +52,10 @@
             read_only = "${glyphs.lock} ";
           };
 
-          git_branch = {
-            format = "[$symbol$branch]($style) ";
-            # A jj repo is always on a detached HEAD, so this would render a bare "HEAD"
-            # where the change id is the real identity; a plain git checkout still shows
-            # its branch. The jj state line lives in custom.vcs below.
-            ignore_branches = [ "HEAD" ];
-          };
+          # jj-starship covers both jj and plain git repos, so starship's own
+          # git modules stay off.
+          git_branch.disabled = true;
+          git_status.disabled = true;
 
           # status, time and direnv are disabled by default; their modules only
           # render once that is off.
@@ -106,29 +104,14 @@
             vimcmd_visual_symbol = "[❮](bold yellow)";
           };
 
-          # The VCS state line. starship's git_status is deliberately not used: in a
-          # colocated jj repo it reports the working copy a second time. --ignore-working-copy
-          # keeps the prompt read-only — rendering never takes a snapshot.
-          custom.vcs = {
-            description = "jj change id, working-copy diff and conflict state";
-            # shell=["sh"]: fish would reject the POSIX script below; only the binary
-            # belongs here — an explicit -c makes starship expect an argument it never passes.
-            shell = [ "sh" ];
-            when = "jj root --quiet >/dev/null 2>&1 || git rev-parse --git-dir >/dev/null 2>&1";
-            command = ''
-              if jj root --quiet >/dev/null 2>&1; then
-                printf '@%s' "$(
-                  jj log --no-graph --ignore-working-copy --color never -r @ \
-                    -T 'separate(" ", bookmarks, change_id.shortest(8)) ++ if(conflict, " ⚠", "") ++ if(self.diff().files().len() > 0, " " ++ self.diff().files().len() ++ "f", "")' \
-                    2>/dev/null
-                )"
-              else
-                n=$(git status --porcelain 2>/dev/null | wc -l)
-                [ "$n" -gt 0 ] && printf '%sf' "$n"
-              fi
-            '';
-            style = "bold magenta";
-            format = "([$output]($style) )";
+          # jj-starship renders the change id, bookmarks and jj state for jj repos and
+          # branch and status for git repos; it reads repository state without snapshotting
+          # the working copy.
+          custom.jj = {
+            description = "jj-starship: VCS state for jj and git repos";
+            when = "${jjStarship} detect";
+            shell = [ jjStarship ];
+            format = "$output ";
           };
 
           # Default modules that cannot apply here, or that cost a filesystem scan per prompt.

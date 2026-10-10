@@ -52,12 +52,12 @@ in
   programs.toggle-kbd.usbInterface = "3-9:1.0";
 
   # Lenovo battery conservation mode.
-  # gio's XDG trash cannot cover /home (its own subvolume), so it falls back to
-  # <mount>/.Trash/<uid> — sticky+world-writable, then the 0700 per-user dir.
+  # gio's trash only renames within one device, and ~/.local/share is its own
+  # subvolume — so the home trash lives on @home, reached through a symlink.
   systemd.tmpfiles.rules = [
     "w /sys/bus/platform/drivers/ideapad_acpi/VPC2004:00/conservation_mode - - - - 1"
-    "d /home/.Trash 1777 root root -"
-    "d /home/.Trash/${toString primaryUser.uid} 0700 ${primaryUser.name} ${primaryUser.name} -"
+    "d /home/${primaryUser.name}/.trash 0700 ${primaryUser.name} ${primaryUser.name} -"
+    "L+ /home/${primaryUser.name}/.local/share/Trash - - - - /home/${primaryUser.name}/.trash"
   ];
 
   # The open NVIDIA and openrazer modules must build against the kernel.

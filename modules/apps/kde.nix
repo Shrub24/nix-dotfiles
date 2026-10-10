@@ -9,6 +9,9 @@ _: {
         platformTheme.name = "gtk3";
       };
 
+      # GTK settings (the Qt platform theme resolves its icon theme through
+      # them) live in the `gtk` aspect.
+
       home.packages =
         with pkgs;
         with pkgs.kdePackages;

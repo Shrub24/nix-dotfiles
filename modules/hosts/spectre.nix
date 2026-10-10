@@ -72,6 +72,7 @@ let
     "audio"
     "pavucontrol"
     "kde-apps"
+    "gtk"
     "libreoffice"
     "util-apps"
     "defaults"
@@ -113,6 +114,7 @@ let
     "containers"
     "desktop-services"
     "kde-apps"
+    "gtk"
     "wireshark"
     "mosh"
   ];
@@ -130,7 +132,12 @@ let
       {
         # The lean set's unfree packages (unrar and bws, both via cli); the
         # desktop's NVIDIA predicate list is deliberately not inherited.
-        nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "unrar" "bws" ];
+        nixpkgs.config.allowUnfreePredicate =
+          pkg:
+          builtins.elem (lib.getName pkg) [
+            "unrar"
+            "bws"
+          ];
       }
       inputs.home-manager.nixosModules.home-manager
       {

@@ -28,5 +28,20 @@ _: {
         "inode/directory" = [ "org.kde.dolphin.desktop" ];
       };
     };
+
+    # The directories file dialogs, KDE's Places and command-line tools resolve
+    # through. Home Manager also renders user-dirs.conf with `enabled=False`, so
+    # xdg-user-dirs-update cannot rewrite the declared mapping.
+    xdg.userDirs = {
+      enable = true;
+      createDirectories = true;
+      # The remaining directories rely on the module's defaults, which are the
+      # standard `$HOME/<dir>` paths. There is no ~/Public on either host, so
+      # that entry is omitted and the XDG default stands.
+      publicShare = null;
+      # The XDG_*_DIR session variables are not how anything here looks these
+      # directories up, and the option's default moves with the state version.
+      setSessionVariables = false;
+    };
   };
 }
