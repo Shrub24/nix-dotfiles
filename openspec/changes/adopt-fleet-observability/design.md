@@ -22,7 +22,7 @@ Declare `services.telemetry.destinations.fleet-metrics` with `protocol = "promet
 
 Add `modules/node-exporter.nix` importing the fleet aspect and select it with `telemetry-metrics` in both NixOS aspect lists. No Home Manager aspect. The node aspect supplies `127.0.0.1:9100` and the `hostName:port` instance label; do not replace the target with a fleet hostname. Failure events for node-exporter and vmagent come from their fleet owners and render through the already-selected notify dispatcher; do not register them again.
 
-`telemetry-otlp` is composed as well, because a Pi trace producer now exists and needs a local admission point. That makes `otlp.signals = [ "traces" ]` the correct value rather than the empty list the metrics-only cut used; the trace destination is a separate decision (below).
+`telemetry-otlp` is composed as well, because a Pi producer now exists and needs a local admission point. That makes `otlp.signals = [ "traces" "metrics" ]` the correct value rather than the empty list the metrics-only cut used; the trace destination is a separate decision (below) and the metrics signal is admitted because the producer exports it (decision 7).
 
 **Alternative:** OTel for metrics now. The native remote-write lane already owns this path; OTel adds a receiver and a different queue model with no producer.
 
@@ -44,7 +44,7 @@ The backend owner identifies existing delivery-health alert rules and the system
 
 ### 5. Verify delivery, not just configuration
 
-Add an evaluation-time policy check owned by the telemetry contributor, failing within `nix flake check --no-build --no-write-lock-file`. For both hosts: exact destination and pipeline, signal scope, loopback node and health listeners, the tailscale source pinned to the daemon's local `100.100.100.100:80` rather than any other address, distinct instance labels, the host identity bound to the configured name, effective failure hooks through notify, trace admission that is local and traces-only, the trace destination resolved from the inventory rather than written locally, and Vector not enabled. Include a negative case for an ineffective notify composition (registrations without notify). Validate built unit files for package-provided units.
+Add an evaluation-time policy check owned by the telemetry contributor, failing within `nix flake check --no-build --no-write-lock-file`. For both hosts: exact destination and pipeline, signal scope, loopback node and health listeners, the tailscale source pinned to the daemon's local `100.100.100.100:80` rather than any other address, distinct instance labels, the host identity bound to the configured name, effective failure hooks through notify, OTLP admission that is local and exactly the traces-and-metrics set, resource-to-label promotion on the metrics exporter so an admitted metric stays host-attributable, the trace destination resolved from the inventory rather than written locally, and Vector not enabled. Include a negative case for an ineffective notify composition (registrations without notify). Validate built unit files for package-provided units.
 
 Runbook `docs/runbooks/verify-workstation-observability.md` keeps a per-host configured/deployed/delivering ledger over the applicable fleet acceptance categories:
 
@@ -73,6 +73,18 @@ Pi's `pi-otel` producer admits traces locally and the contributor resolves the f
 **If payload shaping is ever wanted**, the fleet's own mechanism is sibling trace pipelines on one route receiver rather than a second route: destination-specific output views let a mixed producer send a lean operational copy to the trace store and rich copies to its AI backends from the same route. Two obligations come with it — every destination must be declared in the route so the fleet renders its exporter, credentials and delivery state, and the rendered receiver/processor/exporter assignments must be inspected afterwards, because a native `settings` override makes the pipelines rather than the route declaration decide effective routing. Nothing here needs it: one destination on the AI route, with the gateway's own fanout, already delivers the rich stream to all three backends and gives each selected destination exactly one output path.
 
 Until the switch: hardcode no URL, do not infer AI eligibility from backend presence, and treat 4319 as routing rather than access control.
+
+### 7. Pi metrics are admitted, and only to the metrics store
+
+The producer exports metrics as well as traces. They are admitted on the same local listener, so the collector's OTLP receiver accepts both signals and `metrics = true` is stated explicitly in the aspect — the extension's own default is true, but the value the aspect carries is the one this repository owns.
+
+They cannot reach Langfuse or Latitude, and that is structural rather than policy: `pipelines.metrics` is pinned to the remote-write destination, and `fleet-traces` carries `signals = [ "traces" ]` in `pipelines.traces`. The LLM backends are not in the metrics pipeline at all. The owner's reading agrees — neither backend is a metrics endpoint — so the trace audience and the metric audience do not compete for the same destination.
+
+**Attribution.** `resource_to_telemetry_conversion` defaults to false, so a resource attribute such as `host.name` is not promoted to a series label: the collector emits it on the `target_info` series instead, and finding one host's Pi metrics would mean joining on `(job, instance)`. The contributor enables the conversion on the `fleet-metrics` exporter, and the policy check fails when metrics are admitted without it. The scrape lane labels its own series `host`, so the two lanes still name one concept differently — a fleet-side naming question rather than a defect here.
+
+**Rendered evidence.** Legion's collector configuration before and after the admission: one exporter (`otlphttp/fleet-traces`) and one pipeline (`traces`) became two of each, with `prometheusremotewrite/fleet-metrics` carrying `resource_to_telemetry_conversion: { enabled = true }` and the `metrics` pipeline routed to that exporter alone — so there is no path from an admitted metric to the AI gateway. The receiver is unchanged: one `otlp` receiver on `127.0.0.1:4318` (HTTP) and `127.0.0.1:4317` (gRPC), which serves the producer's `/v1/metrics` path on the listener that was already there.
+
+**Rejected alternative:** admitting the signal only once a producer needs it later. The producer is here now, so admitting it in the same change that configures it keeps the admission set, the exporter's attribution and the recorded contract consistent, instead of leaving a settings flag that produces nothing.
 
 ## Risks / Trade-offs
 

@@ -43,7 +43,19 @@ in
           signals = [ "traces" ];
         };
         pipelines.traces = [ "fleet-traces" ];
-        otlp.signals = [ "traces" ];
+        # Metrics are admitted too, but only ever reach the metrics destination:
+        # `pipelines.metrics` is pinned to the remote-write endpoint above, so
+        # the LLM backends behind the trace gateway are out of reach by
+        # construction, not by policy.
+        otlp.signals = [
+          "traces"
+          "metrics"
+        ];
       };
+
+      # Pi's metric series carry their host only as a resource attribute, which
+      # the remote-write exporter drops into the `target_info` series unless it
+      # is promoted to a label. The scrape lane labels its series `host`.
+      services.otel-collector.exporterExtra.fleet-metrics.resource_to_telemetry_conversion.enabled = true;
     };
 }

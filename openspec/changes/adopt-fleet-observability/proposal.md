@@ -4,14 +4,15 @@
 
 Both workstation configurations select the fleet baseline and GC, but neither exported host metrics. The published observability contract provides a remote-write lane that is settled enough to adopt without copying transport machinery. Journals are split into `adopt-fleet-journals`: replay policy, privacy and backend-retention questions are unresolved and under upstream review.
 
-Two things changed after the metrics lane was implemented. The fleet replaced the single `telemetry` aspect with selectable bundles (`telemetry-metrics`, `telemetry-logs`, `telemetry-otlp`) plus realisations, removing `providers.*` and `realized`, so enablement is now expressed by aspect composition and the health registrations are contributed rather than declared by consumers. And a Pi trace producer now exists (`pi-otel`), which puts the trace audience in scope rather than leaving it hypothetical: it resolves to the AI ingress, so full sessions reach the LLM-observability backends.
+Two things changed after the metrics lane was implemented. The fleet replaced the single `telemetry` aspect with selectable bundles (`telemetry-metrics`, `telemetry-logs`, `telemetry-otlp`) plus realisations, removing `providers.*` and `realized`, so enablement is now expressed by aspect composition and the health registrations are contributed rather than declared by consumers. And a Pi producer now exists (`pi-otel`), which puts the trace audience in scope rather than leaving it hypothetical: it resolves to the AI ingress, so full sessions reach the LLM-observability backends. The same producer exports metrics, which are admitted on the same local listener and can only reach the metrics store — the metrics pipeline carries the remote-write destination, and the LLM backends are not metrics endpoints.
 
 ## What Changes
 
-- Select the fleet `telemetry-metrics` bundle and the `node-exporter` aspect on Legion and Spectre; `telemetry-otlp` is selected only because the Pi trace producer needs a local admission point.
+- Select the fleet `telemetry-metrics` bundle and the `node-exporter` aspect on Legion and Spectre; `telemetry-otlp` is selected because the Pi producer needs a local admission point for its traces and metrics.
 - Send host metrics through one explicitly selected `fleet-metrics` remote-write destination, resolved from the canonical fleet service inventory at the flake-parts boundary. Keep shared policy in a reusable contributor, not in host files.
 - Scrape locally only, and rely on the vmagent provider's own loopback health registration rather than declaring one: a running forwarder that is failing to deliver must stay observable.
 - Send Pi's traces through the fleet AI ingress: the destination resolves from the canonical inventory to `otel-collector/ai-otlp`, so full sessions — prompts, completions and tool and agent spans — reach VictoriaTraces, Langfuse and Latitude. The general ingress is store-only and is not used for this lane.
+- Admit Pi's metrics on that same listener and promote resource attributes to labels on the metrics exporter, so an admitted series names the host that produced it instead of leaving host identity on the separate `target_info` series.
 - Use stable host labels and vmagent's bounded disk queue. Document behaviour when a portable host loses tailnet access or suspends.
 - Record the evaluated queue path in `docs/impermanence.md`, marking it active only after deployment.
 - Provide separate configuration, deployment and delivery evidence per host. Endpoint reachability alone is not acceptance.

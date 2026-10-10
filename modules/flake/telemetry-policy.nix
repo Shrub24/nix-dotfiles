@@ -73,8 +73,12 @@ let
       telemetry.pipelines.metrics != [ "fleet-metrics" ]
     ) "${hostName}: pipelines.metrics is not pinned to [ \"fleet-metrics\" ]"
     ++ lib.optional (
-      telemetry.otlp.signals != [ "traces" ] || telemetry.otlp.ingress != null
-    ) "${hostName}: OTLP admission is not local traces-only"
+      telemetry.otlp.signals != [
+        "traces"
+        "metrics"
+      ]
+      || telemetry.otlp.ingress != null
+    ) "${hostName}: OTLP admission is not the local traces-and-metrics set"
     ++ lib.optional (
       !(telemetry.destinations ? fleet-traces)
       || telemetry.destinations.fleet-traces.protocol != "otlp-http"
@@ -88,6 +92,16 @@ let
     ++
       lib.optional (telemetry.identity.hostName != cfg.networking.hostName)
         "${hostName}: identity.hostName is not the host's configured name; locally collected telemetry would be mislabelled"
+    ++
+      lib.optional
+        (
+          builtins.elem "metrics" telemetry.otlp.signals
+          &&
+            (cfg.services.otel-collector.exporterExtra.fleet-metrics.resource_to_telemetry_conversion.enabled
+              or false
+            ) != true
+        )
+        "${hostName}: the fleet-metrics exporter does not promote resource attributes, so admitted Pi metrics would carry no host label"
     ++ lib.optional telemetry.journald.enable "${hostName}: journald shipping is enabled; journals are the separate gated change"
     ++ lib.optional (cfg.services.vector.enable or false
     ) "${hostName}: Vector is enabled; journals are the separate gated change"

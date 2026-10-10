@@ -109,3 +109,18 @@ Both hosts SHALL admit traces only through a local OTLP listener, and the fleet 
 
 - **WHEN** the trace destination resolves to the general record
 - **THEN** the policy check fails, because Pi spans would silently stop reaching Langfuse and Latitude
+
+### Requirement: Pi metrics are admitted locally and stay host-attributable
+
+Both hosts SHALL admit Pi's metrics through the same local OTLP listener as its traces. The metrics pipeline SHALL carry only the metrics destination, so no admitted series can reach the LLM-observability backends behind the trace gateway, and the metrics exporter SHALL promote resource attributes to labels so an admitted series names the host that produced it.
+
+#### Scenario: Pi exports metrics on either host
+
+- **WHEN** Pi exports metrics
+- **THEN** they are admitted on the local listener and forwarded to the metrics destination
+- **AND** the metrics pipeline contains no LLM-observability backend, because neither is a metrics endpoint
+
+#### Scenario: Host attribution is missing
+
+- **WHEN** metrics are admitted while the metrics exporter does not promote resource attributes
+- **THEN** the policy check fails, because admitted series would carry no host label

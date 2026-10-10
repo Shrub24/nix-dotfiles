@@ -6,7 +6,7 @@
         endpoint = osConfig.services.telemetry.otlp.httpUrl;
         protocol = "http/protobuf";
         traces = true;
-        metrics = false;
+        metrics = true;
         logs = false;
         captureContent = "full";
         selfLogs = false;
