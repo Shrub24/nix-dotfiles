@@ -6,6 +6,7 @@ final: _prev: {
   # Plugin recipes only: which of them a build compiles in is the caller's
   # selection, so `pi-bolt` takes `plugins` (see pkgs/pi-plugins).
   pi-plugins = final.callPackage ./pi-plugins { piExtensions = inputs.pi-extensions; };
+  pi-otel = final.callPackage ./pi-otel { piExtensions = inputs.pi-extensions; };
   pi-bolt = final.callPackage ./pi-bolt { piPlugins = final.pi-plugins; };
   nix-search-tv-fzf = final.callPackage ./nix-search-tv-fzf { };
   nixos-boot = final.callPackage ./nixos-boot { src = inputs.nixos-boot; };

@@ -65,6 +65,7 @@
 - [pi-bolt-entrypoints.md](pi-bolt-entrypoints.md) — why launch behaviour belongs to the package and the executable shares its store root
 - [pi-bolt-fork-release.md](pi-bolt-fork-release.md) — why a Pi-Bolt tag's runtime is a separate release asset, and what a fork release has to carry before the pin can move
 - [pi-herdsman.md](pi-herdsman.md) — the incident where herdsman re-read session transcripts on a refresh pass, and what the fix leaves behind
+- [pi-otel.md](pi-otel.md) — why Pi uses the run-trace fork with a lock-derived runtime closure and leaves backend fanout and credentials at the fleet gateway
 - [pi-plugin-sources.md](pi-plugin-sources.md) — why every Pi extension source is a pin rather than a live checkout, and what that costs
 
 ## Q

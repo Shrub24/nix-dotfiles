@@ -84,12 +84,15 @@ in
       piExtensionRows = import ./_pi-extensions.nix;
       # A row's source or path carries one placeholder: `@home@` for the
       # operator's home, `@extensions@` for the pinned pi-extensions input, or
-      # `@recipe@<id>` for the source a pkgs/pi-plugins recipe resolves — so the
+      # `@package@<name>` for an extension package, or `@recipe@<id>` for a
+      # source a pkgs/pi-plugins recipe resolves — so the
       # running configuration never reads a live checkout.
       rowPath =
         value:
         if lib.hasPrefix "@recipe@" value then
           pkgs.pi-plugins.plugins.${lib.removePrefix "@recipe@" value}.dir
+        else if lib.hasPrefix "@package@" value then
+          toString pkgs.${lib.removePrefix "@package@" value}
         else
           lib.replaceStrings
             [ "@home@" "@extensions@" ]
@@ -121,6 +124,7 @@ in
       childExtensions = [
         "builtin:mcp"
         "builtin:codemode"
+        "${pkgs.pi-otel}"
         "${inputs.pi-extensions}/pi-cbmem/extensions/cbmem.ts"
         "${inputs.pi-extensions}/pi-output-policy/extensions/output-policy.ts"
         "${inputs.pi-extensions}/pi-bash-processes/extensions/background-tasks.ts"
