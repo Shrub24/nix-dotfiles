@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
-"""Update CodexBar to a settled release carrying the Linux x86_64 CLI archive."""
+"""Update CodexBar to the newest stable release carrying the Linux x86_64 CLI archive."""
 
 import json
 import os
 import re
 import subprocess
 import sys
-from datetime import datetime, timedelta, timezone
 from urllib.request import Request, urlopen
 
 ASSET = "CodexBarCLI-v{version}-linux-x86_64.tar.gz"
-SETTLING = timedelta(hours=float(os.environ.get("CODEXBAR_UPDATE_SETTLING_HOURS", "24")))
-STABLE = re.compile(r"v[0-9]+\.[0-9]+\.[0-9]+(-cc)?")
+STABLE = re.compile(r"v[0-9]+\.[0-9]+\.[0-9]+")
 
 
 def releases():
-    url = "https://api.github.com/repos/Shrub24/CodexBar/releases?per_page=100"
+    url = "https://api.github.com/repos/steipete/CodexBar/releases?per_page=100"
     found = []
     while url:
         request = Request(url, headers={"User-Agent": "nix-dotfiles-codexbar-update"})
@@ -35,19 +33,11 @@ def has_asset(release):
     return any(asset["name"] == ASSET.format(version=version) for asset in release["assets"])
 
 
-def settled(release, now):
-    if not release["published_at"]:
-        return False
-    published = datetime.fromisoformat(release["published_at"].replace("Z", "+00:00"))
-    return now - published >= SETTLING
-
-
 def main():
     target = os.environ.get("CODEXBAR_UPDATE_VERSION", "stable")
     if target != "stable" and not STABLE.fullmatch(target):
         raise ValueError(f"expected stable or an exact stable vX.Y.Z tag, got: {target}")
 
-    now = datetime.now(timezone.utc)
     found = {
         release["tag_name"]: release
         for release in releases()
@@ -55,9 +45,9 @@ def main():
     }
 
     if target == "stable":
-        eligible = [tag for tag, release in found.items() if settled(release, now)]
+        eligible = list(found)
         if not eligible:
-            raise ValueError(f"no settled release carries {ASSET.format(version='X.Y.Z')}")
+            raise ValueError(f"no stable release carries {ASSET.format(version='X.Y.Z')}")
         tag = max(eligible, key=key)
     else:
         if target not in found:

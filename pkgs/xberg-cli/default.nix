@@ -11,12 +11,12 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "xberg-cli";
-  version = "1.3.8";
+  version = "1.3.10";
   # The version has to appear in the URL for nix-update to rewrite the source
   # when it bumps the version attribute.
   src = fetchurl {
     url = "https://github.com/xberg-io/xberg/releases/download/v${finalAttrs.version}/xberg-cli-x86_64-unknown-linux-gnu.tar.gz";
-    sha256 = "sha256-XfQChc1/u3GOgWDCHjzDjhHnrrolOkzyBsy2Nj/8LSA=";
+    sha256 = "sha256-hR+0+OqfskRohlVdb0yuljwjTpI8m3PO4q+O/BW9Bj8=";
   };
 
   sourceRoot = "xberg-cli-x86_64-unknown-linux-gnu";
