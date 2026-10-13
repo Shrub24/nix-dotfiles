@@ -12,9 +12,9 @@
   # which plugins a build contains is not this expression's business.
   piPlugins,
   plugins ? { },
-  # Which entrypoint this output carries. The caller's plugin selection is what
-  # the payload compiles, so the variants' payloads differ when it does.
-  variant ? "lead",
+  # The ids the child launcher enables, a subset of `plugins`. The payload
+  # compiles all of `plugins`; each launcher only chooses what it enables.
+  childPlugins ? [ ],
   # The extensions the lead entrypoint loads at runtime, as paths. The caller
   # owns the list because its entries carry the operator's home directory.
   extensions ? [ ],
@@ -27,35 +27,32 @@
   ripgrep,
   wl-clipboard,
 }:
-assert lib.elem variant [
-  "lead"
-  "child"
-];
+assert lib.all (id: lib.hasAttr id plugins) childPlugins;
 let
   # The upstream release pin. This package owns it: a tag is the only version
   # the tree and the runtime archive are published at together, upstream's
   # release workflow asserting the tree's VERSION equals the tag, so the
   # derivation's version is that tag minus upstream's prefix.
-  tag = "bolt-v0.8.5";
+  tag = "bolt-v0.9.1";
   version = lib.removePrefix "bolt-v" tag;
   src = fetchFromGitHub {
     owner = "opensec-git";
     repo = "Pi-Bolt";
     rev = tag;
     fetchSubmodules = false;
-    sha256 = "sha256-x0+akIO6YwiOsxb1YNk/paw6zjwcpionFaiLGf5latM=";
+    sha256 = "sha256-iSSKop4Scd+tSfvFJza2PKezniAIrgmnGZQytydao5g=";
   };
   # The archive beside the tag is the Bun build the AOT step compiles with, so
   # the tag keys its URL.
   runtime = fetchurl {
     url = "https://github.com/opensec-git/Pi-Bolt/releases/download/${tag}/pi-bolt-runtime-linux-x64.tar.gz";
-    sha256 = "sha256-gv8bT+37MesNfAVHuenMGfhkzZBnEl8Cy1eUz8GyB5Y=";
+    sha256 = "sha256-mtQw5iD4wL7A/Q8EstKi4yMbPignT3xcHIApV87Dlhc=";
   };
 
-  executable = if variant == "lead" then "pi-bolt" else "pi-bolt-child";
+  executable = "pi-bolt";
   # The lead also publishes the primary name, so nothing outside this package
   # has to route `pi`. A symlink keeps one script for both names.
-  extraBins = lib.optionals (variant == "lead") [ "pi" ];
+  extraBins = [ "pi" ];
 
   # bash-processes imports tool-renderer's intent helper, so the renderer's
   # source is staged whenever the former is built, registered or not.
@@ -126,7 +123,7 @@ let
     inherit src version;
 
     npmDepsFetcherVersion = 2;
-    npmDepsHash = "sha256-jYN2ro3Pd2fUMWNH7Aq1h2adUrOMGODuqOB4o4uCrBg=";
+    npmDepsHash = "sha256-gtBnoE+/SXU1P7FKwwZ/qZOujJJhedFNvFslDXyDN9w=";
     # Skip the canvas test dependency's native build; runtime WASM is staged below.
     npmRebuildFlags = [ "--ignore-scripts" ];
     npmBuildScript = "build:offline";
@@ -207,12 +204,13 @@ let
   };
 
   # Named compiled plugins are builtins upstream; --no-extensions suppresses
-  # them along with discovery, so both entrypoints opt their selected set back in.
-  compiledArgs = lib.concatMap (id: [
+  # them along with discovery, so each launcher opts its selected set back in.
+  builtinArgs = lib.concatMap (id: [
     "-e"
     "builtin:${id}"
-  ]) (lib.attrNames plugins);
-  compiledFlags = lib.concatMapStringsSep " " lib.escapeShellArg compiledArgs;
+  ]);
+  compiledArgs = builtinArgs (lib.attrNames plugins);
+  childFlags = lib.concatMapStringsSep " " lib.escapeShellArg (builtinArgs childPlugins);
 
   # The lead opts in to Pi's builtins, compiled plugins and runtime extensions.
   leadArgs = lib.concatMapStringsSep " " (arg: lib.escapeShellArg arg) (
@@ -234,60 +232,60 @@ let
     ]) extensions
   );
 
-  # What this binary already contains. A definition still naming one of them
-  # would register it a second time, which on the CLI is a startup failure.
-  duplicates = lib.concatMapStringsSep " | " (id: "*${id}*") (lib.attrNames plugins);
+  # What the child launcher already enables. A definition still naming one of
+  # them would register it a second time, which on the CLI is a startup failure.
+  duplicateArms = lib.optionalString (childPlugins != [ ]) (
+    (lib.concatMapStringsSep " | " (id: "*${id}*") childPlugins) + ") ;;"
+  );
 
   # The script is written inside the output, so the root it names is the one it
   # is installed in: `placeholder` is the only way to say that before the build.
-  entrypoint =
-    if variant == "lead" then
-      ''
-        flags=(${leadArgs})
-        # Herdr's reporter joins the launch as the shim, not as the path Herdr
-        # installs it at: Pi-Bolt skips that file by name and header marker.
-        # The shim exists once Herdr has written the file it links to; a
-        # missing -e path is fatal.
-        herdr="$HOME/.pi/agent/herdr-pi-state.ts"
-        if [ -f "$herdr" ]; then flags+=(-e "$herdr"); fi
-        # Herdsman reads this from its own environment and passes it into the
-        # child pane; a session variable would reach every operator shell.
-        export PI_HERDSMAN_CHILD_COMMAND=pi-bolt-child
-        exec ${placeholder "out"}/lib/pi-bolt/bin/pi-bolt "''${flags[@]}" "$@"
-      ''
-    else
-      ''
-        args=()
-        # Herdsman supplies both when it leads the launch; a launch without them
-        # would discover the settings packages the child compiles.
-        has_no_extensions=
-        for arg in "$@"; do
-          case "$arg" in -ne | --no-extensions) has_no_extensions=1 ;; esac
-        done
-        while [ $# -gt 0 ]; do
-          case "$1" in
-          -e | --extension)
-            if [ $# -lt 2 ]; then
-              echo "pi-bolt-child: $1 needs a path" >&2
-              exit 2
-            fi
-            case "''${2,,}" in
-            ${duplicates}) ;;
-            *) args+=("$1" "$2") ;;
-            esac
-            shift 2
-            ;;
-          *)
-            args+=("$1")
-            shift
-            ;;
-          esac
-        done
-        if [ -z "$has_no_extensions" ]; then
-          args=(--no-extensions -e builtin:mcp -e builtin:codemode "''${args[@]}")
+  leadEntrypoint = ''
+    flags=(${leadArgs})
+    # Herdr's reporter joins the launch as the shim, not as the path Herdr
+    # installs it at: Pi-Bolt skips that file by name and header marker.
+    # The shim exists once Herdr has written the file it links to; a
+    # missing -e path is fatal.
+    herdr="$HOME/.pi/agent/herdr-pi-state.ts"
+    if [ -f "$herdr" ]; then flags+=(-e "$herdr"); fi
+    # Herdsman reads this from its own environment and passes it into the
+    # child pane; a session variable would reach every operator shell.
+    export PI_HERDSMAN_CHILD_COMMAND=pi-bolt-child
+    exec ${placeholder "out"}/lib/pi-bolt/bin/pi-bolt "''${flags[@]}" "$@"
+  '';
+
+  childEntrypoint = ''
+    args=()
+    # Herdsman supplies both when it leads the launch; a launch without them
+    # would discover the settings packages the child compiles.
+    has_no_extensions=
+    for arg in "$@"; do
+      case "$arg" in -ne | --no-extensions) has_no_extensions=1 ;; esac
+    done
+    while [ $# -gt 0 ]; do
+      case "$1" in
+      -e | --extension)
+        if [ $# -lt 2 ]; then
+          echo "pi-bolt-child: $1 needs a path" >&2
+          exit 2
         fi
-        exec ${placeholder "out"}/lib/pi-bolt/bin/pi-bolt ${compiledFlags} "''${args[@]}"
-      '';
+        case "''${2,,}" in
+        ${duplicateArms}
+        *) args+=("$1" "$2") ;;
+        esac
+        shift 2
+        ;;
+      *)
+        args+=("$1")
+        shift
+        ;;
+      esac
+    done
+    if [ -z "$has_no_extensions" ]; then
+      args=(--no-extensions -e builtin:mcp -e builtin:codemode "''${args[@]}")
+    fi
+    exec ${placeholder "out"}/lib/pi-bolt/bin/pi-bolt ${childFlags} "''${args[@]}"
+  '';
 in
 stdenv.mkDerivation {
   pname = executable;
@@ -345,9 +343,13 @@ stdenv.mkDerivation {
     # and the root is interpolated by Nix, which is the only place that knows it.
     cat > $out/bin/${executable} <<'EOF'
     #!${runtimeShell}
-    ${entrypoint}
+    ${leadEntrypoint}
     EOF
-    chmod +x $out/bin/${executable}
+    cat > $out/bin/pi-bolt-child <<'EOF'
+    #!${runtimeShell}
+    ${childEntrypoint}
+    EOF
+    chmod +x $out/bin/${executable} $out/bin/pi-bolt-child
     ${lib.concatMapStringsSep "\n" (name: "ln -s ${executable} $out/bin/${name}") extraBins}
     runHook postInstall
   '';
@@ -361,7 +363,7 @@ stdenv.mkDerivation {
   installCheckPhase = ''
     runHook preInstallCheck
     # Every published name runs this output's payload, not another output's.
-    for name in ${executable} ${lib.concatStringsSep " " extraBins}; do
+    for name in ${executable} pi-bolt-child ${lib.concatStringsSep " " extraBins}; do
       grep -q "$out/lib/pi-bolt/bin/pi-bolt" $out/bin/$name
     done
     version=$(BUN_STATIC_HEAP_VERBOSE=1 $out/bin/${executable} --version 2>&1)
@@ -372,7 +374,7 @@ stdenv.mkDerivation {
       grep -a -q "$dir" $out/lib/pi-bolt/bin/pi-bolt
     done
     ${lib.optionalString (plugins ? omniroute) ''
-      ${python3}/bin/python3 ${./test_entrypoints.py} "$out/bin/${executable}"
+      ${python3}/bin/python3 ${./test_entrypoints.py} "$out/bin/${executable}" "$out/bin/pi-bolt-child"
     ''}
     runHook postInstallCheck
   '';

@@ -74,15 +74,15 @@ let
       };
       cache-optimizer = {
         tarball = npmTarball "pi-cache-optimizer" {
-          version = "2.8.24";
-          hash = "sha512-a++KD9YEMn4bwlPiR7dKmHvNtv97ZZ/l+RCdOrwRSn4gUrGSU6QKwW77T+y2tYbszdhF0S6vyeL79Jy4Q1u3vA==";
+          version = "2.8.25";
+          hash = "sha512-X1IGrpESoVJ+xYwI11OGtwLuuzEv/rtodFRPxZKST+ACaYdLSamPHg0ENinKP1ntuHJsyp4rRKfRs1qy9eKl+g==";
         };
         entry = "index.ts";
       };
       context-view = {
         tarball = npmTarball "pi-context-view" {
-          version = "0.6.0";
-          hash = "sha512-Ngo1m+3lzyi4AE1WxYW2MRKOAYdzvL3XcZSmJg27fqAlJPuDM3Rnp+rqheFBe3ElX+wsK4xZuv1CaZb+FrFKRA==";
+          version = "0.7.1";
+          hash = "sha512-74bg+Tb5SOVdjeUSW70I/yieDtAKcNeEETPj5zU3UFWlYnE3NCjGgA/fLCi6vsO9vmwbRcFmCINJBaoksxH1aw==";
         };
         entry = "src/index.ts";
       };
@@ -153,8 +153,8 @@ let
       };
       ask-user-question = {
         tarball = npmTarball "@juicesharp/rpiv-ask-user-question" {
-          version = "2.13.5";
-          hash = "sha512-D4j32b/JWiNEb2JK9nxWr13aVn/Md1ylRIPzreSzmcJWV6oKjyquBswEg830hPky4W6V65TbKs2mJXywbqYRPg==";
+          version = "2.13.8";
+          hash = "sha512-Uu2jpn5Tf0lo47izmPU7+xbUIuxE9HdmmZ6XjVzBSm8zIvnJ5Hoj/XhfuG0qC0DuCOwIkE0oNRsNsLp1js7/2g==";
         };
         entry = "index.ts";
         # The locale files are source-relative; keep its built-in English fallback
@@ -167,8 +167,8 @@ let
       };
       permission-system = {
         tarball = npmTarball "@gotgenes/pi-permission-system" {
-          version = "40.2.0";
-          hash = "sha512-ZImCyaLTNlHZAA0c5utndLW0HaAwt2UjmN3jeslABlRmgXP0GTXbWPeAehX7amUlf70M5IbrWM9nxfzFnlWgkA==";
+          version = "40.2.1";
+          hash = "sha512-PXmYiJpdoOknpmPEDEkjPecRlSc081MYPLlB7aRg7E0G8ixekJhdO50/xmBtI0AjJLD2qFrhS2FIB3VHRHX3dA==";
         };
         entry = "src/index.ts";
         # Embed the parser's wasm instead of resolving it next to the source, and
@@ -186,8 +186,8 @@ let
       };
       vcc = {
         tarball = npmTarball "@sting8k/pi-vcc" {
-          version = "0.10.1";
-          hash = "sha512-GyA+0mS49naR4oruvlNCwsHb11HDt8ete+HeC89R5VtStXNBNmoPEKgmLGfxMDKQuaqQjxt2sejuwZLDnoZP2A==";
+          version = "0.10.2";
+          hash = "sha512-7vTuOaIRZGRnChb+ZWysYtYKsZgF3KFfiJpufBl03q5KZouKAgGUdiAdfTCOM71mTSEL/gUi2+TBsmy1Y0KxYA==";
         };
         entry = "index.ts";
       };
@@ -290,8 +290,8 @@ let
         hash = "sha512-9baj9YvynilcmDNDs16B1qtioqvpQ2VY6EhOydwUwUwkhebyBhD/ERmQk9Q8go2vyZvIANWtL7GMOh1nq4TAoA==";
       };
       "@narumitw/pi-tui-kit" = npmTarball "@narumitw/pi-tui-kit" {
-        version = "0.65.5";
-        hash = "sha512-F6TiSz7igl8SVRllOJnw8cXdN2lveoD6E3UBNTmBVob1+OlPoWRRYgWSBAlLm3ZYeg75uuEZqYZd4Fg7+LsQ4A==";
+        version = "0.65.6";
+        hash = "sha512-uy+JGV/GamhLGamN932ZXEuBwfqsp6j+A7H0Qzjzn8ha+NDAEmKXk2nlmVpvnxeqEsu9zX0B0wQ2p9C8+XOZiQ==";
       };
       "grok-mermaid" = npmTarball "grok-mermaid" {
         version = "0.2.3";
@@ -306,12 +306,12 @@ let
         hash = "sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==";
       };
       "@juicesharp/rpiv-config" = npmTarball "@juicesharp/rpiv-config" {
-        version = "2.13.5";
-        hash = "sha512-TDXhRomYM3PdBxiWkLoaLHhQP+qerr/OxZ7DQt4k2GHeMDPW7z9RT92tXOFjMJHgxRV3Lk86UyY4b8KmGjjDNw==";
+        version = "2.13.8";
+        hash = "sha512-fNzUmtGHRYbPQ3PWnfwyk0ukBxUgIwFLUhzRQV8U47IMhSZAEfoutqOZ31UCPPEpCgWgF+WATJ3+jn7NwJUotg==";
       };
       "zod" = npmTarball "zod" {
-        version = "4.6.6";
-        hash = "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==";
+        version = "4.6.7";
+        hash = "sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==";
       };
       "web-tree-sitter" = npmTarball "web-tree-sitter" {
         version = "0.27.1";
@@ -322,8 +322,8 @@ let
         hash = "sha512-7hMytuYIMoXOq24yRulgIxthE9YmggZIOHCyPTTuJcu6EU54tYD+4G39cUb28kxC6jMf/AbPfWGLQtgPTdh3xw==";
       };
       "typebox" = npmTarball "typebox" {
-        version = "1.3.36";
-        hash = "sha512-bu2Ec2Ti9B4IFSFj1FcZbtLNB/W7igQwxocMGJLAG2NTv1nI+ImtIA34YgHW4CVyGVlJqNXR1GJyLmdWgV3DuA==";
+        version = "1.3.37";
+        hash = "sha512-k+Qogwk7lztlItGvFf5v4GZPPStFAFehAyOKYeuqIHzi3dfTFqPOTx38JG09hmpcK6TQgctrTD06U/0CTTpM1g==";
       };
     };
   };

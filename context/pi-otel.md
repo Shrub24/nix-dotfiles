@@ -58,7 +58,7 @@ backend-specific endpoints and credentials on every producer.
 **Evidence:** confirmed
 **Revisit when:** a plugin update breaks AOT, or its build cost outweighs the launch benefit
 
-Both Pi-Bolt variants compile the extension rather than parsing its TypeScript
+The Pi-Bolt executable compiles the extension rather than parsing its TypeScript
 and dependency closure at launch. The recipe stages `pkgs/pi-otel`, so stock
 loads and compiled loads use the same source and lock-derived dependencies.
 The runtime package stays in stock Pi's catalogue and the child extension
@@ -68,7 +68,8 @@ Compilation removes the source-relative `package.json` path used for the
 extension version. The recipe embeds the pinned manifest version instead;
 without that patch the extension silently reports `0.0.0`. The runtime package
 keeps its original file-based version lookup. Both compiled variants exported
-synthetic traces carrying the correct `0.3.1` extension version.
+synthetic traces carrying the correct `0.3.1` extension version. The merged
+executable keeps both launchers on that one compiled copy.
 
 **Alternative:** keep runtime loading for Pi-Bolt too. It works, but leaves this
 extension outside the compiled launch path the user requested.

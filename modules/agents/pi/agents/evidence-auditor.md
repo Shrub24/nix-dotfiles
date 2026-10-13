@@ -23,8 +23,9 @@ tools:
   - find
   - ls
   - bash
-  - todowrite
+  - todo
   - ctx_search
+  - ctx_reduce
   - bg_task
   - web_search
   - fetch_content

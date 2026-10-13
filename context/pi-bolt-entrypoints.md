@@ -9,8 +9,8 @@
 **Verification:** corroborated — lead and child entrypoints execute a payload in their own store output; changing runtime extension paths leaves the compilation derivation unchanged
 **Revisit when:** Radar changes its installation-identity model, or Pi-Bolt provides an upstream launch contract that replaces these entrypoints
 
-The lead package owns `pi` and `pi-bolt`; the child package owns
-`pi-bolt-child`. Discovery flags, child extension filtering and native-helper
+One package owns `pi`, `pi-bolt` and `pi-bolt-child`, all running the same
+compiled executable; each launcher enables its own builtin set. Discovery flags, child extension filtering and native-helper
 PATH are required packaging, not Home Manager launcher wiring. The module
 selects compiled plugins and supplies runtime extension paths.
 

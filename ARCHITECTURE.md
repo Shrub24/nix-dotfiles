@@ -278,7 +278,7 @@ backend. Pi's `pi-otel` fork exports through the local OTLP collector
 owns Langfuse/Latitude fanout and credentials, while metrics reach the metrics
 store — the only pipeline that carries them. Both workstations admit traces and
 metrics locally and keep logs off. Full capture includes prompts, completions
-and tool I/O. The extension compiles into both Pi-Bolt binaries; the pinned runtime
+and tool I/O. The extension compiles into the Pi-Bolt executable; the pinned runtime
 package with its npm dependencies remains available to stock Pi. Journal shipping stays off
 (`adopt-fleet-journals`), and Beszel keeps its dashboard lane alongside.
 LLM traffic goes to the OmniRoute gateway on the builder host, an endpoint the
@@ -427,13 +427,12 @@ describes only machines that are always on.
 
   Named compiled plugins are builtins: `--no-extensions` disables them along
   with discovery, so each launcher explicitly enables its compiled set through
-  `-e builtin:<id>`. Which plugins are compiled is a build-time decision with
-  two answers — `pkgs/pi-bolt` builds the
-  recipes it is handed and carries no selection of its own. The lead build is
-  the operator's session; the child build is what a delegated child launches
-  with, which is why it leaves out the renderer, the Powerline footer and recap
-  the operator wants and the child does not. Both are derived from one row table:
-  a row's `compiled` list names the builds that contain it. Two plugins need
+  `-e builtin:<id>`. One executable compiles the union of the rows whose
+  `compiled` list names `lead`; `pkgs/pi-bolt` builds the recipes it is handed
+  and carries no selection of its own. The child launcher enables only the rows
+  naming `child`, which leaves out the renderer, recap and the other lead-only
+  rows a delegated child does not run. Both sets are derived from one row table.
+  Compiling the superset costs no startup time: an unenabled builtin is inert. Two plugins need
   help being compiled: Loop Police and Ask User Question read a file beside
   their own source, which no longer exists once the source is bytes in the
   binary, so their paths move to a Pi-provided location or their fallback; and
@@ -469,8 +468,8 @@ describes only machines that are always on.
   needs when the launch does not, so a child started without herdsman's own flag
   list is still complete. These entrypoints belong to `pkgs/pi-bolt`, not
   separate Home Manager launcher derivations. The lead package publishes `pi`
-  and `pi-bolt`, and the child publishes `pi-bolt-child`; each keeps its payload
-  in the same store output so Radar sees one installation. Compilation is
+  and `pi-bolt`, and the same output publishes `pi-bolt-child`, so Radar sees
+  one installation. Compilation is
   separate, so launcher-only changes reuse the AOT build. Home Manager selects
   plugins and runtime extension paths and installs the lead with `lib.hiPrio`
   over stock Pi; `pi-stock` remains the explicit fallback. Routing is not ours:

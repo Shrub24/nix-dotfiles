@@ -20,15 +20,16 @@ let
     endpoint = "mcp";
     via = "tailnet";
   };
-  # A build compiles the recipes of the rows that name it; the package carries
-  # no selection of its own.
+  # The payload compiles the recipes of every row that names the lead; the
+  # launchers choose what they enable from the ids of the rows that name each.
+  compiledRows =
+    variant: lib.filter (row: lib.elem variant (row.compiled or [ ])) (import ./_pi-extensions.nix);
   compiledPlugins =
     registry: variant:
     lib.listToAttrs (
-      map (row: lib.nameValuePair row.id registry.plugins.${row.id}) (
-        lib.filter (row: lib.elem variant (row.compiled or [ ])) (import ./_pi-extensions.nix)
-      )
+      map (row: lib.nameValuePair row.id registry.plugins.${row.id}) (compiledRows variant)
     );
+  compiledIds = variant: map (row: row.id) (compiledRows variant);
 in
 {
   perSystem =
@@ -41,19 +42,14 @@ in
       # Use the same package overlay as the hosts.
       repoPkgs = pkgs.extend (import ../../pkgs { inherit inputs system; });
       registry = repoPkgs.pi-plugins;
-      # The child build carries a whole child's surface; only the lead one adds
-      # the host's runtime extensions, and those carry the operator's home, so
-      # the module rather than this output supplies them.
-      package =
-        variant:
-        repoPkgs.pi-bolt.override {
-          inherit variant;
-          plugins = compiledPlugins registry variant;
-        };
     in
     {
-      packages.pi-bolt = package "lead";
-      packages.pi-bolt-child = package "child";
+      # The host's runtime extensions carry the operator's home, so the module
+      # rather than this output supplies them to the lead launcher.
+      packages.pi-bolt = repoPkgs.pi-bolt.override {
+        plugins = compiledPlugins registry "lead";
+        childPlugins = compiledIds "child";
+      };
     };
 
   flake.modules.homeManager.pi =
@@ -218,13 +214,9 @@ in
       # module owns what varies with the operator — which plugins each build
       # compiles, and the runtime extensions the lead passes by path.
       piBolt = pkgs.pi-bolt.override {
-        variant = "lead";
         plugins = compiledPlugins pkgs.pi-plugins "lead";
+        childPlugins = compiledIds "child";
         extensions = piBoltExtensions;
-      };
-      piBoltChild = pkgs.pi-bolt.override {
-        variant = "child";
-        plugins = compiledPlugins pkgs.pi-plugins "child";
       };
       # The lead package ships `bin/pi` beside `bin/pi-bolt`; hiPrio outranks the
       # stock package's own `pi`, which stays reachable as `pi-stock`.
@@ -263,11 +255,12 @@ in
           npmCommand = [ "bun" ];
           inherit packages;
 
-          defaultProvider = "omniroute";
-          defaultModel = "coder-high";
+          defaultProvider = "route";
+          defaultModel = "coder";
 
           enabledModels = [
             "anthropic/claude-haiku-5-5"
+            "route/explorer"
             "route/coder"
             "route/budget"
             "route/smart"
@@ -275,14 +268,11 @@ in
             "anthropic/claude-sonnet-5-5"
             "openai-codex/gpt-6-luna"
             "openai-codex/gpt-6.1-sol"
-            "omniroute/coder-high"
-            "omniroute/explorer"
-            "omniroute/budget"
-            "omniroute/smart-budget"
-            "omniroute/vision"
           ];
 
           compaction.enabled = false;
+          # No automatic keep-alive refreshes: each refresh is a real billed request (quota on subscription routes).
+          cacheWarming = "off";
           transport = "auto";
 
           # MCP tools go through codemode; ordinary tools stay direct.
@@ -337,7 +327,7 @@ in
 
             renderBashDiffs = false;
             renderVcsDiffCommandDiffs = true;
-            splitDiffs = true;
+            splitDiffs = false;
             wordDiffHighlights = true;
             shikiDiffs = true;
             styledCodeBlocks = true;
@@ -444,7 +434,7 @@ in
               smart.candidates = [
                 {
                   provider = "anthropic";
-                  id = "claude-opus-5-5";
+                  id = "claude-sonnet-5-5";
                   cacheTtlMs = 3600000;
                   thinkingLevel = "medium";
                 }
@@ -545,12 +535,6 @@ in
               color = "accent";
             }
           ];
-          # Explicit layout, with no preset dependence. Rounded frame: `left` and
-          # `right` share the top border (project/session), `secondary` fills the
-          # bottom border (model) before `vim_mode`, `footer` is the stats line
-          # under the frame, ahead of the extension statuses.
-          # Thinking comes only from the router's custom:thinking item, which shows the
-          # level that will run for every model; Pi's built-in thinking segment is omitted.
           powerline.layout = {
             left = [
               "path"
@@ -569,16 +553,15 @@ in
               "subagents"
               "vim_mode"
             ];
+            # Footer fitting keeps leading groups first: context and cache hit rate win narrow widths.
             footer = [
-              [
-                "tokens"
-                "status:pi-cache-stats"
-                "status:reqcap"
-              ]
-              [
-                "cost"
-                "context_pct"
-              ]
+              [ "context_pct" ]
+              [ "status:pi-cache-stats" ]
+              [ "tokens" ]
+              [ "status:reqcap" ]
+              [ "status:pi-herdsman" ]
+              [ "status:pi-herdsman-waiting" ]
+              [ "cost" ]
               [ "messages" ]
               [ "tool" ]
               [ "speed" ]
@@ -639,7 +622,6 @@ in
       home.packages = [
         claudeCode
         (lib.hiPrio piBolt)
-        piBoltChild
         piStock
       ];
 
@@ -649,16 +631,8 @@ in
 
       home.sessionVariables = {
         HINDSIGHT_BASE_URL = hindsightUrl;
-        # Powerline guesses Nerd Font support from TERM_PROGRAM, which herdr
-        # overrides, so the terminal's Nerd Font is declared here.
-        POWERLINE_NERD_FONTS = "1";
       };
 
-      # Files whose writer renames over the path (pi-tool.json, pi-stamp.json)
-      # stay application-owned: a rename replaces a store symlink instead of
-      # failing. claude-bridge.json writes in place, so it is safe to declare —
-      # its startup-notice key is set precisely so the notice never fires and
-      # `/login` stays imperative, landing the credential in ~/.claude.
       home.file = {
         # Pi's MCP servers. Underscore ids keep Pi's normalized namespaces
         # stable: the tool names a model sees are mcp__<server>__<tool>.
@@ -793,12 +767,6 @@ in
 
       };
 
-      # Herdsman's configuration is one app-written file: changing settings
-      # through `/agents` rewrites it atomically (temp file plus rename), which
-      # is the same write path as herdr's config.toml and would replace a store
-      # symlink with a real file. The keys this repository owns are merged
-      # recursively into the real file instead, so anything set through the UI
-      # survives a switch.
       home.activation.piHerdsmanConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         cfg="$HOME/.pi/agent/pi-herdsman/config.json"
         ${pkgs.coreutils}/bin/mkdir -p "$(dirname "$cfg")"

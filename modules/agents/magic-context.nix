@@ -24,9 +24,9 @@
                 ];
               };
               pi = {
-                model = "omniroute/neural/deepseek-v4.1-flash";
+                model = "anthropic/claude-haiku-5-5";
                 fallback_models = [
-                  "anthropic/claude-haiku-5-5"
+                  "omniroute/neural/deepseek-v4.1-flash"
                   "openai-codex/gpt-6-luna"
                 ];
                 thinking_level = "low";
@@ -43,12 +43,10 @@
               query_input_type = "query";
             };
             cache_ttl = {
-              default = "30m";
-              "openai-codex/*" = "10m";
-              "anthropic/*" = "60m";
+              default = "never";
             };
             toast_duration_ms = 500;
-            execute_threshold_tokens.default = 200000;
+            execute_threshold_tokens.default = 250000;
             smart_drops = true;
 
             profiles.subagent.memory.read_only = true;

@@ -1,8 +1,9 @@
 # One row per extension, consumed twice: `source` is what Pi's discovery reads
 # from settings.json, `path` is the installed location a discovery-off launch
 # passes as -e, and `id` names the recipe in pkgs/pi-plugins. `compiled` names
-# the builds that bake it in — a compiled factory loads unconditionally, so such
-# a row is filtered from that build's -e list. A source or path may carry one
+# the launchers that enable it. The one Pi-Bolt executable compiles every row
+# naming `lead`; a launcher enables its compiled rows through `-e builtin:<id>`,
+# and a compiled row is filtered from the lead's runtime -e list. A source or path may carry one
 # placeholder: `@home@`, `@extensions@` (the pinned pi-extensions input),
 # `@package@<name>[/subpath]` (an installed extension package), or `@recipe@<id>`
 # (the source a pkgs/pi-plugins recipe resolves).

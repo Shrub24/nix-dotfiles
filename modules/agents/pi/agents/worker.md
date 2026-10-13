@@ -24,8 +24,9 @@ tools:
   - find
   - ls
   - bash
-  - todowrite
+  - todo
   - ctx_search
+  - ctx_reduce
   - bg_task
   - edit
   - write
@@ -36,7 +37,6 @@ tools:
   - get_code_snippet
   - get_file_outline
   - get_graph_schema
-  - index_status
   - list_projects
   - query_graph
   - search_code

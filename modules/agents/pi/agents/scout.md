@@ -21,8 +21,9 @@ tools:
   - find
   - ls
   - bash
-  - todowrite
+  - todo
   - ctx_search
+  - ctx_reduce
   - bg_task
   - write
   - check_index_coverage
@@ -47,8 +48,6 @@ tools:
   - mcp__docs_mcp_server__list_jobs
   - mcp__docs_mcp_server__get_job_info
   - mcp__docs_mcp_server__cancel_job
-  - mcp__docs_mcp_server__remove_docs
-  - mcp__docs_mcp_server__fetch_url
   - mcp__nixos__nix
   - mcp__nixos__nix_versions
   - mcp__grep_app__searchGitHub

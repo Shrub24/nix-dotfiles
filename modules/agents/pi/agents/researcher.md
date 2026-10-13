@@ -26,6 +26,7 @@ tools:
   - bash
   - todowrite
   - ctx_search
+  - ctx_reduce
   - bg_task
   - write
   - web_search
