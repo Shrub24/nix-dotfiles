@@ -841,11 +841,11 @@
     "pi-extensions": {
       "flake": false,
       "locked": {
-        "lastModified": 1791811592,
-        "narHash": "sha256-lp4XzbL7KTsNp9nvLMlWAXkJJbot0ldXCT7q+p6JZCk=",
+        "lastModified": 1792105417,
+        "narHash": "sha256-lRmYTUKMLb5/RmKTqrbfgw+ruvQDf0sLIByApjtulpo=",
         "owner": "Shrub24",
         "repo": "pi-extensions",
-        "rev": "a53f56746f0cc5e25a41679acf5c899f6bd71bb7",
+        "rev": "ae0090aa4bddd260616e762c873cd23a21d82f60",
         "type": "github"
       },
       "original": {
