@@ -8,6 +8,7 @@
 
   flake.modules.homeManager.direnv =
     {
+      lib,
       ...
     }:
     {
@@ -36,6 +37,13 @@
           mux_delay = 4;
         };
       };
+
+      # Fish exports its direnv-instant state to every child, including nix-shell's
+      # bash. That cache is fish syntax, so bash must not inherit it or emit it.
+      programs.bash.initExtra = lib.mkBefore ''
+        unset __DIRENV_INSTANT_ENV_FILE
+        export DIRENV_INSTANT_SHELL=bash
+      '';
     }
 
   ;

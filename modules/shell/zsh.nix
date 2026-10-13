@@ -15,6 +15,7 @@ _: {
           dotDir = "${config.home.homeDirectory}/.config/zshrc";
           enableCompletion = true;
           zprof.enable = false;
+          shellAliases.sed = "sd";
           antidote = {
             enable = true;
             plugins = [

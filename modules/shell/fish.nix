@@ -34,6 +34,9 @@
       programs = {
         fish = {
           enable = true;
+          # sd replaces sed only in interactive shells: nix-shell's bash setup
+          # calls sed, and a bash alias would hand it sd's syntax.
+          shellAliases.sed = "sd";
           functions = {
             _fzf_preview_router = ''
               set -l cand $argv[1]

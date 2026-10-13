@@ -22,6 +22,7 @@ _: {
           set -g base-index 1
           setw -g pane-base-index 1
 
+          set -g extended-keys-format csi-u
           set -g focus-events on
           set -g aggressive-resize on
           set -g window-size latest

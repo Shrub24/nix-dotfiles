@@ -70,7 +70,6 @@ in
           df = "duf";
           du = "dust";
           cat = "bat";
-          sed = "sd";
           ps = "procs";
           top = "btm";
           htop = "btop";
@@ -102,6 +101,8 @@ in
           # pi-cache-optimizer: keep prompts/skill XML verbatim.
           PI_CACHE_OPTIMIZER_NO_PROMPT_REWRITE = "1";
           PI_CACHE_OPTIMIZER_NO_SKILL_COMPRESSION = "1";
+          # Keep the zero-price override off too, so enabling cacheWarming in /settings cannot start keep-alive refreshes.
+          PI_CACHE_OPTIMIZER_NO_ZERO_PRICE_WARMING = "1";
           PI_CACHE_RETENTION = "long";
         };
       };
