@@ -23,11 +23,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791797454,
-        "narHash": "sha256-TBzl6d9E1FKAIQSuYBB1lQcVC5DLq9ugzkOG0t90wTo=",
+        "lastModified": 1792081506,
+        "narHash": "sha256-pZQfmmZf4e82Taj0A6CLpviRQnl3YlP6ZdIz0qPm868=",
         "owner": "Shrub24",
         "repo": "agent-radar",
-        "rev": "f87348032a808967c50a4e84b7e1c766a64ebfe3",
+        "rev": "77e69f216a65251500010190235a3da60d6edfed",
         "type": "github"
       },
       "original": {

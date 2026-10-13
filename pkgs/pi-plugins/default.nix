@@ -285,6 +285,10 @@ let
     libraries = {
       # Resolved from the plugin tree's own node_modules.
       # (dir name) = tarball
+      "pi-radar" = npmTarball "pi-radar" {
+        version = "0.1.0";
+        hash = "sha512-9baj9YvynilcmDNDs16B1qtioqvpQ2VY6EhOydwUwUwkhebyBhD/ERmQk9Q8go2vyZvIANWtL7GMOh1nq4TAoA==";
+      };
       "@narumitw/pi-tui-kit" = npmTarball "@narumitw/pi-tui-kit" {
         version = "0.65.5";
         hash = "sha512-F6TiSz7igl8SVRllOJnw8cXdN2lveoD6E3UBNTmBVob1+OlPoWRRYgWSBAlLm3ZYeg75uuEZqYZd4Fg7+LsQ4A==";
