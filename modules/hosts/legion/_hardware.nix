@@ -3,7 +3,7 @@
 { primaryUser }:
 { config, lib, ... }:
 let
-  dataDisk = (import ./_storage.nix { inherit primaryUser; }).storage.dataDisk;
+  dataDisk = (import ./_storage.nix).storage.dataDisk;
   btrfsOf = subvol: uuid: opts: {
     device = "/dev/disk/by-uuid/${uuid}";
     fsType = "btrfs";

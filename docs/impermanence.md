@@ -98,9 +98,8 @@ drop it rather than preserve it:
 
 ### Durable state under snapshot-excluded roots
 
-The migration recorded `.local/share` and `.local/state` as nested subvolumes;
-`modules/hosts/legion/_storage.nix` still lists them as home churn roots. Btrfs
-snapshots do not descend into child subvolumes. These concrete paths therefore
+The migration recorded `.local/share` and `.local/state` as nested subvolumes
+(`docs/runbooks/migrate-home-to-data-disk.md`). Btrfs snapshots do not descend into child subvolumes. These concrete paths therefore
 need independent preservation and backup coverage:
 
 - `~/.local/share/grist`: documents and SQLite state.
@@ -112,7 +111,7 @@ need independent preservation and backup coverage:
 Also choose whether to retain `~/.local/share/fish` (history) and
 `~/.local/share/zoxide` (navigation history); both exist on Legion.
 
-The churn list is descriptive, not a reset policy. Re-check the live subvolume
+The runbook's churn list is descriptive, not a reset policy. Re-check the live subvolume
 layout with privileges before migrating it; the unprivileged audit could not
 read the btrfs tree. Add newly discovered durable paths here by name rather than
 classifying either whole XDG directory as regenerable.

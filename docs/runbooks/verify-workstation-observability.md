@@ -14,21 +14,22 @@ delivery evidence.
 
 ## What is configured where
 
-| Piece             | Value                                                                                                                                                       | Owner                                |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Aspects           | `telemetry-metrics` + `telemetry-otlp` + `node-exporter` in both aspect lists                                                                               | `modules/hosts/*.nix`                |
-| Destination       | `fleet-metrics`, `prometheus-remote-write`, `victoriametrics/remote-write` over `tailnet`                                                                   | `modules/telemetry.nix`              |
-| Pipeline          | `pipelines.metrics = [ "fleet-metrics" ]`, pinned                                                                                                           | `modules/telemetry.nix`              |
-| Node exporter     | nixpkgs node exporter on `127.0.0.1:9100`, scrape job `node`, instance `<hostName>:9100`                                                                    | fleet node-exporter aspect           |
-| Collectors        | `systemd` appended by the fleet aspect (`mkAfter`), so a consumer's own collector list adds to it rather than displacing it                                 | fleet node-exporter aspect           |
-| Tailscale metrics | daemon-local endpoint `100.100.100.100:80/metrics`, scrape job `tailscale`; authorized by UID-independent quad100 routing, so no operator grant is involved | fleet tailscale aspect               |
-| Scrape labels     | every target carries `host = <hostName>`; an explicit label on a registration wins over it                                                                  | fleet identity helper                |
-| Forwarder health  | vmagent metrics on `127.0.0.1:8429`, scrape job `vmagent-health`, instance `<hostName>:vmagent`                                                             | fleet vmagent realisation            |
-| Trace admission   | local OTLP/HTTP listener, `otlp.signals = [ "traces" ]`                                                                                                     | fleet `telemetry-otlp` bundle        |
-| Trace destination | `fleet-traces`, `otlp-http`, `otel-collector/ai-otlp` over `tailnet`                                                                                        | `modules/telemetry.nix`              |
-| Queue             | `StateDirectory=vmagent` (`/var/lib/vmagent` → `/var/lib/private/vmagent`), 1 GiB per URL                                                                   | fleet vmagent contributor            |
-| Failure hooks     | `vmagent` and `prometheus-node-exporter` → `notify-event@<unit>.service`, topic `system`                                                                    | fleet aspects + `modules/notify.nix` |
-| Off, by design    | journald shipping and Vector; the collector runs only as the trace admission point, never as a scrape realisation                                           | this change                          |
+| Piece             | Value                                                                                                                                                                     | Owner                                         |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Aspects           | `telemetry-metrics` + `telemetry-otlp` + `node-exporter` in both aspect lists                                                                                             | `modules/hosts/*.nix`                         |
+| Destination       | `fleet-metrics`, `prometheus-remote-write`, `victoriametrics/remote-write` over `tailnet`                                                                                 | `modules/telemetry.nix`                       |
+| Pipeline          | `pipelines.metrics = [ "fleet-metrics" ]`, pinned                                                                                                                         | `modules/telemetry.nix`                       |
+| Node exporter     | nixpkgs node exporter on `127.0.0.1:9100`, scrape job `node`, instance `<hostName>:9100`                                                                                  | fleet node-exporter aspect                    |
+| Process exporter  | legion only; nixpkgs process exporter on `127.0.0.1`, scrape job `process`, instance `<hostName>:<port>`; named groups for stable daemons, threads off (`-threads=false`) | `modules/process-exporter.nix` + fleet aspect |
+| Collectors        | `systemd` appended by the fleet aspect (`mkAfter`), so a consumer's own collector list adds to it rather than displacing it                                               | fleet node-exporter aspect                    |
+| Tailscale metrics | daemon-local endpoint `100.100.100.100:80/metrics`, scrape job `tailscale`; authorized by UID-independent quad100 routing, so no operator grant is involved               | fleet tailscale aspect                        |
+| Scrape labels     | every target carries `host = <hostName>`; an explicit label on a registration wins over it                                                                                | fleet identity helper                         |
+| Forwarder health  | vmagent metrics on `127.0.0.1:8429`, scrape job `vmagent-health`, instance `<hostName>:vmagent`                                                                           | fleet vmagent realisation                     |
+| Trace admission   | local OTLP/HTTP listener, `otlp.signals = [ "traces" ]`                                                                                                                   | fleet `telemetry-otlp` bundle                 |
+| Trace destination | `fleet-traces`, `otlp-http`, `otel-collector/ai-otlp` over `tailnet`                                                                                                      | `modules/telemetry.nix`                       |
+| Queue             | `StateDirectory=vmagent` (`/var/lib/vmagent` → `/var/lib/private/vmagent`), 1 GiB per URL                                                                                 | fleet vmagent contributor                     |
+| Failure hooks     | `vmagent` and `prometheus-node-exporter` → `notify-event@<unit>.service`, topic `system`                                                                                  | fleet aspects + `modules/notify.nix`          |
+| Off, by design    | journald shipping and Vector; the collector runs only as the trace admission point, never as a scrape realisation                                                         | this change                                   |
 
 The policy check enforces this shape: `nix flake check --no-build --no-write-lock-file`
 evaluates `checks.x86_64-linux.telemetry-policy` (`modules/flake/telemetry-policy.nix`).

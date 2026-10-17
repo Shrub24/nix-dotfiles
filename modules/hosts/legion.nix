@@ -46,54 +46,38 @@ let
   };
   sshTrustModule = { inherit sshTrust; };
   overlay = import ../../pkgs { inherit inputs system; };
-  # Applied to the NixOS global pkgs and the VM-test pkgs.
+  # Applied to the NixOS global pkgs and the VM-test pkgs. CUDA 13.4 names every
+  # redistributable `cuda<version>-<pname>` — cccl, libcublas, libnvvm, cudnn —
+  # with a bare pname, so the family matches on the name prefix.
+  insecurePackages = [ "firefox-esr-140-bin-unwrapped-140.17.0esr" ];
   unfreePredicate =
     pkg:
-    (lib.hasPrefix "nvidia" (lib.getName pkg))
+    (lib.hasPrefix "cuda" (pkg.name or ""))
+    || (lib.hasPrefix "nvidia" (lib.getName pkg))
+    || (lib.hasPrefix "firefox-esr-" (lib.getName pkg))
     || builtins.elem (lib.getName pkg) [
       "zsh-abbr"
       "vscode"
       "code"
       "unrar"
       "bws"
-      "cuda_cuobjdump"
-      "cuda_gdb"
-      "cuda_nvcc"
-      "cuda_nvdisasm"
-      "cuda_nvprune"
-      "cuda_cccl"
-      "cuda_cudart"
-      "cuda_cupti"
-      "cuda_cuxxfilt"
-      "cuda_nvrtc"
-      "cuda_nvtx"
-      "cuda_profiler_api"
-      "cuda_sanitizer_api"
-      "libcublas"
-      "libcufft"
-      "libnvjitlink"
-      "libcurand"
-      "libcusolver"
-      "libcusparse"
-      "libnpp"
-      "cuda-merged"
-      "cuda_nvml_dev"
-      "nvidia-x11"
-      "nvidia-settings"
-      "nvidia-persistenced"
     ];
   pkgs = import inputs.nixpkgs {
     inherit system;
     overlays = [ overlay ];
     config = {
       allowUnfreePredicate = unfreePredicate;
+      permittedInsecurePackages = insecurePackages;
       nvidia.acceptLicense = true;
     };
   };
   pkgsUnfree = import inputs.nixpkgs {
     inherit system;
     overlays = [ overlay ];
-    config.allowUnfree = true;
+    config = {
+      allowUnfree = true;
+      permittedInsecurePackages = insecurePackages;
+    };
   };
   homepage = import ../../lib/web-services.nix {
     inherit (pkgs) lib;
@@ -103,6 +87,7 @@ let
   hmAspects = [
     "current-host"
     "pi"
+    "pi-dashboard"
     "pi-otel"
     "magic-context"
     "herdr"
@@ -175,12 +160,14 @@ let
     "globalprotect"
     "boot"
     "ssh"
+    "sops-systemd-activation"
     "tailscale"
     "greeter"
     "nix"
     "notify"
     "telemetry"
     "node-exporter"
+    "process-exporter"
     "beszel-agent"
     "nixbuild"
     "audio"
@@ -207,7 +194,12 @@ let
       inputs.disko.nixosModules.disko
       (import ./legion/_disko.nix { })
       { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration
-      { nixpkgs.config.allowUnfreePredicate = unfreePredicate; }
+      {
+        nixpkgs.config = {
+          allowUnfreePredicate = unfreePredicate;
+          permittedInsecurePackages = insecurePackages;
+        };
+      }
       # Builder selection is composition policy from the canonical inventory.
       {
         nix.distributedBuilds = true;
@@ -327,8 +319,8 @@ in
                 home.username = primaryUser.name;
                 home.homeDirectory = "/home/${primaryUser.name}";
                 home.stateVersion = "26.11";
-                # VM-only: virglrenderer 1.3.0 draws the hardware cursor plane
-                # upside-down (QEMU #2315, fixed upstream in virgl 1.3.1) — drop then.
+                # HACK: VM-only; virglrenderer 1.3.0 draws the cursor plane upside-down
+                # (QEMU #2315, fixed in virgl 1.3.1). Drop once the guest has 1.3.1.
                 wayland.windowManager.niri.settings.debug."disable-cursor-plane" = { };
               };
             };

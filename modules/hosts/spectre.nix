@@ -32,10 +32,21 @@ let
   };
   sshTrustModule = { inherit sshTrust; };
   overlay = import ../../pkgs { inherit inputs system; };
+  insecurePackages = [ "firefox-esr-140-bin-unwrapped-140.17.0esr" ];
+  unfreePredicate =
+    pkg:
+    builtins.elem (lib.getName pkg) [
+      "unrar"
+      "bws"
+    ]
+    || lib.hasPrefix "firefox-esr-" (lib.getName pkg);
   pkgsUnfree = import inputs.nixpkgs {
     inherit system;
     overlays = [ overlay ];
-    config.allowUnfree = true;
+    config = {
+      allowUnfree = true;
+      permittedInsecurePackages = insecurePackages;
+    };
   };
   hmAspect = name: config.flake.modules.homeManager.${name};
   nixosAspect = name: config.flake.modules.nixos.${name};
@@ -101,6 +112,7 @@ let
     "globalprotect"
     "boot"
     "ssh"
+    "sops-systemd-activation"
     "tailscale"
     "greeter"
     "nix"
@@ -130,14 +142,10 @@ let
       (import ./spectre/_disko.nix { })
       { nixpkgs.overlays = [ overlay ]; }
       {
-        # The lean set's unfree packages (unrar and bws, both via cli); the
-        # desktop's NVIDIA predicate list is deliberately not inherited.
-        nixpkgs.config.allowUnfreePredicate =
-          pkg:
-          builtins.elem (lib.getName pkg) [
-            "unrar"
-            "bws"
-          ];
+        nixpkgs.config = {
+          allowUnfreePredicate = unfreePredicate;
+          permittedInsecurePackages = insecurePackages;
+        };
       }
       inputs.home-manager.nixosModules.home-manager
       {

@@ -576,8 +576,8 @@ selected server key paths; compare all three fingerprints with the pre-install
 record. For an unenrolled revision, use `/root/.ssh/nix-remote` for the builder
 check and fingerprint the copied `/etc/ssh/ssh_host_*_key.pub` files instead.
 
-Root sops runs through NixOS activation, not a `sops-install-secrets.service` unit;
-the secret-file checks above verify its output. If sops fails, verify the shared
+Root SOPS secrets are installed by `sops-install-secrets.service` during NixOS
+activation; the secret-file checks above verify its output. If sops fails, verify the shared
 home is mounted and the copied root age key exists with root ownership and mode
 `0600`. Restore a missing key from its secured backup; do not generate a replacement,
 which cannot decrypt the existing secrets. Re-run system activation and the failed
