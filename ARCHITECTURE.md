@@ -78,17 +78,16 @@ modules/                 ← import-tree scan (the only discovery root)
 
 Host composition lives in modules/hosts/legion.nix and modules/hosts/spectre.nix,
 not flake.nix:
-  └─ 28 nixos aspects + _nixos.nix + _disko.nix + embedded HM → nixosConfigurations.legion
+  └─ nixos aspects + _nixos.nix + _disko.nix + embedded HM → nixosConfigurations.legion
 
 modules/hosts/spectre.nix composes the laptop with the same shape and a leaner
 aspect set:
-  └─ 23 nixos aspects + _nixos.nix + _hardware.nix + _disko.nix + embedded HM
+  └─ nixos aspects + _nixos.nix + _hardware.nix + _disko.nix + embedded HM
      → nixosConfigurations.spectre
 
-The embedded Home Manager on legion composes 65 aspects, the NixOS-only
-cuda/libcamera/codex among them; tailscale, syncthing, mosh and niks3 are
-system-owned and appear only as NixOS aspects. Spectre's embedded Home Manager
-composes 47 lean aspects.
+Legion's embedded Home Manager includes the NixOS-only cuda, libcamera and codex
+aspects; tailscale, syncthing, mosh and niks3 are system-owned and appear only as
+NixOS aspects.
 
 The Legion counts above include `legion-ssh-identities` in each class: it delivers client keys through Home Manager and the
 builder and server host keys through the NixOS layer, from
@@ -256,8 +255,9 @@ from the host module for units only that host runs; package-provided units
 (`nix-daemon`, `tailscaled`) register with `fromPackage`. MCP servers reach Pi
 the same way: the aspect that owns one writes its
 `programs.pi-coding-agent.mcpServers` entry
-and the pi aspect renders the register into `~/.pi/agent/mcp.json`, so the only
-servers Pi names itself are the endpoints this repository does not serve
+and the pi aspect renders the register as store-managed `mcp.json` files for
+the default agent and each Pi-Bolt role, so the only servers Pi names itself are
+the endpoints this repository does not serve
 (grep.app, sourcegraph, and the fleet's docs-mcp). Machine metrics go to
 the fleet's `beszel-agent` capability (hub on the la-admin-1 host of
 nix-homelab). The agent holds no secret: the key it verifies the hub with is the
@@ -284,238 +284,22 @@ package with its npm dependencies remains available to stock Pi. Journal shippin
 LLM traffic goes to the OmniRoute gateway on the builder host, an endpoint the
 fleet service inventory carries (`lib.serviceEndpoints`).
 Service ports and display metadata are owned by `lib/web-services.nix`
-(grist 8484, qmd 8181, mcp-nixos 8000, web-catalog 8123);
+(grist 8484, qmd 8181, mcp-nixos 8000, web-catalog 8123, pi-dashboard 8100);
 canonical contract: [web-service-catalog](openspec/specs/web-service-catalog/spec.md).
 Grist binds loopback only (`127.0.0.1:8484`) and is not reverse-proxied;
 its bundled SQLite state persists at `~/.local/share/grist`.
 On NixOS, exposure is tailnet-scoped: the global firewall stays closed, and
-Mosh (UDP 60000–61000), web-catalog 8123, and Syncthing's
-relay/discovery ports are allowed on `tailscale0` only — Syncthing sets
+Mosh (UDP 60000–61000), web-catalog 8123 on legion, and
+Syncthing's relay/discovery ports are allowed on `tailscale0` only — Syncthing sets
 `openDefaultPorts = false` so its ports follow the same rules.
 The laptop (`spectre`) selects no local service tier: its clients reach the
 desktop's and the forge's services over the tailnet, so the service list above
 describes only machines that are always on.
 
-## Durable Decisions
+## Decisions
 
-- **Monique is the sole monitor authority** — niri's store-linked config
-  includes Monique-owned runtime state and HM defines no inline output
-  blocks, so hotplug handling is never split between config layers.
-- **Niri config is store-linked** — the compositor boots from a read-only
-  store path, making the desktop session fully declarative.
-- **Noctalia GUI state is runtime state** — the shell owns its mutable
-  settings outside the store; treat them as machine-local, not declarative
-  configuration.
-- **Noctalia themes through its own template entries, declared locally** —
-  `theme.templates.enable_builtin_templates` and `enable_community_templates`
-  are off, and every entry is a row in `modules/desktop/noctalia.nix`. A row
-  names a store path input (the noctalia package for builtins, the pinned
-  `community-templates` flake input for the rest), an output path, and a hook
-  only where Nix cannot point the consuming application at the rendered file.
-  The inverse — enabling upstream template ids and bending the Nix config around
-  their hooks — was rejected: hooks that rewrite store-linked configs fail, and
-  a Nix-owned file cannot be a template's output.
-- **Discovery is scoped to the single `modules/` tree** — `import-tree` scans
-  only `modules/`; raw class modules live at `_`-prefixed paths, which
-  `import-tree` ignores, so dormant files cannot alter a host accidentally.
-- **Machine identity is canonical, policy is local** — nix-fleet's contract owns
-  what a machine _is_ (target system, tailnet hostname, SSH host key); this
-  repository owns what it _does_ (the login user, the account it configures,
-  which builders it schedules). Service endpoints are typed options declared in
-  `modules/policy/topology.nix`, and each host composition projects its own entry
-  into `currentHost` for the class evaluations it builds. Features read the
-  projection or the native option, never a registry key and never a hardcoded
-  hostname, so one aspect value is correct for every host and nothing travels
-  through an argument bus.
-- **Trust is its own door** — which machines this one talks to is a separate
-  selection from which may build for it, resolved through the contract's
-  `resolveHosts` rather than a build profile. Trust never implies use and use
-  never implies trust, so naming a host for one cannot silently grant the other.
-  Host keys land in the system known-hosts file rather than the user's, because
-  ssh appends to the latter.
-- **System secrets stay out of user scope** — owned end to end by the sops-nix
-  OS module; a root credential is never rendered through user-scoped Home
-  Manager state.
-- **One durable document** — `ARCHITECTURE.md` records boundaries and
-  rationale; the filesystem inventory duplicate was deleted because it
-  diverged from implementation.
-- **A file an application rewrites is never Nix-owned** — the Pi
-  configuration surface is rendered by the `programs.pi-coding-agent` Home
-  Manager module, but the test is the write path, not whether the file holds
-  settings. Pi's `settings.json` is declared
-  because its failed write is a caught `EACCES` that reports loudly; the
-  extension settings files `pi-tool.json` and `pi-stamp.json` are not, because they save through a
-  temporary file plus `rename()`, which replaces a store symlink with a real
-  file instead of failing, and diverges silently. The same write path is
-  accepted for `gtk.gtk3.bookmarks`: GTK saves a bookmark edited in a chooser
-  that way too, but the file holds only the directories `xdg.userDirs`
-  declares — policy rather than app-owned settings — and the next switch moves
-  the edit aside as a backup.
-- **Delegation is herdsman; pane state is Herdr's own integration** —
-  `pi-herdsman` replaces `pi-subagents`, which is gone outright: no extension
-  row, no `subagents` settings block and no rendered config remain. What that
-  block carried lives where its owner reads it — the disabled roles through
-  herdsman's own `disabledDefinitions`, a child's extensions and provider
-  through its agent definition. The official `herdr integration install pi`
-  replaces `@narumitw/pi-herdr`. The integration is a file Herdr writes to
-  `~/.pi/agent/extensions/herdr-agent-state.ts`, so it stays imperative and is
-  re-run after a Herdr upgrade. Herdsman passes a definition's `skills` paths
-  to Pi unchanged, so the agent definitions carry `@home@` placeholders that the
-  Home Manager module substitutes at build time, and the drift guard reads the
-  skill names back out of those paths. A skill whose absence would break the
-  role's core work is preloaded — its body inlined into every child request,
-  at the cost of that skill's tokens — instead of only advertised, because an
-  advertisement lets the model skip the read. That is `lean-implementation`
-  for worker and delegate, `review-policy` and `lean-implementation` for
-  reviewer, and `evidence-discipline` for researcher and evidence-auditor;
-  `testing-discipline` is also preloaded for worker; delegate and reviewer
-  receive it as an advertised skill and load it when validation or test work
-  needs it;
-  every other skill also stays advertised and is read when its work needs it. Two
-  publishers of pane metadata never run at once: the swap is one change.
-
-- **Herdsman's config is seeded, not linked** — `pi-herdsman/config.json` is
-  rewritten atomically whenever settings change through `/agents`, so it takes
-  the same treatment as Herdr's `config.toml`: an activation step merges the
-  keys this repository owns — `disabledDefinitions` for the bundled
-  generalist/implementer roles, and `modelScopes` for the per-role model
-  allow-lists — into the real file, and everything set through the UI survives
-  a switch. A scope only restricts, so each list names the models that
-  definition actually pins.
-
-- **Plugin-owned config tables are declared, not merged** — Herdr and its
-  plugins rewrite `config.toml` by renaming a temporary file over the real
-  path, so a store symlink breaks them with `EACCES` in `/nix/store`. The file
-  is therefore rendered from `programs.herdr.settings` but written as a real
-  file at activation, and the blocks herdr-radar owns are re-applied in the same
-  step, so a switch re-seeds the published keys and the plugin reinstalls its
-  own layout rather than leaving a stale copy behind.
-
-  TOML allows a table once, which makes declaring one the way to keep it.
-  `[theme.custom]` is declared so Herdr's theme name stays this repository's
-  choice rather than the panel-fill value the plugin installs along with it; the
-  plugin finds a foreign table and skips its theme block. Its sidebar panel is
-  deliberately not declared: the plugin rebuilds that block per appearance and
-  its daemon re-probes the desktop's, so a Nix-declared copy pins one appearance
-  — and while the table is ours the plugin reads the panel as someone else's and
-  disables its own ordering, which is how a declared panel quietly costs the
-  activity sort.
-
-- **Pi agent definitions live under the Pi agent directory** — the seven
-  subagent definitions are repository files mounted at `~/.pi/agent/agents`.
-  `~/.agents` is the cross-tool agent directory that `opencode.nix` also
-  symlinks, so Pi-specific personas are not placed there. Extension paths in a
-  definition are written relative to the definition file, which keeps them free
-  of hardcoded home directories.
-- **Pi-Bolt plugin sources are flake inputs** — its local extensions come from
-  the `pi-extensions` input, advanced by `nix flake update pi-extensions` and
-  replaceable for a local build with `--override-input`; the Powerline footer
-  fork is an input of its own, pinned in the declaration at the commit its
-  branch was pushed at rather than advanced by an update. `pkgs/pi-plugins` is
-  the one place a compiled plugin's recipe lives: where its source comes from
-  (an npm pin, a path in an input, or a pinned upstream checkout), which
-  file exports its factory, and the patch its compile-time assumptions need,
-  applied with `--replace-fail` so a moved upstream fails loudly. Every source
-  here is a pin: the npm tarballs by hand, the local plugins from the
-  `pi-extensions` input, the footer fork's revision, and OmniRoute's
-  `deploy/edge` checkout pinned by
-  `pkgs/pi-plugins` — so the running configuration never reads a live checkout,
-  and `nix flake update pi-extensions` is what
-  moves the local plugins' code. The launcher disables extension discovery, so
-  compiled plugins need not be removed from the normal Pi `packages` list. Loop Police's mutable config lives in the agent directory;
-  Ask User Question keeps its built-in English fallback in the compiled build.
-
-  Named compiled plugins are builtins: `--no-extensions` disables them along
-  with discovery, so each launcher explicitly enables its compiled set through
-  `-e builtin:<id>`. One executable compiles the union of the rows whose
-  `compiled` list names `lead`; `pkgs/pi-bolt` builds the recipes it is handed
-  and carries no selection of its own. The child launcher enables only the rows
-  naming `child`, which leaves out the renderer, recap and the other lead-only
-  rows a delegated child does not run. Both sets are derived from one row table.
-  Compiling the superset costs no startup time: an unenabled builtin is inert. Two plugins need
-  help being compiled: Loop Police and Ask User Question read a file beside
-  their own source, which no longer exists once the source is bytes in the
-  binary, so their paths move to a Pi-provided location or their fallback; and
-  permission-system resolves its bash-parser wasm through `require.resolve`,
-  which is a build-time resolution and so becomes an embedded file import, after
-  which the `npm root -g` walk is dead code worth short-circuiting.
-
-  Compiled plugin code must also bind the modules the executable runs: Pi's own
-  tsconfig points the host packages at `packages/*/src` while the build bundles
-  `packages/*/dist`, so a plugin compiled from that map gets a second copy of the
-  host's classes and a class-style patch — the renderer's user-message component —
-  lands on a class the app never renders with. `pkgs/pi-bolt` stages a tsconfig
-  beside the plugin files that moves the coding-agent entry to `dist`, and the AOT
-  ceiling it exports is the largest single module's top-level bytecode, re-measured
-  when the plugin set changes.
-
-  What a binary does not contain must still reach the session, and that is the
-  one place both Pi entry points read the same list: one row per extension in
-  `modules/agents/_pi-extensions.nix` yields the settings `packages` entry the
-  discovery-based `pi` loads and the extension path a discovery-denied Pi-Bolt
-  launch passes. A row that loads without an installed path, or compiles without
-  a recipe, fails evaluation rather than going quietly missing.
-
-- **One extension list serves both Pi binaries** — the definitions' extension
-  paths are written for upstream pi, and the child launcher drops the ones its
-  own binary already compiles in rather than registering them twice. That drop
-  is load-bearing rather than hygiene: on the CLI a duplicate is a startup
-  failure, so a definition still naming a compiled plugin presents as a pane
-  that never comes up. The launchers pass `--no-extensions` for the same reason
-  — it suppresses the settings `packages` set — and both launchers explicitly
-  enable their compiled builtins. The child launcher supplies it with the two
-  Pi builtins a child
-  needs when the launch does not, so a child started without herdsman's own flag
-  list is still complete. These entrypoints belong to `pkgs/pi-bolt`, not
-  separate Home Manager launcher derivations. The lead package publishes `pi`
-  and `pi-bolt`, and the same output publishes `pi-bolt-child`, so Radar sees
-  one installation. Compilation is
-  separate, so launcher-only changes reuse the AOT build. Home Manager selects
-  plugins and runtime extension paths and installs the lead with `lib.hiPrio`
-  over stock Pi; `pi-stock` remains the explicit fallback. Routing is not ours:
-  the lead launcher exports
-  `PI_HERDSMAN_CHILD_COMMAND`, and pi-herdsman — which creates the pane itself —
-  runs that command as the child's process (`herdr pane run <pane> '<command>
---extension …'`), so no shell function or per-kind override is involved. Herdr's
-  own `agent start --kind pi` path, which types the canonical `pi` into the pane's
-  shell, is only the fallback for a lead that sets no command.
-  Herdsman supplies its own session layout flags (`--session-dir`, `--session`)
-  and nothing intercepts them, which is what keeps a child's sessions in
-  `.pi/sessions/children`, while operator sessions stay in the global root
-  (`~/.pi/agent/sessions`) — Pi resolves one session root at a time, so a
-  project-local operator `sessionDir` hides every pre-existing session from the
-  picker, `--continue`, Magic Context and Memex (removed 2026-10-06; migrating
-  the operator's sessions into their projects stays a manual step).
-  `pi-stock` is the stock binary, so degrading costs no rebuild.
-
-- **The why lives in `context/`** — the keep-the-why skill owns it: decisions,
-  rejected alternatives, workarounds, incidents and constraints, each with a
-  status and a revisit trigger. `ARCHITECTURE.md` describes the current shape,
-  `CONVENTIONS.md` holds the rules, OpenSpec holds intended behaviour, and
-  `context/` holds why any of it is the way it is. Durable Decisions entries
-  move there as the skill's retrospective pass reaches them.
-
-- **Session mode is a launch choice** — plain `pi` is the implementor with the
-  user in the loop; `pio` appends `~/.pi/agent/modes/orchestrator.md`. A mode is
-  appended prompt text fixed for the session, so the prompt cache sees one head,
-  and `AGENTS.md` stays mode-neutral.
-
-- **A managed child cannot be given its own agent directory** — the obvious way
-  to quiet a child's TUI is a second agent directory plus a fish `pi` wrapper
-  that points `PI_CODING_AGENT_DIR` at it, with only `settings.json` differing.
-  pi-herdsman refuses it: the child derives its mailbox path from the agent
-  directory and compares that string with the `PI_HERDSMAN_MAILBOX` its parent
-  passed, so a linked or renamed directory makes it classify itself as unmanaged
-  and the launch dies with `pane_not_ready`. Normalising both sides through
-  `realpath` upstream is the prerequisite; until then the thin definitions are
-  the whole child-side TUI reduction.
-
-- **Each discipline has one source** — `lean-implementation` owns implementation
-  scope, robustness and completion; `testing-discipline` owns validation choice
-  and test value. Agent definitions and the global `AGENTS.md` point to those
-  skills rather than repeating their rules. `CONVENTIONS.md` applies them to
-  this repository's boundaries, and role definitions keep role mechanics
-  (escalation, report shape), so each rule changes in one place.
+Decisions, their rejected alternatives and their revisit triggers live in
+`context/` (see `context/index.md`).
 
 ## Verification
 
