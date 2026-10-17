@@ -11,6 +11,7 @@ _: {
         pkgs.matugen
         pkgs.wl-mirror
         pkgs.adw-gtk3
+        pkgs.zotero
       ];
     };
 }

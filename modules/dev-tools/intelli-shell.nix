@@ -7,7 +7,7 @@ _: {
       # Fish 4 rejects the Fish 3 compatibility branch in the generated script
       # (`bind \c$char`) as invalid syntax, and `source` discards the whole
       # file, so the integration is sourced with that branch rewritten to Fish
-      # 4 key names. Drop this once upstream stops emitting the escape form.
+      # 4 key names. HACK: drop once upstream stops emitting the escape form.
       enableFishIntegration = false;
     };
     programs.fish.interactiveShellInit = ''

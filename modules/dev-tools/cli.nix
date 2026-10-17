@@ -126,6 +126,13 @@ _: {
           };
           ui.editor = "nvim";
           git.push-new-bookmarks = true;
+          # The default freezes every remote bookmark it does not track, which is
+          # what a wip branch pushed from another machine — or left behind by a
+          # deleted local bookmark — becomes. Carving those out keeps them
+          # rewritable; every other clause is the builtin's, so trunk and tags
+          # stay protected.
+          "revset-aliases"."immutable_heads()" =
+            "trunk() | tags() | untracked_remote_tags() | (untracked_remote_bookmarks() ~ remote_bookmarks('wip/*'))";
           # lazyjj has no config file; it reads `lazyjj.*` from jj's config. Match the
           # formatter delta renders with so both panes agree.
           lazyjj.diff-format = "git";

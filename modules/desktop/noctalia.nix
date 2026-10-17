@@ -298,9 +298,8 @@
             output_path = "$XDG_CACHE_HOME/noctalia/nvim-palette.lua";
             post_hook = "${pkgs.procps}/bin/pkill -SIGUSR1 -x nvim || true";
           };
-          # Radar's lifecycle roles mapped onto Noctalia's roles; local because
-          # the mapping is ours. Rendered to a file of its own — Radar's
-          # config.toml is Nix-owned — for Radar to read once it accepts one.
+          # Radar's lifecycle roles mapped onto Noctalia's roles; rendered to its own
+          # file because Radar's config.toml is Nix-owned.
           agent-radar = {
             input_path = "${localTemplates}/agent-radar.toml";
             output_path = "$XDG_CONFIG_HOME/radar/theme.toml";
@@ -318,10 +317,8 @@
       imports = [
         inputs.noctalia.homeModules.default
 
-        # Upstream disables the HM module by filename ("programs/noctalia.nix"),
-        # but home-manager turned it into a folder on 2026-09-30, so both copies
-        # load and declare programs.noctalia twice. Until noctalia PR #4656
-        # lands, disable the folder here too (the lists merge).
+        # HACK: home-manager now loads programs/noctalia as a folder, so upstream's
+        # by-filename disable misses it. Drop once noctalia PR #4656 lands.
         { disabledModules = [ "programs/noctalia" ]; }
       ];
 
@@ -334,7 +331,7 @@
         "C %h/.local/share/wallpapers/wallpapersden.com_colorful-textured-abstract_3840x2160.jpg 0644 - - - ${wallpaperSeed}"
       ];
 
-      # niri's KDL parser rejects a second binds node in one file, so shell binds render into noctalia-binds.kdl included below.
+      # niri rejects a second binds node in one file, so shell binds go in their own included file.
       xdg.configFile."niri/noctalia.kdl" =
         lib.mkIf (config ? wayland.windowManager.niri && config.wayland.windowManager.niri.enable)
           {
@@ -419,18 +416,8 @@
             builtin = "Catppuccin";
             community_palette = "Oxocarbon";
 
-            # Template definitions. Upstream's builtin and community catalogues
-            # are switched off: `templates` below is the whole set, so which
-            # templates exist, where they render, and what runs afterwards is
-            # ours, and nothing is downloaded at apply time.
-            #
-            # The rows are the single source of truth — the same table drives
-            # both the entries and the input filter, so a row cannot supply one
-            # without the other. Inputs are store paths: the noctalia package for
-            # builtins, the pinned community-templates input for the rest.
-            #
-            # A row carries a hook only when the consuming app cannot be pointed
-            # at the rendered file from Nix; see the per-row comments below.
+            # Upstream's catalogues are off: the rows below are the whole set and
+            # nothing downloads at apply time. Each row also sets the input filter.
             templates = {
               enable_builtin_templates = false;
               enable_community_templates = false;
@@ -588,17 +575,7 @@
             # No layout reservation: the bar draws over windows instead of
             # pushing them, so showing it never reflows the workspace.
             reserve_space = false;
-            # New monitors build their own bar instance from the config, and
-            # `bar-hide` only reaches instances that already exist — which is
-            # why a hotplugged display showed both bars unbidden. `auto_hide` is
-            # the one key read at instance creation, so every bar starts hidden
-            # hidden on every monitor. Nothing else in config gives a
-            # toggle-only bar, though: the same key also arms a 3px
-            # bottom-edge hover reveal (`kAutoHideTriggerPx` is a hardcoded
-            # constant, not a setting) and fades the bar out when the pointer
-            # leaves. `noctalia-action-bar-init` takes auto-hide back off at
-            # runtime for the instances that exist, leaving the config value
-            # to do its job for instances built later.
+            # Read at instance creation, so hotplugged monitors start hidden; `noctalia-action-bar-init` clears it on existing ones.
             auto_hide = true;
             background_opacity = 0.92;
             capsule_fill = "surface";
@@ -750,12 +727,8 @@
         # icefish/phone-connect shells out to gdbus.
         pkgs.glib.bin
         noctaliaGreeterPackage
-        # auto_hide is what makes an action-bar instance start hidden
-        # (bar.cpp:3350), but the same key arms the bottom-edge hover reveal
-        # and the hide-on-pointer-leave, so a config-only bar can never be
-        # toggle-only. This clears auto-hide on the instances that exist and
-        # puts them back under bar-toggle; the config value still applies to
-        # instances created later, so a hotplugged display still starts hidden.
+        # Config `auto_hide` also arms a hover reveal, so the running instances
+        # are switched back to toggle-only here.
         (pkgs.writeShellApplication {
           name = "noctalia-action-bar-init";
           runtimeInputs = [

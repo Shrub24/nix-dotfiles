@@ -152,6 +152,12 @@ in
 
           config.hyperlink_rules = wezterm.default_hyperlink_rules()
 
+          -- `gui-startup` does not run for `wezterm connect`.
+          wezterm.on("gui-startup", function(cmd)
+            local _, pane, window = wezterm.mux.spawn_window(cmd or {})
+            window:gui_window():perform_action(act.ShowLauncherArgs { flags = "FUZZY|DOMAINS" }, pane)
+          end)
+
           config.keys = {
             { key = "A", mods = "CTRL|SHIFT", action = act.EmitEvent("toggle-opencode") },
             { key = "S", mods = "CTRL|SHIFT", action = act.ShowLauncherArgs { flags = "DOMAINS" } },

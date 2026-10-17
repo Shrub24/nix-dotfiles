@@ -285,7 +285,6 @@ _: {
 
           window-rule {
             match app-id=r#"$"# title=r#"^Extension:"#
-            match app-id=r#"^brave-.*-Default$"#
             match app-id="^OneDriveGUI$"
             open-floating true
           }
