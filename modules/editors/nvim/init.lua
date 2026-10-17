@@ -92,6 +92,11 @@ local inline_specs = {
 					mux = { backend = "tmux", enabled = false },
 				},
 			})
+					vim.keymap.set("n", "<Tab>", function()
+				if not require("sidekick").nes_jump_or_apply() then
+					return "<Tab>"
+				end
+			end, { expr = true, desc = "Goto/Apply Next Edit Suggestion" })
 		end,
 	},
 	{
@@ -129,6 +134,7 @@ local inline_specs = {
 	{
 		"copilot.lua",
 		auto_enable = true,
+		event = "DeferredUIEnter", -- starts the client that sidekick NES also uses
 		on_require = "copilot",
 		after = function()
 			require("copilot").setup({

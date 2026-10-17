@@ -374,6 +374,21 @@ return {
 			})
 			require("mini.move").setup({})
 			require("mini.hipatterns").setup({})
+			-- Mappings: ys{motion}{char} adds, ds{char} deletes, cs{old}{new} replaces;
+			-- visual ys{char} wraps the selection. `cs` shadows the builtin change-sentence.
+			require("mini.surround").setup({
+				mappings = {
+					add = "ys",
+					delete = "ds",
+					replace = "cs",
+					find = "gs",
+					find_left = "gS",
+					highlight = "",
+					update_n_lines = "",
+				},
+			})
+			-- Binds only the ]/[ groups LazyVim leaves free; `h` stays off for gitsigns.
+			require("mini.bracketed").setup({})
 
 			-- lze keeps the first spec per name, so this is mini.nvim's only after
 			-- callback.

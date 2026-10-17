@@ -15,7 +15,7 @@ map("n", "<C-h>", splits.move_cursor_left)
 map("n", "<C-j>", splits.move_cursor_down)
 map("n", "<C-k>", splits.move_cursor_up)
 map("n", "<C-l>", splits.move_cursor_right)
-map("n", "<C-\\>", splits.move_cursor_previous)
+map("n", "<C-\\>", "<cmd>wincmd p<cr>", { desc = "Previous window" })
 
 map("n", "<leader><leader>h", splits.swap_buf_left)
 map("n", "<leader><leader>j", splits.swap_buf_down)

@@ -1,5 +1,4 @@
--- Servers LazyVim's core and lang.*/linting extras used to enable; `vim.lsp.enable`
--- does that job now, gated on `vim.fn.executable()` where the server is optional.
+-- Servers are enabled with `vim.lsp.enable`, gated on `vim.fn.executable()` where optional.
 return {
 	{
 		"nvim-lspconfig",
@@ -28,9 +27,8 @@ return {
 			vim.lsp.enable("docker_compose_language_service")
 			-- `just` is absent: lspconfig's server needs `just-lsp` on PATH. Enable it
 			-- here once the package is added.
-			-- sidekick's next-edit-suggestions run on the copilot LSP server, not on
-			-- copilot.lua, which only does completions.
-			vim.lsp.enable("copilot")
+			-- copilot.lua owns the copilot client; never vim.lsp.enable("copilot") too,
+			-- since copilot.lua stops any second one (exit 143).
 		end,
 	},
 	{
