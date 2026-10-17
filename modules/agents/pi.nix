@@ -5,16 +5,12 @@
   ...
 }:
 let
-  # Read at the flake-parts level and closed over by the HM module — the same
-  # shape as omniroute/ntfy/niks3. The endpoint resolves from the fleet's
-  # canonical inventory, never a literal in the extension's config.
+  # Resolved from the fleet inventory, never a literal in the extension's config.
   hindsightUrl = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
     service = "hindsight";
     endpoint = "api";
     via = "tailnet";
   };
-  # docs-mcp runs on home-forge, so its MCP endpoint comes from the fleet
-  # inventory rather than from the port this repository's own module declares.
   docsMcpUrl = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
     service = "docs-mcp";
     endpoint = "mcp";
@@ -39,13 +35,11 @@ in
       ...
     }:
     let
-      # Use the same package overlay as the hosts.
       repoPkgs = pkgs.extend (import ../../pkgs { inherit inputs system; });
       registry = repoPkgs.pi-plugins;
     in
     {
-      # The host's runtime extensions carry the operator's home, so the module
-      # rather than this output supplies them to the lead launcher.
+      # Runtime extensions come from the home module, not from this output.
       packages.pi-bolt = repoPkgs.pi-bolt.override {
         plugins = compiledPlugins registry "lead";
         childPlugins = compiledIds "child";
@@ -61,28 +55,24 @@ in
     }:
     let
       stockPi = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi;
-      # The Claude subscription path: pi-claude-bridge drives this executable
-      # through the Agent SDK, and reads the path below rather than resolving
-      # `claude` on PATH.
+      # Direct use only: Pi's Anthropic subscription auth does not run through it.
       claudeCode = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.claude-code;
 
       json = pkgs.formats.json { };
 
-      # Pi agent dir; referenced by rendered settings and out-of-store symlinks.
       piAgentDir = "${config.home.homeDirectory}/.pi/agent";
-      # Rows are the single list of extensions: the settings list and the
-      # launcher both read them, so nothing can be installed for one and dropped
-      # by the other.
+      leadAgentDir = "${config.home.homeDirectory}/.pi/roles/lead";
+      orchestratorAgentDir = "${config.home.homeDirectory}/.pi/roles/orchestrator";
+      childAgentDir = "${config.home.homeDirectory}/.pi/roles/child";
+      herdsmanDataDir = "${piAgentDir}/pi-herdsman";
+      # Extension rows drive package sources and each role's compiled selection.
       piExtensionRows = import ./_pi-extensions.nix;
-      # A row's source or path carries one placeholder: `@home@` for the
-      # operator's home, `@extensions@` for the pinned pi-extensions input,
-      # `@package@<name>[/subpath]` for an extension package, or `@recipe@<id>`
-      # for a source a pkgs/pi-plugins recipe resolves — so the
-      # running configuration never reads a live checkout.
+      # A row's source or path carries placeholders resolved at build time, never
+      # a live checkout.
       rowPath =
         value:
         if lib.hasPrefix "@recipe@" value then
-          pkgs.pi-plugins.plugins.${lib.removePrefix "@recipe@" value}.dir
+          toString pkgs.pi-plugins.plugins.${lib.removePrefix "@recipe@" value}
         else if lib.hasPrefix "@package@" value then
           let
             parts = lib.splitString "/" (lib.removePrefix "@package@" value);
@@ -95,47 +85,83 @@ in
             [ "@home@" "@extensions@" ]
             [ config.home.homeDirectory "${inputs.pi-extensions}" ]
             value;
-      # A row with no settings source is compiled-only (pi-vcc), so it is neither
-      # installed nor passed as -e.
+      # A row with no source is compiled-only (pi-vcc).
       loadable = row: (row.load or true) && row ? source;
-      # Compiled plugins are enabled as builtins by the launcher; only these
-      # remaining extensions need a runtime path passed as -e.
-      runtimeRows = lib.filter (
-        row: loadable row && !(lib.elem "lead" (row.compiled or [ ]))
-      ) piExtensionRows;
-      pathlessRows = map (row: row.id) (lib.filter (row: (row.path or null) == null) runtimeRows);
-      # A compiled row with no recipe fails as a missing attribute; name the row.
+      runtimeRows = lib.filter (row: loadable row && (row.compiled or [ ]) == [ ]) piExtensionRows;
+      packageSource =
+        row:
+        if row.overrides or { } == { } then
+          rowPath row.source
+        else
+          { source = rowPath row.source; } // row.overrides;
+      runtimePackages = map packageSource runtimeRows;
+      childRuntimeIds = [
+        "magic-context"
+        "native-router"
+        "web-access"
+      ];
+      childPackages = map packageSource (lib.filter (row: lib.elem row.id childRuntimeIds) runtimeRows);
       missingRecipes = map (row: row.id) (
         lib.filter (
           row: (row.compiled or [ ]) != [ ] && !(pkgs.pi-plugins.plugins ? ${row.id})
         ) piExtensionRows
       );
-      piBoltExtensions = map (row: rowPath row.path) (
-        lib.filter (row: (row.path or null) != null) runtimeRows
-      );
 
-      # The base every child gets, written for upstream pi: denying extension
-      # discovery also denies Pi's built-ins, so MCP and codemode are named back.
-      # Per-role additions (provider, web tools) live in the definition that
-      # needs them.
-      childExtensions = [
-        "builtin:mcp"
-        "builtin:codemode"
-        "${pkgs.pi-otel}"
-        "${inputs.pi-extensions}/pi-cbmem/extensions/cbmem.ts"
-        "${inputs.pi-extensions}/pi-output-policy/extensions/output-policy.ts"
-        "${inputs.pi-extensions}/pi-bash-processes/extensions/background-tasks.ts"
-        "${pkgs.pi-magic-context}/dist/index.js"
-        "${inputs.pi-extensions}/pi-native-router/src/index.ts"
-        "${piAgentDir}/npm/node_modules/pi-tool-repair/tool-repair.ts"
-        "${piAgentDir}/npm/node_modules/@gotgenes/pi-permission-system/src/index.ts"
+      extensionRow = id: lib.findFirst (row: row.id == id) null piExtensionRows;
+      extensionPath = id: rowPath (extensionRow id).path;
+      webAccessPath = extensionPath "web-access";
+      childExtensionIds = [
+        "otel"
+        "cbmem"
+        "output-policy"
+        "bash-processes"
+        "magic-context"
+        "native-router"
+        "tool-repair"
+        "permission-system"
       ];
+      childExtension =
+        id:
+        let
+          row = extensionRow id;
+        in
+        if lib.elem "child" (row.compiled or [ ]) then "builtin:${id}" else extensionPath id;
+      childExtensions = map childExtension childExtensionIds;
       childExtensionsYaml = lib.concatStringsSep "\n" (map (path: "  - ${path}") childExtensions);
 
-      # Credentials reach pi by path, not by environment, and only where a
-      # credentials aspect is selected — the laptop's phase-1 evaluation selects
-      # no sops, and its extensions report a missing credential as before.
+      # Secret paths, present only where the sops aspect is selected.
       sopsSecrets = (config.sops or { }).secrets or { };
+      codexbarQuota = provider: {
+        source = "codexbar";
+        inherit provider;
+        enforce = true;
+      };
+      goAccount =
+        secret: account:
+        lib.optionalAttrs (sopsSecrets ? ${secret}) {
+          apiKeyFile = sopsSecrets.${secret}.path;
+          quota = codexbarQuota "opencodego" // {
+            inherit account;
+          };
+        };
+      haikuCandidate = {
+        provider = "anthropic";
+        id = "claude-haiku-5-5";
+        cacheTtlMs = 3600000;
+        thinkingLevel = "high";
+      };
+      opencodeDeepseekCandidate = {
+        provider = "opencode-go";
+        id = "deepseek-v4.1-flash";
+        cacheTtlMs = 10800000;
+        thinkingLevel = "medium";
+      };
+      commandcodeDeepseekCandidate = {
+        provider = "commandcode";
+        id = "deepseek/deepseek-v4.1-flash";
+        cacheTtlMs = 10800000;
+        thinkingLevel = "medium";
+      };
 
       webSearchKeyConfig = lib.mapAttrs (_field: secret: "!cat ${sopsSecrets.${secret}.path}") (
         lib.filterAttrs (_field: secret: sopsSecrets ? ${secret}) {
@@ -151,21 +177,46 @@ in
         }
       );
 
+      mcpServers = {
+        docs_mcp_server = {
+          url = docsMcpUrl;
+          description = "Library documentation search, served by the fleet's index on the forge.";
+        };
+        grep_app = {
+          url = "https://mcp.grep.app";
+          exposure = "direct";
+        };
+        sourcegraph = {
+          url = "https://sourcegraph.com/.api/mcp";
+          description = "GitHub code search: commit, diff, keyword and file lookups.";
+        }
+        // lib.optionalAttrs (sopsSecrets ? SOURCEGRAPH_TOKEN) {
+          headers.Authorization = "!printf 'token %s' \"$(cat ${sopsSecrets.SOURCEGRAPH_TOKEN.path})\"";
+        };
+      }
+      // lib.mapAttrs (
+        _: lib.filterAttrs (_: value: value != null && value != [ ] && value != { })
+      ) config.programs.pi-coding-agent.mcpServers;
+      mcpConfig = builtins.toJSON { inherit mcpServers; };
+
       # Each definition's frontmatter picks one of these; the list is a ceiling,
       # not a preference order.
       workhorseModels = [
         "route/coder"
-        "route/budget"
+        "route/cheap"
         "openai-codex/gpt-6-luna"
         "omniroute/coder-high"
         "omniroute/budget"
         "omniroute/smart-budget"
       ];
 
-      # The keys this repository owns in herdsman's app-written config: the two
-      # bundled roles whose vocabulary duplicates worker and delegate, and the
-      # per-role model allow-lists. A scope only restricts.
-      herdsmanConfig = builtins.toJSON {
+      smartModels = [
+        "openai-codex/gpt-6.1-sol"
+        "route/smart"
+      ];
+      # Rendered whole and read-only to the extension. Model lists only restrict;
+      # omitted keys take the extension's defaults.
+      herdsmanConfig = {
         retainWorkers = false;
         softTimeoutMs = 1800000;
         workerCompaction = false;
@@ -187,36 +238,90 @@ in
               "omniroute/explorer"
               "route/explorer"
             ];
-            oracle.allow = [
-              "openai-codex/gpt-6.1-sol"
-              "route/smart"
-            ];
-            reviewer.allow = [
-              "openai-codex/gpt-6.1-sol"
-              "route/smart"
-            ];
+            oracle.allow = smartModels;
+            reviewer.allow = smartModels;
           };
         };
       };
 
-      # Pi materialises a missing or stale source here on next start. A row with
-      # `load = false` is still installed; `overrides` is what keeps it out of a
-      # discovery-based session.
-      packages = map (
-        row:
-        if row.overrides or { } == { } then
-          rowPath row.source
-        else
-          { source = rowPath row.source; } // row.overrides
-      ) (lib.filter (row: row ? source) piExtensionRows);
+      packages = map packageSource (lib.filter (row: row ? source) piExtensionRows);
+      # A role's selection: the plugins its payload compiled, plus the packages it
+      # loads at run time. Closed because a role directory is Pi-Bolt's alone.
+      selectFor =
+        role:
+        piBolt.payload.select {
+          plugins =
+            lib.filter (plugin: lib.elem plugin.piBolt.name (compiledIds role)) piBolt.payload.passthru.plugins
+            ++ (if role == "child" then childPackages else runtimePackages);
+          closed = true;
+          enable = [
+            "mcp"
+            "codemode"
+          ]
+          ++ lib.optionals (role != "child") [
+            "tool-search"
+            "llama.cpp"
+          ];
+        };
+      roleSettings =
+        let
+          settingsFor =
+            role: lib.recursiveUpdate config.programs.pi-coding-agent.settings (selectFor role).settings;
+          lead = settingsFor "lead";
+        in
+        {
+          lead = lead // {
+            extensions = lead.extensions ++ [ "${leadAgentDir}/herdr-pi-state.ts" ];
+          };
+          orchestrator = settingsFor "orchestrator";
+          child = (settingsFor "child") // {
+            sessionDir = "${childAgentDir}/sessions";
+          };
+        };
+      roleDirs = {
+        lead = leadAgentDir;
+        orchestrator = orchestratorAgentDir;
+        child = childAgentDir;
+      };
+      sharedRuntimeEntries = [
+        "auth.json"
+        "trust.json"
+        "mcp-auth.json"
+        "loop-police.json"
+        "loop-police.jsonl"
+        "npm"
+        "git"
+        "cache"
+        "bin"
+        "themes"
+        "kendex"
+        "fff"
+        "extension-data"
+        "pi-jev"
+        "pi-native-router"
+        "powerline-footer"
+        "extensions/pi-permission-system"
+      ]
+      ++ map (name: "pi-freeflow${name}") [
+        "-cline-pool.json"
+        "-onboarded"
+        "-opencode-version.json"
+        "-update.json"
+        "-upstream-health.json"
+      ];
+      roleSettingsFiles = lib.mapAttrs (
+        name: settings: json.generate "pi-${name}-settings.json" settings
+      ) roleSettings;
 
-      # The package owns both entrypoints and the payload they sit beside; this
-      # module owns what varies with the operator — which plugins each build
-      # compiles, and the runtime extensions the lead passes by path.
       piBolt = pkgs.pi-bolt.override {
         plugins = compiledPlugins pkgs.pi-plugins "lead";
         childPlugins = compiledIds "child";
-        extensions = piBoltExtensions;
+        inherit
+          leadAgentDir
+          childAgentDir
+          orchestratorAgentDir
+          herdsmanDataDir
+          ;
       };
       # The lead package ships `bin/pi` beside `bin/pi-bolt`; hiPrio outranks the
       # stock package's own `pi`, which stays reachable as `pi-stock`.
@@ -227,18 +332,12 @@ in
           ln -s ${target} $out/bin/${name}
         '';
       piStock = alias "pi-stock" "${stockPi}/bin/pi";
-
     in
     {
       imports = [ ./_pi-mcp.nix ];
 
-      # A row that loads with no installed path would be silently absent from a
-      # session; a row that compiles with no recipe fails at an attribute.
+      # Reports every compiled row without a recipe; a missing attribute would name only the first.
       assertions = [
-        {
-          assertion = pathlessRows == [ ];
-          message = "pi: these extensions load at runtime but have no installed path, so a Pi-Bolt launch would drop them: ${lib.concatStringsSep ", " pathlessRows}";
-        }
         {
           assertion = missingRecipes == [ ];
           message = "pi: these rows compile into a Pi-Bolt build but have no recipe in pkgs/pi-plugins: ${lib.concatStringsSep ", " missingRecipes}";
@@ -257,6 +356,7 @@ in
 
           defaultProvider = "route";
           defaultModel = "coder";
+          defaultProjectTrust = "always";
 
           enabledModels = [
             "anthropic/claude-haiku-5-5"
@@ -264,6 +364,7 @@ in
             "route/coder"
             "route/budget"
             "route/smart"
+            "route/free"
             "anthropic/claude-opus-5-5"
             "anthropic/claude-sonnet-5-5"
             "openai-codex/gpt-6-luna"
@@ -348,88 +449,39 @@ in
               opencode-go = {
                 name = "OpenCode Go";
                 accounts = {
-                  go-a = {
-                    apiKeyFile = sopsSecrets.OPENCODE_API_KEY.path;
-                    quota = {
-                      source = "codexbar";
-                      provider = "opencodego";
-                      account = "main";
-                      enforce = true;
-                    };
-                  };
-                  go-b = {
-                    apiKeyFile = sopsSecrets.OPENCODE_API_KEY_HOMELAB.path;
-                    quota = {
-                      source = "codexbar";
-                      provider = "opencodego";
-                      account = "homelab";
-                      enforce = true;
-                    };
-                  };
-                  go-c = {
-                    apiKeyFile = sopsSecrets.OPENCODE_API_KEY_UNI.path;
-                    quota = {
-                      source = "codexbar";
-                      provider = "opencodego";
-                      account = "uni";
-                      enforce = true;
-                    };
-                  };
+                  go-a = goAccount "OPENCODE_API_KEY" "main";
+                  go-b = goAccount "OPENCODE_API_KEY_HOMELAB" "homelab";
+                  go-c = goAccount "OPENCODE_API_KEY_UNI" "uni";
                 };
               };
-              commandcode = {
+              commandcode = lib.optionalAttrs (sopsSecrets ? COMMANDCODE_API_KEY) {
                 name = "Command Code";
                 apiKeyFile = sopsSecrets.COMMANDCODE_API_KEY.path;
-                quota = {
-                  source = "codexbar";
-                  provider = "commandcode";
-                  enforce = true;
-                };
+                quota = codexbarQuota "commandcode";
               };
               "openai-codex" = {
                 name = "Codex";
-                quota = {
-                  source = "codexbar";
-                  provider = "codex";
-                  enforce = true;
-                };
+                quota = codexbarQuota "codex";
               };
               anthropic = {
                 name = "Claude";
-                quota = {
-                  source = "codexbar";
-                  provider = "claude";
-                  enforce = true;
-                };
+                quota = codexbarQuota "claude";
+              };
+              freeflow = {
+                name = "Free";
               };
             };
             routes = {
               coder.candidates = [
-                {
-                  provider = "anthropic";
-                  id = "claude-haiku-5-5";
-                  cacheTtlMs = 3600000;
-                  thinkingLevel = "high";
-                }
-                {
-                  provider = "commandcode";
-                  id = "deepseek/deepseek-v4.1-flash";
-                  cacheTtlMs = 10800000;
-                  thinkingLevel = "medium";
-                }
-                {
-                  provider = "opencode-go";
-                  id = "deepseek-v4.1-flash";
-                  cacheTtlMs = 10800000;
-                  thinkingLevel = "medium";
-                }
+                haikuCandidate
+                commandcodeDeepseekCandidate
+                opencodeDeepseekCandidate
                 {
                   provider = "openai-codex";
                   id = "gpt-6-luna";
                   cacheTtlMs = 600000;
                   thinkingLevel = "high";
                 }
-
               ];
               smart.candidates = [
                 {
@@ -447,37 +499,44 @@ in
               ];
               # A bare opencode-go candidate expands to every Go account, in declaration order.
               explorer.candidates = [
-                {
-                  provider = "opencode-go";
-                  id = "deepseek-v4.1-flash";
-                  cacheTtlMs = 10800000;
-                  thinkingLevel = "medium";
-                }
-                {
-                  provider = "commandcode";
-                  id = "deepseek/deepseek-v4.1-flash";
-                  cacheTtlMs = 10800000;
-                  thinkingLevel = "medium";
-                }
+                opencodeDeepseekCandidate
+                commandcodeDeepseekCandidate
               ];
               cheap.candidates = [
-                {
-                  provider = "anthropic";
-                  id = "claude-haiku-5-5";
-                  cacheTtlMs = 3600000;
-                  thinkingLevel = "high";
-                }
+                haikuCandidate
                 {
                   provider = "opencode-go";
                   id = "mimo-v2.6-flash";
                   cacheTtlMs = 600000;
                   thinkingLevel = "medium";
                 }
+                opencodeDeepseekCandidate
+              ];
+              free.candidates = [
                 {
-                  provider = "opencode-go";
-                  id = "deepseek-v4.1-flash";
-                  cacheTtlMs = 10800000;
-                  thinkingLevel = "medium";
+                  provider = "freeflow";
+                  id = "z-ai/glm-5.3-flash";
+                  thinkingLevel = "high";
+                }
+                {
+                  provider = "freeflow";
+                  id = "deepseek-v4.1-flash-free";
+                  thinkingLevel = "high";
+                }
+                {
+                  provider = "freeflow";
+                  id = "muse-spark-1.3-contributor-free";
+                  thinkingLevel = "xhigh";
+                }
+                {
+                  provider = "freeflow";
+                  id = "cline-free/muse-spark-1.3-contributor";
+                  thinkingLevel = "xhigh";
+                }
+                {
+                  provider = "freeflow";
+                  id = "mimo-v2.6-flash-free";
+                  thinkingLevel = "high";
                 }
               ];
             };
@@ -521,6 +580,12 @@ in
               position = "left";
             }
             {
+              id = "route-health";
+              statusKey = "native-router-pin-health";
+              position = "left";
+              color = "warning";
+            }
+            {
               id = "peak";
               statusKey = "native-router-peak";
               position = "left";
@@ -546,6 +611,7 @@ in
               "model"
               "custom:provider"
               "custom:model"
+              "custom:route-health"
               "custom:peak"
               "custom:thinking"
               "shell_mode"
@@ -625,159 +691,150 @@ in
         piStock
       ];
 
-      # Session mode is chosen at launch: plain `pi` implements with the user
-      # in the loop; `pio` appends the orchestrator stance.
-      home.shellAliases.pio = "pi --append-system-prompt ${piAgentDir}/modes/orchestrator.md";
+      # Plain `pi` uses the lead role; `pio` uses the orchestrator role and shares
+      # the operator session history.
+      home.shellAliases.pio = "pi-bolt-orchestrator --append-system-prompt ${orchestratorAgentDir}/modes/orchestrator.md";
 
       home.sessionVariables = {
         HINDSIGHT_BASE_URL = hindsightUrl;
+        PI_HERDSMAN_DATA_DIR = herdsmanDataDir;
       };
 
-      home.file = {
-        # Pi's MCP servers. Underscore ids keep Pi's normalized namespaces
-        # stable: the tool names a model sees are mcp__<server>__<tool>.
-        ".pi/agent/mcp.json".source = json.generate "pi-native-mcp.json" {
-          mcpServers = {
-            docs_mcp_server = {
-              url = docsMcpUrl;
-              description = "Library documentation search, served by the fleet's index on the forge.";
+      home.file =
+        let
+          agentFiles = {
+            # Pi rewrites these through a rename; force re-links them instead of backing up.
+            ".pi/agent/mcp.json" = {
+              text = mcpConfig;
+              force = true;
             };
-            # GitHub code search is reached mid-investigation, where a codemode
-            # script costs more than declaring the one tool.
-            grep_app = {
-              url = "https://mcp.grep.app";
-              exposure = "direct";
+            ".config/rpiv-todo/config.json".source = json.generate "rpiv-todo.json" {
+              collapseKey = "ctrl+alt+t";
+              maxWidgetLines = 5;
             };
-            sourcegraph = {
-              url = "https://sourcegraph.com/.api/mcp";
-              description = "Sourcegraph public-code search: commit, diff, keyword and file lookups.";
-            }
-            # `!command` is Pi's value form; the token never leaves the secret file.
-            // lib.optionalAttrs (sopsSecrets ? SOURCEGRAPH_TOKEN) {
-              headers.Authorization = "!printf 'token %s' \"$(cat ${sopsSecrets.SOURCEGRAPH_TOKEN.path})\"";
+
+            ".pi/agent/pi-herdsman/config.json".source = json.generate "pi-herdsman-config.json" herdsmanConfig;
+
+            ".pi/agent/pi-fff.json".source = json.generate "pi-fff.json" {
+              "$schema" =
+                "https://raw.githubusercontent.com/dmtrKovalenko/fff/main/packages/pi-fff/pi-fff.schema.json";
+              mode = "override";
             };
-          }
-          # The servers this repository runs register themselves, from the
-          # aspect that owns each one (_pi-mcp.nix); what is left above is the
-          # endpoints Pi owns.
-          // lib.mapAttrs (
-            _: lib.filterAttrs (_: value: value != null && value != [ ] && value != { })
-          ) config.programs.pi-coding-agent.mcpServers;
-        };
 
-        ".pi/agent/pi-fff.json".source = json.generate "pi-fff.json" {
-          "$schema" =
-            "https://raw.githubusercontent.com/dmtrKovalenko/fff/main/packages/pi-fff/pi-fff.schema.json";
-          mode = "override";
-        };
+            # Provider keys read their decrypted sops secrets, ahead of the environment.
+            # useCurrentModel routes hosted search through the Codex subscription on GPT models.
+            ".pi/agent/web-search.json".source = json.generate "pi-web-search.json" (
+              {
+                searchRouting = {
+                  providers = [
+                    "parallel"
+                    "brave"
+                    "tavily"
+                    "jina"
+                    "serpdive"
+                    "tinyfish"
+                    "gemini"
+                  ];
+                  useCurrentModel = true;
+                  fallbackOn = [
+                    "unsupported"
+                    "transient"
+                    "quota"
+                    "network"
+                    "invalid-response"
+                  ];
+                };
+                # Keys resolve from the decrypted sops secret paths, so no search
+                # credential is exported to the environment. pi-web-access prefers a
+                # configured value over its environment fallback.
+                fetchRouting.providers = [
+                  "http"
+                  "firecrawl"
+                  "jina"
+                  "parallel"
+                  "tinyfish"
+                  "gemini"
+                ];
+                # Declare the web tools from the first request on every model: a
+                # session-wide list shape beats web_enable's per-model variance.
+                toolActivation = "eager";
+                workflow = "none";
+                summaryModel = "omniroute/budget";
+              }
+              // webSearchKeyConfig
+            );
 
-        # pi-web-access routing. Each provider key below reads its decrypted
-        # sops secret, which takes precedence over the environment fallback.
-        # Parallel first while its 60-day credit lasts, then free tiers;
-        # useCurrentModel uses the Codex subscription for hosted search when on
-        # GPT models, which costs nothing extra.
-        ".pi/agent/web-search.json".source = json.generate "pi-web-search.json" (
-          {
-            searchRouting = {
-              providers = [
-                "parallel"
-                "brave"
-                "tavily"
-                "jina"
-                "serpdive"
-                "tinyfish"
-                "gemini"
-              ];
-              useCurrentModel = true;
-              fallbackOn = [
-                "unsupported"
-                "transient"
-                "quota"
-                "network"
-                "invalid-response"
-              ];
+            ".pi/agent/extensions/pi-tool-repair.json".source = json.generate "pi-tool-repair.json" {
+
+              grammarRepair = {
+                enabled = true;
+                mode = "recover";
+                requireKnownTool = true;
+                grammars = [
+                  "dsml"
+                  "invoke"
+                  "glm"
+                ];
+              };
+
             };
-            # Keys resolve from the decrypted sops secret paths, so no search
-            # credential is exported to the environment. pi-web-access prefers a
-            # configured value over its environment fallback.
-            fetchRouting.providers = [
-              "http"
-              "firecrawl"
-              "jina"
-              "parallel"
-              "tinyfish"
-              "gemini"
-            ];
-            # Declare the web tools from the first request on every model: a
-            # session-wide list shape beats web_enable's per-model variance.
-            toolActivation = "eager";
-            workflow = "none";
-            summaryModel = "omniroute/budget";
-          }
-          // webSearchKeyConfig
-        );
+            #
+            # Pi-Bolt skips the extension Herdr installs for Pi by name and header
+            # marker, so the pane would go unreported. The shim is a link to that
+            # same file under a name Pi-Bolt does not recognise: Herdr's own
+            # reporter runs again, keeps reporting as `pi`, and follows the file
+            # Herdr rewrites on an upgrade. It sits outside the extensions
+            # directory so stock Pi's discovery does not load it twice.
+            ".pi/agent/herdr-pi-state.ts".source =
+              config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.pi/agent/extensions/herdr-agent-state.ts";
 
-        ".pi/agent/claude-bridge.json".source = json.generate "claude-bridge.json" {
-          startupNoticeShown = "2026-09-28";
-          provider.pathToClaudeCodeExecutable = "${claudeCode}/bin/claude";
-        };
+            # Herdsman passes `skills` and `extensions` values to Pi unchanged, so
+            # the definitions use substituted paths and @childExtensions@ for their
+            # shared compiled/runtime base.
+            ".pi/agent/agents".source = pkgs.runCommand "pi-agents" { } ''
+              mkdir $out
+              for f in ${./pi/agents}/*.md; do
+                substitute "$f" "$out/$(basename "$f")" \
+                  --subst-var-by home ${config.home.homeDirectory} \
+                  --subst-var-by webAccess ${lib.escapeShellArg webAccessPath} \
+                  --subst-var-by childExtensions ${lib.escapeShellArg childExtensionsYaml}
+              done
+            '';
 
-        ".pi/agent/extensions/pi-tool-repair.json".source = json.generate "pi-tool-repair.json" {
+            ".pi/agent/modes".source = ./pi/modes;
 
-          grammarRepair = {
-            enabled = true;
-            mode = "recover";
-            requireKnownTool = true;
-            grammars = [
-              "dsml"
-              "invoke"
-              "glm"
-            ];
+            # Global main-agent instructions: skill routing + delegation policy.
+            ".pi/agent/AGENTS.md".source = ./pi/AGENTS.md;
+
+            ".pi/agent/skills".source = ./pi/skills;
+
           };
-
+          relative = name: lib.removePrefix ".pi/agent/" name;
+          roleFiles =
+            role:
+            let
+              dir = ".pi/roles/${role}";
+            in
+            lib.mapAttrs' (name: value: lib.nameValuePair "${dir}/${relative name}" value) agentFiles
+            // lib.listToAttrs (
+              map (
+                entry:
+                lib.nameValuePair "${dir}/${entry}" {
+                  source = config.lib.file.mkOutOfStoreSymlink "${piAgentDir}/${entry}";
+                }
+              ) (sharedRuntimeEntries ++ lib.optional (role != "child") "sessions")
+            )
+            // {
+              "${dir}/settings.json" = {
+                source = roleSettingsFiles.${role};
+                force = true;
+              };
+            };
+        in
+        agentFiles
+        // lib.concatMapAttrs (role: _: roleFiles role) roleDirs
+        // {
+          "${config.programs.pi-coding-agent.configDir}/settings.json".force = true;
         };
-        #
-        # Pi-Bolt skips the extension Herdr installs for Pi by name and header
-        # marker, so the pane would go unreported. The shim is a link to that
-        # same file under a name Pi-Bolt does not recognise: Herdr's own
-        # reporter runs again, keeps reporting as `pi`, and follows the file
-        # Herdr rewrites on an upgrade. It sits outside the extensions
-        # directory so stock Pi's discovery does not load it twice.
-        ".pi/agent/herdr-pi-state.ts".source =
-          config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.pi/agent/extensions/herdr-agent-state.ts";
-
-        # Herdsman passes `skills` and `extensions` values to Pi unchanged, so
-        # the definitions carry @home@ placeholders instead of a hardcoded home
-        # directory and @childExtensions@ for the shared thin base above.
-        ".pi/agent/agents".source = pkgs.runCommand "pi-agents" { } ''
-          mkdir $out
-          for f in ${./pi/agents}/*.md; do
-            substitute "$f" "$out/$(basename "$f")" \
-              --subst-var-by home ${config.home.homeDirectory} \
-              --subst-var-by childExtensions ${lib.escapeShellArg childExtensionsYaml}
-          done
-        '';
-
-        ".pi/agent/modes".source = ./pi/modes;
-
-        # Global main-agent instructions: skill routing + delegation policy.
-        ".pi/agent/AGENTS.md".source = ./pi/AGENTS.md;
-
-        ".pi/agent/skills".source = ./pi/skills;
-
-      };
-
-      home.activation.piHerdsmanConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        cfg="$HOME/.pi/agent/pi-herdsman/config.json"
-        ${pkgs.coreutils}/bin/mkdir -p "$(dirname "$cfg")"
-        if ${pkgs.coreutils}/bin/test -s "$cfg"; then
-          ${pkgs.jq}/bin/jq --argjson owned '${herdsmanConfig}' \
-            '. * $owned' "$cfg" > "$cfg.new"
-        else
-          ${pkgs.jq}/bin/jq -n --argjson owned '${herdsmanConfig}' \
-            '$owned' > "$cfg.new"
-        fi
-        ${pkgs.coreutils}/bin/mv -f "$cfg.new" "$cfg"
-      '';
     };
 }

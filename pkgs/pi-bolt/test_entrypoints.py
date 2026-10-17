@@ -37,8 +37,9 @@ def main(*executables):
         with tempfile.TemporaryDirectory() as directory:
             agent = Path(directory) / "agent"
             agent.mkdir()
-            # Discovery must stay disabled while the compiled provider loads.
-            (agent / "settings.json").write_text(json.dumps({"packages": ["/nonexistent/packaging-discovery-probe"]}))
+            # The isolated role has no runtime packages; the compiled provider
+            # must load by default and in the explicit no-discovery launch.
+            (agent / "settings.json").write_text(json.dumps({"packages": []}))
             env = os.environ | {
                 "PI_CODING_AGENT_DIR": str(agent),
                 "OMNIROUTE_BASE_URL": f"http://127.0.0.1:{server.server_port}",
@@ -48,7 +49,15 @@ def main(*executables):
             cases = [
                 (executable, args)
                 for executable in executables
-                for args in [[], ["--no-extensions", "-e", "builtin:mcp", "-e", "builtin:codemode"]]
+                for args in [
+                    [],
+                    [
+                        "--no-extensions",
+                        "-e", "builtin:mcp",
+                        "-e", "builtin:codemode",
+                        "-e", "builtin:omniroute",
+                    ],
+                ]
             ]
             for executable, args in cases:
                 result = subprocess.run(
@@ -58,7 +67,7 @@ def main(*executables):
                 output = result.stdout + result.stderr
                 if result.returncode or "No models matching" in output or "packaging-probe" not in result.stdout or "Failed to load" in output:
                     raise AssertionError(f"{executable} {args}:\n{output}")
-                print(f"PASS {Path(executable).name} {args}: compiled provider registered with discovery disabled")
+                print(f"PASS {Path(executable).name} {args}: compiled provider is enabled")
     finally:
         server.shutdown()
         server.server_close()

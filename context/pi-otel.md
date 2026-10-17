@@ -61,15 +61,16 @@ backend-specific endpoints and credentials on every producer.
 The Pi-Bolt executable compiles the extension rather than parsing its TypeScript
 and dependency closure at launch. The recipe stages `pkgs/pi-otel`, so stock
 loads and compiled loads use the same source and lock-derived dependencies.
-The runtime package stays in stock Pi's catalogue and the child extension
-list; the compiled child filters that path as a duplicate.
+Stock Pi keeps the source in its `packages` list; Pi-Bolt roles select the
+compiled extension as `+builtin:otel`, and managed children name it
+`builtin:otel`.
 
 Compilation removes the source-relative `package.json` path used for the
 extension version. The recipe embeds the pinned manifest version instead;
 without that patch the extension silently reports `0.0.0`. The runtime package
-keeps its original file-based version lookup. Both compiled variants exported
-synthetic traces carrying the correct `0.3.1` extension version. The merged
-executable keeps both launchers on that one compiled copy.
+keeps its original file-based version lookup. The compiled executable exported
+synthetic traces carrying the correct `0.3.1` extension version; the lead and
+child launchers select their own compiled builtin sets from the shared payload.
 
 **Alternative:** keep runtime loading for Pi-Bolt too. It works, but leaves this
 extension outside the compiled launch path the user requested.

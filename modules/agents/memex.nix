@@ -36,16 +36,9 @@
             settings = {
               auto_index_on_search = true;
 
-              # Serving MCP is what makes the service continuous — the module
-              # picks `daemon run` over `index` whenever this is set — so one
-              # process holds the index and the embedding model resident and pi
-              # dials it, instead of every session spawning its own stdio server
-              # and loading a second copy of the model (the default model is
-              # local gemma).
-              #
-              # The listen address is stated rather than left to the
-              # 127.0.0.1:5363 default so the URL pi builds cannot drift from an
-              # upstream default change without this file moving too.
+              # Serving MCP selects `daemon run`, so sessions share one resident index
+              # and embedding model instead of each loading their own copy.
+              # The listen address is pinned so pi's URL cannot drift from upstream.
               index_service_mcp = true;
               mcp.listen = "127.0.0.1:5363";
             };

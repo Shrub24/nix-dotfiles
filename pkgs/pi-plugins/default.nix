@@ -1,13 +1,15 @@
 # Source recipes for the extensions Pi-Bolt can compile in: where each plugin's
-# source comes from, which file exports its factory, and the patch its
-# compile-time assumptions need (`--replace-fail` keeps a patch loud when
-# upstream moves). Which plugins a build contains is the module's decision, so
-# nothing here says who gets what.
+# source comes from, which file exports its factory, which sibling plugins it
+# imports, and the patch its compile-time assumptions need (`--replace-fail`
+# keeps a patch loud when upstream moves). Which plugins a build contains is the
+# module's decision, so nothing here says who gets what.
 {
   lib,
   fetchurl,
   fetchFromGitHub,
   linkFarm,
+  runCommand,
+  writeText,
   writeShellApplication,
   python3,
   nix,
@@ -16,6 +18,10 @@
   # the plugin directory its recipe stages.
   piPowerlineFooter,
   pi-otel,
+  # Pi-Bolt's plugin scope: the builder each recipe becomes, and the fetcher the
+  # libraries use. An input rather than a vendored copy, so the interface this
+  # repository tests is the one Pi-Bolt publishes.
+  piBoltPlugins,
 }:
 let
   # One updater owns this set; nix-update cannot locate individual helper calls.
@@ -53,8 +59,8 @@ let
     plugins = {
       tool-repair = {
         tarball = npmTarball "pi-tool-repair" {
-          version = "0.3.7";
-          hash = "sha512-1tnZ/TgAQqLf3eGU8cf1AV9Tug1WcR2GcKrtV7wRq2xgNfh1RCy0/DS2QZB1Z1azrvBuffO3Utu5FTfOeSaorw==";
+          version = "0.3.9";
+          hash = "sha512-DhNdHn2rNixXk1fxVBwrbri1G1a+TNNWpoLY3V41aU0LJZfztCWmVare2rYFk/wmNdQ+rsrPd3NLBKJ86AS4EA==";
         };
         entry = "tool-repair.ts";
       };
@@ -74,33 +80,30 @@ let
       };
       cache-optimizer = {
         tarball = npmTarball "pi-cache-optimizer" {
-          version = "2.8.25";
-          hash = "sha512-X1IGrpESoVJ+xYwI11OGtwLuuzEv/rtodFRPxZKST+ACaYdLSamPHg0ENinKP1ntuHJsyp4rRKfRs1qy9eKl+g==";
+          version = "2.10.0";
+          hash = "sha512-3ODSj705TZem6ZjvXnuyqa7y/Mu7t8OQfL7L8ix378stHHQUcMia4JdF7coIXmT+KSXSJomZ+ylBSHx7y/ZxfA==";
         };
         entry = "index.ts";
       };
       context-view = {
         tarball = npmTarball "pi-context-view" {
-          version = "0.7.1";
-          hash = "sha512-74bg+Tb5SOVdjeUSW70I/yieDtAKcNeEETPj5zU3UFWlYnE3NCjGgA/fLCi6vsO9vmwbRcFmCINJBaoksxH1aw==";
+          version = "0.7.2";
+          hash = "sha512-i8jtZJA1ovhMLsBHHWE0mB8mzX28Mhm125Zy4QDiD9+bYCgcsYdMzXE7fPnmtx64MB3MNkMIAeMtTrJQ7HtuWQ==";
         };
         entry = "src/index.ts";
       };
-      # The footer and the Vim editor backend in one plugin, which is what
-      # retires the separate vim, starship and draft-history extensions.
+      # Footer and Vim editor backend in one plugin.
       powerline-footer = {
         dir = piPowerlineFooter;
         entry = "index.ts";
       };
       anthropic-auth = {
         tarball = npmTarball "@gotgenes/pi-anthropic-auth" {
-          version = "3.4.2";
-          hash = "sha512-xNbI8eYKZmfk2PRqNoogULF69mjKeCnX/ZQJo50mkG6ibu+asYNTZaBWYpAW1RQVyprPfFoBBgNhha+jxRluZg==";
+          version = "3.4.3";
+          hash = "sha512-w2WwBxUKY4pLOHYvVdkR39lDrFgRrETIs3Oh5iCK461nL5MhKjW18iBjBD9DkTJlcavKZkrRvRvQnLz9o8DVMg==";
         };
         entry = "src/index.ts";
-        # Pi-Bolt replaces Pi's default preamble with its own, which detection
-        # here never matched: the verbose preamble then reached Anthropic OAuth
-        # unshaped. Accept either preamble.
+        # Pi-Bolt's own preamble must be shaped too; detection misses it otherwise.
         patch = ''
           substituteInPlace plugins/anthropic-auth/src/constants.ts \
             --replace-fail \
@@ -140,8 +143,7 @@ let
           hash = "sha512-gEp4SIAtU7UpSpe1Bs2OxA8B7rYejdunXNFpDdqo6hyLklS5b4SOQgBiyKCd3P1Xk/zHqqDCbWCcgUB4YDMyrw==";
         };
         entry = "extensions/loop-police.ts";
-        # Its mutable config belongs beside the agent directory, not in the source
-        # tree it no longer has once compiled.
+        # Mutable config lives beside the agent directory, not in the compiled source tree.
         patch = ''
           substituteInPlace plugins/loop-police/extensions/loop-police.ts \
             --replace-fail 'import { dirname, isAbsolute, join, resolve } from "node:path";' 'import { isAbsolute, join, resolve } from "node:path";' \
@@ -153,8 +155,8 @@ let
       };
       ask-user-question = {
         tarball = npmTarball "@juicesharp/rpiv-ask-user-question" {
-          version = "2.13.8";
-          hash = "sha512-Uu2jpn5Tf0lo47izmPU7+xbUIuxE9HdmmZ6XjVzBSm8zIvnJ5Hoj/XhfuG0qC0DuCOwIkE0oNRsNsLp1js7/2g==";
+          version = "2.13.9";
+          hash = "sha512-vx9CIkRHbzavPr7DFYUjorfaYErAVwurZOs2tKC5kQFv5y05CShlxf3qQ7k67lqvODdz8j/sbMIaj6szgLyCEg==";
         };
         entry = "index.ts";
         # The locale files are source-relative; keep its built-in English fallback
@@ -165,10 +167,33 @@ let
           printf '%s\n' 'export function registerLocalesFromDir() {}' > plugins/ask-user-question/i18n-loader.ts
         '';
       };
+      todo = {
+        tarball = npmTarball "@juicesharp/rpiv-todo" {
+          version = "2.13.9";
+          hash = "sha512-fXuUVU2HlxiUMeDeRTXbSVDPftP+CMGe47nAA5H0BX4YYl7chl1M2fSL1fFQqq5FCcpk5+ZBiQ43tiKvUu97gQ==";
+        };
+        entry = "index.ts";
+        # The i18n SDK is an optional peer and its locale files are
+        # source-relative, so both imports become the inline English fallback.
+        # A persisted snapshot that lost a task's subject otherwise reaches the
+        # renderer's string sanitizer and dies on `.replace` at resume, so the
+        # replay boundary validates task entries instead.
+        patch = ''
+          substituteInPlace plugins/todo/index.ts \
+            --replace-fail '@juicesharp/rpiv-i18n/loader' './i18n-loader.ts'
+          printf '%s\n' 'export function registerLocalesFromDir() {}' > plugins/todo/i18n-loader.ts
+          substituteInPlace plugins/todo/state/i18n-bridge.ts \
+            --replace-fail '@juicesharp/rpiv-i18n' './i18n-scope.ts'
+          printf '%s\n' 'export function scope() { return (_key: string, fallback: string) => fallback; }' > plugins/todo/state/i18n-scope.ts
+          substituteInPlace plugins/todo/state/replay.ts \
+            --replace-fail 'return Array.isArray(v.tasks) && typeof v.nextId === "number";' \
+            'return Array.isArray(v.tasks) && typeof v.nextId === "number" && v.tasks.every((task) => !!task && typeof task === "object" && typeof (task as { subject?: unknown }).subject === "string");'
+        '';
+      };
       permission-system = {
         tarball = npmTarball "@gotgenes/pi-permission-system" {
-          version = "40.2.1";
-          hash = "sha512-PXmYiJpdoOknpmPEDEkjPecRlSc081MYPLlB7aRg7E0G8ixekJhdO50/xmBtI0AjJLD2qFrhS2FIB3VHRHX3dA==";
+          version = "41.0.0";
+          hash = "sha512-BJHnj4yrtVMT5A5Tzss+yRhdvRndJSEBMr4j3QGa+T5MxmHof1xTKlVlDA6Xiq3hFQ7LcvTTCxzvXfPW85zftA==";
         };
         entry = "src/index.ts";
         # Embed the parser's wasm instead of resolving it next to the source, and
@@ -194,6 +219,9 @@ let
       herdsman = {
         dir = checkout "pi-herdsman";
         entry = "extension/index.ts";
+        # Its sibling imports are relative into the staged plugins directory, so
+        # bash-processes has to be staged beside it.
+        dependencies = [ "bash-processes" ];
         # Children on stock Pi still need the extension path; bundled definitions
         # must remain readable from disk rather than Bun's virtual filesystem.
         patch = ''
@@ -211,6 +239,9 @@ let
       tool-renderer = {
         dir = checkout "pi-tool-renderer";
         entry = "extensions/tool-renderer.ts";
+        # bash-processes imports it by package name, so the builder links it into
+        # that plugin's node_modules instead of it being staged as a sibling.
+        packageName = "@vanillagreen/pi-tool-renderer";
       };
       output-policy = {
         dir = checkout "pi-output-policy";
@@ -219,20 +250,14 @@ let
       bash-processes = {
         dir = checkout "pi-bash-processes";
         entry = "extensions/background-tasks.ts";
-        # It imports tool-renderer's intent helper, which a compiled build resolves
-        # against the staged sibling source rather than a package specifier.
-        patch = ''
-          substituteInPlace \
-            plugins/bash-processes/extensions/background-tasks.ts \
-            plugins/bash-processes/extensions/registrations.ts \
-            --replace-fail '"@vanillagreen/pi-tool-renderer/intent"' '"../../tool-renderer/extensions/tool-renderer/intent.ts"'
-          substituteInPlace plugins/bash-processes/extensions/background-tasks.ts \
-            --replace-fail '"@vanillagreen/pi-tool-renderer/managed-bash"' '"../../tool-renderer/extensions/tool-renderer/managed-bash.ts"'
-        '';
+        dependencies = [ "tool-renderer" ];
       };
       jev = {
         dir = checkout "pi-jev";
         entry = "extensions/compiled.ts";
+        # Its entry imports permission-system by a path relative to the staged
+        # siblings, so that plugin is staged even where this one is not selected.
+        dependencies = [ "permission-system" ];
         # Keep both portable entries; the compiled manifest needs one factory.
         patch = ''
           chmod u+w plugins/jev/extensions
@@ -285,9 +310,12 @@ let
     libraries = {
       # Resolved from the plugin tree's own node_modules.
       # (dir name) = tarball
+      # 0.5.1 is the floor the plugin sources need: `pi-radar/communication`
+      # arrived in 0.3.0, and 0.5.1 is the release that requires daemon wire
+      # revision 4, so presence is not silently unserved.
       "pi-radar" = npmTarball "pi-radar" {
-        version = "0.1.0";
-        hash = "sha512-9baj9YvynilcmDNDs16B1qtioqvpQ2VY6EhOydwUwUwkhebyBhD/ERmQk9Q8go2vyZvIANWtL7GMOh1nq4TAoA==";
+        version = "0.5.1";
+        hash = "sha512-VZKxHqehBtIV80ZizTKXeBTQx+q6w2djmFdvvhrNqHQ02N58qc2D6abbTr5QYM6BxfiDVku4TKqnChuwC3yGyA==";
       };
       "@narumitw/pi-tui-kit" = npmTarball "@narumitw/pi-tui-kit" {
         version = "0.65.6";
@@ -306,8 +334,8 @@ let
         hash = "sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==";
       };
       "@juicesharp/rpiv-config" = npmTarball "@juicesharp/rpiv-config" {
-        version = "2.13.8";
-        hash = "sha512-fNzUmtGHRYbPQ3PWnfwyk0ukBxUgIwFLUhzRQV8U47IMhSZAEfoutqOZ31UCPPEpCgWgF+WATJ3+jn7NwJUotg==";
+        version = "2.13.9";
+        hash = "sha512-wCy7w4PNi+9pVD5gsbsIxq6ysdoFKXGPIQfOICyITW/+Jg6OGlFZa/tG99J9OZvTHDM8ZwUvqXNrFRsU6Z8NTQ==";
       };
       "zod" = npmTarball "zod" {
         version = "4.6.7";
@@ -322,16 +350,58 @@ let
         hash = "sha512-7hMytuYIMoXOq24yRulgIxthE9YmggZIOHCyPTTuJcu6EU54tYD+4G39cUb28kxC6jMf/AbPfWGLQtgPTdh3xw==";
       };
       "typebox" = npmTarball "typebox" {
-        version = "1.3.37";
-        hash = "sha512-k+Qogwk7lztlItGvFf5v4GZPPStFAFehAyOKYeuqIHzi3dfTFqPOTx38JG09hmpcK6TQgctrTD06U/0CTTpM1g==";
+        version = "1.4.2";
+        hash = "sha512-eSoZzgSIyOKDtTH9MI7XMAxMaiXq7UiSFWarysN1ka66baTLDxAVdQ6WkWn6qDqsJFVrcjzvuP+CqHo9yrlQpg==";
       };
     };
   };
+  # The npm packages the compiled plugins import, unpacked once: Pi-Bolt's
+  # builder copies this into each plugin's own node_modules, so a plugin resolves
+  # its dependencies inside the payload's tree.
+  libraryPackages = writeText "pi-plugins-libraries.json" (
+    builtins.toJSON (
+      lib.mapAttrsToList (name: path: {
+        inherit name;
+        path = toString path;
+      }) recipes.libraries
+    )
+  );
+  libraryNodeModules = runCommand "pi-plugins-node-modules" { } ''
+    ${python3}/bin/python3 ${./unpack-libraries.py} ${libraryPackages}
+  '';
+
+  # A recipe becomes the flake's plugin derivation: the same source pin and entry,
+  # with the patch's `plugins/<id>/` prefix dropped because the builder works in
+  # the plugin's own tree. `pluginName` is the row id, so the launchers' existing
+  # `-e builtin:<id>` arguments keep naming these plugins.
+  toPlugin =
+    id: recipe:
+    piBoltPlugins.buildPiBoltPlugin {
+      pname = id;
+      # The pins of record are the recipe's own; a plugin's version is not
+      # separately meaningful, and the source hash still separates two of them.
+      version = "0";
+      pluginName = id;
+      packageName = recipe.packageName or null;
+      src = recipe.tarball or recipe.dir;
+      inherit (recipe) entry;
+      dependencies = builtins.map pluginOf (recipe.dependencies or [ ]);
+      nodeModules = "${libraryNodeModules}/node_modules";
+      postPatch = lib.optionalString (recipe ? patch) (
+        lib.replaceStrings [ "plugins/${id}/" ] [ "" ] recipe.patch
+      );
+    };
+
+  # A recipe names its plugin dependencies by row id; the builder wants the
+  # derivations, and the plugin map below is where they live.
+  pluginOf = id: plugins.${id};
+  plugins = lib.mapAttrs toPlugin recipes.plugins;
+
   sources = linkFarm "pi-plugins" (
-    lib.mapAttrsToList (id: plugin: {
+    lib.mapAttrsToList (id: path: {
       name = "plugins/${id}";
-      path = plugin.tarball or plugin.dir;
-    }) recipes.plugins
+      inherit path;
+    }) plugins
     ++ lib.mapAttrsToList (name: path: {
       name = "libraries/${name}";
       inherit path;
@@ -352,20 +422,6 @@ sources.overrideAttrs (_: {
         exec python3 ${./update.py}
       '';
     });
-    plugins = lib.mapAttrs (
-      id: plugin:
-      plugin
-      // (
-        if plugin ? tarball then
-          {
-            tarball = "${sources}/plugins/${id}";
-          }
-        else
-          {
-            dir = "${sources}/plugins/${id}";
-          }
-      )
-    ) recipes.plugins;
-    libraries = lib.mapAttrs (name: _: "${sources}/libraries/${name}") recipes.libraries;
+    inherit plugins;
   };
 })

@@ -12,7 +12,7 @@ inheritSkills: true
 noExtensions: true
 extensions:
 @childExtensions@
-  - "@home@/.pi/agent/npm/node_modules/pi-web-access/dist/index.js"
+  - "@webAccess@"
 skills:
   - "@home@/.pi/agent/skills/web-research/SKILL.md"
 preloadedSkills:

@@ -38,3 +38,18 @@ deployment moves the pin with `nix flake update pi-extensions`.
 it takes a pin bump and a switch, or an override-input build for a trial.
 OmniRoute keeps its own literal checkout pin, so a source that is not an npm
 tarball and not in the `pi-extensions` input still has a home.
+
+## The powerline footer fork follows the lock, not a commit in its declaration
+
+**Id:** 77ceaca9-6c12-496a-9373-320607a20f6a
+**Type:** decision
+**Status:** active
+**Evidence:** measurement in this repository — `modules/flake/inputs.nix` declares `github:Shrub24/pi-powerline-footer` with no rev, and `flake.lock` pins `ca67e21e2b6dfce26274e813595f2691f8ac725e`, the same as the upstream default branch HEAD at check time
+**Source:** ARCHITECTURE.md's former Durable Decisions said the input was pinned in its declaration at the commit its branch was pushed at; that text did not match the declaration and was removed
+**Revisit when:** the footer fork needs to stay on one commit across `nix flake update`, in which case pin the rev in the declaration
+
+The footer fork is an ordinary input. `nix flake update pi-powerline-footer` advances it, like the other Pi plugin sources, and a switch picks up the new commit. Nothing else holds it back.
+
+**Reason:** not recorded by the owner. Inferred: the declaration never carried a commit, so the lock has been the only pin.
+**Rejected alternative:** not recorded by the owner. The alternative is a rev in the declaration, which would be the only input pinned that way.
+**Consequence:** a footer update can change the running footer on the next `nix flake update`; check it with a local build before switching.

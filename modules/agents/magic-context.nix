@@ -53,18 +53,17 @@
             profiles.subagent.pi.subagent_prompt = true;
             pi.cache_ttl = "never";
             # Children are spawned as the bare pi-bolt binary with
-            # --no-extensions, so they inherit none of the pi wrapper's -e list:
-            # every extension they need has to be named here. Providers first —
-            # the historian resolves its own models inside this child. Compiled
-            # extensions load by their builtin: name, the way the wrapper names
-            # them; the rest are runtime paths.
+            # --no-extensions, so this is their explicit extension set. Providers
+            # first — the historian resolves its own models inside this child.
+            # Compiled extensions use their builtin: name; runtime ones use
+            # their installed path.
             pi.subagent_extensions = [
               "builtin:omniroute"
               "builtin:anthropic-auth"
               "builtin:tool-repair"
               "${inputs.pi-extensions}/pi-native-router"
               "${config.home.homeDirectory}/.pi/agent/npm/node_modules/pi-commandcode-provider"
-              "${config.home.homeDirectory}/.pi/agent/npm/node_modules/opensec-pi-todo"
+              "builtin:todo"
               "${config.home.homeDirectory}/.pi/agent/npm/node_modules/opensec-pi-fff"
             ];
           };

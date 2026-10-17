@@ -20,13 +20,7 @@
 
       programs.herdr.package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr;
 
-      # The fork owns the plugin root, the anchor wrapper and the sidebar and
-      # tab-bar blocks, so its module is the one that links and versions them:
-      # `herdr plugin link` is the only way Herdr learns of a plugin and its
-      # registry is mutable state, so the link is refreshed every activation.
-      # nixpkgs carries no herdr, so the link target is the same package Herdr
-      # itself comes from. `herdrPlus` stays off: its workspace templates are
-      # layouts, and nothing here asks for them yet.
+      # Relinked on every activation: Herdr's plugin registry is mutable state.
       programs.herdr-radar = {
         enable = true;
         herdrPackage = config.programs.herdr.package;
@@ -40,22 +34,9 @@
         inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hunk
       ];
 
-      # Rendered by Nix, then seeded into $XDG_CONFIG_HOME/herdr/config.toml as
-      # a real file at activation (see home.activation.herdrConfig); the rest of
-      # that directory is Herdr-owned runtime state and stays unmanaged.
-      #
-      # This file is the one place an application owns config here: Herdr writes
-      # it whenever its UI persists a setting, and herdr-radar writes a
-      # marker-fenced block into it. Both write through a temp file renamed over
-      # the real path, which a read-only store symlink cannot serve: the link
-      # resolves into /nix/store, the temp file lands beside the store path and
-      # the install dies with EACCES. Hence a seeded file rather than a link.
-      #
-      # Anything Herdr or a plugin writes here is machine-local state, and a
-      # switch re-seeds the published keys over it. One of the three blocks
-      # herdr-radar installs is declared here instead — its theme tokens — and a
-      # table in this file is a table it leaves alone, so it writes its sidebar
-      # and tab-bar blocks itself and leaves the theme ours.
+      # Seeded as a real file at activation, not linked: Herdr and herdr-radar rename
+      # temp files over it, which fails with EACCES on a store link. A switch
+      # re-seeds these keys; anything else written here is machine-local.
       programs.herdr.settings = {
         onboarding = false;
         theme = {
@@ -75,8 +56,7 @@
           toast.delivery = "system";
           sidebar_max_width = 48;
         };
-        # Prefix: herdr default (ctrl+b) for now — shift+space proved
-        # non-capturable in practice; revisit with a plugin later.
+        # Prefix: herdr default (ctrl+b); shift+space cannot be captured.
         # Plugin hotkeys — nvim-like movement, workspace jump, nvim sidebar.
         # Action ids are <plugin_id>.<action_id>; herdr binds none by default.
         # Navigation goes through smart-splits.nvim's herdr plugin (the same
@@ -102,8 +82,7 @@
             command = "${pkgs.herdr-nvim-zoom}/bin/herdr-nvim-zoom";
             description = "nvim fullscreen toggle (zoomed sidebar)";
           }
-          # Full-pane tool launchers (popups; singleton-tab revisit later
-          # via a herdr plugin).
+          # Full-pane tool launchers (popups).
           {
             key = "prefix+j";
             type = "popup";
@@ -226,29 +205,22 @@
         ];
       };
 
-      # Home Manager would link the settings above read-only; that is the one
-      # thing this file cannot be. Seeding it as a real file keeps the published
-      # keys authoritative without freezing the file against Herdr's own writes.
       xdg.configFile."herdr/config.toml".enable = false;
       home.activation.herdrConfig =
         lib.hm.dag.entryAfter
           ([ "writeBoundary" ] ++ lib.optional config.programs.herdr-radar.enable "linkHerdrRadar")
           ''
             ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/herdr"
-            # Written beside the target and renamed over it: the path is a store
-            # symlink until this runs, and writing through one would land in the
-            # store.
+            # Renamed into place: the old path is a store symlink, which a write would follow.
             ${pkgs.coreutils}/bin/install -m 0644 \
               ${(pkgs.formats.toml { }).generate "herdr-config.toml" config.programs.herdr.settings} \
               "$HOME/.config/herdr/config.toml.new"
             ${pkgs.coreutils}/bin/mv -f "$HOME/.config/herdr/config.toml.new" "$HOME/.config/herdr/config.toml"
 
-            # The seed replaces the whole file, so radar's sidebar and tab-bar
-            # blocks go back in through its own merge. A refusal (a config that
-            # would not parse) aborts the switch; `|| true` here hid exactly that.
+            # The seed replaces the whole file, so radar re-merges its own blocks.
+            # A refusal (a config that does not parse) aborts the switch.
             ${config.programs.herdr-radar.package}/bin/configure.js --apply
-            # Layouts and themes are client-side; a running Herdr picks them up
-            # on prefix+shift+r, this reload covers the server half.
+            # Layouts and themes are client-side (prefix+shift+r); this reloads the server.
             ${lib.getExe config.programs.herdr.package} server reload-config || true
           '';
     };
