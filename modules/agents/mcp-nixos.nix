@@ -15,7 +15,7 @@ _: {
       imports = [ ./_pi-mcp.nix ];
 
       options.programs.mcpNixos = {
-        enable = lib.mkEnableOption "mcp-nixos (NixOS options, packages and channels over MCP)";
+        enable = lib.mkEnableOption "the local mcp-nixos daemon";
 
         enablePiIntegration = lib.mkEnableOption "connecting Pi to mcp-nixos" // {
           default = true;

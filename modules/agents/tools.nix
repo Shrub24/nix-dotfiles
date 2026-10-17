@@ -7,15 +7,8 @@ _: {
       ...
     }:
 
-    let
-      cfg = config.programs.agentTools;
-    in
     {
-      options.programs.agentTools = {
-        enable = lib.mkEnableOption "AI agent CLI tools (codebase-memory-mcp, xberg-cli)";
-      };
-
-      config = lib.mkIf cfg.enable {
+      config = {
         home.packages = with pkgs; [
           brave-search-cli
           codebase-memory-mcp

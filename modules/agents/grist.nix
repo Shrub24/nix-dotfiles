@@ -25,8 +25,6 @@ _: {
     in
     {
       options.programs.grist = {
-        enable = lib.mkEnableOption "Grist local spreadsheet database";
-
         port = lib.mkOption {
           type = lib.types.port;
           default = webServices.grist.port;
@@ -55,7 +53,7 @@ _: {
         };
       };
 
-      config = lib.mkIf cfg.enable {
+      config = {
         assertions = [
           {
             assertion = cfg.administratorEmail != "" && cfg.organizationSlug != "";

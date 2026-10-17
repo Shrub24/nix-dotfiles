@@ -9,8 +9,6 @@
     }:
     {
       options.programs.miseTools = {
-        enable = lib.mkEnableOption "mise management for pnpm, bun, and node";
-
         node = lib.mkOption {
           type = lib.types.str;
           default = "lts";
@@ -30,7 +28,7 @@
         };
       };
 
-      config = lib.mkIf config.programs.miseTools.enable {
+      config = {
         home.packages = [
           inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.openspec
           inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.openspecui

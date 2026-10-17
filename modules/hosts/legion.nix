@@ -5,7 +5,6 @@
   ...
 }:
 let
-  # The single account declaration; every consumer derives from it.
   primaryUser = {
     name = "saurabhj";
     uid = 1000;
@@ -33,8 +32,6 @@ let
       sshKeyPath = "/run/secrets/ssh-builder";
     }
   ) (dispatch.resolveBuildProfile config.fleet "workstations");
-  # Which fleet hosts this machine trusts is host policy; trust is not use.
-  # Multiplexing rides the selection rather than the global block.
   sshOptions = {
     ControlMaster = "auto";
   };
@@ -87,7 +84,6 @@ let
   hmAspects = [
     "current-host"
     "pi"
-    "pi-dashboard"
     "pi-otel"
     "magic-context"
     "herdr"
@@ -189,8 +185,6 @@ let
       currentHostModule
       sshTrustModule
       (import ./legion/_nixos.nix { inherit primaryUser; })
-      # disko owns the install target's root mounts and LUKS initrd device on
-      # this host: _hardware.nix declares policy, _disko.nix declares the disk.
       inputs.disko.nixosModules.disko
       (import ./legion/_disko.nix { })
       { nixpkgs.overlays = [ overlay ]; } # same local overlay as systemConfiguration
@@ -200,7 +194,6 @@ let
           permittedInsecurePackages = insecurePackages;
         };
       }
-      # Builder selection is composition policy from the canonical inventory.
       {
         nix.distributedBuilds = true;
         nix.buildMachines = dispatch.buildMachines dispatchSpecs;
@@ -236,7 +229,6 @@ let
 in
 {
   config = {
-    # This machine's registry entry; the rest live in the topology schema.
     topology.hosts.${hostId} = {
       inherit primaryUser;
       sshUser = primaryUser.name;

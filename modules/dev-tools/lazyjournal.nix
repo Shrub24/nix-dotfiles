@@ -12,8 +12,6 @@ _: {
     in
     {
       options.programs.lazyjournal = {
-        enable = lib.mkEnableOption "lazyjournal — TUI for journald, file, Docker and remote SSH logs";
-
         package = lib.mkOption {
           type = lib.types.package;
           default = pkgs.lazyjournal;
@@ -22,7 +20,7 @@ _: {
         };
       };
 
-      config = lib.mkIf cfg.enable {
+      config = {
         home.packages = [ cfg.package ];
 
         xdg.configFile."lazyjournal/config.yml".text = lib.generators.toYAML { } {

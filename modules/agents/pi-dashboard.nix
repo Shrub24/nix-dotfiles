@@ -58,8 +58,6 @@ _: {
     in
     {
       options.programs.piDashboard = {
-        enable = lib.mkEnableOption "the pi agent dashboard (web UI over pi sessions)";
-
         port = lib.mkOption {
           type = lib.types.port;
           default = homepage.services.pi-dashboard.port;
@@ -73,7 +71,7 @@ _: {
         };
       };
 
-      config = lib.mkIf cfg.enable {
+      config = {
         systemd.user.services.pi-dashboard = {
           Unit = {
             Description = "Pi Dashboard — web UI over local pi sessions";

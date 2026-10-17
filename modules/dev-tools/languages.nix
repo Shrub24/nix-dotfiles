@@ -12,8 +12,6 @@ _: {
     in
     {
       options.programs.devTools = {
-        enable = lib.mkEnableOption "CLI and language dev tools (ast-grep, tree-sitter, grammars)";
-
         treeSitterGrammars = lib.mkOption {
           description = "Extra tree-sitter grammars to make available system-wide";
           type = with lib.types; listOf package;
@@ -22,7 +20,7 @@ _: {
         };
       };
 
-      config = lib.mkIf cfg.enable {
+      config = {
         home.packages =
           with pkgs;
           [

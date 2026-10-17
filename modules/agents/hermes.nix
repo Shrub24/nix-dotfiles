@@ -63,7 +63,7 @@ in
               url = docsMcpUrl;
             };
           }
-          (lib.mkIf (config.programs.qmd.enable or false) {
+          (lib.mkIf (config.programs ? qmd) {
             qmd = {
               url = "http://localhost:${toString config.programs.qmd.port}/mcp";
             };

@@ -26,11 +26,9 @@
   programs = {
     home-manager.enable = true;
 
-    pi-coding-agent.enable = true;
     herdr.enable = true;
 
     grist = {
-      enable = true;
       administratorEmail = "jhanjeesaurabh@gmail.com";
       organizationSlug = "personal";
     };
@@ -53,15 +51,6 @@
         ];
       };
     };
-    lazyjournal = {
-      enable = true;
-    };
-    qmd.enable = true;
-    mcpNixos.enable = true;
-    agentTools.enable = true;
-    devTools.enable = true;
-    webCatalog.enable = true;
-
     hermes-agent.enable = false;
 
     zsh.initContent = lib.mkAfter ''
@@ -71,7 +60,6 @@
     '';
 
     miseTools = {
-      enable = true;
       node = "lts";
       pnpm = "latest";
       bun = "latest";

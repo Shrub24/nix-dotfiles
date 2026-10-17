@@ -16,8 +16,6 @@ _: {
     in
     {
       options.programs.webCatalog = {
-        enable = lib.mkEnableOption "web service catalog HTTP server";
-
         port = lib.mkOption {
           type = lib.types.port;
           default = homepage.services.web-catalog.port;
@@ -25,7 +23,7 @@ _: {
         };
       };
 
-      config = lib.mkIf cfg.enable {
+      config = {
         systemd.user.services.web-catalog = {
           Unit = {
             Description = "Web Service Catalog HTTP Server";

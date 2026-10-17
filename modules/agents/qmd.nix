@@ -13,8 +13,6 @@
     in
     {
       options.programs.qmd = {
-        enable = lib.mkEnableOption "qmd — local markdown search engine (MCP HTTP server)";
-
         port = lib.mkOption {
           type = lib.types.port;
           default = webServices.qmd.port;
@@ -42,7 +40,7 @@
         };
       };
 
-      config = lib.mkIf cfg.enable {
+      config = {
         home.packages = [ cfg.package ];
 
         systemd.user.services.qmd = {

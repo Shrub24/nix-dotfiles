@@ -1,6 +1,4 @@
 { primaryUser }: _: {
-  # Imported inside the composition's `home-manager.users.<name>` list, so these
-  # are Home Manager options directly.
   home = {
     username = primaryUser.name;
     homeDirectory = "/home/${primaryUser.name}";
@@ -10,13 +8,7 @@
 
   programs.home-manager.enable = true;
 
-  # Journal picker over ssh; the aspect is option-gated, so the host turns it on.
-  programs.lazyjournal.enable = true;
-
-  # Same dev stack as the desktop, minus services. The other aspects are
-  # unconditional; `miseTools` is what turns on the mise aspect.
   programs.miseTools = {
-    enable = true;
     node = "lts";
     pnpm = "latest";
     bun = "latest";
