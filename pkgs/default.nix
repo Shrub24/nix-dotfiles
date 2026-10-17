@@ -2,16 +2,27 @@
   inputs,
   system,
 }:
-final: _prev: {
+final: _prev:
+let
+  # Pi-Bolt's own package and plugin scope, on the nixpkgs this repository
+  # follows: the base set extended with the flake's overlay, not the set built
+  # below — the `pi-bolt` published here is this repository's launchers, and
+  # reading it there would put our wrapper where the payload belongs.
+  piBoltPkgs = inputs.nixpkgs.legacyPackages.${system}.extend inputs.pi-bolt-nix.overlays.default;
+in
+{
   # Plugin recipes only: which of them a build compiles in is the caller's
-  # selection, so `pi-bolt` takes `plugins` (see pkgs/pi-plugins).
+  # selection, so `pi-bolt` takes `plugins` (see pkgs/pi-plugins). Each recipe
+  # becomes a plugin through the flake's own builder.
   pi-plugins = final.callPackage ./pi-plugins {
     piExtensions = inputs.pi-extensions;
     piPowerlineFooter = inputs.pi-powerline-footer;
+    inherit (piBoltPkgs) piBoltPlugins;
   };
   pi-otel = final.callPackage ./pi-otel { piExtensions = inputs.pi-extensions; };
+  pi-freeflow = final.callPackage ./pi-freeflow { };
   pi-magic-context = inputs.magic-context.packages.${system}.pi-magic-context;
-  pi-bolt = final.callPackage ./pi-bolt { piPlugins = final.pi-plugins; };
+  pi-bolt = final.callPackage ./pi-bolt { piBolt = piBoltPkgs.pi-bolt; };
   nix-search-tv-fzf = final.callPackage ./nix-search-tv-fzf { };
   jj-hunk-tool = final.callPackage ./jj-hunk-tool { };
   nixos-boot = final.callPackage ./nixos-boot { src = inputs.nixos-boot; };

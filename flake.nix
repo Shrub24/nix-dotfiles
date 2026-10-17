@@ -101,6 +101,10 @@
       url = "github:noctalia-dev/noctalia";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    pi-bolt-nix = {
+      url = "github:Shrub24/Pi-Bolt.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     pi-extensions = {
       url = "github:Shrub24/pi-extensions";
       flake = false;

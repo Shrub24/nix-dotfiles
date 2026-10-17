@@ -16,4 +16,7 @@
       pkgs.sops
     ];
   };
+
+  flake.modules.nixos.sops-systemd-activation =
+    inputs.nix-fleet.modules.nixos.sops-systemd-activation;
 }

@@ -4,14 +4,14 @@
 
 **Id:** 25f7be20-c2fc-4aeb-a4f4-752506978f72
 **Type:** decision
-**Status:** active
+**Status:** needs-review
 **Evidence:** confirmed
 **Source:** approved `adopt-fleet-package-updates` design and package update implementation
-**Verification:** corroborated — package pins are literal in their owning files, the four owners are registered, and recorded-target runs completed
+**Verification:** contradicted — the `pi-bolt-nix` flake now owns the Pi-Bolt release, its runtime and the pin, and `pkgs/pi-bolt` carries no `src`/`npmDepsHash`/updater, so the tree registers three owners (Pi plugins, xberg-cli, codexbar), not four
 **Revisit when:** nix-update locator behavior or the fleet package-update contract changes
 
 The repository uses nix-fleet's package-update app with one registered owner per
-pin set: Pi-Bolt, Pi plugins, xberg-cli and codexbar. Derived outputs are not
+pin set: Pi plugins, xberg-cli and codexbar. Derived outputs are not
 separate owners. Each source pin is a literal in its owning file so nix-update
 can identify where to write it.
 
@@ -27,8 +27,7 @@ multi-package-file support is a known weak spot, so each package instead owns
 its pin literals.
 
 **Consequence:** package-specific scripts preserve upstream pin semantics:
-Pi-Bolt updates its tag-keyed runtime asset and refreshes `npmDepsHash` as a
-unit; Pi plugins update exact npm versions and two branch-head commits; xberg
+Pi plugins update exact npm versions and two branch-head commits; xberg
 selects its stable release-tag family rather than component tags. Codexbar's
 thin wrapper defaults to standard stable-release discovery and accepts
 `CODEXBAR_UPDATE_VERSION` because the fleet app has no flag passthrough and

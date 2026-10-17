@@ -9,7 +9,8 @@
     in
     {
       packageUpdates.packages = [
-        "pi-bolt"
+        # Pi-Bolt's release pin lives in the flake that builds it, so its
+        # version is bumped as an input rather than here.
         "pi-plugins"
         "xberg-cli"
         "codexbar"

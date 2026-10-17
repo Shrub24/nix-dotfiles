@@ -47,6 +47,15 @@ let
       mcp.path = "/mcp";
     };
 
+    pi-dashboard = {
+      name = "Pi Dashboard";
+      port = 8100;
+      icon = "mdi-view-dashboard";
+      description = "Web UI over local pi sessions";
+      ui.path = "/";
+      health.path = "/api/health";
+    };
+
     web-catalog = {
       name = "Web Catalog";
       port = 8123;

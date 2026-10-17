@@ -9,12 +9,12 @@
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "codexbar";
-  version = "0.75.0";
+  version = "0.77.0";
   # The version has to appear in the URL for nix-update to rewrite the source
   # when it bumps the version attribute.
   src = fetchurl {
     url = "https://github.com/steipete/CodexBar/releases/download/v${finalAttrs.version}/CodexBarCLI-v${finalAttrs.version}-linux-x86_64.tar.gz";
-    sha256 = "sha256-eSDI5Cpkql3CSb2zp0Xo7JGgYssmaLeNySZt//oNetc=";
+    sha256 = "sha256-qcMLi1bsL8hSa2O6Ry8xmJYFx+AcLGWslbSr8gt+VNQ=";
   };
 
   # nixpkgs' codexbar is macOS-only; upstream's Linux tarball has no top-level dir.

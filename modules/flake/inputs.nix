@@ -30,6 +30,16 @@ _: {
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Pi-Bolt compiled ahead of time with the plugins a Nix expression selects.
+    # The interface this repository adopted while it was proposed upstream now
+    # lives in its own repository, which also owns the release it builds, the
+    # runtime that release needs, and the docs for both: its README,
+    # docs/PLUGINS.md (plugins, withPlugins) and docs/RELEASES.md (releases).
+    pi-bolt-nix = {
+      url = "github:Shrub24/Pi-Bolt.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Plymouth theme source built by pkgs/nixos-boot (boot.nix selects it).
     nixos-boot = {
       url = "github:Melkor333/nixos-boot";
