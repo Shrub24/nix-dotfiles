@@ -16,11 +16,9 @@ in
   #   sudo nix run nixpkgs#nixos-facter -- -o modules/hosts/legion/facter.json
   hardware.facter.reportPath = lib.mkIf (builtins.pathExists ./facter.json) ./facter.json;
 
-  # Early KMS for i915 gives the Plymouth prompt the panel's native mode; the
-  # proprietary nvidia module has no business in the initrd.
+  # Early KMS for i915 gives the Plymouth prompt the panel's native mode.
   hardware.facter.detected.boot.graphics.kernelModules = [ "i915" ];
 
-  # UEFI + systemd-boot; disko creates the ESP and its mount.
   boot.loader.systemd-boot = {
     enable = true;
     configurationLimit = 20; # match snapper retention
@@ -38,7 +36,6 @@ in
 
   hardware.i2c.enable = true;
 
-  # Data-disk mounts, derived from _storage.nix.
   fileSystems."/home" = btrfsOf dataDisk.homeSubvol dataDisk.uuid dataDisk.commonOptions;
 
   fileSystems."/data" = btrfsOf dataDisk.dataSubvol dataDisk.uuid dataDisk.commonOptions;
@@ -57,7 +54,6 @@ in
     ];
   };
 
-  # zram swap (31G on 32G RAM).
   zramSwap = {
     enable = true;
     memoryPercent = 100;
@@ -74,7 +70,7 @@ in
   # the iGPU and exposes `nvidia-offload <cmd>` for the dGPU.
   services.xserver.videoDrivers = [ "nvidia" ];
 
-  # Open module: reclocking concerns that kept this proprietary are obsolete on Ada.
+  # Open kernel module, which Ada supports.
   hardware.nvidia = {
     modesetting.enable = true;
     powerManagement.enable = true;
@@ -88,7 +84,6 @@ in
         enable = true;
         enableOffloadCmd = true;
       };
-      # Reverse PRIME not needed - iGPU is the default.
     };
   };
 }

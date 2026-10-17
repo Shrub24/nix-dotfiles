@@ -1,7 +1,7 @@
 # Architecture
 
-This repository is a single-user Nix configuration for two hosts: a desktop
-(`legion`) and a portable laptop (`spectre`, HP Spectre x360 13-aw0039TU). Both
+This repository is a single-user Nix configuration for two laptops: `legion`
+(Lenovo Legion Slim 7 16IRH8) and a portable `spectre` (HP Spectre x360 13-aw0039TU). Both
 are NixOS — `nixosConfigurations.legion` and `nixosConfigurations.spectre`.
 Each composes feature modules that are discovered by directory scan but
 activated only by explicit host selection, and each embeds the user-scoped
@@ -292,8 +292,8 @@ On NixOS, exposure is tailnet-scoped: the global firewall stays closed, and
 Mosh (UDP 60000–61000), web-catalog 8123 on legion, and
 Syncthing's relay/discovery ports are allowed on `tailscale0` only — Syncthing sets
 `openDefaultPorts = false` so its ports follow the same rules.
-The laptop (`spectre`) selects no local service tier: its clients reach the
-desktop's and the forge's services over the tailnet, so the service list above
+The laptop (`spectre`) selects no local service tier: its clients reach
+legion's and the forge's services over the tailnet, so the service list above
 describes only machines that are always on.
 
 ## Decisions

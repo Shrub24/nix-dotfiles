@@ -1,8 +1,6 @@
 vim.loader.enable()
 
 do
-	-- _G.nixInfo: the nix -> lua channel; outside nix the fallback below returns
-	-- the default it is called with.
 	local ok
 	ok, _G.nixInfo = pcall(require, vim.g.nix_info_plugin_name)
 	if not ok then
@@ -67,7 +65,6 @@ nixInfo.lze.register_handlers({
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
--- LazyVim's core options first; config.options overrides.
 require("config.options-lazyvim")
 require("config.options")
 require("config.keymaps-core") -- LazyVim defaults; own maps override
@@ -75,7 +72,6 @@ require("config.keymaps-picker") -- LazyVim's picker extra
 require("config.keymaps")
 require("config.autocmds")
 require("config.lsp")
--- Opt-in capture; see lua/config/errorlog.lua. No-op without $NVIM_ERRORLOG.
 require("config.errorlog")
 
 local inline_specs = {
@@ -100,8 +96,7 @@ local inline_specs = {
 		end,
 	},
 	{
-		-- From LazyVim's editor.inc-rename extra; `cmd` avoids loading it eagerly.
-		"inc-rename.nvim",
+			"inc-rename.nvim",
 		auto_enable = true,
 		cmd = { "IncRename" },
 		after = function()
@@ -149,13 +144,10 @@ local inline_specs = {
 			})
 		end,
 	},
-	-- Menu/icon providers pulled in by module name from blink and lualine.
 	{ "nvim-web-devicons", auto_enable = true, on_require = "nvim-web-devicons", after = function() end },
 	{ "colorful-menu.nvim", auto_enable = true, on_require = "colorful-menu", after = function() end },
 	{ "lspkind.nvim", auto_enable = true, on_require = "lspkind", after = function() end },
 	{
-		-- Sources are separate specs in _plugins.nix; only the provider wiring
-		-- lives here.
 		"blink.cmp",
 		auto_enable = true,
 		event = "DeferredUIEnter",
@@ -273,10 +265,7 @@ vim.cmd.colorscheme("noctalia")
 
 require("sops_nvim").setup()
 
--- Plugin specs live one file per group under lua/plugins/, each returning a
--- list of lze specs.
 local groups = {
-	-- LazyVim's core plugin layer first; the user's own groups then override it.
 	"plugins.lazyvim-core",
 	"plugins.aerial",
 	"plugins.appearance",

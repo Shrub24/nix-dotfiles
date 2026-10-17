@@ -158,7 +158,6 @@
               source "$HOME/.config/sops-nix/secrets/rendered/agent-env.fish"
             end
 
-            # fancy ctrl z + sudo
             bind \cz 'if jobs -q; fg; else; commandline -f repaint; end'
             bind \cs 'commandline -i "sudo "; commandline -f execute'
 
@@ -181,7 +180,6 @@
             bind -M insert \t complete-and-search
             bind -M default \t complete-and-search
 
-            # ctrl-space: custom fzf lookahead completion
             bind -M insert ctrl-space _fzf_complete_lookahead
             bind -M default ctrl-space _fzf_complete_lookahead
 

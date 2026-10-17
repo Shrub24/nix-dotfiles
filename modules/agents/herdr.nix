@@ -1,8 +1,5 @@
 { inputs, ... }:
 {
-  # The herdr-radar fork: `packages.default` is the plugin root Herdr registers,
-  # `packages.herdr-anchor` the pane wrapper, and `homeManagerModules.default`
-  # the module imported below.
   flake-file.inputs.herdr-radar = {
     url = "github:Shrub24/herdr-radar";
     inputs.nixpkgs.follows = "nixpkgs";
@@ -42,12 +39,7 @@
         theme = {
           name = "terminal";
           auto_switch = false;
-          # Herdr's active-row fill. The plugin installs this token itself, but
-          # it rewrites `theme.name` in the same write — `terminal` is neither a
-          # light nor a dark built-in, so it substitutes catppuccin — and the
-          # theme is ours to choose. Declaring the table makes the plugin skip
-          # its theme block and leave both keys alone. The value is the plugin's
-          # own dark chrome token.
+          # Declared so the plugin skips its theme block; the theme is ours (see context/herdr.md).
           custom.active_row_bg = "#414868";
         };
         ui = {
@@ -57,7 +49,6 @@
           sidebar_max_width = 48;
         };
         # Prefix: herdr default (ctrl+b); shift+space cannot be captured.
-        # Plugin hotkeys — nvim-like movement, workspace jump, nvim sidebar.
         # Action ids are <plugin_id>.<action_id>; herdr binds none by default.
         # Navigation goes through smart-splits.nvim's herdr plugin (the same
         # plugin that drives the Neovim side), so ctrl+hjkl works identically
@@ -125,7 +116,6 @@
             command = "smart-splits.nvim.right";
             description = "navigate right (nvim-aware)";
           }
-          # herdr-navigator: fuzzy jump anywhere + tmux-style jump-back
           {
             key = "prefix+t";
             type = "plugin_action";
@@ -138,14 +128,12 @@
             command = "herdr-navigator.jump-back";
             description = "navigator: jump back";
           }
-          # herdr-bar: fuzzy tab/pane/agent jump bar
           {
             key = "prefix+k";
             type = "plugin_action";
             command = "herdr-bar.open";
             description = "jump bar: fuzzy tab/pane/agent";
           }
-          # herdr-plus: new workspace from template / quick actions
           {
             key = "prefix+up";
             type = "plugin_action";
@@ -158,7 +146,6 @@
             command = "cloudmanic.herdr-plus.quick-actions";
             description = "quick actions: fuzzy script launcher";
           }
-          # herdr-nvim: nvim sidebar + file picker
           {
             key = "prefix+e";
             type = "plugin_action";
@@ -171,7 +158,6 @@
             command = "chmarax.herdr-nvim.pick-file";
             description = "nvim: open file from agent output";
           }
-          # annotate + herdr-flash: selection tooling
           {
             key = "prefix+a";
             type = "plugin_action";
@@ -192,10 +178,7 @@
             command = "nicosuave.memex.palette";
             description = "memex: session palette";
           }
-          # herdr-radar: the Agents panel's order, off -> active -> recent and
-          # round again. Herdr disables its own grouped/priority toggle while a
-          # sort override is active, so this key is both the way in and the way
-          # out. It leaves the panel's look alone, which is declared in Nix.
+          # Cycles herdr-radar's Agents panel order; Herdr's grouped/priority toggle is disabled while this is active.
           {
             key = "prefix+v";
             type = "plugin_action";

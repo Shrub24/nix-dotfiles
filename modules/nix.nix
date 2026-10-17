@@ -83,9 +83,6 @@
   flake.modules.nixos.nix =
     { config, ... }:
     {
-      # nix-fleet owns the daemon baseline and the cleanup units; this selects
-      # them and binds what is host-specific (identity, I/O class, memory,
-      # evaluation knobs).
       imports = [
         inputs.nix-fleet.modules.nixos.nix-baseline
         inputs.nix-fleet.modules.nixos.nix-gc

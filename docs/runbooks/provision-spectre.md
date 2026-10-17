@@ -1,11 +1,11 @@
 # Provisioning the laptop (`spectre`)
 
 One-time, destructive, operator-run. Wipes `/dev/nvme0n1` and installs
-`nixosConfigurations.spectre`. The desktop is the driver; the laptop only
+`nixosConfigurations.spectre`. Legion is the driver; the laptop only
 needs to be booted into a NixOS installer with a reachable SSH host.
 
 Companion runbook: [migrate-home-to-data-disk.md](migrate-home-to-data-disk.md)
-is the desktop's migration and shares nothing with this one.
+is legion's migration and shares nothing with this one.
 
 ## What this creates
 
@@ -33,8 +33,7 @@ Inside the container, one btrfs filesystem with nine subvolumes:
 
 No `@images`: the laptop runs no VMs (`virtualisation.libvirtd` is off). No
 containers subvolume either — rootless podman keeps its store under
-`~/.local/share/containers`, and `/var/lib/containers` holds 120K on the
-desktop, so the rootful path is unused.
+`~/.local/share/containers`, and `/var/lib/containers` holds 120K on legion, so the rootful path is unused.
 
 Every subvolume carries `noatime,compress=zstd:3,ssd,discard=async,space_cache=v2`.
 
@@ -50,12 +49,12 @@ else, because disko renders them at normal priority:
 `_hardware.nix` keeps `boot.loader.*`, and everything else it declares
 overrides facter's `mkDefault` assignments.
 
-**Divergence from the desktop's root disk:** the desktop also carries
+**Divergence from legion's root disk:** legion also carries
 `@images` → `/var/lib/libvirt/images` for its NixOS VM tests. The laptop runs
 no VMs, so that one is deliberately absent; everything else matches.
 
 **Not covered by either host yet:** `@home` here is a single subvolume, so
-`~/.cache` and `~/.local/share` still fall inside home snapshots. The desktop
+`~/.cache` and `~/.local/share` still fall inside home snapshots. Legion
 splits those out as nested subvolumes under `@home`; the laptop can follow
 once snapper covers `/home` there.
 
@@ -112,7 +111,7 @@ history, and yescrypt is what makes that acceptable.
 
 ## Phase 1 — install
 
-Runs from the desktop. `nixos-anywhere` kexecs the laptop into a clean
+Runs from legion. `nixos-anywhere` kexecs the laptop into a clean
 installer, runs disko, installs, and reboots.
 
 ```fish
@@ -178,10 +177,10 @@ The laptop selects the full aspect set, including `notify` and the
 secret-consuming Home Manager aspects, so sops activation needs a key that can
 decrypt. Before the first switch of this revision, add the host's age key as a
 recipient in `.sops.yaml` and run `sops updatekeys` on each secret file from
-the desktop. Without it activation fails.
+legion. Without it activation fails.
 
 ## Rollback
 
 There is none — the disk is wiped. Re-provisioning is re-running Phase 1.
-The desktop's install (`nixos-dual-boot-install`) is the one that must stay
+Legion's install (`nixos-dual-boot-install`) is the one that must stay
 reversible, and it provisions by hand for that reason.

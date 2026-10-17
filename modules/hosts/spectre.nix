@@ -19,8 +19,6 @@ let
   };
   currentHostModule = { inherit currentHost; };
   dispatch = inputs.nix-fleet.lib.buildProfile;
-  # Which fleet hosts the laptop trusts is host policy; multiplexing rides the
-  # selection rather than the global block.
   sshOptions = {
     ControlMaster = "auto";
   };
@@ -51,9 +49,6 @@ let
   hmAspect = name: config.flake.modules.homeManager.${name};
   nixosAspect = name: config.flake.modules.nixos.${name};
 
-  # Lean portable profile — deliberate omissions, not drift: the service tier is
-  # reached over the tailnet, the desktop-only apps are not installed here, and
-  # mcp-nixos is wired for its client only (its daemon stays off).
   hmAspects = [
     "current-host"
     "pi"
@@ -136,8 +131,6 @@ let
       currentHostModule
       sshTrustModule
       (import ./spectre/_nixos.nix { inherit primaryUser; })
-      # disko owns the mounts, the LUKS initrd device and swap on this host:
-      # _hardware.nix declares policy, _disko.nix declares the disk.
       inputs.disko.nixosModules.disko
       (import ./spectre/_disko.nix { })
       { nixpkgs.overlays = [ overlay ]; }
@@ -180,7 +173,6 @@ let
 in
 {
   config = {
-    # This machine's registry entry; the rest live in the topology schema.
     topology.hosts.${hostId} = {
       inherit primaryUser;
       sshUser = primaryUser.name;

@@ -59,7 +59,6 @@ in
                     mountpoint = "/nix";
                     mountOptions = opts;
                   };
-                  # Churn paths, kept out of the root snapshots.
                   "@cache" = {
                     mountpoint = "/var/cache";
                     mountOptions = opts;

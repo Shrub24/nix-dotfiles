@@ -1,6 +1,5 @@
 _:
 let
-  # Tracked seed for the mutable theme.
   dankThemeSeed = ./wezterm-dank-theme.toml;
 in
 {

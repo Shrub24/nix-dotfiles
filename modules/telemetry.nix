@@ -1,5 +1,3 @@
-# Selection is enablement: importing the fleet module is what makes
-# `services.telemetry` readable here; consumers elsewhere fail closed by name.
 { config, inputs, ... }:
 let
   # Resolved at the flake-parts level from the fleet's service inventory, like

@@ -1,6 +1,6 @@
 # Tasks — Snapper snapshots on the NixOS hosts
 
-## Desktop (`legion`)
+## Legion (`legion`)
 
 - [x] Reserve `@snapshots` in the install-time btrfs layout and mount it at
       `/.snapshots` (`nixos-dual-boot-install` owns that install).
@@ -18,7 +18,7 @@
 - [ ] `snapper list` shows a snapshot after a switch, and one rollback is
       performed deliberately rather than discovered in an emergency.
 
-  - reason: still open — a runtime verification on the booted desktop; no
+  - reason: still open — a runtime verification on the booted legion; no
     snapshot or deliberate rollback has been exercised or recorded yet.
 
 ## Laptop (`spectre`)

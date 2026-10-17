@@ -34,10 +34,7 @@
       localTemplates = ./noctalia-templates;
       templateHooks = pkgs.noctalia-template-hooks;
 
-      # Built-in rows: [dir file] read from the noctalia package assets.
-      # `script` is the template's own apply.sh in that directory; `action` is a
-      # Noctalia-native post action. A row with neither needs no hook because
-      # Nix points the consuming app at the rendered file.
+      # Built-in rows: [dir file] from the noctalia package. `script` runs the template's apply.sh; `action` is a Noctalia post action.
       builtinRows = [
         {
           id = "btop";
@@ -68,16 +65,13 @@
           script = { };
         }
         {
-          # wezterm.lua sets color_scheme = "Noctalia" and reload-watches this
-          # file, so upstream's config-editing hook is not needed.
           id = "wezterm";
           dir = "wezterm";
           file = "wezterm.toml";
           out = "$XDG_CONFIG_HOME/wezterm/colors/Noctalia.toml";
         }
         {
-          # ghostty.nix sets theme = "noctalia"; upstream's reload.sh (config
-          # edit stripped) only pokes the running instance to re-read the theme.
+          # Upstream's reload.sh only pokes the running instance (config edit stripped).
           id = "ghostty";
           dir = "ghostty";
           file = "ghostty";
@@ -94,8 +88,6 @@
           cmd = "pkill -USR1 -x kitty || true";
         }
         {
-          # foot.ini declares the include; upstream's apply.sh is entirely
-          # config editing, so no hook — foot re-reads on next launch.
           id = "foot";
           dir = "foot";
           file = "foot";
@@ -188,14 +180,12 @@
           action = "firefox-theme";
         }
         {
-          # tmux.conf sources this file from the Nix-rendered config.
           id = "tmux";
           dir = "tmux";
           file = "tmux.conf";
           out = "$XDG_CONFIG_HOME/tmux/themes/noctalia.conf";
         }
         {
-          # Vicinae's theme is named in modules/desktop/vicinae.nix; no hook.
           id = "vicinae";
           dir = "vicinae";
           file = "vicinae.toml";
@@ -235,8 +225,7 @@
         )}
       '';
 
-      # Rows become template entries. `root` is the input the row's paths are
-      # relative to, so the same builder serves both tables.
+      # Rows become template entries; `root` is the input their paths are relative to.
       templateEntries =
         root: rows:
         builtins.listToAttrs (
@@ -272,9 +261,7 @@
         templateEntries builtinTemplates builtinRows
         // templateEntries communityTemplates communityRows
         // {
-          # Our own templates. fastfetch's config *is* the template: Noctalia
-          # renders the whole file, palette placeholders included, so no hook and
-          # no merge step is involved.
+          # fastfetch's config is the template itself: Noctalia renders the whole file.
           fastfetch = {
             input_path = "${localTemplates}/fastfetch.jsonc";
             output_path = "$XDG_CONFIG_HOME/fastfetch/config.jsonc";
@@ -287,12 +274,8 @@
             input_path = "${localTemplates}/pi-agent.json";
             output_path = "${config.home.homeDirectory}/.pi/agent/themes/noctalia.json";
           };
-          # Fork of the community neovim template so base0C/0D/0E can use the
-          # bright tonal tier; upstream's `*_fixed_dim` roles are the same value
-          # as the base roles. Local rather than upstream so apply.sh stays out of
-          # the config.
-          # ~/.config/nvim is read-only from the store, so the palette renders
-          # to the cache and colors/noctalia.lua dofiles it.
+          # Local fork: base0C/0D/0E take the bright tonal tier; upstream's *_fixed_dim roles equal the base roles.
+          # ~/.config/nvim is read-only, so the palette renders to the cache and colors/noctalia.lua dofiles it.
           neovim = {
             input_path = "${localTemplates}/neovim.lua";
             output_path = "$XDG_CACHE_HOME/noctalia/nvim-palette.lua";
@@ -308,8 +291,7 @@
 
       # Packaged seed for the mutable wallpaper. Copied into the user home only
       # when absent (tmpfiles `C`, not `C+`), so a runtime-edited wallpaper survives
-      # switches. The packaged source is PNG where the destination ends in `.jpg`;
-      # Qt inspects content, so no conversion dependency is added.
+      # switches. The packaged source is PNG where the destination ends in `.jpg`.
       wallpaperSeed = pkgs.nixos-artwork.wallpapers.nineish-dark-gray.gnomeFilePath;
 
     in
@@ -322,10 +304,7 @@
         { disabledModules = [ "programs/noctalia" ]; }
       ];
 
-      # Bootstrap the mutable wallpaper directory + seed on first activation.
-      # xdg.dataFile would store-link the destination and break runtime changes;
-      # `d`+`C` create mutable paths under user ownership and copy the seed only
-      # when absent. `C` (not `C+`) preserves a pre-existing wallpaper.
+      # Not xdg.dataFile, which would store-link the wallpaper. `C` copies the seed only when absent.
       systemd.user.tmpfiles.rules = [
         "d %h/.local/share/wallpapers 0755 - - -"
         "C %h/.local/share/wallpapers/wallpapersden.com_colorful-textured-abstract_3840x2160.jpg 0644 - - - ${wallpaperSeed}"
@@ -593,7 +572,6 @@
             margin_ends = 26;
             padding = 16;
             radius = 18;
-            # Twice the default bar: 76px tall, widget content at 2x.
             scale = 2.0;
             shadow = true;
             thickness = 76;
@@ -693,8 +671,6 @@
           };
 
           plugins = {
-            # screen_recorder is deliberately absent: screen-toolkit covers the
-            # same ground and the recorder widget is not on either bar.
             enabled = [
               "salemsayed/codexbar-meter"
               "lux/ideapad-conservation-mode"

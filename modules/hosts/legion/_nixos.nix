@@ -51,7 +51,6 @@ in
   # The built-in ITE keyboard (048d:c987); toggle-kbd unbinds this interface.
   programs.toggle-kbd.usbInterface = "3-9:1.0";
 
-  # Lenovo battery conservation mode.
   # gio's trash only renames within one device, and ~/.local/share is its own
   # subvolume — so the home trash lives on @home, reached through a symlink.
   systemd.tmpfiles.rules = [
@@ -63,7 +62,6 @@ in
   # The open NVIDIA and openrazer modules must build against the kernel.
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  # Units only this host runs; the shared set is in notify.
   services.notify.events = {
     "niks3-auto-upload".failure = { };
     "home-manager-${primaryUser.name}".failure.severity = "critical";

@@ -3,7 +3,6 @@
 # this is destructive: `disko --mode disko` wipes the named disk.
 _:
 let
-  # Shared by every subvolume so the mount options cannot drift.
   opts = [
     "noatime"
     "compress=zstd:3"
@@ -79,7 +78,7 @@ in
                     mountpoint = "/persist";
                     mountOptions = opts;
                   };
-                  # Desktop root-disk set minus @images: no VMs, and rootless
+                  # Legion's root-disk set minus @images: no VMs, and rootless
                   # podman stores under ~/.local, so these out of @ keep churn
                   # out of the root snapshots.
                   "@log" = {

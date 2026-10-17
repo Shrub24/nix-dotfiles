@@ -7,7 +7,6 @@ _:
   #   nix run nixpkgs#nixos-facter > modules/hosts/spectre/facter.json
   hardware.facter.reportPath = lib.mkIf (builtins.pathExists ./facter.json) ./facter.json;
 
-  # UEFI + systemd-boot, single boot: Windows later is a resize, not a reinstall.
   boot.loader.systemd-boot = {
     enable = true;
     # ~50 MB per generation on the 1 GiB ESP.
@@ -42,5 +41,4 @@ _:
     memoryPercent = 50;
   };
 
-  # No per-interface DHCP: NetworkManager owns interfaces via the network aspect.
 }

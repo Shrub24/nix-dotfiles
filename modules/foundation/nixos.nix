@@ -1,13 +1,10 @@
 _: {
-  # The account and base-OS surface both NixOS hosts share; hostname and state
-  # version are host-owned.
   flake.modules.nixos.foundation =
     { config, pkgs, ... }:
     let
       primaryUser = config.currentHost.primaryUser;
     in
     {
-      # Home Manager owns user configuration; Git is also available to root.
       programs.git.enable = true;
 
       i18n.defaultLocale = "en_AU.UTF-8";
@@ -24,9 +21,7 @@ _: {
         iw
         tcpdump
 
-        # chattr/lsattr and mkfs for external drives, NTFS repair for the Windows-shared
-        # volume (ntfs3 mounts it but cannot clear a dirty flag), and the rest of the
-        # Arch base tools that the NixOS core set lacks.
+        # Filesystem tools; ntfs3 mounts the Windows volume but cannot clear a dirty flag.
         e2fsprogs
         exfatprogs
         ntfs3g
@@ -61,8 +56,7 @@ _: {
         inherit (primaryUser) uid;
         group = primaryUser.name;
         extraGroups = [ "wheel" ];
-        # The fleet owns SSH hardening and offers no key option, so who may log in
-        # is declared here — a deliberate set, not a copy of any host's keys.
+        # The fleet owns SSH hardening, not key choice; the login set is declared here.
         openssh.authorizedKeys.keys = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFBqFsxbrn6SVOHXi4+LS5olKxEW8JlZ5V+irA18/586 saurabhj@arch"
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINC4MMzkSTgp9ohQMY4uZay4srU7ZUcyYEz/Mi8L7q8X u0_a925@localhost"
@@ -70,7 +64,6 @@ _: {
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICtAJ/Vgep5XISOIcE+bY/4jOyA4Qi6yihLPn1VJa/Xr whip"
         ];
       };
-      # Private primary group (user-private-groups: GID == UID).
       users.groups.${primaryUser.name} = {
         inherit (primaryUser) gid;
       };

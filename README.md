@@ -20,10 +20,10 @@ nix develop          # or: direnv allow (uses .envrc — `use flake . --impure`)
 ## Usage
 
 ```bash
-# Switch the NixOS configuration (desktop host)
+# Switch the NixOS configuration (legion)
 nh os switch .#legion
 
-# Switch the NixOS configuration (portable laptop host)
+# Switch the NixOS configuration (spectre, portable)
 nh os switch .#spectre
 
 # Validate: format, lint, and evaluate all host configurations (same as CI)

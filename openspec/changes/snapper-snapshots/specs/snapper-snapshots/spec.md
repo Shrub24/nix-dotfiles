@@ -34,7 +34,7 @@ cache residue rather than snapshotted user data.
 
 #### Scenario: Root and home are covered
 
-- **WHEN** the desktop's installed system boots
+- **WHEN** legion's installed system boots
 - **THEN** `snapper list-configs` reports the root and home configs
 
 ### Requirement: Scrubbing and snapshots are both retained

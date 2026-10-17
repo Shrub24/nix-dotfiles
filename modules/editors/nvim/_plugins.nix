@@ -55,8 +55,7 @@ with pkgs'.vimPlugins;
   };
 
   # --- optional, activated by lze ------------------------------------------
-  # Grammars listed explicitly: withAllGrammars pulls 320 parsers (251 MB), most
-  # for languages this config never opens.
+  # Grammars listed explicitly: withAllGrammars pulls 320 parsers, most unused here.
   treesitter = {
     lazy = true;
     data = [
@@ -127,8 +126,7 @@ with pkgs'.vimPlugins;
       friendly-snippets
     ];
   };
-  # Explicit, not transitive via copilot-lualine: copilot-lua supplies the ghost
-  # text, blink-copilot surfaces it as a blink completion source.
+  # Explicit: copilot-lua supplies the ghost text that blink-copilot surfaces.
   copilot = {
     lazy = true;
     data = [

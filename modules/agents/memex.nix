@@ -10,8 +10,6 @@
     inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  # Indexes local agent history (Claude Code, Codex, OpenCode, Pi) for search,
-  # transcript reads and session resume.
   flake.modules.homeManager.memex =
     {
       config,
@@ -45,10 +43,7 @@
           };
         }
 
-        # Registration follows ownership, as with the fleet's notify events.
-        # Nothing gates it but the daemon: memex serves MCP out of the daemon and
-        # nowhere else — unlike mcp-nixos, where a client can be given the server
-        # without one.
+        # Registered only where the daemon serves MCP: memex serves nowhere else.
         (lib.mkIf (config.programs.memex.enable && config.programs.memex.daemon.enable) {
           programs.pi-coding-agent.mcpServers.memex = {
             url = "http://${config.programs.memex.settings.mcp.listen}/mcp";

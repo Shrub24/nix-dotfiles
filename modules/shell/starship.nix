@@ -57,8 +57,6 @@
           git_branch.disabled = true;
           git_status.disabled = true;
 
-          # status, time and direnv are disabled by default; their modules only
-          # render once that is off.
           status = {
             disabled = false;
             symbol = "${glyphs.failure} ";
@@ -104,9 +102,7 @@
             vimcmd_visual_symbol = "[❮](bold yellow)";
           };
 
-          # jj-starship renders the change id, bookmarks and jj state for jj repos and
-          # branch and status for git repos; it reads repository state without snapshotting
-          # the working copy.
+          # jj-starship reads repo state without snapshotting the working copy.
           custom.jj = {
             description = "jj-starship: VCS state for jj and git repos";
             when = "${jjStarship} detect";
