@@ -5,7 +5,6 @@
   ...
 }:
 let
-  # Resolved from the fleet inventory, never a literal in the extension's config.
   hindsightUrl = inputs.nix-fleet.lib.serviceEndpoints.url config.fleet {
     service = "hindsight";
     endpoint = "api";
@@ -16,8 +15,6 @@ let
     endpoint = "mcp";
     via = "tailnet";
   };
-  # The payload compiles the recipes of every row that names the lead; the
-  # launchers choose what they enable from the ids of the rows that name each.
   compiledRows =
     variant: lib.filter (row: lib.elem variant (row.compiled or [ ])) (import ./_pi-extensions.nix);
   compiledPlugins =
@@ -65,10 +62,7 @@ in
       orchestratorAgentDir = "${config.home.homeDirectory}/.pi/roles/orchestrator";
       childAgentDir = "${config.home.homeDirectory}/.pi/roles/child";
       herdsmanDataDir = "${piAgentDir}/pi-herdsman";
-      # Extension rows drive package sources and each role's compiled selection.
       piExtensionRows = import ./_pi-extensions.nix;
-      # A row's source or path carries placeholders resolved at build time, never
-      # a live checkout.
       rowPath =
         value:
         if lib.hasPrefix "@recipe@" value then
@@ -129,7 +123,6 @@ in
       childExtensions = map childExtension childExtensionIds;
       childExtensionsYaml = lib.concatStringsSep "\n" (map (path: "  - ${path}") childExtensions);
 
-      # Secret paths, present only where the sops aspect is selected.
       sopsSecrets = (config.sops or { }).secrets or { };
       codexbarQuota = provider: {
         source = "codexbar";
@@ -345,8 +338,8 @@ in
       ];
 
       programs.pi-coding-agent = {
-        # Unmodified upstream: a local override changes the derivation and loses
-        # the binary-cache hit.
+        enable = true;
+
         package = stockPi;
 
         settings = {
@@ -388,7 +381,7 @@ in
           steeringMode = "all";
           hideThinkingBlock = false;
 
-          kendex.extensionManager.config."@vanillagreen/pi-background-tasks" = {
+          "pi-bash-processes" = {
             autoBackgroundBash = true;
             autoBackgroundPatterns = "";
             wakeMessageStyle = "line";
@@ -406,7 +399,7 @@ in
             dashboardShortcut = "f5";
           };
 
-          kendex.extensionManager.config."@vanillagreen/pi-tool-renderer" = {
+          "pi-tool-renderer" = {
             glyphStyle = "unicode";
             treeStyle = "unicode";
             thinkingPanel = true;
@@ -444,7 +437,7 @@ in
           # Native router: virtual route/<role> models over ordered physical candidates.
           # Shared settings sit on each provider; accounts are only for providers with several
           # keys (OpenCode Go). Keys are sops-decrypted files; a missing key fails closed.
-          kendex.extensionManager.config."@vanillagreen/pi-native-router" = {
+          "pi-native-router" = {
             providers = {
               opencode-go = {
                 name = "OpenCode Go";
@@ -543,7 +536,7 @@ in
           };
 
           # pi-jev: advisory mode steers instead of gating; only material harm refuses.
-          kendex.extensionManager.config."@vanillagreen/pi-jev" = {
+          "pi-jev" = {
             mode = "advisory";
             # Collect readings without suppressing producer reminders.
             watcherMode = "shadow";
@@ -563,8 +556,7 @@ in
             pinLabeledEntries = true;
           };
 
-          # The compiled footer owns the editor, and `vim` selects its vendored
-          # Vim backend; every other setting keeps the extension's default.
+          # `vim` selects the footer's vendored Vim editor backend.
           powerline.editor.mode = "vim";
           powerline.editor.frame = "rounded";
           powerline.welcome = false;
@@ -619,7 +611,6 @@ in
               "subagents"
               "vim_mode"
             ];
-            # Footer fitting keeps leading groups first: context and cache hit rate win narrow widths.
             footer = [
               [ "context_pct" ]
               [ "status:pi-cache-stats" ]
@@ -634,7 +625,6 @@ in
             ];
             footerRight = [ "time" ];
           };
-          # Statuses other extensions publish, compacted on the footer line.
           powerline.statusOrder = [ "pi-permission-system" ];
           powerline.statusStyle = "pills";
           powerline.statusFormats = {
@@ -691,8 +681,6 @@ in
         piStock
       ];
 
-      # Plain `pi` uses the lead role; `pio` uses the orchestrator role and shares
-      # the operator session history.
       home.shellAliases.pio = "pi-bolt-orchestrator --append-system-prompt ${orchestratorAgentDir}/modes/orchestrator.md";
 
       home.sessionVariables = {
@@ -703,7 +691,7 @@ in
       home.file =
         let
           agentFiles = {
-            # Pi rewrites these through a rename; force re-links them instead of backing up.
+            # Pi rewrites these by rename; see context/pi-config-ownership.md.
             ".pi/agent/mcp.json" = {
               text = mcpConfig;
               force = true;
@@ -744,9 +732,7 @@ in
                     "invalid-response"
                   ];
                 };
-                # Keys resolve from the decrypted sops secret paths, so no search
-                # credential is exported to the environment. pi-web-access prefers a
-                # configured value over its environment fallback.
+                # Keys resolve from sops secret paths; no search credential reaches the environment.
                 fetchRouting.providers = [
                   "http"
                   "firecrawl"
@@ -755,8 +741,7 @@ in
                   "tinyfish"
                   "gemini"
                 ];
-                # Declare the web tools from the first request on every model: a
-                # session-wide list shape beats web_enable's per-model variance.
+                # Declared on every model from the first request; web_enable varies per model.
                 toolActivation = "eager";
                 workflow = "none";
                 summaryModel = "omniroute/budget";
@@ -779,18 +764,13 @@ in
 
             };
             #
-            # Pi-Bolt skips the extension Herdr installs for Pi by name and header
-            # marker, so the pane would go unreported. The shim is a link to that
-            # same file under a name Pi-Bolt does not recognise: Herdr's own
-            # reporter runs again, keeps reporting as `pi`, and follows the file
-            # Herdr rewrites on an upgrade. It sits outside the extensions
-            # directory so stock Pi's discovery does not load it twice.
+            # Pi-Bolt skips the extension Herdr installs by name and header marker, so this link
+            # carries it under another name.
+            # Kept outside the extensions directory so stock Pi does not load it twice.
             ".pi/agent/herdr-pi-state.ts".source =
               config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.pi/agent/extensions/herdr-agent-state.ts";
 
-            # Herdsman passes `skills` and `extensions` values to Pi unchanged, so
-            # the definitions use substituted paths and @childExtensions@ for their
-            # shared compiled/runtime base.
+            # Herdsman passes these values to Pi unchanged; definitions carry substituted paths.
             ".pi/agent/agents".source = pkgs.runCommand "pi-agents" { } ''
               mkdir $out
               for f in ${./pi/agents}/*.md; do

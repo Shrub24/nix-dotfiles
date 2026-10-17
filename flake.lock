@@ -23,11 +23,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792573566,
-        "narHash": "sha256-8HeNlQ75Wca1I2JrgGzFNeq2KHTD4qm2iBxIHC4/9L0=",
+        "lastModified": 1792584217,
+        "narHash": "sha256-DaAAScRJrWVMBZW2uMZJnWwv6R7PMVOnbTHIXR9pH0o=",
         "owner": "Shrub24",
         "repo": "agent-radar",
-        "rev": "117253d33ac752af8398206541a26c1e40b7d547",
+        "rev": "ce062654827c78d6dd5796eace8aa4087f0fb54d",
         "type": "github"
       },
       "original": {
@@ -841,16 +841,16 @@
     "pi-bolt": {
       "flake": false,
       "locked": {
-        "lastModified": 1792370596,
-        "narHash": "sha256-B/EeA30nqHeEyf2/dBvlE2bVPsq3F9289jv7gCUmgDc=",
+        "lastModified": 1792469472,
+        "narHash": "sha256-e3hDBURDPcaw61ckra66QWweX3cv5IfBj/ywcc+A2q4=",
         "owner": "opensec-git",
         "repo": "Pi-Bolt",
-        "rev": "6f3151382a959506044328f90addbb02d781490a",
+        "rev": "5433b91a0a76927665b2bd458a795bf3d1bbae75",
         "type": "github"
       },
       "original": {
         "owner": "opensec-git",
-        "ref": "bolt-v0.9.5",
+        "ref": "bolt-v0.9.6",
         "repo": "Pi-Bolt",
         "type": "github"
       }
@@ -867,11 +867,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792545332,
-        "narHash": "sha256-TY6y8Wc/slCk4hsmhoPYBjlz/RVDqHS3qmJiPAgJdaY=",
+        "lastModified": 1792584064,
+        "narHash": "sha256-/tJE0QUDtuxaWQetvpqjI3CI/l3ML0SWI32GS3Ldoxo=",
         "owner": "Shrub24",
         "repo": "Pi-Bolt.nix",
-        "rev": "baa42150d6eb47d9b65b3ef174eb9cc3b24bc0e4",
+        "rev": "5249734f31514222aca28fa85523f5d1cd77163f",
         "type": "github"
       },
       "original": {
@@ -883,11 +883,11 @@
     "pi-extensions": {
       "flake": false,
       "locked": {
-        "lastModified": 1792551873,
-        "narHash": "sha256-qTxYxEdIOHmORshAnmROnhK+7qV13TOd/RJSpzmAMT4=",
+        "lastModified": 1792587660,
+        "narHash": "sha256-FzTtnd3frxDLei0zbsTpU2vtweGZ3vDYoQN+skHNqnw=",
         "owner": "Shrub24",
         "repo": "pi-extensions",
-        "rev": "71d0e31e778ec97c316d2d394a92881d03bcaff4",
+        "rev": "e5b1486cfa9ed396ceab9b2f6b8288daaa6d8f6a",
         "type": "github"
       },
       "original": {

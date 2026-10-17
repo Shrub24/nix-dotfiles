@@ -18,11 +18,15 @@ in
     piExtensions = inputs.pi-extensions;
     piPowerlineFooter = inputs.pi-powerline-footer;
     inherit (piBoltPkgs) piBoltPlugins;
+    piBolt = piBoltPkgs.pi-bolt;
   };
   pi-otel = final.callPackage ./pi-otel { piExtensions = inputs.pi-extensions; };
   pi-freeflow = final.callPackage ./pi-freeflow { };
   pi-magic-context = inputs.magic-context.packages.${system}.pi-magic-context;
-  pi-bolt = final.callPackage ./pi-bolt { piBolt = piBoltPkgs.pi-bolt; };
+  pi-bolt = final.callPackage ./pi-bolt {
+    piBolt = piBoltPkgs.pi-bolt;
+    pluginLock = ./pi-plugins/plugins.lock.json;
+  };
   nix-search-tv-fzf = final.callPackage ./nix-search-tv-fzf { };
   jj-hunk-tool = final.callPackage ./jj-hunk-tool { };
   nixos-boot = final.callPackage ./nixos-boot { src = inputs.nixos-boot; };

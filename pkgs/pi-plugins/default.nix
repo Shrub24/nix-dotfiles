@@ -1,27 +1,17 @@
-# Source recipes for the extensions Pi-Bolt can compile in: where each plugin's
-# source comes from, which file exports its factory, which sibling plugins it
-# imports, and the patch its compile-time assumptions need (`--replace-fail`
-# keeps a patch loud when upstream moves). Which plugins a build contains is the
-# module's decision, so nothing here says who gets what.
+# Source recipes for the extensions Pi-Bolt can compile in. Which ones a build contains is the module's decision.
 {
   lib,
   fetchurl,
   fetchFromGitHub,
   linkFarm,
-  runCommand,
-  writeText,
   writeShellApplication,
   python3,
   nix,
   piExtensions,
-  # The footer fork's repository, an input like pi-extensions: the whole tree is
-  # the plugin directory its recipe stages.
   piPowerlineFooter,
   pi-otel,
-  # Pi-Bolt's plugin scope: the builder each recipe becomes, and the fetcher the
-  # libraries use. An input rather than a vendored copy, so the interface this
-  # repository tests is the one Pi-Bolt publishes.
   piBoltPlugins,
+  piBolt,
 }:
 let
   # One updater owns this set; nix-update cannot locate individual helper calls.
@@ -37,8 +27,7 @@ let
     };
   # The local plugins come from the same pinned checkout as the runtime ones.
   checkout = name: "${piExtensions}/${name}";
-  # OmniRoute publishes no releases, so the pin tracks the deploy/edge branch's
-  # commit — the line that carries @omniroute/pi-agent.
+  # No releases: pinned to a deploy/edge commit that carries @omniroute/pi-agent.
   omnirouteSrc = fetchFromGitHub {
     owner = "Shrub24";
     repo = "OmniRoute";
@@ -46,8 +35,7 @@ let
     fetchSubmodules = false;
     sha256 = "sha256-4AYwqWmBuNGojnx0eiD7uTgvfSklMQLgj9lixdKEqT8=";
   };
-  # fork-in publishes no releases either, so its pin tracks the default branch's
-  # commit — the fork entrypoint `/fork-in-herdr` is what we compile in.
+  # No releases: pinned to a default-branch commit; `/fork-in-herdr` is the entry compiled in.
   forkInSrc = fetchFromGitHub {
     owner = "onsails";
     repo = "fork-in";
@@ -92,7 +80,6 @@ let
         };
         entry = "src/index.ts";
       };
-      # Footer and Vim editor backend in one plugin.
       powerline-footer = {
         dir = piPowerlineFooter;
         entry = "index.ts";
@@ -159,8 +146,7 @@ let
           hash = "sha512-vx9CIkRHbzavPr7DFYUjorfaYErAVwurZOs2tKC5kQFv5y05CShlxf3qQ7k67lqvODdz8j/sbMIaj6szgLyCEg==";
         };
         entry = "index.ts";
-        # The locale files are source-relative; keep its built-in English fallback
-        # rather than resolving store assets.
+        # Locale files are source-relative; keep the built-in English fallback.
         patch = ''
           substituteInPlace plugins/ask-user-question/index.ts \
             --replace-fail '@juicesharp/rpiv-i18n/loader' './i18n-loader.ts'
@@ -173,11 +159,8 @@ let
           hash = "sha512-fXuUVU2HlxiUMeDeRTXbSVDPftP+CMGe47nAA5H0BX4YYl7chl1M2fSL1fFQqq5FCcpk5+ZBiQ43tiKvUu97gQ==";
         };
         entry = "index.ts";
-        # The i18n SDK is an optional peer and its locale files are
-        # source-relative, so both imports become the inline English fallback.
-        # A persisted snapshot that lost a task's subject otherwise reaches the
-        # renderer's string sanitizer and dies on `.replace` at resume, so the
-        # replay boundary validates task entries instead.
+        # The English fallback replaces the optional i18n peer.
+        # A snapshot missing a task subject crashes the renderer on resume, so replay validates task entries.
         patch = ''
           substituteInPlace plugins/todo/index.ts \
             --replace-fail '@juicesharp/rpiv-i18n/loader' './i18n-loader.ts'
@@ -241,7 +224,7 @@ let
         entry = "extensions/tool-renderer.ts";
         # bash-processes imports it by package name, so the builder links it into
         # that plugin's node_modules instead of it being staged as a sibling.
-        packageName = "@vanillagreen/pi-tool-renderer";
+        packageName = "pi-tool-renderer";
       };
       output-policy = {
         dir = checkout "pi-output-policy";
@@ -304,96 +287,25 @@ let
         '';
       };
     };
-
-    # Runtime dependencies the compiled plugins import, resolved from the plugin
-    # tree's own node_modules.
-    libraries = {
-      # Resolved from the plugin tree's own node_modules.
-      # (dir name) = tarball
-      # 0.5.1 is the floor the plugin sources need: `pi-radar/communication`
-      # arrived in 0.3.0, and 0.5.1 is the release that requires daemon wire
-      # revision 4, so presence is not silently unserved.
-      "pi-radar" = npmTarball "pi-radar" {
-        version = "0.5.1";
-        hash = "sha512-VZKxHqehBtIV80ZizTKXeBTQx+q6w2djmFdvvhrNqHQ02N58qc2D6abbTr5QYM6BxfiDVku4TKqnChuwC3yGyA==";
-      };
-      "@narumitw/pi-tui-kit" = npmTarball "@narumitw/pi-tui-kit" {
-        version = "0.65.6";
-        hash = "sha512-uy+JGV/GamhLGamN932ZXEuBwfqsp6j+A7H0Qzjzn8ha+NDAEmKXk2nlmVpvnxeqEsu9zX0B0wQ2p9C8+XOZiQ==";
-      };
-      "grok-mermaid" = npmTarball "grok-mermaid" {
-        version = "0.2.3";
-        hash = "sha512-/4KopAbsjvuRP9MdPtlDjOHUmUVEohOX73JNcsWpzAtFxh+bq5+Dhb6gzvRieLDwIPQIR3/vy8V1NNTuz4Zsmg==";
-      };
-      "highlight.js" = npmTarball "highlight.js" {
-        version = "11.12.0";
-        hash = "sha512-nbfWpyRMcMrPMmDwJB+dhX/eiaPKtc2RB+0QZskqJ3WjRA/FDS0e9hZrx8EC/lbEv8gXy98FcDbNa/dspAaJMg==";
-      };
-      "yaml" = npmTarball "yaml" {
-        version = "2.9.1";
-        hash = "sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==";
-      };
-      "@juicesharp/rpiv-config" = npmTarball "@juicesharp/rpiv-config" {
-        version = "2.13.9";
-        hash = "sha512-wCy7w4PNi+9pVD5gsbsIxq6ysdoFKXGPIQfOICyITW/+Jg6OGlFZa/tG99J9OZvTHDM8ZwUvqXNrFRsU6Z8NTQ==";
-      };
-      "zod" = npmTarball "zod" {
-        version = "4.6.7";
-        hash = "sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==";
-      };
-      "web-tree-sitter" = npmTarball "web-tree-sitter" {
-        version = "0.27.1";
-        hash = "sha512-qtx0VyUyNRHtL3ze7+v0hCKB/sLcAmY7ZAVp/ZK/bCj0yED8ptvNrr7Vd7DwDyKDWN9baqcUx4uaD2r2ql+6IA==";
-      };
-      "tree-sitter-bash" = npmTarball "tree-sitter-bash" {
-        version = "0.25.1";
-        hash = "sha512-7hMytuYIMoXOq24yRulgIxthE9YmggZIOHCyPTTuJcu6EU54tYD+4G39cUb28kxC6jMf/AbPfWGLQtgPTdh3xw==";
-      };
-      "typebox" = npmTarball "typebox" {
-        version = "1.4.2";
-        hash = "sha512-eSoZzgSIyOKDtTH9MI7XMAxMaiXq7UiSFWarysN1ka66baTLDxAVdQ6WkWn6qDqsJFVrcjzvuP+CqHo9yrlQpg==";
-      };
-    };
   };
-  # The npm packages the compiled plugins import, unpacked once: Pi-Bolt's
-  # builder copies this into each plugin's own node_modules, so a plugin resolves
-  # its dependencies inside the payload's tree.
-  libraryPackages = writeText "pi-plugins-libraries.json" (
-    builtins.toJSON (
-      lib.mapAttrsToList (name: path: {
-        inherit name;
-        path = toString path;
-      }) recipes.libraries
-    )
-  );
-  libraryNodeModules = runCommand "pi-plugins-node-modules" { } ''
-    ${python3}/bin/python3 ${./unpack-libraries.py} ${libraryPackages}
-  '';
 
-  # A recipe becomes the flake's plugin derivation: the same source pin and entry,
-  # with the patch's `plugins/<id>/` prefix dropped because the builder works in
-  # the plugin's own tree. `pluginName` is the row id, so the launchers' existing
-  # `-e builtin:<id>` arguments keep naming these plugins.
+  # `pluginName` must stay the row id: the launchers pass `-e builtin:<id>`.
   toPlugin =
     id: recipe:
     piBoltPlugins.buildPiBoltPlugin {
       pname = id;
-      # The pins of record are the recipe's own; a plugin's version is not
-      # separately meaningful, and the source hash still separates two of them.
+      # Version is cosmetic; the source hash is what separates pins.
       version = "0";
       pluginName = id;
       packageName = recipe.packageName or null;
       src = recipe.tarball or recipe.dir;
       inherit (recipe) entry;
       dependencies = builtins.map pluginOf (recipe.dependencies or [ ]);
-      nodeModules = "${libraryNodeModules}/node_modules";
       postPatch = lib.optionalString (recipe ? patch) (
         lib.replaceStrings [ "plugins/${id}/" ] [ "" ] recipe.patch
       );
     };
 
-  # A recipe names its plugin dependencies by row id; the builder wants the
-  # derivations, and the plugin map below is where they live.
   pluginOf = id: plugins.${id};
   plugins = lib.mapAttrs toPlugin recipes.plugins;
 
@@ -402,11 +314,18 @@ let
       name = "plugins/${id}";
       inherit path;
     }) plugins
-    ++ lib.mapAttrsToList (name: path: {
-      name = "libraries/${name}";
-      inherit path;
-    }) recipes.libraries
   );
+
+  # Plugins with npm dependencies need a workspace in the lock. bash-processes is absent:
+  # its one dependency is a `workspace:*` sibling the builder links from the recipe's edge.
+  lockMembers = [
+    "ask-user-question"
+    "herdsman"
+    "otel"
+    "permission-system"
+    "todo"
+    "tool"
+  ];
 in
 sources.overrideAttrs (_: {
   version = "unstable";
@@ -422,6 +341,16 @@ sources.overrideAttrs (_: {
         exec python3 ${./update.py}
       '';
     });
+    # The plugin lock's own generator, run where a pin moves: it resolves the
+    # declared ranges against the registry, which no build may do.
+    updateLock = writeShellApplication {
+      name = "pi-plugins-update-lock";
+      text = ''
+        exec ${lib.getExe piBolt.updatePluginLock} pkgs/pi-plugins/plugins.lock.json ${
+          lib.concatMapStrings (id: " \"${id}=${plugins.${id}}/package.json\"") lockMembers
+        }
+      '';
+    };
     inherit plugins;
   };
 })

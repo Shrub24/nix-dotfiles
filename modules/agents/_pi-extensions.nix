@@ -141,10 +141,6 @@
     source = "@extensions@/pi-tool-renderer";
   }
   {
-    id = "extension-manager";
-    source = "npm:@vanillagreen/pi-extension-manager";
-  }
-  {
     id = "output-policy";
     compiled = [
       "lead"

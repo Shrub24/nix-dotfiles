@@ -3,6 +3,7 @@
   stdenv,
   piBolt,
   plugins ? { },
+  pluginLock ? null,
   childPlugins ? [ ],
   leadAgentDir ? null,
   childAgentDir ? null,
@@ -15,7 +16,6 @@
 }:
 assert lib.all (id: lib.hasAttr id plugins) childPlugins;
 let
-  # The release the payload was built from, and what this package reports.
   inherit (piBolt) version;
 
   # Compilation only: launcher changes leave this derivation, and its AOT build, alone.
@@ -52,6 +52,7 @@ let
     ).override
       {
         inherit launchers;
+        inherit pluginLock;
       };
 
   tools = payload.passthru.runtimeInputs ++ [ wl-clipboard ];
@@ -187,7 +188,6 @@ stdenv.mkDerivation {
     printf '%s\n' "$version"
     grep -q 'image registered: true' <<< "$version"
     grep -q 'JIT on' <<< "$version"
-    # Every program the flake resolved reaches Pi's PATH through the entrypoints.
     for pkg in ${lib.concatStringsSep " " (map toString tools)}; do
       grep -a -q "$pkg/bin" $out/lib/pi-bolt/${executable}
     done

@@ -4,11 +4,15 @@
 
 **Id:** 810ac3c5-0a8e-4535-8c7d-46de9b84df10
 **Type:** issue
-**Status:** open
-**Evidence:** confirmed
+**Status:** superseded
+**Superseded by:** [pi-plugin-lock.md](pi-plugin-lock.md) — Pi-Bolt derives each plugin's declared dependencies from its own `package.json` and the plugin set resolves through one lock, so the consumer no longer pins them by hand
+**Evidence:** contradicted
 **Source:** a failing `nix build .#packages.x86_64-linux.pi-bolt` on this host, the two plugin definitions (`pi-extensions/nix/plugins.nix`, `pkgs/pi-plugins/default.nix`), the published `pi-radar` export maps, and `pi-bolt/nix/plugins/build-plugin.nix`
-**Verification:** corroborated — the failure reproduced at `pi-radar` 0.2.0 and cleared at 0.5.1 with no other change; the rebuilt payload's input tree carries `pi-radar-0.5.1.tgz.drv`; `pi-radar@0.2.0` exports no `./communication` while `0.5.1` does
+**Verification:** corroborated for the failure, contradicted for the conclusion — the failure reproduced at `pi-radar` 0.2.0 and cleared at 0.5.1 with no other change, and `pi-radar@0.2.0` exports no `./communication` while `0.5.1` does; but Pi-Bolt 0.9.6 now reads each plugin's `package.json`, resolves the set through a lock, and fails the compile on an out-of-range pin, so the consumer no longer has to write the pin down
 **Revisit when:** this repository consumes `pi-extensions`' plugin outputs by name, or Pi-Bolt's builder derives a plugin's dependencies itself
+
+_Kept for the incident. The map it describes no longer exists; see
+[pi-plugin-lock.md](pi-plugin-lock.md)._
 
 The compiled payload's `installPhase` failed with
 `Could not resolve: "pi-radar/communication"` at

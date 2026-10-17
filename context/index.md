@@ -77,7 +77,8 @@
 - [pi-dashboard.md](pi-dashboard.md) — why the dashboard runs as a service, attaches locally, and is exposed only on Legion's tailnet interface
 - [pi-herdsman.md](pi-herdsman.md) — the incident where herdsman re-read session transcripts on a refresh pass, and what the fix leaves behind
 - [pi-otel.md](pi-otel.md) — why Pi uses the run-trace fork with a lock-derived runtime closure and leaves backend fanout and credentials at the fleet gateway
-- [pi-plugin-dependencies.md](pi-plugin-dependencies.md) — why a plugin's npm dependencies are pinned by its consumer, so the producer's pin cannot be enforced
+- [pi-plugin-dependencies.md](pi-plugin-dependencies.md) — the incident where a hand-pinned library drifted from the plugin's own range, and what it cost
+- [pi-plugin-lock.md](pi-plugin-lock.md) — why compiled plugins resolve through one npm lock extending Pi's own, and what regenerates it
 - [pi-plugin-sources.md](pi-plugin-sources.md) — why every Pi extension source is a pin rather than a live checkout, and what that costs
 
 ## Q

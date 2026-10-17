@@ -17,6 +17,9 @@
       ];
       packages = {
         inherit (repoPkgs) pi-plugins xberg-cli codexbar;
+        # The plugin lock's generator: run after a Pi-Bolt input bump or a plugin
+        # pin change, since it resolves ranges against the registry.
+        update-plugin-lock = repoPkgs.pi-plugins.passthru.updateLock;
       };
     };
 }
