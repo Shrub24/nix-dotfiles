@@ -1,0 +1,21 @@
+name: fleet-build
+on:
+  workflow_dispatch:
+concurrency:
+  group: fleet-build
+  cancel-in-progress: false
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  build:
+    # Pinned to the commit behind nix-fleet's v2 tag; the tag form is unproven
+    # against the tailnet credential.
+    uses: Shrub24/nix-fleet/.github/workflows/build-push-cache.yml@11a028b224375e342319fe0eb242b55346724ac1
+    with:
+      targets: .#ciRoot
+      systems: x86_64-linux
+      runner_system: x86_64-linux
+      profile: ci
+    secrets:
+      BUILDER_SSH_KEY: ${{ secrets.FLEET_BUILDER_SSH_KEY }}
