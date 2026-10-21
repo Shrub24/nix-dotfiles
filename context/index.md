@@ -30,6 +30,8 @@
 
 ## C
 
+- [ci-fleet-build.md](ci-fleet-build.md) — why the fleet build targets a non-VM aggregate pinned to a commit, and why validate keeps no second builder
+
 ## D
 
 - [desktop-shell.md](desktop-shell.md) — why Monique owns monitor state, Niri is store-linked, and Noctalia themes come from local template rows

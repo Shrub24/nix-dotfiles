@@ -310,10 +310,15 @@ nix flake check --no-build --no-write-lock-file
 ```
 
 `nix fmt` (treefmt-nix) is both formatter and formatting check — nixfmt for
-Nix, and prettier for Markdown, YAML and JSON. Flake checks cover Statix and Deadnix over all
-maintained Nix source, the treefmt check, and full
-evaluation of both NixOS toplevels and the NixOS VM test derivations — a
-change that breaks any host output fails CI without switching anything.
+Nix, and prettier for Markdown, YAML and JSON. Statix and Deadnix are devShell tools run by lefthook, not flake
+checks. Flake checks evaluate the treefmt check and both NixOS toplevels and
+VM test derivations, so a change that breaks any host output fails CI without
+switching anything.
+
+The fleet build (`.github/workflows/fleet-build.yml`, dispatch-only) is the only
+workflow that builds and publishes. It builds `.#ciRoot`: the non-VM outputs
+for x86_64-linux. Decision and revisit triggers are in
+`context/ci-fleet-build.md`.
 Lefthook runs fast formatting and lint checks at pre-commit and the canonical
 no-build check at pre-push; GitHub Actions runs the same check on pull
 requests with pinned action revisions.
