@@ -24,10 +24,28 @@ Renovate owns the `nix-fleet` flake input and this workflow pin, as separate pul
 **Type:** decision
 **Status:** active
 **Evidence:** confirmed
-**Source:** `.github/workflows/validate.yml` before this change; nix-fleet runbook section 1 (the fleet job is the only builder)
+**Source:** `.github/workflows/validate.yml` before this change; nix-fleet runbook section 1 and `docs/contracts/update-candidates.md`
 
-`validate.yml` runs `nix flake check --no-build --no-write-lock-file` and nothing that builds. The former `checks-build` job is removed: it named `statix` and `deadnix` as flake checks, but both are devShell tools in `modules/flake/tooling.nix`, so the job could not resolve them.
+`ci.yml` is the only validation caller, and it calls nix-fleet's `validate.yml`, the one definition of valid. The former local `validate.yml` is gone, and its `checks-build` job with it: that job named `statix` and `deadnix` as flake checks, but both are devShell tools in `modules/flake/tooling.nix`, so the job could not resolve them.
 
-**Alternatives:** keep the job and add statix and deadnix as flake checks, which would keep a second builder in routine CI.
-**Reason:** the runbook says a repository that builds in its own CI should stop once the fleet path is green, because two publishers for one closure is how a cache starts lying.
+**Alternatives:** keep a local validation file and add statix and deadnix as flake checks, which would keep a second definition of valid.
+**Reason:** the contract makes the fleet's `validate.yml` the definition that both the contributor path and the pipeline call, so a human pull request and a candidate are judged the same way.
 **Revisit when:** Statix and Deadnix need to run in CI rather than only at pre-commit through lefthook. Adding them to the flake-check job is the cheap option.
+
+## Path B candidate pipeline runs under the label policy
+
+**Id:** 1ad0c35a-f1ba-44a2-bd81-f27079083b91
+**Type:** decision
+**Status:** active
+**Evidence:** confirmed
+**Source:** nix-fleet `docs/contracts/update-candidates.md` (consumer adoption and policy sections)
+
+The repository consumes nix-fleet's pipeline through thin trigger files: `ci.yml`, `pipeline.yml`, `promote.yml`, `accept.yml` and `candidate-sweep.yml`, all pinned to the commit behind the v2 tag. `PROMOTION_POLICY` is `label`. Candidate builds use `CANDIDATE_TARGETS=.#ciRoot` with x86_64-linux, so VM tests are not built in the pipeline either.
+
+The repository holds `.github/scripts/prepare-candidate.sh` and `promote-candidate.sh`, copied verbatim from the pinned commit. The validation job runs the preparation script from the default branch, and promotion runs the promote script from `main`, so the fleet's own copies would not be used.
+
+**Alternatives:** call the scripts from the pinned nix-fleet revision, which would remove the copies. nix-fleet's workflows do not do this today, and changing them is a nix-fleet change, which this repository does not make.
+**Reason:** the trusted procedure must come from the default branch, and the runbook lists no script in consumer adoption. The copies are the only way promotion runs here.
+**Revisit when:** nix-fleet resolves these scripts from the pinned revision, or the copies drift from the pinned commit. Compare with `git show 11a028b2:.github/scripts/promote-candidate.sh`.
+
+Before this pipeline can promote, the App, its `automation` environment secret, `AUTOMATION_APP_ID`/`AUTOMATION_APP_SLUG`, and the `update-candidate` ruleset need to exist. The ruleset is deliberately absent until one candidate has validated and promoted by hand.

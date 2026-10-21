@@ -1,0 +1,11 @@
+name: accept
+on:
+  pull_request_target:
+    types: [labeled, unlabeled]
+permissions:
+  statuses: write
+jobs:
+  accept:
+    uses: Shrub24/nix-fleet/.github/workflows/accept.yml@11a028b224375e342319fe0eb242b55346724ac1
+    permissions:
+      statuses: write

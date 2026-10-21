@@ -310,15 +310,18 @@ nix flake check --no-build --no-write-lock-file
 ```
 
 `nix fmt` (treefmt-nix) is both formatter and formatting check — nixfmt for
-Nix, and prettier for Markdown, YAML and JSON. Statix and Deadnix are devShell tools run by lefthook, not flake
-checks. Flake checks evaluate the treefmt check and both NixOS toplevels and
-VM test derivations, so a change that breaks any host output fails CI without
-switching anything.
+Nix, and prettier for Markdown, YAML and JSON. Statix and Deadnix are devShell
+tools run by lefthook, not flake checks.
 
-The fleet build (`.github/workflows/fleet-build.yml`, dispatch-only) is the only
-workflow that builds and publishes. It builds `.#ciRoot`: the non-VM outputs
-for x86_64-linux. Decision and revisit triggers are in
+`ci.yml` calls nix-fleet's `validate.yml` at a pinned commit: formatting (builds
+`treefmt`), evaluation of every system's flake outputs with VM tests evaluated
+but not built, and a freshness check that fails when `flake.nix` or `flake.lock`
+differ from regeneration. Dependency updates (`renovate/*`, `automation/*`) move
+through the candidate pipeline (`pipeline.yml`, `promote.yml`, `accept.yml`,
+`candidate-sweep.yml`): a candidate builds `.#ciRoot`, and `main` moves only by
+fast-forward after validation under the `label` policy. `fleet-build.yml` is a
+dispatch-only build of `.#ciRoot` for the cache. The decisions are in
 `context/ci-fleet-build.md`.
+
 Lefthook runs fast formatting and lint checks at pre-commit and the canonical
-no-build check at pre-push; GitHub Actions runs the same check on pull
-requests with pinned action revisions.
+no-build check at pre-push.

@@ -1,0 +1,24 @@
+name: pipeline
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      source_pr:
+        description: "Pull request number to validate"
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  pipeline:
+    uses: Shrub24/nix-fleet/.github/workflows/pipeline.yml@11a028b224375e342319fe0eb242b55346724ac1
+    with:
+      source_pr: ${{ inputs.source_pr }}
+    permissions:
+      contents: write
+      statuses: write
+      pull-requests: write
+      id-token: write
+    secrets: inherit

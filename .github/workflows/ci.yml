@@ -1,0 +1,15 @@
+name: ci
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    # The merge ref is not the revision under test: validate the pull request head.
+    uses: Shrub24/nix-fleet/.github/workflows/validate.yml@11a028b224375e342319fe0eb242b55346724ac1
+    with:
+      revision: ${{ github.event.pull_request.head.sha || github.sha }}
+      generated_files: check

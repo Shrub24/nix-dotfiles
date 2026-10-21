@@ -1,0 +1,11 @@
+name: promote
+on:
+  status:
+permissions:
+  contents: read
+jobs:
+  promote:
+    uses: Shrub24/nix-fleet/.github/workflows/promote-candidate.yml@11a028b224375e342319fe0eb242b55346724ac1
+    permissions:
+      contents: write
+    secrets: inherit
