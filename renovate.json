@@ -45,6 +45,12 @@
       "enabled": false
     },
     {
+      "description": "The vicinae and noctalia inputs supply the Home Manager module for a package nixpkgs builds. Their pins follow pkgs.<name>.version, so they must not be bumped on their own schedule.",
+      "matchManagers": ["nix"],
+      "matchDepNames": ["vicinae", "noctalia"],
+      "enabled": false
+    },
+    {
       "description": "A nix-fleet bump is the fleet's baseline update: it moves the shared pins (nixpkgs, flake-parts, import-tree, treefmt-nix) as one change.",
       "matchManagers": ["nix"],
       "matchDepNames": ["nix-fleet"],

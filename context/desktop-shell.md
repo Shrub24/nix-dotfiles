@@ -51,3 +51,17 @@ The shell owns its mutable settings outside the store. Treat them as machine-loc
 
 **Alternatives:** enabling the upstream template ids and bending the Nix config around their hooks. Rejected: hooks that rewrite store-linked configs fail, and a Nix-owned file cannot be a template's output.
 **Reason:** the local rows keep every output path under Nix's control and need hooks only where the consumer cannot be pointed at the file.
+
+## Vicinae and Noctalia module inputs follow the nixpkgs package version
+
+**Id:** bbf03942-ef19-49c3-ad5c-d0bcad0356c3
+**Type:** decision
+**Status:** active
+**Evidence:** confirmed
+**Source:** `modules/desktop/vicinae.nix`, `modules/desktop/noctalia.nix`, `renovate.json`; `pkgs.vicinae.version` 0.29.1 and `pkgs.noctalia.version` 5.3.0 at nixpkgs `fe132422`
+
+Both inputs supply only the Home Manager module — `package = pkgs.vicinae` and `package = pkgs.noctalia` supply the build. They are pinned to the release tag that matches the installed package (`v0.29.1`, `v5.3.0`) rather than following the default branch, and the nix manager is disabled for them in Renovate.
+
+**Alternatives:** follow the default branch, which is what the declarations did before: upstream commits daily, so the module runs ahead of the package and can address options the installed version does not have. Pin to the latest release, which drifts immediately — vicinae's `v0.29.2` was already newer than the packaged `0.29.1`.
+**Reason:** a module and a binary that disagree about their own option surface fail quietly, at runtime, in the desktop session rather than at build time.
+**Revisit when:** `pkgs.vicinae.version` or `pkgs.noctalia.version` moves, which is the signal to move the pin with it; or the package starts being built from the input rather than nixpkgs, which brings churn into a build and changes the reason to pin.

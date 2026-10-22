@@ -98,7 +98,7 @@
     };
     nixpkgs.follows = "nix-fleet/nixpkgs";
     noctalia = {
-      url = "github:noctalia-dev/noctalia";
+      url = "github:noctalia-dev/noctalia/v5.3.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     pi-bolt-nix = {
@@ -119,7 +119,7 @@
     };
     treefmt-nix.follows = "nix-fleet/treefmt-nix";
     vicinae = {
-      url = "github:vicinaehq/vicinae";
+      url = "github:vicinaehq/vicinae/v0.29.1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     wrappers = {

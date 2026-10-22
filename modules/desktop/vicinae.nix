@@ -1,6 +1,6 @@
 { inputs, ... }: {
   flake-file.inputs.vicinae = {
-    url = "github:vicinaehq/vicinae";
+    url = "github:vicinaehq/vicinae/v0.29.1";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
