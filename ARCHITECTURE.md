@@ -313,15 +313,19 @@ nix flake check --no-build --no-write-lock-file
 Nix, and prettier for Markdown, YAML and JSON. Statix and Deadnix are devShell
 tools run by lefthook, not flake checks.
 
-`ci.yml` calls nix-fleet's `validate.yml` at a pinned commit: formatting (builds
-`treefmt`), evaluation of every system's flake outputs with VM tests evaluated
-but not built, and a freshness check that fails when `flake.nix` or `flake.lock`
-differ from regeneration. Dependency updates (`renovate/*`, `automation/*`) move
-through the candidate pipeline (`pipeline.yml`, `promote.yml`, `accept.yml`,
-`candidate-sweep.yml`): a candidate builds `.#ciRoot`, and `main` moves only by
-fast-forward after validation under the `label` policy. `fleet-build.yml` is a
-dispatch-only build of `.#ciRoot` for the cache. The decisions are in
-`context/ci-fleet-build.md`.
+`ci.yml` calls nix-fleet's `validate.yml` at the revision `flake.lock` holds:
+formatting (builds `treefmt`), evaluation of every system's flake outputs with VM
+tests evaluated but not built, and a freshness check that fails when `flake.nix`
+or `flake.lock` differ from regeneration. The evaluator primes source paths with a
+writable, IFD-disabled pass before the read-only check, so a cold store does not
+fabricate failures for packages that copy sources at evaluation time. Dependency
+updates (`renovate/*`, `automation/*`) move through the candidate pipeline
+(`pipeline.yml`, `promote.yml`, `accept.yml`, `candidate-sweep.yml`): a candidate
+builds `.#ciRoot`, and `main` moves only by fast-forward after validation under
+the `label` policy. Promotion then pins `packages.<system>.cache-root`, the
+artefact aggregate `modules/flake/ci.nix` imports from nix-fleet, which is why
+`ciRoot` builds it. `fleet-build.yml` is a dispatch-only build of `.#ciRoot` for
+the cache. The decisions are in `context/ci-fleet-build.md`.
 
 Lefthook runs fast formatting and lint checks at pre-commit and the canonical
 no-build check at pre-push.

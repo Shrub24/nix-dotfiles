@@ -1,0 +1,16 @@
+name: verify-cache
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    uses: Shrub24/nix-fleet/.github/workflows/verify-cache.yml@ddd024ab14506baecc585f9520e02c1178dfa5d5
+    with:
+      targets: .#packages
+      subject: cache-root
+      systems: x86_64-linux
+    permissions:
+      contents: read

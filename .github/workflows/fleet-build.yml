@@ -9,9 +9,8 @@ permissions:
   id-token: write
 jobs:
   build:
-    # Pinned to the commit behind nix-fleet's v2 tag; the tag form is unproven
-    # against the tailnet credential.
-    uses: Shrub24/nix-fleet/.github/workflows/build-push-cache.yml@11a028b224375e342319fe0eb242b55346724ac1
+    # Pinned to the nix-fleet revision this repository's flake locks.
+    uses: Shrub24/nix-fleet/.github/workflows/build-push-cache.yml@ddd024ab14506baecc585f9520e02c1178dfa5d5
     with:
       targets: .#ciRoot
       systems: x86_64-linux

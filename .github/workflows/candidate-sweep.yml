@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   sweep:
-    uses: Shrub24/nix-fleet/.github/workflows/candidate-sweep.yml@11a028b224375e342319fe0eb242b55346724ac1
+    uses: Shrub24/nix-fleet/.github/workflows/candidate-sweep.yml@ddd024ab14506baecc585f9520e02c1178dfa5d5
     permissions:
       contents: write
     secrets: inherit

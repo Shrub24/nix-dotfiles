@@ -6,6 +6,6 @@ permissions:
   statuses: write
 jobs:
   accept:
-    uses: Shrub24/nix-fleet/.github/workflows/accept.yml@11a028b224375e342319fe0eb242b55346724ac1
+    uses: Shrub24/nix-fleet/.github/workflows/accept.yml@ddd024ab14506baecc585f9520e02c1178dfa5d5
     permissions:
       statuses: write
