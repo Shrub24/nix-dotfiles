@@ -1,145 +1,260 @@
 # Conventions
 
-Rules that no tool enforces. `nix fmt` owns formatting and statix/deadnix own
-mechanical lint — neither is restated here. Boundaries and rationale live in
-[ARCHITECTURE.md](ARCHITECTURE.md); the pattern rules live in the
-`dendritic-nix` agent skill. General implementation discipline (minimality,
-scope, done) lives in `lean-implementation`; validation choice and test value
-live in `testing-discipline`. The
-`review-conventions` skill reviews against this document. This document covers
-what none of them does.
+Shared implementation and review rules for these repositories. The general rules
+apply across languages; the Nix sections describe the dendritic configuration
+pattern. Repository-specific paths, commands and policies belong in the final
+section, not in the shared rules.
+
+Formatters and linters own mechanical style. This document covers choices they
+cannot settle. Architecture documents describe boundaries; decision records
+explain non-obvious choices and rejected alternatives.
+
+## Scope and Simplicity
+
+- Deliver the smallest coherent change through the real production path, not
+  the smallest diff at an arbitrary call site.
+- Reuse existing repository code, standard libraries and native platform features
+  before adding a dependency or another implementation.
+- Give each fact one authoritative owner. Derive consumer representations from
+  that source rather than maintaining parallel lists or configuration tables.
+- Extract genuine repeated behaviour, not merely similar-looking syntax. A small
+  helper should remove duplication without hiding ownership or control flow.
+- Add options, abstractions and extension points for current consumers, not
+  hypothetical callers. A value that never varies rarely needs a public option.
+- Remove solving scaffolds, debug output and unused parameters from the finished
+  change. List unrelated improvements separately rather than expanding scope.
 
 ## Comments
 
-Comment only where the code cannot say it.
+Comment only where the code cannot carry the meaning. Judge necessity before
+length: a shorter redundant comment is still redundant.
 
-Delete:
+Remove comments that:
 
-- restatement of the option name, value, or expression below it
-- narration of the change or of what a file used to contain
-- Nix or module-system explanation any Nix reader already has
-- planning and task identifiers (`(B5)`, `(D2)`, `task 3.1`) — they reference
-  documents that are archived or gone, and mean nothing to a later reader
-- a second statement of a decision already recorded in ARCHITECTURE.md
+- restate an option name, assignment or operation;
+- teach ordinary language, module-system or dendritic mechanics at a use site;
+- narrate edits, migrations, past mistakes or what the file used to contain;
+- describe an absence with no current consequence, such as an override not made;
+- embed task numbers, completed plans, stale directives or session history;
+- repeat architecture or re-argue a decision already recorded elsewhere.
 
-Keep, at one or two lines:
+Keep comments that identify a non-obvious invariant, dangerous operation,
+compatibility constraint, load-order requirement or silent failure mode. A
+negative statement earns its place only when the absence is load-bearing.
 
-- a footgun whose failure is silent or misleading — a store symlink a program
-  rewrites, a parser that rejects a duplicate node, a pin that must match an
-  external file, an absence that is deliberate and load-bearing
-- a standard debt marker, one line, with the trigger that retires it:
-  `TODO:` deferred work, `FIXME:` known-wrong behaviour, `HACK:` a deliberate
-  workaround or shortcut with its ceiling and upgrade path
-- one terse divider inside a long list
+File headers and section dividers are welcome when they help navigate a long or
+mixed-purpose file. Do not label every assignment or repeat obvious option names.
+There is no comment-count or line-reduction target.
 
-Rationale is stated once. Put it in the commit message or a durable decision in
-ARCHITECTURE.md; at the use site, one line that links to the rule, not a
-re-argument of it.
+Use debt markers precisely:
+
+- `TODO:` deferred work;
+- `FIXME:` known-wrong behaviour;
+- `HACK:` a deliberate workaround or limited shortcut.
+
+State the constraint and what would retire the marker. An upstream issue or PR
+can identify that trigger; a task identifier alone cannot. Keep the local warning
+short and put extended reasoning in the decision record. Link only where the
+reader needs that context, not at every use of an established pattern.
 
 ## Validation
 
-Validate at a trust boundary. Nowhere else.
+Validate where data enters a contract or invalid state has a meaningful
+consequence: external input, persistence and wire formats, public module options,
+host composition, security and destructive operations.
 
-Boundaries in this repository:
+Establish internal invariants once, through types, construction or a focused
+assertion at their source. Do not repeatedly defend against impossible states in
+values the repository constructs itself.
 
-- foreign data: registry and API responses, `builtins.fromJSON` over fetched or
-  vendored JSON, anything parsed from a file the repository does not own
-- files outside the store that an external program creates, rewrites, or owns —
-  `~/.local/state`, `/var/lib`, application config directories
-- secret material and sops-rendered paths
-- host selection: an option a host composition layer sets
+- Let native errors report missing required attributes, type mismatches and failed
+  commands. Do not wrap them in a second guard that adds no useful contract.
+- Keep assertions for relationships the type system cannot express, such as
+  mutually exclusive selections or missing members of a required set.
+- Do not turn programming errors into apparent success with fallback values,
+  `tryEval`, ignored exit codes or catch-and-continue handling.
+- Recover only when absence or failure is expected and the contract defines the
+  fallback. External data does not automatically justify a default.
+- Keep trust, secret-handling and data-loss checks proportionate to their risk.
+  Minimalism is not a reason to remove them.
 
-Everything the repository supplies itself is already checked by Nix. A missing
-attribute, a type mismatch, a failed `ln`, and a failed `install` all fail the
-build with a located error. Do not add an `assert`, `throw`, `abort`,
-`tryEval`, `or` fallback, `test -f`, or `lib.asserts` guard in front of them:
-the guard hides the original failure and leaves a second thing to maintain.
+In Nix, `assert`, `throw`, `or`, `mkIf` and shell `test -f` are review prompts,
+not forbidden syntax. Ask what boundary or invariant each one serves.
 
-An option that a host sets is a feature gate, not validation. `mkIf` on such an
-option is correct. `mkIf` on a value the aspect itself computes is not.
+A sibling-aspect probe such as `config.programs.<other>.enable or false` can be
+valid when the sibling is genuinely optional. A fallback on an external registry
+key can be valid when that field's absence is supported. Neither should conceal
+an input that is actually required.
 
-Two checks that look like internal validation but are boundaries:
+## Tests and Verification
 
-- `config.programs.<other>.enable or false` probing a sibling aspect. Host
-  composition decides which aspects are present, so this is the composition
-  contract, not a redundant guard.
-- `or { }` or `or default` on a key read from an external pinned registry. A
-  model or field absent upstream is expected, not an error.
+- Name the behaviour this repository owns and a plausible regression before
+  adding a test. Test our selection, translation and integration, not a
+  dependency's algorithms or the language's semantics.
+- Use the cheapest faithful evidence: types and static checks, evaluated or
+  rendered configuration, build checks, then runtime tests where needed.
+- Exercise the production path. A helper test does not prove its caller reaches
+  it; a source grep does not prove the configured behaviour works.
+- Derive expected results independently of the implementation. Copying the
+  production table into a fixture does not verify that table.
+- Prefer observable relationships and effects over literal assignments,
+  whole-object snapshots and incidental call order.
+- Keep distinct regressions and meaningful security cases. Remove duplicate
+  evidence, obsolete migration tests and fixtures coupled to harmless refactors.
+- Zero new tests is acceptable when existing checks cover the change. A missing
+  faithful check is a reported gap, not permission to claim verification.
+
+State exactly what passed and what it establishes. Formatting, evaluation,
+building and runtime behaviour are different claims. Record the revision and
+relevant environment when reproducing a failure; a warm-store pass does not
+establish cold-store behaviour. Local and CI validation should enforce the same
+contract.
+
+## Dead Code and Legacy Code
+
+Remove code with no current consumer once its ownership and reachability are
+established: dead branches, unused options, duplicate implementations, abandoned
+helpers and obsolete compatibility layers.
+
+- A search with no matches is not sufficient proof of dead code. Check discovery,
+  generated references, runtime loading and external consumers where relevant.
+- Read existing decision records before removing a surprising workaround.
+- Do not keep an old implementation commented out or maintain two paths after a
+  completed migration. Version control preserves the old source.
+- Keep compatibility code only for a supported consumer or a concrete upstream
+  limitation. Identify the condition that permits its removal.
+- Retain an active migration inventory or provenance record while it still serves
+  its purpose. Age or the word "legacy" alone is not grounds for deletion.
+- Remove superseded documentation and tests with the implementation, or mark
+  historical decision records as superseded. Do not leave contradictory guidance.
+- Do not sweep unrelated working-copy changes into a cleanup or delete them as
+  clutter. Establish ownership and keep them separate.
+
+## Documentation
+
+Give each kind of information one home:
+
+| Location                           | Owns                                                                |
+| ---------------------------------- | ------------------------------------------------------------------- |
+| `README.md`, runbooks              | Setup, operation and recovery procedures                            |
+| `CONVENTIONS.md`                   | Implementation and review rules                                     |
+| `ARCHITECTURE.md`                  | Current structure, ownership and boundaries                         |
+| Specs                              | Behavioural contracts                                               |
+| Decision records (`context/` here) | Non-obvious choices, alternatives, constraints and revisit triggers |
+| Source comments                    | Local constraints needed to read or safely change nearby code       |
+
+Link rather than copy. Commit messages explain a change, but are not the sole home
+of durable rationale. Record only reasoning that needs preserving, not an account
+of every edit. Mark inference and unknown rationale rather than inventing it.
+
+Verify factual descriptions against authoritative sources. Do not infer hardware
+roles, ownership or upstream behaviour from convenient labels. When code and docs
+disagree, establish which is wrong before changing either.
 
 ## Prefer the Native Module
 
-Before writing a unit, timer, config file, activation script, shell hook, or
-environment variable, check whether Home Manager, nixpkgs, or the program's own
-module already declares it. Two lookups settle it:
+Before writing a unit, timer, configuration file, activation script, shell hook or
+environment bridge, check the native NixOS, Home Manager or upstream module.
+Verify its semantics at the pinned version, not just its option name.
 
-1. the docs MCP server (`home-manager` and `nixos` are indexed) for the option
-   path;
-1. the pinned source in `/nix/store/*-source/modules/` for the exact semantics.
+Use native lifecycle and restart mechanisms rather than activation orchestration
+when they express the requirement. Hand-written machinery needs a concrete gap in
+the native interface; record the rejected option and reason when non-obvious.
 
-Hand-rolling is justified only when the native module is absent, or when it
-covers strictly less and the leftover is worth carrying. When it is chosen, say
-which native option was rejected and why.
-
-The failure mode this prevents is silent: a hand-rolled unit often keeps the
-native module's unit name while doing the wrong thing — an unprivileged user
-timer running `nh clean all` where the module runs `nh clean user`.
+Respect privilege and state ownership. Root daemons and root-owned state belong
+in the system layer; user programs and user services belong in the user layer.
+Give each lifecycle operation one owner. Do not declare immutable store ownership
+for logs or application-rewritten state.
 
 ## Dendritic Structure
 
-- `flake.nix` is generated by flake-file from the input declarations in this
-  tree: declare an input in the module that owns it (`modules/flake/inputs.nix`
-  for plumbing, the feature module otherwise) and run `nix run .#write-flake`.
-  Never hand-edit the generated file.
+- Organize by feature, not configuration class. A feature contributes its NixOS,
+  Home Manager or nix-darwin aspects together where applicable.
+- Every auto-discovered Nix file is a flake-parts module. Keep raw class modules
+  and private Nix helpers under discovery-excluded underscore-prefixed segments.
+- Publish named aspects through `flake.modules.<class>.<aspect>`. Discovery
+  registers them; host composition selects them. Registration must not activate
+  the feature on every host.
+- Keep aspects host-agnostic. Resolve host identity and project host-specific
+  policy at the composition boundary; do not read a named machine's registry
+  entry inside a reusable feature.
+- Share local values with `let` bindings and cross-file policy through typed
+  module options. Do not use `specialArgs` or `extraSpecialArgs` as a facts bus,
+  or add empty argument sets merely to advertise their absence.
+- Keep the flake entrypoint plumbing-only. When using flake-file, declare inputs
+  beside their owner and regenerate `flake.nix`; never edit generated content.
+- Give shared pins an explicit authority and declare `follows` beside the input
+  it redirects. Do not duplicate another repository's canonical inventory.
+- Keep package recipes in the package layer, not inline in configuration aspects.
+- Do not let incidental import-list order express feature policy. Use module
+  merging, priorities and explicit dependencies for their intended purposes.
 
-- Pins shared with `Shrub24/nix-fleet` follow it (`follows = "nix-fleet/<input>"`)
-  so one nix-fleet update moves them together; nothing here duplicates a shared
-  pin as its own URL.
-- Declare nested `follows` next to the input they redirect; nothing infers them.
-  An input whose upstream builds against its own pin simply declares none, with
-  the reason in the comment above it.
+### Enables and Gates
 
-- Every `.nix` under `modules/` is a flake-parts module that publishes named
-  aspects under `flake.modules.homeManager` or `.nixos`. A
-  raw class module lives only under an underscore-prefixed path segment.
+Selecting an aspect is normally its feature gate. The aspect can directly set
+`programs.<name>.enable = true` or `services.<name>.enable = true` using the native
+module's interface. That assignment needs no comment explaining dendritic Nix.
 
-- One feature per file, spanning every class it applies to. Registration is
-  filesystem-driven; activation is host-driven.
+Do not add a second custom `enable` option and wrap the whole aspect in `mkIf`
+when omitting the aspect already provides the same choice. Remove both the
+redundant declaration and its callers when simplifying such a gate.
 
-- An aspect is host-agnostic. Host-specific facts are selected and parameterized
-  at the host composition layer.
+Keep an option when it represents a real independent choice inside a selected
+aspect, a supported reusable interface or host policy that composition alone does
+not express. `mkIf` remains appropriate for those choices and genuine optional
+integrations. Do not replace every custom option mechanically or remove native
+upstream enable assignments.
 
-- Share a value with a `let` binding inside one file, or a flake-parts option
-  across files. Never `specialArgs` or `extraSpecialArgs` — and do not set
-  `specialArgs = { }` to signal restraint.
+### Feature Layout
 
-- Never let import-list order carry feature semantics.
+- One contributor with assets: `feature.nix` beside `feature/`.
+- Several real contributors: `feature/core.nix`, `feature/integrations.nix`, etc.,
+  each contributing through normal module merging.
+- Private Nix implementation: underscore-excluded files or directories.
+- `default.nix`: an actual directory-import entrypoint, not a compulsory name for
+  every feature directory.
 
-- A derivation lives in `pkgs/`, never inline in an aspect.
+Do not turn a flat feature into a directory hierarchy merely because it gained
+assets. Non-Nix assets do not need discovery exclusions.
 
 ## Module Style
 
-- `pkgs.stdenv.hostPlatform.system`, not `pkgs.system`.
-- No `with lib;`. `with pkgs;` inside a package list is fine — then drop the
-  `pkgs.` prefix from the entries in it.
-- Inline a `let` binding that is used once.
-- `lib.subtractLists`, `lib.filterAttrs`, `lib.optionals` — reach for `lib`
-  before `builtins`.
-- Custom feature options are named for their aspect. Do not reuse a name an
-  upstream module already owns.
-- An option that exists only to hold one host's value, or only to gate one
-  module, is a candidate for deletion. YAGNI applies to options.
-- A `tools` entry in an agent definition may reference only a tool the child
-  runtime provides at launch. A tool that exists solely because an extension was
-  loaded through `extensions` or `subagentOnlyExtensions` does not go in `tools`;
-  names in `tools` that the runtime does not register fail the run at start.
-  Check that the extension actually registers the name — `pi-fff`'s `multi_grep`
-  registers only when `PI_FFF_MULTIGREP=1`, so listing it killed runs.
+- Use `pkgs.stdenv.hostPlatform.system`, not `pkgs.system`.
+- Avoid `with lib;`. `with pkgs;` in a package list is fine; do not then repeat
+  `pkgs.` on its entries.
+- Prefer established `lib` helpers to rebuilding their behaviour manually.
+- Use a binding to share a value or name a meaningful concept. Inline single-use
+  aliases that add neither clarity nor structure; do not optimise for use count.
+- Name custom options for their owning feature, without colliding with upstream
+  options. Keep implementation details out of the public option surface.
+
+## Repository Application
+
+In this repository:
+
+- `modules/` is the only discovery root; raw modules use underscore exclusions.
+- `pkgs/` owns package recipes; `context/` owns durable decisions.
+- nix-fleet owns the shared platform pins and fleet inventory. This repository
+  owns workstation composition and its repository-specific inputs and policy.
+- Formatting is `nix fmt`; statix and deadnix provide mechanical Nix lint.
+- The declared no-build validation command is
+  `nix flake check --no-build --no-write-lock-file`. Its known cold-store limitation
+  and a possible writable evaluation replacement are under investigation; neither
+  should be reported as resolved without evidence.
+- VM tests remain manual build/run tools, not CI build targets.
+- Agent tool allowlists must name tools registered in the child runtime at launch,
+  including any required extension flags. An installed extension alone does not
+  establish that its tools are available.
 
 ## Review Checklist
 
-1. Any comment that restates the line below it — delete.
-1. Any guard on a value the repository supplies — delete.
-1. Any value present in two files — keep one, reference it.
-1. Any option, `mkIf`, or `let` binding with a single consumer and no gate —
-   consider deleting.
-1. `nix flake check --no-build --no-write-lock-file` passes.
+1. Does every addition serve current behaviour, through the production path?
+1. Is each fact owned once, with consumers deriving rather than copying it?
+1. Does every comment add information, a useful warning or genuine navigation?
+1. Does every guard enforce a real boundary or invariant without hiding failure?
+1. Is any enable gate redundant with aspect selection?
+1. Can native modules or lifecycle mechanisms replace custom machinery?
+1. Is removed code actually unused, and is retained compatibility still needed?
+1. Are docs current, non-duplicated and in the right place?
+1. Does validation cover the owned behaviour, with important gaps stated?
+1. Is the change free of unrelated work, debug scaffolding and speculative APIs?
