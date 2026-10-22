@@ -23,7 +23,7 @@ in
   # the module is evaluated inside this repository's Home Manager, so matching
   # the version it runs against is the stricter arrangement.
   flake-file.inputs.hermes-agent = {
-    url = "github:NousResearch/hermes-agent";
+    url = "github:NousResearch/hermes-agent/v0.22.4";
     inputs.home-manager.follows = "home-manager";
     inputs.flake-parts.follows = "flake-parts";
   };

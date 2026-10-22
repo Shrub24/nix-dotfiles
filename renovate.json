@@ -24,9 +24,26 @@
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Update the hermes-agent release pin in modules/agents/hermes.nix",
+      "managerFilePatterns": ["/modules/agents/hermes\\.nix$/"],
+      "matchStrings": [
+        "github:NousResearch/hermes-agent/(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "depNameTemplate": "NousResearch/hermes-agent",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver-coerced"
     }
   ],
   "packageRules": [
+    {
+      "description": "The hermes-agent input is pinned to a release tag in its declaration; the custom regex manager owns that pin, so the nix manager must not also rewrite the locked input.",
+      "matchManagers": ["nix"],
+      "matchDepNames": ["hermes-agent"],
+      "enabled": false
+    },
     {
       "description": "A nix-fleet bump is the fleet's baseline update: it moves the shared pins (nixpkgs, flake-parts, import-tree, treefmt-nix) as one change.",
       "matchManagers": ["nix"],
@@ -48,5 +65,6 @@
       "groupName": "OCI image refs",
       "commitMessageTopic": "OCI image refs"
     }
-  ]
+  ],
+  "rebaseWhen": "behind-base-branch"
 }

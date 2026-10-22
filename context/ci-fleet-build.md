@@ -32,25 +32,25 @@ Renovate owns the `nix-fleet` flake input and this workflow pin, as separate pul
 **Reason:** the contract makes the fleet's `validate.yml` the definition that both the contributor path and the pipeline call, so a human pull request and a candidate are judged the same way.
 **Revisit when:** Statix and Deadnix need to run in CI rather than only at pre-commit through lefthook. Adding them to the flake-check job is the cheap option.
 
-## Path B candidate pipeline runs under the label policy
+## Path B candidate pipeline runs under the automatic policy
 
 **Id:** 1ad0c35a-f1ba-44a2-bd81-f27079083b91
 **Type:** decision
 **Status:** active
 **Evidence:** confirmed
-**Source:** nix-fleet `docs/contracts/update-candidates.md` (consumer adoption and policy sections)
+**Source:** nix-fleet `docs/contracts/update-candidates.md` (consumer adoption and policy sections); `renovate.json`
 
-The repository consumes nix-fleet's pipeline through thin trigger files: `ci.yml`, `pipeline.yml`, `promote.yml`, `accept.yml` and `candidate-sweep.yml`, all pinned to the revision `flake.lock` holds. `PROMOTION_POLICY` is `label`. Candidate builds use `CANDIDATE_TARGETS=.#ciRoot` with x86_64-linux, so VM tests are not built in the pipeline either.
+The repository consumes nix-fleet's pipeline through thin trigger files: `ci.yml`, `pipeline.yml`, `promote.yml`, `accept.yml` and `candidate-sweep.yml`, all pinned to the revision `flake.lock` holds. `PROMOTION_POLICY` is `auto`, and Renovate rebases with `behind-base-branch` so a candidate is re-validated against a moved base instead of landing on a stale one. Candidate builds use `CANDIDATE_TARGETS=.#ciRoot` with x86_64-linux, so VM tests are not built in the pipeline either.
 
 Each caller grants the union the called jobs declare: `pipeline.yml` needs contents, statuses, pull requests and OIDC write, and `promote.yml` needs contents plus OIDC write, because its dependent pin job joins the tailnet. A narrower grant fails the call at startup with no logs.
 
 Neither repository file supplies a script: validation and promotion use the actions bundled with the pinned workflow revision. An earlier revision read `prepare-candidate.sh` and `promote-candidate.sh` from this repository's default branch, and copies were carried here for that reason until the bundled actions replaced them.
 
-**Alternatives:** copy the scripts and keep them current by hand, which is what the earlier revision required.
-**Reason:** a bundled action is the revision the caller pinned, so a consumer tracks one SHA instead of a SHA plus two drifting copies.
-**Revisit when:** a caller needs behaviour the bundled actions do not expose.
+**Alternatives:** copy the scripts and keep them current by hand, which is what the earlier revision required. The `label` policy was the conservative first setting, requiring an operator's `accept-update` on every candidate.
+**Reason:** a bundled action is the revision the caller pinned, so a consumer tracks one SHA instead of a SHA plus two drifting copies. Automatic promotion is acceptable because a candidate is built and validated before it can land, and a nixpkgs bump that passes both is a bump nobody would have rejected by hand.
+**Revisit when:** a caller needs behaviour the bundled actions do not expose, or a candidate lands that a reviewer would have refused.
 
-Before this pipeline can promote, the App, its `automation` environment secret, `AUTOMATION_APP_ID`/`AUTOMATION_APP_SLUG`, and the `update-candidate` ruleset need to exist. The ruleset is deliberately absent until one candidate has validated and promoted by hand.
+Before this pipeline can promote, the App, its `automation` environment secret and `AUTOMATION_APP_ID`/`AUTOMATION_APP_SLUG` need to exist. The `update-candidate` ruleset is deliberately absent until one candidate has validated and promoted by hand; `docs/runbooks/enable-candidate-pipeline.md` holds the steps.
 
 ## Retention pins the fleet's cache-root aggregate
 
