@@ -51,7 +51,7 @@
         ];
       };
     };
-    hermes-agent.enable = false;
+    mcpNixos.daemon.enable = true;
 
     zsh.initContent = lib.mkAfter ''
       if [[ -z "$TMUX" ]] && { [[ -n "$SSH_CONNECTION" ]] || [[ -n "$MOSH_SERVER" ]]; }; then
@@ -176,10 +176,5 @@
         };
       }
     ];
-  };
-
-  services.hermes-agent = {
-    enable = true;
-    gateway.enable = true;
   };
 }

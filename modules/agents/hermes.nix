@@ -47,14 +47,16 @@ in
     {
       imports = [ upstreamModule ];
 
+      programs.hermes-agent.enable = lib.mkDefault true;
+
       sops.templates."hermes.env".content = ''
         OPENAI_API_KEY=${config.sops.placeholder.OMNIROUTE_API_KEY}
       '';
 
       services.hermes-agent = {
-        enable = lib.mkDefault false;
+        enable = lib.mkDefault true;
 
-        package = lib.mkDefault inputs.hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.minimal;
+        package = lib.mkDefault pkgs.hermes-agent;
 
         environmentFiles = [
           config.sops.templates."hermes.env".path

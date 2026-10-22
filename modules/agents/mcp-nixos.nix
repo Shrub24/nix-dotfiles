@@ -15,7 +15,7 @@ _: {
       imports = [ ./_pi-mcp.nix ];
 
       options.programs.mcpNixos = {
-        enable = lib.mkEnableOption "the local mcp-nixos daemon";
+        daemon.enable = lib.mkEnableOption "the local mcp-nixos daemon";
 
         enablePiIntegration = lib.mkEnableOption "connecting Pi to mcp-nixos" // {
           default = true;
@@ -47,7 +47,7 @@ _: {
       };
 
       config = lib.mkMerge [
-        (lib.mkIf cfg.enable {
+        (lib.mkIf cfg.daemon.enable {
           systemd.user.services.mcp-nixos = {
             Unit = {
               Description = "mcp-nixos — NixOS knowledge MCP server";
@@ -86,7 +86,7 @@ _: {
             description = "NixOS options and package versions.";
           }
           // (
-            if cfg.enable then
+            if cfg.daemon.enable then
               {
                 url = "http://${cfg.host}:${toString cfg.port}${cfg.path}";
               }

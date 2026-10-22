@@ -88,7 +88,6 @@ let
     "magic-context"
     "herdr"
     "radar"
-    "hermes"
     "tools"
     "memex"
     "dev-tools"

@@ -208,14 +208,6 @@
         eza.enableFishIntegration = true;
         "pay-respects".enableFishIntegration = true;
       };
-
-      xdg.configFile."fish/completions/hermes.fish".source =
-        pkgs.runCommand "hermes-fish-completions" { }
-          ''
-            ${
-              inputs.hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.default
-            }/bin/hermes completion fish > $out
-          '';
     }
 
   ;

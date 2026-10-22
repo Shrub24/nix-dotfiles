@@ -36,5 +36,8 @@ in
   herdr-nvim-zoom = final.callPackage ./herdr-nvim-zoom {
     herdr = inputs.llm-agents.packages.${system}.herdr;
   };
+  hermes-agent = final.callPackage ./hermes-agent {
+    hermes-agent = inputs.hermes-agent.packages.${system}.minimal;
+  };
   keypeek = final.callPackage ./keypeek { inherit inputs system; };
 }
