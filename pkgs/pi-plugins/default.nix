@@ -15,15 +15,20 @@
 }:
 let
   # One updater owns this set; nix-update cannot locate individual helper calls.
+  # The npm name is kept beside the tarball: the lock's members are named to the
+  # updater by it, so nothing has to read it back out of this file.
   npmTarball =
     name:
     {
       version,
       hash,
     }:
-    fetchurl {
-      url = "https://registry.npmjs.org/${name}/-/${lib.last (lib.splitString "/" name)}-${version}.tgz";
-      inherit hash;
+    {
+      inherit name version;
+      src = fetchurl {
+        url = "https://registry.npmjs.org/${name}/-/${lib.last (lib.splitString "/" name)}-${version}.tgz";
+        inherit hash;
+      };
     };
   # The local plugins come from the same pinned checkout as the runtime ones.
   checkout = name: "${piExtensions}/${name}";
@@ -68,8 +73,8 @@ let
       };
       cache-optimizer = {
         tarball = npmTarball "pi-cache-optimizer" {
-          version = "2.10.0";
-          hash = "sha512-3ODSj705TZem6ZjvXnuyqa7y/Mu7t8OQfL7L8ix378stHHQUcMia4JdF7coIXmT+KSXSJomZ+ylBSHx7y/ZxfA==";
+          version = "2.10.4";
+          hash = "sha512-Y0e7RzN7ehK0xN5atreN/jHyCdBNhFI0IwtWGgPn9j7aMPe8xK+tMjmkb8lqlktyRcfzLD6wH8Z4o1CR47w3og==";
         };
         entry = "index.ts";
       };
@@ -119,8 +124,8 @@ let
       };
       tool = {
         tarball = npmTarball "@narumitw/pi-tool" {
-          version = "0.3.2";
-          hash = "sha512-6pRKKRmYF7otun14utUtbxOEkWEPz/GfENyJj15pGblNKWUh8S74v8WO2w+3WecldY+QDG/i1BWlK1MmlvDIRg==";
+          version = "0.3.3";
+          hash = "sha512-+baoJZ8C2B9SR4jkV6K7CNCRkr8up5gSmm1tUfYZ8Z3vDwj+E05Olsh0G2dv8ud1pRxsPrJ+dT9qFUOxNatQRg==";
         };
         entry = "dist/index.ts";
       };
@@ -201,6 +206,10 @@ let
       };
       herdsman = {
         dir = checkout "pi-herdsman";
+        # The lock member's manifest, relative to the pi-extensions input. Written
+        # as a path so the updater can combine manifests without a store path
+        # evaluated before the pins moved.
+        manifest = "pi-herdsman/package.json";
         entry = "extension/index.ts";
         # Its sibling imports are relative into the staged plugins directory, so
         # bash-processes has to be staged beside it.
@@ -275,6 +284,7 @@ let
       # Reuse the runtime package's lock-derived dependency closure.
       otel = {
         dir = "${pi-otel}";
+        manifest = "pi-otel/package.json";
         entry = "src/index.ts";
         # AOT has no source-relative package.json; keep the stock version.
         patch = ''
@@ -294,11 +304,14 @@ let
     id: recipe:
     piBoltPlugins.buildPiBoltPlugin {
       pname = id;
-      # Version is cosmetic; the source hash is what separates pins.
-      version = "0";
+      # A plugin built from an input checkout takes the manifest's version, so a
+      # pi-extensions bump moves it with the input. Tarball recipes keep "0":
+      # their version is the pin's, which names the source already.
+      version =
+        if recipe ? manifest then (lib.importJSON "${piExtensions}/${recipe.manifest}").version else "0";
       pluginName = id;
       packageName = recipe.packageName or null;
-      src = recipe.tarball or recipe.dir;
+      src = if recipe ? tarball then recipe.tarball.src else recipe.dir;
       inherit (recipe) entry;
       dependencies = builtins.map pluginOf (recipe.dependencies or [ ]);
       postPatch = lib.optionalString (recipe ? patch) (
@@ -326,6 +339,22 @@ let
     "todo"
     "tool"
   ];
+  # Where each member's manifest comes from, as the updater reads it: a tarball
+  # pin names its package, and a checkout declares the manifest relative to the
+  # pi-extensions input. Read as a path rather than a store path so the lock can
+  # be regenerated in the run that moves the pins.
+  lockMemberSources = lib.concatStringsSep " " (
+    map (
+      id:
+      let
+        recipe = recipes.plugins.${id};
+      in
+      if recipe ? manifest then
+        "${id}=manifest:${recipe.manifest}"
+      else
+        "${id}=npm:${recipe.tarball.name}"
+    ) lockMembers
+  );
 in
 sources.overrideAttrs (_: {
   version = "unstable";
@@ -336,19 +365,32 @@ sources.overrideAttrs (_: {
       runtimeInputs = [
         python3
         nix
+        # The lock's generator: the updater combines the refreshed manifests in
+        # the same run, so pins and lock never disagree in the working copy.
+        piBolt.updatePluginLock
       ];
+      # The input the directory-shaped members live in, and the member list: both
+      # are read by the updater so the recipe file is not parsed for them.
       text = ''
+        export PI_EXTENSIONS_ROOT=${piExtensions}
+        export PI_LOCK_MEMBERS="${lockMemberSources}"
         exec python3 ${./update.py}
       '';
     });
-    # The plugin lock's own generator, run where a pin moves: it resolves the
-    # declared ranges against the registry, which no build may do.
+    # The lock regenerated from the pins already in the tree: the tool to run
+    # after a pi-extensions bump, which moves member manifests without moving an
+    # npm pin. It is the updater's own lock step, not a second implementation.
     updateLock = writeShellApplication {
       name = "pi-plugins-update-lock";
+      runtimeInputs = [
+        python3
+        nix
+        piBolt.updatePluginLock
+      ];
       text = ''
-        exec ${lib.getExe piBolt.updatePluginLock} pkgs/pi-plugins/plugins.lock.json ${
-          lib.concatMapStrings (id: " \"${id}=${plugins.${id}}/package.json\"") lockMembers
-        }
+        export PI_EXTENSIONS_ROOT=${piExtensions}
+        export PI_LOCK_MEMBERS="${lockMemberSources}"
+        exec python3 ${./update.py} --lock-only
       '';
     };
     inherit plugins;
