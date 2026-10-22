@@ -184,14 +184,16 @@ stdenv.mkDerivation {
       esac
     done
     [ "$(readlink -f $out/bin/${executable})" = "$out/lib/pi-bolt/${executable}" ]
-    version=$(BUN_STATIC_HEAP_VERBOSE=1 $out/bin/${executable} --version 2>&1)
+    # A stalled payload prints nothing, so without a limit the failure surfaces as
+    # an unexplained timeout in the build's log rather than here.
+    version=$(timeout 120 env BUN_STATIC_HEAP_VERBOSE=1 $out/bin/${executable} --version 2>&1)
     printf '%s\n' "$version"
     grep -q 'image registered: true' <<< "$version"
     grep -q 'JIT on' <<< "$version"
     for pkg in ${lib.concatStringsSep " " (map toString tools)}; do
       grep -a -q "$pkg/bin" $out/lib/pi-bolt/${executable}
     done
-    doctor=$(PI_OFFLINE=1 HOME=$TMPDIR PATH=$out/bin:$PATH $out/bin/${executable} doctor 2>&1 || true)
+    doctor=$(timeout 120 env PI_OFFLINE=1 HOME=$TMPDIR PATH=$out/bin:$PATH $out/bin/${executable} doctor 2>&1 || true)
     grep -q '(this Pi-Bolt)' <<< "$doctor" || {
       echo "doctor does not report this installation as its own:"$'\n'"$doctor" >&2
       exit 1
@@ -205,7 +207,7 @@ stdenv.mkDerivation {
       done
     ''}
     ${lib.optionalString (plugins ? omniroute) ''
-      ${python3}/bin/python3 ${./test_entrypoints.py} "$out/lib/pi-bolt/pi" "$out/bin/pi-bolt-child"
+      timeout 300 ${python3}/bin/python3 ${./test_entrypoints.py} "$out/lib/pi-bolt/pi" "$out/bin/pi-bolt-child"
     ''}
     runHook postInstallCheck
   '';
