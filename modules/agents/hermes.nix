@@ -22,8 +22,11 @@ in
   # keeps it rather than following the root pin. Its home-manager does follow:
   # the module is evaluated inside this repository's Home Manager, so matching
   # the version it runs against is the stricter arrangement.
+  # Pinned to the head of NousResearch/hermes-agent PR #141834: upstream reads its
+  # lockfiles through filtered paths, which fail under `nix flake check --no-build`
+  # on a cold store (#141750). Return to the default branch once #141834 is merged.
   flake-file.inputs.hermes-agent = {
-    url = "github:NousResearch/hermes-agent";
+    url = "github:NousResearch/hermes-agent/68ce9ec90170ab8b9d7429669a54cbc281430c09";
     inputs.home-manager.follows = "home-manager";
     inputs.flake-parts.follows = "flake-parts";
   };

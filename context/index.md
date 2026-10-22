@@ -32,6 +32,8 @@
 
 - [ci-fleet-build.md](ci-fleet-build.md) — why the fleet build targets a non-VM aggregate pinned to a commit, and why validate keeps no second builder
 
+- [hermes-agent-pin.md](hermes-agent-pin.md) — why hermes-agent is pinned to an unmerged upstream PR head, and when to return it to the default branch
+
 ## D
 
 - [desktop-shell.md](desktop-shell.md) — why Monique owns monitor state, Niri is store-linked, and Noctalia themes come from local template rows
