@@ -18,16 +18,17 @@
     },
     "agent-radar": {
       "inputs": {
+        "crane": "crane",
         "nixpkgs": [
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1792584217,
-        "narHash": "sha256-DaAAScRJrWVMBZW2uMZJnWwv6R7PMVOnbTHIXR9pH0o=",
+        "lastModified": 1792674258,
+        "narHash": "sha256-Nwbey00ooPgP49w+zNNtMDHwsRQoKjti7O2DhmmfqkM=",
         "owner": "Shrub24",
         "repo": "agent-radar",
-        "rev": "ce062654827c78d6dd5796eace8aa4087f0fb54d",
+        "rev": "c552f48b703b346755e359b3acfb72d94acef0d8",
         "type": "github"
       },
       "original": {
@@ -112,6 +113,21 @@
       }
     },
     "crane": {
+      "locked": {
+        "lastModified": 1792350552,
+        "narHash": "sha256-292lvpvxTGKryKxh3/3tcIVi85CwYGdl4oOi113Sob8=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "e675a36b7377bebe41d548388a2501cbb16d380d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
+    "crane_2": {
       "locked": {
         "lastModified": 1791754810,
         "narHash": "sha256-cN0Mgk+sQtCJcGWs9H4M0CnLRAuC4I8aCwiBTcBJs6E=",
@@ -433,17 +449,16 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1792463041,
-        "narHash": "sha256-DbJRxim6j5+DuGopiC0ovDtGbD6H46unh192jCfYITU=",
+        "lastModified": 1792681156,
+        "narHash": "sha256-BuCS5lAVQ4AjH2Nmwcb9fwhgsnpXQxCpmGj2P6eoSuc=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "68ce9ec90170ab8b9d7429669a54cbc281430c09",
+        "rev": "dc0fe3e476a06cfa9c0cb289f3604b0f80bc2734",
         "type": "github"
       },
       "original": {
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "68ce9ec90170ab8b9d7429669a54cbc281430c09",
         "type": "github"
       }
     },
@@ -663,11 +678,11 @@
         "treefmt-nix": "treefmt-nix_3"
       },
       "locked": {
-        "lastModified": 1792453640,
-        "narHash": "sha256-pYuUf0m3z6/tEb9Dm5GMiuRzkmjPl4VVYZwmcEi9IfA=",
+        "lastModified": 1792676241,
+        "narHash": "sha256-TCE1ajeMuxLQnGBwxH6B+hBWwfgMNNdBRS5+OHPrgfM=",
         "owner": "Shrub24",
         "repo": "nix-fleet",
-        "rev": "dc9d64a80fa9f52f84eadf053cd6b2c67f6c54c1",
+        "rev": "ddd024ab14506baecc585f9520e02c1178dfa5d5",
         "type": "github"
       },
       "original": {
@@ -868,11 +883,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792584064,
-        "narHash": "sha256-/tJE0QUDtuxaWQetvpqjI3CI/l3ML0SWI32GS3Ldoxo=",
+        "lastModified": 1792674151,
+        "narHash": "sha256-iz33SUqnyFM4rIEHw6hNEq23L8R4p9l1jklOGPf/S3Q=",
         "owner": "Shrub24",
         "repo": "Pi-Bolt.nix",
-        "rev": "5249734f31514222aca28fa85523f5d1cd77163f",
+        "rev": "d86cfb05e9fa745bbd1cb36031e0ea8cd76cb63d",
         "type": "github"
       },
       "original": {
@@ -884,11 +899,11 @@
     "pi-extensions": {
       "flake": false,
       "locked": {
-        "lastModified": 1792587660,
-        "narHash": "sha256-FzTtnd3frxDLei0zbsTpU2vtweGZ3vDYoQN+skHNqnw=",
+        "lastModified": 1792681075,
+        "narHash": "sha256-xU0/xH6w+q9bNjBjTSD9iig4YRz/88ZZ2RvPcsujHYg=",
         "owner": "Shrub24",
         "repo": "pi-extensions",
-        "rev": "e5b1486cfa9ed396ceab9b2f6b8288daaa6d8f6a",
+        "rev": "ba1cb4b6e38994ce72c6ec5dabbbfcc05eaf1a44",
         "type": "github"
       },
       "original": {
@@ -990,7 +1005,7 @@
       "inputs": {
         "agent-radar": "agent-radar",
         "community-templates": "community-templates",
-        "crane": "crane",
+        "crane": "crane_2",
         "direnv-instant": "direnv-instant",
         "disko": "disko",
         "fenix": "fenix",

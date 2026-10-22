@@ -4,7 +4,8 @@
 
 **Id:** 6046b69e-3dcb-4842-a68c-eb9d046e04ed
 **Type:** decision
-**Status:** active
+**Status:** superseded
+**Superseded by:** the fleet evaluator now primes source paths before validating (see `ci-fleet-build.md`, af1d8c00-3f3a-4217-945d-d20ea9b0abb7 and the pin entry there), and `modules/agents/hermes.nix` returns the input to the default branch. #141834 was still open when the pin was retired.
 **Evidence:** confirmed
 **Source:** NousResearch/hermes-agent#141750 (issue) and #141834 (PR, head `68ce9ec9`); `modules/agents/hermes.nix`
 
@@ -15,3 +16,5 @@ The pinned head is 11 days of upstream newer than the previous pin `e0550c97` (2
 **Alternatives:** wait for #141834 to merge (ci stays red meanwhile); remove the hermes aspect; pin to the PR base `0b10b9f8`, which lacks the fix.
 **Reason:** the operator chose to unblock ci now, accepting an unmerged upstream head and the larger upstream change.
 **Revisit when:** #141834 is on the upstream default branch. Then point the declaration back at the default branch and relock.
+
+This entry is superseded: the declaration was returned to the default branch because the fleet's evaluation gate now primes source paths with a writable, IFD-disabled evaluation before the read-only check, which removes the cold-store failure the pin worked around. The upstream PR is unmerged, so a _selected_ hermes still fails a cold read-only evaluation run by hand; the pipelined gate does not.
