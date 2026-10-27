@@ -66,8 +66,7 @@ the unit, which set a bogus lowercase variable and was not the cause.
 **Source:** `xdg-desktop-portal` journal, 2026-10-25 and 2026-10-26; portal and KIO state
 read from the running session, 2026-10-28
 **Revisit when:** the terminal chooser cannot express a save dialog, yazi leaves the
-nixpkgs pin, the portal frontend gains a chooser that keeps its own history, or the
-nixpkgs pin reaches termfilechooser 1.5.0 so the local override can go
+nixpkgs pin, or the portal frontend gains a chooser that keeps its own history
 **See:** legion-desktop.md#the-kde-portal-backend-stays-out-of-the-frontends-startup-set — b0def88a-67c6-4a72-a48f-849f1865e359 — as of 2026-10-28
 
 `org.freedesktop.impl.portal.FileChooser` resolves to `xdg-desktop-portal-termfilechooser`,
@@ -91,8 +90,9 @@ supplies the last-folder memory nothing else in the chain has
 terminal window, and a save makes the filename part of the yazi session rather than a text
 field.
 
-The pin sits one release ahead of nixpkgs (1.5.0) because that release registers `niri` in
-its portal file and closes a command injection in the wrapper scripts.
+The package comes from nixpkgs: the 1.5.0 release it once needed ahead of the pin — the one
+that registers `niri` in the portal file and closes a command injection in the wrapper
+scripts — is what nix-fleet's pin now carries.
 
 **Rejected alternatives:** keep the KDE backend and order its unit before the frontend —
 the two wait on each other whatever the order, since the backend's startup needs a frontend
@@ -134,6 +134,17 @@ So the confirmed half is the outcome: shares work under umbriel, and they failed
 under it while the client's renderer was broken. That the broken renderer caused
 the format rejection is inferred from that sequence, not traced through the
 capturer.
+
+The portal package is pinned to the `Shrub24` fork branch `fix/picker-parent-window`,
+which forwards `parent_window` from `Start` into the picker and has the picker import it.
+
+Measured on 2026-11-09: given a real handle, the picker parents. Launched with
+`parent_window: "wayland:<handle>"` from a GTK3 window that exported itself, the picker
+reports that window's id as its `parent` and floats. Asked by Chromium through the portal,
+the request the picker receives carries no `parent_window` key at all, so it floats
+unparented — the client sends none back. Chromium's ScreenCast client omits it, and
+libportal 0.9.1's screencast session API takes no parent argument, so the fork helps only
+clients that export a window themselves.
 
 **Rejected alternatives:** keep xdpw as the ScreenCast backend — it works, but with
 no picker it cannot offer a window, a source choice or cursor modes, and it needs

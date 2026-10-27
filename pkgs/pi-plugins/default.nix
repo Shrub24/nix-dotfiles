@@ -105,8 +105,8 @@ let
       };
       context-view = {
         tarball = npmTarball "pi-context-view" {
-          version = "0.8.3";
-          hash = "sha512-gkeblBXXwz0uxhCSWa4RrMU64E3TYHr8vSyM10wcIkOAKaL8zoO6ob4bE9s+KjFfNVZ7WcPClSDnOOo2BjyhUw==";
+          version = "0.8.4";
+          hash = "sha512-ss1WICGiQGTJszw8cqVsW/+cjtTUvM9EkiPUNCuAa3KwcYOscjpZi+RIU5gcdyFhe5KR46SRsy8X5Kq6nal4cg==";
         };
         entry = "src/index.ts";
       };
@@ -120,8 +120,14 @@ let
           hash = "sha512-oWCkPFSa7AkvSju3OrlYu0GTo8Jdqz2OvszJtHj0hzXLw8tErtmPPMYPqK2it3zaXu+Wl2oH8nfpeIUVsqW2Vw==";
         };
         entry = "src/index.ts";
-        # Pi-Bolt's own preamble must be shaped too; detection misses it otherwise.
+        # Pi-Bolt's own preamble must be shaped too; detection misses it otherwise,
+        # and the claimed Claude Code entrypoint is deployment policy, not a pin.
         patch = ''
+          substituteInPlace plugins/anthropic-auth/src/billing-header.ts \
+            --replace-fail \
+              'export const CLAUDE_CODE_ENTRYPOINT = "sdk-cli";' \
+              'export const CLAUDE_CODE_ENTRYPOINT = process.env.PI_ANTHROPIC_AUTH_ENTRYPOINT?.trim() || "sdk-cli";'
+
           substituteInPlace plugins/anthropic-auth/src/constants.ts \
             --replace-fail \
               '  "You are an expert coding assistant operating inside pi, a coding agent harness.";' \
@@ -149,8 +155,8 @@ let
       };
       tool = {
         tarball = npmTarball "@narumitw/pi-tool" {
-          version = "0.4.2";
-          hash = "sha512-ap4mSHkhLQ6v/CYE9SIuZ+fWJiCKHCe9tYlDkgsWq17cMuksXIuBFD3ion8bUg00lq5wJo9gJN3DEXrVoKBfUw==";
+          version = "0.4.3";
+          hash = "sha512-pdX3ELV3Wv76KuRc6pzaPa6Wm3CgMKrvUVej8MXx2YClGqSg3tHk/RG3y/tEr1lCSUCp5RU6Tetsu4vjf5Zc2A==";
         };
         entry = "dist/index.ts";
       };

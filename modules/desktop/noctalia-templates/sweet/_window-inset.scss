@@ -1,0 +1,10 @@
+// Sweet zeroes every widget's padding (`* { padding: 0 }`). Tab bars get a top
+// inset so they clear the rounded corners; windows without tabs are left alone.
+// The sides and bottom are inset inside the notebook page.
+notebook > header {
+  padding-top: 8px;
+}
+
+notebook > stack > * {
+  padding: 0 12px 12px 12px;
+}

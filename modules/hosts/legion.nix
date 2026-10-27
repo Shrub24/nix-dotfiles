@@ -157,7 +157,6 @@ let
     "foundation"
     "fish"
     "network"
-    "globalprotect"
     "boot"
     "ssh"
     "sops-systemd-activation"
@@ -318,8 +317,9 @@ in
                 home.username = primaryUser.name;
                 home.homeDirectory = "/home/${primaryUser.name}";
                 home.stateVersion = "26.11";
-                # HACK: VM-only; virglrenderer 1.3.0 draws the cursor plane upside-down
-                # (QEMU #2315, fixed in virgl 1.3.1). Drop once the guest has 1.3.1.
+                # HACK: VM-only; virglrenderer 1.3.0 draws the cursor plane upside-down.
+                # The fix (virglrenderer MR !1611) is on upstream main, unreleased, so drop
+                # this once nixpkgs' virglrenderer carries it.
                 wayland.windowManager.niri.settings.debug."disable-cursor-plane" = { };
               };
             };

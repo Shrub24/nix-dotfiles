@@ -45,6 +45,8 @@
 
 ## G
 
+- [globalprotect.md](globalprotect.md) — why the gateway being SAML-only removed the NetworkManager profile and leaves gpclient as the client
+
 ## H
 
 - [herdr.md](herdr.md) — why delegation is herdsman, and why Herdr's `config.toml` is a declared real file
@@ -65,8 +67,6 @@
 
 ## M
 
-- [mcp-nixos-mcp1.md](mcp-nixos-mcp1.md) — why mcp-nixos keeps the mcp 1.x SDK our pinned nixpkgs no longer defaults to
-
 ## N
 
 - [noctalia-greeter-sync.md](noctalia-greeter-sync.md) — how greeter sync becomes passwordless, and why the wrapper and sudoers routes lost
@@ -81,7 +81,7 @@
 - [pi-bolt-build.md](pi-bolt-build.md) — why Pi-Bolt's own flake builds the payload and what this repository still owns
 - [pi-bolt-compiled-plugins.md](pi-bolt-compiled-plugins.md) — how a compiled Pi-Bolt extension binds Pi's own modules, why the build owns that binding, and what the package asserts about the compiled set
 - [pi-bolt-entrypoints.md](pi-bolt-entrypoints.md) — why launch behaviour belongs to the package, and why the entrypoints sit beside the payload's own launcher
-- [pi-bolt-fork-source.md](pi-bolt-fork-source.md) — why the compiled source once followed a fork branch, the engine-stamp constraint behind that, and why a tag bump replaced it
+- [pi-bolt-fork-source.md](pi-bolt-fork-source.md) — why the compiled source followed a fork branch ahead of release, and the engine stamp that kept it from building on the pinned release (superseded: the work shipped as 1.2.1)
 - [pi-bolt-memory.md](pi-bolt-memory.md) — why every session samples its own memory, what the profiler costs, and what the one heap snapshot showed
 - [pi-bolt-release-pins.md](pi-bolt-release-pins.md) — why a Pi-Bolt tag's runtime is a separate release asset keyed to the engine stamp, and how the flake that owns the pin verifies it
 - [pi-config-ownership.md](pi-config-ownership.md) — why a file Pi or an extension rewrites is never a store link, and why herdsman's config is rendered

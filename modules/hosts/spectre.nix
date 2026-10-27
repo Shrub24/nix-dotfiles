@@ -103,7 +103,6 @@ let
     "foundation"
     "fish"
     "network"
-    "globalprotect"
     "boot"
     "ssh"
     "sops-systemd-activation"

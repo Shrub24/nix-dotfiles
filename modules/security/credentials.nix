@@ -51,6 +51,9 @@ _: {
           }
           // mkSecrets (secretsDir + "/sourcegraph.yaml") {
             SOURCEGRAPH_TOKEN = "sourcegraph_token";
+          }
+          // mkSecrets (secretsDir + "/nixbot.yaml") {
+            NIXBOT_TOKEN = "nixbot_token";
           };
 
         # Env-only consumers; drop a line once its consumer gains a key mechanism.
@@ -68,6 +71,7 @@ _: {
               DATALAB_API_KEY = config.sops.placeholder.DATALAB_API_KEY;
               VOYAGE_API_KEY = config.sops.placeholder.VOYAGE_API_KEY;
               TYPESAFE_API_KEY = config.sops.placeholder.TYPESAFE_API_KEY;
+              NIXBOT_TOKEN = config.sops.placeholder.NIXBOT_TOKEN;
             };
             render = line: lib.concatStringsSep "\n" (lib.mapAttrsToList line envOnly) + "\n";
           in

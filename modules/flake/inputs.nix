@@ -17,9 +17,14 @@ _: {
     };
 
     # Package layer: consumed by pkgs/ recipes rather than by one feature.
+    # The plugin set is consumed through its flake output — per-plugin packages,
+    # or `overlays.default` for the whole set. It builds against Pi-Bolt.nix, so
+    # its input follows ours: one builder, one release, for the plugins and for
+    # the payload that compiles them in.
     pi-extensions = {
       url = "github:Shrub24/pi-extensions";
-      flake = false;
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.pi-bolt-nix.follows = "pi-bolt-nix";
     };
     pi-powerline-footer = {
       url = "github:Shrub24/pi-powerline-footer";
@@ -34,10 +39,17 @@ _: {
     # The interface this repository adopted while it was proposed upstream now
     # lives in its own repository, which also owns the release it builds, the
     # runtime that release needs, and the docs for both: its README,
-    # docs/PLUGINS.md (plugins, withPlugins) and docs/RELEASES.md (releases).
+    # docs/guides/plugins.md (plugins, withPlugins) and docs/contributing/releases.md.
     pi-bolt-nix = {
       url = "github:Shrub24/Pi-Bolt.nix";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Local nixpkgs fork carrying packages pending upstream review. No follows:
+    # its packages build against the fork's own pins, so the derivation under test
+    # is the one proposed upstream.
+    nixpkgs-fork = {
+      url = "git+file:///home/saurabhj/Projects/dev/custom/nixpkgs?rev=8ec593ac99f7c500942d218389fa665a8fae6a46&shallow=1";
     };
 
     # Plymouth theme source built by pkgs/nixos-boot (boot.nix selects it).
@@ -58,8 +70,10 @@ _: {
       url = "github:nix-community/fenix/monthly";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # The fork carries the package assets (desktop entry, icon, udev rule) and
+    # the Home Manager module this repository configures.
     keypeek = {
-      url = "github:srwi/keypeek";
+      url = "github:Shrub24/keypeek";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.crane.follows = "crane";
       inputs.fenix.follows = "fenix";
@@ -68,6 +82,16 @@ _: {
       url = "github:numtide/llm-agents.nix";
       inputs.flake-parts.follows = "flake-parts";
       inputs.treefmt-nix.follows = "treefmt-nix";
+    };
+
+    # Vicinae extensions and the capture CLI they front; behaviour and the
+    # launcher surface that presents it version together there.
+    vicinae-extensions = {
+      url = "path:/home/saurabhj/Projects/vicinae-extensions";
+      inputs.nixpkgs.follows = "nixpkgs";
+      # The extensions build against the launcher that serves them, not a second
+      # checkout of their own; following it also carries its nixpkgs.
+      inputs.vicinae.follows = "vicinae";
     };
   };
 }

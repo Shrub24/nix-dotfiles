@@ -5,6 +5,11 @@
 
   outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
 
+  nixConfig = {
+    extra-substituters = [ "https://umbriel.cachix.org?priority=50" ];
+    extra-trusted-public-keys = [ "umbriel.cachix.org-1:JfNq/2yg2S6D6z4Z2dVSZrZlDPQTKtexB6GAVLD98nw=" ];
+  };
+
   inputs = {
     agent-radar = {
       url = "github:Shrub24/agent-radar";
@@ -58,7 +63,7 @@
     };
     import-tree.follows = "nix-fleet/import-tree";
     keypeek = {
-      url = "github:srwi/keypeek";
+      url = "github:Shrub24/keypeek";
       inputs = {
         crane.follows = "crane";
         fenix.follows = "fenix";
@@ -97,8 +102,9 @@
       flake = false;
     };
     nixpkgs.follows = "nix-fleet/nixpkgs";
+    nixpkgs-fork.url = "git+file:///home/saurabhj/Projects/dev/custom/nixpkgs?rev=8ec593ac99f7c500942d218389fa665a8fae6a46&shallow=1";
     noctalia = {
-      url = "github:noctalia-dev/noctalia/v5.3.0";
+      url = "github:noctalia-dev/noctalia/v5.4.1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     pi-bolt-nix = {
@@ -107,7 +113,10 @@
     };
     pi-extensions = {
       url = "github:Shrub24/pi-extensions";
-      flake = false;
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        pi-bolt-nix.follows = "pi-bolt-nix";
+      };
     };
     pi-powerline-footer = {
       url = "github:Shrub24/pi-powerline-footer";
@@ -117,13 +126,32 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    sweet = {
+      url = "github:EliverLara/Sweet";
+      flake = false;
+    };
     treefmt-nix.follows = "nix-fleet/treefmt-nix";
+    umbriel = {
+      url = "github:noctalia-dev/umbriel";
+      inputs.xdg-desktop-portal-umbriel.follows = "xdg-desktop-portal-umbriel";
+    };
     vicinae = {
-      url = "github:vicinaehq/vicinae/v0.29.1";
+      url = "github:vicinaehq/vicinae/v0.29.2";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+    vicinae-extensions = {
+      url = "path:/home/saurabhj/Projects/vicinae-extensions";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        vicinae.follows = "vicinae";
+      };
     };
     wrappers = {
       url = "github:nix-community/nix-wrapper-modules";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    xdg-desktop-portal-umbriel = {
+      url = "github:Shrub24/xdg-desktop-portal-umbriel/fix/picker-parent-window";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

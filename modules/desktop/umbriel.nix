@@ -2,6 +2,10 @@
 {
   # Umbriel's cache only matches its own locked nixpkgs, so the input does not follow ours.
   flake-file.inputs.umbriel.url = "github:noctalia-dev/umbriel";
+  # Trials the picker parent-window fix; the compositor follows it so one build serves both.
+  flake-file.inputs.xdg-desktop-portal-umbriel.url = "github:Shrub24/xdg-desktop-portal-umbriel/fix/picker-parent-window";
+  flake-file.inputs.xdg-desktop-portal-umbriel.inputs.nixpkgs.follows = "nixpkgs";
+  flake-file.inputs.umbriel.inputs.xdg-desktop-portal-umbriel.follows = "xdg-desktop-portal-umbriel";
   flake-file.nixConfig = {
     extra-substituters = [ "https://umbriel.cachix.org?priority=50" ];
     extra-trusted-public-keys = [ "umbriel.cachix.org-1:JfNq/2yg2S6D6z4Z2dVSZrZlDPQTKtexB6GAVLD98nw=" ];
@@ -25,7 +29,7 @@
   flake.modules.homeManager.umbriel =
     { lib, pkgs, ... }:
     let
-      packages = inputs.umbriel.packages.${pkgs.stdenv.hostPlatform.system};
+      portalPkg = inputs.xdg-desktop-portal-umbriel.packages.${pkgs.stdenv.hostPlatform.system}.default;
       directions = {
         Left = "left";
         Down = "down";
@@ -250,8 +254,8 @@
       # The ScreenCast/Screenshot mapping names this backend, so it must be
       # installed where the session's frontend looks: Home Manager, not the
       # NixOS-side list, which is inert while xdg.portal is disabled there.
-      xdg.portal.extraPortals = [ packages.xdg-desktop-portal-umbriel ];
-      systemd.user.packages = [ packages.xdg-desktop-portal-umbriel ];
+      xdg.portal.extraPortals = [ portalPkg ];
+      systemd.user.packages = [ portalPkg ];
 
       programs.umbriel = {
         enable = true;
@@ -395,7 +399,7 @@
               # More opaque than the rest, so the focused window keeps its
               # foreground legible over the heavier blur behind it.
               match.is_focused = true;
-              opacity = 0.92;
+              opacity = 0.87;
               border_width = 2;
             }
             {
@@ -436,6 +440,22 @@
               default_floating_size = {
                 width = 0.8;
                 height = 0.8;
+              };
+              default_position = {
+                x = 0;
+                y = 0;
+                anchor = "center";
+              };
+            }
+            # ScreenCast clients send no parent_window, so the share picker has
+            # nothing to attach to and floats small and centred instead.
+            {
+              match.app_id = "^dev.noctalia.UmbrielSharePicker$";
+              default_floating = true;
+              default_focused = true;
+              default_floating_size = {
+                width = 0.45;
+                height = 0.5;
               };
               default_position = {
                 x = 0;

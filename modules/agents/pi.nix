@@ -296,6 +296,8 @@ in
         # rename; see context/pi-config-ownership.md.
         extraEnv = {
           PI_FREEFLOW_DATA_DIR = piAgentDir;
+          # The input the patched anthropic-auth build reads its billing entrypoint from.
+          PI_ANTHROPIC_AUTH_ENTRYPOINT = "paseo";
         };
         inherit
           leadAgentDir

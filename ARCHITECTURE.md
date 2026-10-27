@@ -205,7 +205,7 @@ places: a SOPS foundation aspect (`modules/security/sops.nix`, module import +
 age key + tooling), a shared credentials aspect
 (`modules/security/credentials.nix`, the cross-feature provider and tool keys in
 one encrypted file per consumer group — `llm-providers.yaml`, `web-search.yaml`,
-`github.yaml`, `sourcegraph.yaml`), and each service's own feature module (its
+`github.yaml`, `sourcegraph.yaml`, `nixbot.yaml`), and each service's own feature module (its
 service-specific secrets and rendered env templates — `aichat.env`,
 `grist.env`, `hermes.env`, `niks3-auth-token`,
 `nix-access-tokens`). A consumer that can resolve a key itself reads the

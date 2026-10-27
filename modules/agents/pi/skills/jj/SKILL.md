@@ -291,7 +291,7 @@ If you write one, three things bite:
 
 - `remote_bookmarks([name_pattern], [[remote=]remote_pattern])` takes positional arguments; `remote_bookmarks(pattern='wip/')` fails with `Unexpected keyword argument`.
 - A bare string is not a prefix — `'wip/'` matches nothing, `'wip/*'` matches `wip/scratch`.
-- Base a carve-out on `remote_bookmarks()`, not `untracked_remote_bookmarks()`. Subtracting from the untracked set leaves every *tracked* branch mutable, which is the builtin behaviour and protects almost nothing.
+- Base a carve-out on `remote_bookmarks()`, not `untracked_remote_bookmarks()`. Subtracting from the untracked set leaves every _tracked_ branch mutable, which is the builtin behaviour and protects almost nothing.
 
 ## Git Bridge
 

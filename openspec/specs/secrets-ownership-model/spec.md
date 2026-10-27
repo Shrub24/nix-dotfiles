@@ -22,7 +22,7 @@ The repository SHALL declare SOPS infrastructure — the sops-nix module import,
 
 ### Requirement: Shared cross-feature credentials live in one credentials aspect
 
-Credentials consumed by more than one feature SHALL be declared together in a single shared credentials aspect (`modules/security/credentials.nix`), and SHALL be stored in one encrypted file per consumer group — `secrets/llm-providers.yaml`, `secrets/web-search.yaml`, `secrets/github.yaml`, `secrets/sourcegraph.yaml` — so that a host decrypts only the groups its selected aspects consume.
+Credentials consumed by more than one feature SHALL be declared together in a single shared credentials aspect (`modules/security/credentials.nix`), and SHALL be stored in one encrypted file per consumer group — `secrets/llm-providers.yaml`, `secrets/web-search.yaml`, `secrets/github.yaml`, `secrets/sourcegraph.yaml`, `secrets/nixbot.yaml` — so that a host decrypts only the groups its selected aspects consume.
 
 #### Scenario: A shared API key is added
 

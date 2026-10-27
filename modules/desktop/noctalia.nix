@@ -5,7 +5,7 @@
 {
   flake-file.inputs = {
     noctalia = {
-      url = "github:noctalia-dev/noctalia/v5.3.0";
+      url = "github:noctalia-dev/noctalia/v5.4.1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -13,6 +13,13 @@
     # pinning the source repo keeps the template inputs declarative.
     community-templates = {
       url = "github:noctalia-dev/community-templates";
+      flake = false;
+    };
+
+    # Sweet's Sass sources. The palette is injected at render time, so the theme
+    # is rebuilt on every colour change rather than shipped pre-coloured.
+    sweet = {
+      url = "github:EliverLara/Sweet";
       flake = false;
     };
   };
@@ -52,6 +59,7 @@
           runtimeInputs = [
             pkgs.coreutils
             pkgs.zip
+            pkgs.python3
           ];
           text = ''
             if [ "$#" -ne 1 ]; then
@@ -65,6 +73,47 @@
             cp -r "$source_dir" "$build"
             chmod -R u+w "$build"
             exec bash "$build/apply.sh"
+          '';
+        };
+
+        # Sweet's own colours are literal in its compiled CSS, so a palette can
+        # only reach it by rebuilding: substitute the palette into the Sass
+        # sources, then compile both toolkits.
+        sweet = pkgs.writeShellApplication {
+          name = "noctalia-template-sweet-gtk";
+          runtimeInputs = [
+            pkgs.coreutils
+            pkgs.sassc
+          ];
+          text = ''
+            cache="''${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/sweet"
+            theme="''${XDG_DATA_HOME:-$HOME/.local/share}/themes/Sweet-Noctalia"
+
+            if [ ! -f "$cache/_colors.scss" ]; then
+              echo "noctalia-template-sweet-gtk: $cache/_colors.scss missing" >&2
+              exit 1
+            fi
+
+            if [ -e "$theme" ]; then
+              chmod -R u+w "$theme"
+              rm -rf "$theme"
+            fi
+            mkdir -p "$theme"
+            cp -r --no-preserve=mode ${inputs.sweet}/gtk-3.0 ${inputs.sweet}/gtk-4.0 ${inputs.sweet}/assets "$theme/"
+            cp --no-preserve=mode ${inputs.sweet}/index.theme "$theme/"
+
+            for toolkit in gtk-3.0 gtk-4.0; do
+              cp "$cache/_colors.scss" "$theme/$toolkit/"
+              cp --no-preserve=mode ${localTemplates}/sweet/_window-inset.scss "$theme/$toolkit/"
+              printf "\n@import 'window-inset';\n" >> "$theme/$toolkit/gtk-dark.scss"
+              sassc "$theme/$toolkit/gtk-dark.scss" "$theme/$toolkit/gtk-dark.css"
+              # Only the dark entry point is built; both names resolve to it.
+              cp "$theme/$toolkit/gtk-dark.css" "$theme/$toolkit/gtk.css"
+            done
+
+            # GTK reads the theme name from settings; cycling it makes running apps re-read.
+            gsettings set org.gnome.desktop.interface gtk-theme "" || true
+            gsettings set org.gnome.desktop.interface gtk-theme Sweet-Noctalia || true
           '';
         };
       };
@@ -91,13 +140,6 @@
           file = "kcolorscheme.colors";
           out = "$XDG_DATA_HOME/color-schemes/noctalia.colors";
           action = "kde-color-scheme";
-        }
-        {
-          id = "starship";
-          dir = "starship";
-          file = "starship.toml";
-          out = "$XDG_CACHE_HOME/noctalia/starship-palette.toml";
-          script = { };
         }
         {
           id = "wezterm";
@@ -192,6 +234,13 @@
           file = "pywalfox.json";
           out = "$XDG_CACHE_HOME/wal/colors.json";
           action = "firefox-theme";
+        }
+        {
+          # Moved out of the package's builtin rows in Noctalia 5.4.0.
+          id = "starship";
+          dir = "starship";
+          file = "starship.toml";
+          out = "$XDG_CACHE_HOME/noctalia/starship-palette.toml";
         }
         {
           id = "tmux";
@@ -313,6 +362,19 @@
             input_path = "${localTemplates}/agent-radar.toml";
             output_path = "$XDG_CONFIG_HOME/radar/theme.toml";
           };
+          # Sweet's palette partials. Both hooks rebuild the theme, so the order the
+          # engine renders them in cannot matter.
+          sweet-colors = {
+            input_path = "${localTemplates}/sweet/_colors.scss";
+            output_path = "$XDG_CACHE_HOME/noctalia/sweet/_colors.scss";
+            post_hook = "${templateHooks.sweet}/bin/noctalia-template-sweet-gtk";
+          };
+          # libadwaita takes the palette through CSS variables; Sweet cannot, because
+          # its compiled CSS bakes colours in. Rendering here touches no build.
+          sweet-libadwaita = {
+            input_path = "${localTemplates}/sweet/libadwaita.css";
+            output_path = "$XDG_CONFIG_HOME/gtk-4.0/gtk.css";
+          };
         };
 
       # Packaged seed for the mutable wallpaper. Copied into the user home only
@@ -324,10 +386,6 @@
     {
       imports = [
         inputs.noctalia.homeModules.default
-
-        # HACK: home-manager now loads programs/noctalia as a folder, so upstream's
-        # by-filename disable misses it. Drop once noctalia PR #4656 lands.
-        { disabledModules = [ "programs/noctalia" ]; }
       ];
 
       # Not xdg.dataFile, which would store-link the wallpaper. `C` copies the seed only when absent.

@@ -193,6 +193,14 @@ _: {
             desc = "Jump to a bookmark";
           }
           {
+            on = [ "<C-k>" ];
+            run = ''
+              shell --
+              	for p in %s; do kdeconnect-cli -n "$KDECONNECT_DEVICE" --share "$p"; done
+            '';
+            desc = "Send to phone via KDE Connect";
+          }
+          {
             on = [
               "b"
               "d"

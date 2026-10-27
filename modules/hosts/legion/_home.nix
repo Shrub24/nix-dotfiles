@@ -21,10 +21,14 @@
     ];
   };
 
-  programs.pi-coding-agent.settings.remoteControl.service.tunnel = {
-    # UUID avoids an account-level API lookup to resolve the tunnel name.
-    name = "e6ab20ef-4c94-44cb-9566-61667b7f8f7f";
-    hostname = "pi.shrublab.xyz";
+  programs.pi-coding-agent.settings.remoteControl = {
+    # Pi-Bolt 1.2.0 serves nothing while remote control is off and the service exits at once; earlier releases ignore the key.
+    enabled = true;
+    service.tunnel = {
+      # UUID avoids an account-level API lookup to resolve the tunnel name.
+      name = "e6ab20ef-4c94-44cb-9566-61667b7f8f7f";
+      hostname = "pi.shrublab.xyz";
+    };
   };
 
   sops.templates."aichat.env".content = ''

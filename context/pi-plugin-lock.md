@@ -35,7 +35,7 @@ they gain must be added by hand; the compile's dependency check names it.
 The nine plugins `pi-extensions` publishes are candidates through its
 `lib.pluginLockCandidates` output — its manifests and its `pi-radar` pin, taken as
 data rather than read out of its `nix/recipes.nix`, which this repository no longer
-imports. Its plugin *builds* come from its package table for the same reason: the
+imports. Its plugin _builds_ come from its package table for the same reason: the
 producer owns a plugin's pins and its build identity, and this repository names
 which of them it uses.
 

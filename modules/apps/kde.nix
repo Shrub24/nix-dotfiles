@@ -34,6 +34,9 @@ _: {
           kdegraphics-thumbnailers
         ];
 
+      # The device yazi's `C-k` shares to; `kdeconnect-cli -l` lists the others.
+      home.sessionVariables.KDECONNECT_DEVICE = "OnePlus 15";
+
       # breeze-icons intentionally omitted — user runs Sweet-Rainbow (via matugen);
       # add kdePackages.breeze-icons here if KDE-specific icons break.
     };

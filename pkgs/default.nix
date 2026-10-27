@@ -34,21 +34,10 @@ in
   };
   nix-search-tv-fzf = final.callPackage ./nix-search-tv-fzf { };
   mo-viewer = inputs.nixpkgs-fork.legacyPackages.${system}.mo-viewer;
-  # Upstream fix, one day younger than our nixpkgs pin; see context/mcp-nixos-mcp1.md.
-  mcp-nixos = _prev.mcp-nixos.override {
-    python3Packages = _prev.python3Packages.overrideScope (
-      pythonFinal: _: { mcp = pythonFinal.mcp_1; }
-    );
-  };
   # Upstream fix, hours younger than our nixpkgs pin; see context/intelli-shell-aws-lc.md.
   intelli-shell = _prev.intelli-shell.overrideAttrs (old: {
     buildInputs = old.buildInputs ++ [ final.aws-lc ];
   });
-  # One release ahead of our nixpkgs pin: niri is in its portal file there, and
-  # the wrapper's command injection is closed; see context/legion-desktop.md.
-  xdg-desktop-portal-termfilechooser = final.callPackage ./xdg-desktop-portal-termfilechooser {
-    inherit (_prev) xdg-desktop-portal-termfilechooser;
-  };
   jj-hunk-tool = final.callPackage ./jj-hunk-tool { };
   nixos-boot = final.callPackage ./nixos-boot { src = inputs.nixos-boot; };
   xberg-cli = final.callPackage ./xberg-cli { };
