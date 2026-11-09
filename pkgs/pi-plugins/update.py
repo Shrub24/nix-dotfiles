@@ -54,47 +54,39 @@ def github_hash(repo, revision):
     ], text=True).strip()
 
 
-def resolve_manifest(name, store_path, workdir):
-    """The plugin's package.json, as a file: extracted from its npm tarball."""
+def resolve_manifest(name, store_path, manifest_path, workdir):
+    """The plugin's manifest, as a file: extracted from its npm tarball."""
     with tarfile.open(store_path) as archive:
-        extracted = archive.extractfile("package/package.json")
+        extracted = archive.extractfile(manifest_path)
         if extracted is None:
-            raise ValueError(f"{name}: the tarball has no package/package.json")
+            raise ValueError(f"{name}: the tarball has no {manifest_path}")
         manifest = extracted.read().decode()
     target = Path(workdir) / f"{name.replace('/', '_')}.json"
     target.write_text(manifest)
     return target
 
 
-def lock_member_manifests(sources, tarballs, extensions_root, workdir):
-    """NAME=MANIFEST for every lock member, from the list Nix passed in."""
-    if not sources:
-        raise ValueError("PI_LOCK_MEMBERS is not set, so the lock members are unknown")
-
+def lock_member_manifests(candidates, tarballs, extensions_root, workdir):
+    """NAME=MANIFEST for every candidate whose manifest declares dependencies."""
     specs = []
-    for source in sources.split():
-        member, sep, where = source.partition("=")
-        kind, _, value = where.partition(":")
-        if not sep or not ((kind == "npm" and value) or (kind == "manifest" and value)):
-            raise ValueError(f"{source} is not MEMBER=npm:PACKAGE or MEMBER=manifest:PATH")
-        if kind == "manifest":
-            specs.append(f"{member}={extensions_root}/{value}")
-            continue
-        store_path = tarballs.get(value)
-        if store_path is None:
-            raise ValueError(f"{member}: no prefetched tarball for {value}")
-        specs.append(f"{member}={resolve_manifest(member, store_path, workdir)}")
+    for candidate in candidates:
+        member = candidate["id"]
+        if "npm" in candidate:
+            store_path = tarballs.get(candidate["npm"])
+            if store_path is None:
+                raise ValueError(f"{member}: no prefetched tarball for {candidate['npm']}")
+            manifest = resolve_manifest(member, store_path, candidate["manifest"], workdir)
+        else:
+            manifest = Path(extensions_root) / candidate["manifest"]
+        if json.loads(manifest.read_text()).get("dependencies"):
+            specs.append(f"{member}={manifest}")
     return specs
 
 
 def lock_only():
-    """Regenerate the lock from the pins already in the recipe file, pinning nothing."""
-    text = Path("pkgs/pi-plugins/default.nix").read_text()
-    tarballs = {}
-    for match in NPM.finditer(text):
-        _, store_path = prefetch(match["name"], match["version"], match["hash"])
-        tarballs[match["name"]] = store_path
-    write_lock(tarballs)
+    """Regenerate the lock from the candidates' own tarballs, pinning nothing."""
+    candidates = json.loads(Path(os.environ["PI_LOCK_CANDIDATES"]).read_text())
+    write_lock({candidate["npm"]: candidate["tarball"] for candidate in candidates if "npm" in candidate})
 
 
 def write_lock(tarballs):
@@ -102,12 +94,20 @@ def write_lock(tarballs):
     extensions_root = os.environ.get("PI_EXTENSIONS_ROOT")
     if not extensions_root:
         raise ValueError("PI_EXTENSIONS_ROOT is not set, so the directory-shaped members cannot be read")
+    candidates_file = os.environ.get("PI_LOCK_CANDIDATES")
+    if not candidates_file:
+        raise ValueError("PI_LOCK_CANDIDATES is not set, so the lock candidates are unknown")
+    candidates = json.loads(Path(candidates_file).read_text())
+    # A candidate's tarball can come from a recipe in the pi-extensions checkout
+    # rather than a literal pin the updater refreshes (radar's does), so the
+    # resolved set alone does not cover every member.
+    for candidate in candidates:
+        if "npm" in candidate:
+            tarballs.setdefault(candidate["npm"], candidate["tarball"])
     with tempfile.TemporaryDirectory() as workdir:
-        specs = lock_member_manifests(
-            os.environ.get("PI_LOCK_MEMBERS", ""), tarballs, extensions_root, workdir
-        )
+        specs = lock_member_manifests(candidates, tarballs, extensions_root, workdir)
         subprocess.run(
-            ["update-plugin-lock", str(Path("pkgs/pi-plugins/plugins.lock.json")), *specs], check=True
+            ["update-plugin-lock", "-o", str(Path("pkgs/pi-plugins/plugins.lock.json")), *specs], check=True
         )
 
 

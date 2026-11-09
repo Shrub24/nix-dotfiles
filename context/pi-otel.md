@@ -14,12 +14,13 @@ fork also differs from upstream `stnly/pi-otel`: it roots a trace at each
 user-driven run rather than at a session that can remain open for hours. This
 keeps the Langfuse/Latitude trace unit aligned with an interaction.
 
-The pinned subtree carries source and a lockfile, but no `node_modules`.
-`pkgs/pi-otel` supplies a runtime package directory using `importNpmLock`.
-The dev-only Pi host entries are filtered out: they lack integrity hashes and
-must not supply a second host beside the one Pi's loader provides. The matching
-`importNpmLock.npmConfigHook` installs the lock-derived store sources; the usual
-cache hook expects a different dependency-cache format.
+The pinned subtree carries source and a lockfile, but no `node_modules`. The
+closure comes from `pi-extensions`' own plugin package, which builds it with
+`importNpmLock.buildNodeModules` over the same lock, dev-only entries filtered
+out — they lack integrity hashes and must not supply a second host beside the
+one Pi's loader provides. This repository built that directory itself as
+`pkgs/pi-otel` until the producer published one; the package is gone and the
+`otel` row names the producer's tree.
 
 **Alternative:** install upstream or the similarly named npm package, which
 would change the trace model or the extension entirely. A live checkout would
@@ -59,16 +60,16 @@ backend-specific endpoints and credentials on every producer.
 **Revisit when:** a plugin update breaks AOT, or its build cost outweighs the launch benefit
 
 The Pi-Bolt executable compiles the extension rather than parsing its TypeScript
-and dependency closure at launch. The recipe stages `pkgs/pi-otel`, so stock
-loads and compiled loads use the same source and lock-derived dependencies.
-Stock Pi keeps the source in its `packages` list; Pi-Bolt roles select the
-compiled extension as `+builtin:otel`, and managed children name it
-`builtin:otel`.
+and dependency closure at launch. The compiled recipe and the tree stock Pi
+loads are built from the same pinned source, so both resolve the same
+dependencies. Stock Pi takes the built plugin tree in its `packages` list;
+Pi-Bolt roles select the compiled extension as `+builtin:otel`, and managed
+children name it `builtin:otel`.
 
 Compilation removes the source-relative `package.json` path used for the
 extension version. The recipe embeds the pinned manifest version instead;
-without that patch the extension silently reports `0.0.0`. The runtime package
-keeps its original file-based version lookup. The compiled executable exported
+without that patch the extension silently reports `0.0.0`. The tree stock Pi
+loads keeps its `package.json`, so its file-based version lookup still works. The compiled executable exported
 synthetic traces carrying the correct `0.3.1` extension version; the lead and
 child launchers select their own compiled builtin sets from the shared payload.
 

@@ -9,10 +9,14 @@
   childAgentDir ? null,
   orchestratorAgentDir ? null,
   herdsmanDataDir ? null,
+  extraEnv ? { },
   runtimeShell,
   python3,
+  applyPatches,
   # The one program Pi looks for in PATH and would otherwise download.
   wl-clipboard,
+  # Programs every entrypoint gets, on top of the base runtime inputs.
+  extraPackages ? [ ],
 }:
 assert lib.all (id: lib.hasAttr id plugins) childPlugins;
 let
@@ -20,10 +24,12 @@ let
 
   # Compilation only: launcher changes leave this derivation, and its AOT build, alone.
   # `maxAotCandidateBytecodeSize` is re-measured when the plugin set changes.
-  sharedEnv = lib.optionalAttrs (herdsmanDataDir != null) {
-    PI_HERDSMAN_DATA_DIR = herdsmanDataDir;
-    PI_HERDSMAN_CHILD_COMMAND = "pi-bolt-child";
-  };
+  sharedEnv =
+    lib.optionalAttrs (herdsmanDataDir != null) {
+      PI_HERDSMAN_DATA_DIR = herdsmanDataDir;
+      PI_HERDSMAN_CHILD_COMMAND = "pi-bolt-child";
+    }
+    // extraEnv;
   launchers = {
     pi-bolt = {
       env =
@@ -44,15 +50,23 @@ let
   };
   payload =
     (
-      (piBolt.override {
+      (piBolt.override (args: {
+        source = args.source // {
+          outPath = applyPatches {
+            name = "pi-bolt-request-model-source";
+            src = args.source.outPath;
+            patches = [ ./patches/context-request-model.patch ];
+          };
+        };
         jit = true;
         maxAotCandidateBytecodeSize = 500000;
-      }).withPlugins
+      })).withPlugins
         (_: builtins.attrValues plugins)
     ).override
       {
         inherit launchers;
         inherit pluginLock;
+        inherit extraPackages;
       };
 
   tools = payload.passthru.runtimeInputs ++ [ wl-clipboard ];
@@ -77,6 +91,11 @@ let
   herdsmanDataDirEnv = lib.optionalString (herdsmanDataDir != null) ''
     export PI_HERDSMAN_DATA_DIR="''${PI_HERDSMAN_DATA_DIR:-${lib.escapeShellArg herdsmanDataDir}}"
   '';
+  extraEnvLines = lib.concatStrings (
+    lib.mapAttrsToList (name: value: ''
+      export ${name}="''${${name}:-${lib.escapeShellArg value}}"
+    '') extraEnv
+  );
 
   duplicateArms =
     lib.concatMapStringsSep " | " (id: "builtin:${id}") (
@@ -117,6 +136,7 @@ let
     done
     ${childAgentDirEnv}
     ${herdsmanDataDirEnv}
+    ${extraEnvLines}
     export PATH=${lib.makeBinPath tools}:$PATH
     if [ -n "$has_no_extensions" ]; then
       ${execPayload} ${childFlags} "''${args[@]}"

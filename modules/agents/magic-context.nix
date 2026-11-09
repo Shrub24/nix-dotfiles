@@ -1,4 +1,4 @@
-{ inputs, ... }: {
+_: {
   flake.modules.homeManager.magic-context =
     {
       config,
@@ -24,15 +24,32 @@
                 ];
               };
               pi = {
-                model = "anthropic/claude-haiku-5-5";
+                model = "neuralwatt/deepseek-v4.1-flash";
                 fallback_models = [
-                  "omniroute/neural/deepseek-v4.1-flash"
-                  "openai-codex/gpt-6-luna"
+                  "anthropic/claude-haiku-5-5"
+                  "openai/gpt-6-luna"
                 ];
                 thinking_level = "low";
               };
             };
-            dreamer.disable = true;
+            dreamer = {
+              opencode = {
+                model = "opencode-omniroute/coder-high";
+                fallback_models = [
+                  "opencode-omniroute/budget"
+                ];
+              };
+              pi = {
+                # Dream tasks are background work on a schedule, so the flex tier's
+                # spare-capacity queueing costs nothing they care about.
+                model = "neuralwatt/deepseek-v4.1-flash-flex";
+                fallback_models = [
+                  "anthropic/claude-haiku-5-5"
+                  "openai/gpt-6-luna"
+                ];
+                thinking_level = "low";
+              };
+            };
             memory.enabled = true;
             embedding = {
               provider = "openai-compatible";
@@ -42,27 +59,41 @@
               input_type = "document";
               query_input_type = "query";
             };
+            # 250k is the working baseline and 300k the larger Anthropic models. gpt-6.1-sol serves
+            # 500k upstream, but this catalog entry declares 272k, so MC measures usage against that
+            # and clamps anything above 90% of it. Unlisted models fall back to
+            # execute_threshold_percentage (65%).
+            execute_threshold_tokens = {
+              "anthropic/claude-haiku-5-5" = 250000;
+              "anthropic/claude-sonnet-5-5" = 300000;
+              "anthropic/claude-opus-5-5" = 300000;
+              "commandcode/deepseek/deepseek-v4.1-flash" = 250000;
+              "openai/gpt-6-luna" = 250000;
+              "openai/gpt-6.1-sol" = 250000;
+              "opencode-go/deepseek-v4.1-flash" = 250000;
+              "opencode-go/mimo-v2.6-flash" = 250000;
+            };
             cache_ttl = {
               default = "never";
+              "anthropic/claude-haiku-5-5" = "1h";
+              "anthropic/claude-sonnet-5-5" = "1h";
+              "anthropic/claude-opus-5-5" = "1h";
+              "commandcode/deepseek/deepseek-v4.1-flash" = "3h";
+              "openai/gpt-6-luna" = "2h";
+              "openai/gpt-6.1-sol" = "2h";
+              "opencode-go/deepseek-v4.1-flash" = "3h";
+              "opencode-go/mimo-v2.6-flash" = "10m";
             };
             toast_duration_ms = 500;
-            execute_threshold_tokens.default = 250000;
             smart_drops = true;
 
             profiles.subagent.memory.read_only = true;
             profiles.subagent.pi.subagent_prompt = true;
-            pi.cache_ttl = "never";
-            # Children are spawned as the bare pi-bolt binary with
-            # --no-extensions, so this is their explicit extension set. Providers
-            # first — the historian resolves its own models inside this child.
-            # Compiled extensions use their builtin: name; runtime ones use
-            # their installed path.
+
             pi.subagent_extensions = [
-              "builtin:omniroute"
+              "builtin:neuralwatt"
               "builtin:anthropic-auth"
               "builtin:tool-repair"
-              "${inputs.pi-extensions}/pi-native-router"
-              "${config.home.homeDirectory}/.pi/agent/npm/node_modules/pi-commandcode-provider"
               "builtin:todo"
               "${config.home.homeDirectory}/.pi/agent/npm/node_modules/opensec-pi-fff"
             ];

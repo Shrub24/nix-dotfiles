@@ -7,7 +7,7 @@
 **Status:** active
 **Evidence:** confirmed
 **Source:** `pkgs/pi-plugins/plugins.lock.json`, the six member manifests, and Pi-Bolt.nix `1fe822a0` (`scripts/update-plugin-lock.sh`, `nix/plugin-set.nix`, `docs/PLUGINS.md`)
-**Verification:** confirmed — the lock is 87 packages with six `pbplugins/*` workspaces and no `@earendil-works/*` entries; `nix/pi-bolt.nix` stages it as its own derivation and `npm ci` accepts it
+**Verification:** confirmed — the lock is 90 packages with seven `pbplugins/*` workspaces and no `@earendil-works/*` entries; `nix/pi-bolt.nix` stages it as its own derivation and `npm ci` accepts it
 **Revisit when:** a plugin needs a closure npm cannot express (a bun or pnpm lock source keeps `nodeModules`)
 
 A compiled plugin's npm imports must be staged at build. The set resolves through
@@ -24,11 +24,20 @@ Three properties follow, and each was load-bearing in the earlier design:
 - the lock is regenerated when the **plugin set** changes, not when the release
   does.
 
-Only plugins that declare dependencies are members: `ask-user-question`,
-`herdsman`, `otel`, `permission-system`, `todo`, `tool`. A plugin without
-declared dependencies needs no closure, and one that gains a dependency and is
-missing from the member list fails the compile's dependency check, which names
-it.
+Membership follows the manifest: a plugin whose `package.json` declares
+`dependencies` is a member. The updater reads each candidate's manifest to decide,
+so a plugin that gains a dependency joins the lock on the next regeneration. Every
+candidate's manifest defaults to its own `package.json`: a checkout's at its
+checkout path, an npm tarball's at `package/package.json` inside the archive.
+`omniroute`, `fork-in` and `powerline-footer` are not candidates, so a dependency
+they gain must be added by hand; the compile's dependency check names it.
+
+The nine plugins `pi-extensions` publishes are candidates through its
+`lib.pluginLockCandidates` output — its manifests and its `pi-radar` pin, taken as
+data rather than read out of its `nix/recipes.nix`, which this repository no longer
+imports. Its plugin *builds* come from its package table for the same reason: the
+producer owns a plugin's pins and its build identity, and this repository names
+which of them it uses.
 
 **Reason.** A range belongs next to the import that needs it, and the resolver
 must be the one the ecosystem uses. Deriving the closure from each plugin's own
@@ -49,13 +58,12 @@ it never declared.
 **Consequence.** `update-plugin-lock` takes `OUT NAME=MANIFEST...` and nothing
 else: it combines manifests, so it owns no source shape and a caller passes the
 `package.json` it holds. `pkgs/pi-plugins/update.py` therefore regenerates the
-lock in the same run that moves the pins, using each prefetched tarball's
-manifest and each `manifest = "…"` path a recipe declares. Regeneration is not a
+lock in the same run that moves the pins, reading each candidate's manifest from
+its source. Regeneration is not a
 second command, because an unregenerated lock stages versions the plugins no
 longer declare, which the compile refuses. `bash-processes` stays out of the
-lock: its one dependency is the sibling `tool-renderer`, declared `workspace:*` —
-a pnpm and bun specifier npm rejects — and the recipe's `dependencies` edge links
-it into that plugin's `node_modules` instead.
+lock because its manifest declares no npm dependencies; its sibling
+`tool-renderer` reaches it through the recipe's `dependencies` edge.
 
 ## Compiled plugins resolved through Pi-Bolt's release lock
 

@@ -1,0 +1,253 @@
+From: dotfiles
+Subject: expose the resolved request model to context handlers
+
+Upstream: https://github.com/earendil-works/pi/issues/10318
+Keep ctx.model as the selection; forward the prepared request target without
+resolving the virtual route again. Remove when Pi exposes this natively.
+
+diff --git a/packages/agent/src/agent-loop.ts b/packages/agent/src/agent-loop.ts
+index 3e16d10be..94808db90 100644
+--- a/packages/agent/src/agent-loop.ts
++++ b/packages/agent/src/agent-loop.ts
+@@ -492,7 +492,7 @@ async function streamAssistantResponse(
+ 	// Apply context transform if configured (AgentMessage[] → AgentMessage[])
+ 	let messages = context.messages;
+ 	if (config.transformContext) {
+-		messages = await config.transformContext(messages, signal);
++		messages = await config.transformContext(messages, signal, config.model);
+ 	}
+ 
+ 	// Convert to LLM-compatible messages (AgentMessage[] → Message[])
+diff --git a/packages/agent/src/agent.ts b/packages/agent/src/agent.ts
+index bb634ad7a..c86946431 100644
+--- a/packages/agent/src/agent.ts
++++ b/packages/agent/src/agent.ts
+@@ -116,7 +116,11 @@ function createMutableAgentState(initialState?: AgentInitialState): MutableAgent
+ export interface AgentOptions {
+ 	initialState?: AgentInitialState;
+ 	convertToLlm?: (messages: AgentMessage[]) => Message[] | Promise<Message[]>;
+-	transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>;
++	transformContext?: (
++		messages: AgentMessage[],
++		signal?: AbortSignal,
++		requestModel?: Model<any>,
++	) => Promise<AgentMessage[]>;
+ 	streamFn: StreamFn;
+ 	getApiKey?: (provider: string) => Promise<string | undefined> | string | undefined;
+ 	onPayload?: SimpleStreamOptions["onPayload"];
+@@ -200,7 +204,11 @@ export class Agent {
+ 	private readonly followUpQueue: PendingMessageQueue;
+ 
+ 	public convertToLlm: (messages: AgentMessage[]) => Message[] | Promise<Message[]>;
+-	public transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>;
++	public transformContext?: (
++		messages: AgentMessage[],
++		signal?: AbortSignal,
++		requestModel?: Model<any>,
++	) => Promise<AgentMessage[]>;
+ 	public streamFunction: StreamFn;
+ 	public getApiKey?: (provider: string) => Promise<string | undefined> | string | undefined;
+ 	public onPayload?: SimpleStreamOptions["onPayload"];
+diff --git a/packages/agent/src/types.ts b/packages/agent/src/types.ts
+index 6b768e1df..f405300e7 100644
+--- a/packages/agent/src/types.ts
++++ b/packages/agent/src/types.ts
+@@ -241,7 +241,11 @@ export interface AgentLoopConfig extends SimpleStreamOptions {
+ 	 * }
+ 	 * ```
+ 	 */
+-	transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>;
++	transformContext?: (
++		messages: AgentMessage[],
++		signal?: AbortSignal,
++		requestModel?: Model<any>,
++	) => Promise<AgentMessage[]>;
+ 
+ 	/**
+ 	 * Resolves an API key dynamically for each LLM call.
+diff --git a/packages/coding-agent/src/core/agent-session.ts b/packages/coding-agent/src/core/agent-session.ts
+index 7c26b4e48..1a593f98d 100644
+--- a/packages/coding-agent/src/core/agent-session.ts
++++ b/packages/coding-agent/src/core/agent-session.ts
+@@ -1925,8 +1925,10 @@ export class AgentSession {
+ 	 */
+ 	private _installHiddenDeclarationsProjection(): void {
+ 		const previousTransformContext = this.agent.transformContext;
+-		this.agent.transformContext = async (messages, signal) => {
+-			const transformed = previousTransformContext ? await previousTransformContext(messages, signal) : messages;
++		this.agent.transformContext = async (messages, signal, requestModel) => {
++			const transformed = previousTransformContext
++				? await previousTransformContext(messages, signal, requestModel)
++				: messages;
+ 			const hidden = this._hiddenDeclarations;
+ 			if (hidden.size === 0) return transformed;
+ 			return transformed.map((message) => {
+@@ -1945,8 +1947,10 @@ export class AgentSession {
+ 
+ 	private _installAgentForcedPromptProjection(): void {
+ 		const previousTransformContext = this.agent.transformContext;
+-		this.agent.transformContext = async (messages, signal) => {
+-			const transformed = previousTransformContext ? await previousTransformContext(messages, signal) : messages;
++		this.agent.transformContext = async (messages, signal, requestModel) => {
++			const transformed = previousTransformContext
++				? await previousTransformContext(messages, signal, requestModel)
++				: messages;
+ 			const forced = this._runSystemPromptOptions?.forceSystemPrompt;
+ 			if (forced === undefined) return transformed;
+ 			const current = getCurrentSystemMessage(transformed);
+diff --git a/packages/coding-agent/src/core/extensions/runner.ts b/packages/coding-agent/src/core/extensions/runner.ts
+index a45521dcc..d44ec74f3 100644
+--- a/packages/coding-agent/src/core/extensions/runner.ts
++++ b/packages/coding-agent/src/core/extensions/runner.ts
+@@ -1431,7 +1431,7 @@ export class ExtensionRunner {
+ 	 * only and Pi restores the prompt and tool state after each; `context_with_system`
+ 	 * handlers then see the full transcript and their output is used as returned.
+ 	 */
+-	async emitContext(messages: AgentMessage[]): Promise<AgentMessage[]> {
++	async emitContext(messages: AgentMessage[], requestModel?: Model<any>): Promise<AgentMessage[]> {
+ 		// The copy only protects the transcript from handlers that edit it in place. Without
+ 		// handlers it would duplicate the whole context, images included, on every request.
+ 		if (!this.hasHandlers("context") && !this.hasHandlers("context_with_system")) return messages;
+@@ -1443,7 +1443,7 @@ export class ExtensionRunner {
+ 				try {
+ 					const visibleMessages = currentMessages.filter((message) => message.role !== "system");
+ 					const visibleSnapshot = visibleMessages.slice();
+-					const event: ContextEvent = { type: "context", messages: visibleMessages };
++					const event: ContextEvent = { type: "context", messages: visibleMessages, requestModel };
+ 					const handlerResult = (await handler(event, ctx)) as ContextEventResult | undefined;
+ 
+ 					// Handlers may return a new list or edit event.messages in place.
+@@ -1469,7 +1469,11 @@ export class ExtensionRunner {
+ 			for (const handler of handlers) {
+ 				try {
+ 					const hadLeadingSystemMessage = currentMessages[0]?.role === "system";
+-					const event: ContextWithSystemEvent = { type: "context_with_system", messages: currentMessages };
++					const event: ContextWithSystemEvent = {
++						type: "context_with_system",
++						messages: currentMessages,
++						requestModel,
++					};
+ 					const handlerResult = (await handler(event, ctx)) as ContextEventResult | undefined;
+ 					currentMessages = handlerResult?.messages ?? currentMessages;
+ 					// Providers read the prompt and initial tools from the leading system message.
+diff --git a/packages/coding-agent/src/core/extensions/types.ts b/packages/coding-agent/src/core/extensions/types.ts
+index 60388c0eb..09949ed10 100644
+--- a/packages/coding-agent/src/core/extensions/types.ts
++++ b/packages/coding-agent/src/core/extensions/types.ts
+@@ -885,6 +885,8 @@ export type SessionEvent =
+ export interface ContextEvent {
+ 	type: "context";
+ 	messages: AgentMessage[];
++	/** Resolved target for this request; ctx.model remains the selection. */
++	requestModel?: Model<any>;
+ }
+ 
+ /**
+@@ -895,6 +897,8 @@ export interface ContextEvent {
+ export interface ContextWithSystemEvent {
+ 	type: "context_with_system";
+ 	messages: AgentMessage[];
++	/** Resolved target for this request; ctx.model remains the selection. */
++	requestModel?: Model<any>;
+ }
+ 
+ /** Fired before a provider request is sent. Can replace the payload. */
+diff --git a/packages/coding-agent/src/core/sdk.ts b/packages/coding-agent/src/core/sdk.ts
+index c844ceb9e..545e17f54 100644
+--- a/packages/coding-agent/src/core/sdk.ts
++++ b/packages/coding-agent/src/core/sdk.ts
+@@ -457,10 +457,10 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
+ 		onResponse: handleProviderResponse,
+ 		onProviderStreamEvent: handleProviderStreamEvent,
+ 		sessionId: sessionManager.getSessionId(),
+-		transformContext: async (messages) => {
++		transformContext: async (messages, _signal, requestModel) => {
+ 			const runner = extensionRunnerRef.current;
+ 			if (!runner) return messages;
+-			return runner.emitContext(messages);
++			return runner.emitContext(messages, requestModel);
+ 		},
+ 		steeringMode: settingsManager.getSteeringMode(),
+ 		followUpMode: settingsManager.getFollowUpMode(),
+diff --git a/packages/coding-agent/test/suite/harness.ts b/packages/coding-agent/test/suite/harness.ts
+index 988e9e817..72682375d 100644
+--- a/packages/coding-agent/test/suite/harness.ts
++++ b/packages/coding-agent/test/suite/harness.ts
+@@ -6,7 +6,7 @@ import { createInMemoryModelRegistry, createModelRegistry, getModelRuntime } fro
+ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+ import { tmpdir } from "node:os";
+ import { join } from "node:path";
+-import type { AgentMessage, AgentTool } from "@earendil-works/pi-agent-core";
++import type { AgentTool } from "@earendil-works/pi-agent-core";
+ import { Agent } from "@earendil-works/pi-agent-core";
+ import type {
+ 	FauxModelDefinition,
+@@ -219,10 +219,10 @@ export async function createHarness(options: HarnessOptions = {}): Promise<Harne
+ 				headers: response.headers,
+ 			});
+ 		},
+-		transformContext: async (messages: AgentMessage[]) => {
++		transformContext: async (messages, _signal, requestModel) => {
+ 			const runner = extensionRunnerRef.current;
+ 			if (!runner) return messages;
+-			return runner.emitContext(messages);
++			return runner.emitContext(messages, requestModel);
+ 		},
+ 	});
+ 	const extensionsResult = options.extensionFactories
+diff --git a/packages/coding-agent/test/suite/virtual-models.test.ts b/packages/coding-agent/test/suite/virtual-models.test.ts
+index 377d58fd9..578f935d0 100644
+--- a/packages/coding-agent/test/suite/virtual-models.test.ts
++++ b/packages/coding-agent/test/suite/virtual-models.test.ts
+@@ -77,6 +77,51 @@ describe("AgentSession virtual models", () => {
+ 		return { harness, requests, reasons, dispatched };
+ 	}
+ 
++	it("exposes the current request target to both context hooks without changing selection", async () => {
++		const seen: string[] = [];
++		const { harness, reasons } = await createRoutedHarness(
++			(request, ctx) => ({
++				model: ctx.modelRegistry.find("faux", request.reason === "user" ? "large" : "small")!,
++				thinkingLevel: "off",
++			}),
++			{
++				settings: { retry: { enabled: true, maxRetries: 3, baseDelayMs: 1 } },
++				extensionFactories: [
++					(pi) => {
++						for (const eventName of ["context", "context_with_system"] as const) {
++							pi.on(eventName, (event, ctx) => {
++								seen.push(`${eventName}:${ctx.model?.id}:${event.requestModel?.id}`);
++							});
++						}
++					},
++				],
++			},
++		);
++		harness.setResponses([
++			fauxAssistantMessage("", { stopReason: "error", errorMessage: "overloaded_error" }),
++			fauxAssistantMessage(fauxToolCall("echo", { text: "hi" }), { stopReason: "toolUse" }),
++			fauxAssistantMessage("done"),
++		]);
++		await harness.session.prompt("hello");
++		expect(reasons()).toEqual(["user", "retry", "continuation"]);
++		expect(seen).toEqual([
++			"context:auto:large",
++			"context_with_system:auto:large",
++			"context:auto:small",
++			"context_with_system:auto:small",
++			"context:auto:small",
++			"context_with_system:auto:small",
++		]);
++		expect(
++			harness.session.messages.filter((message) => message.role === "assistant").map((message) => message.model),
++		).toEqual(["small", "small"]);
++
++		await harness.session.setModel(harness.session.modelRuntime.getModel("faux", "large")!);
++		harness.setResponses([fauxAssistantMessage("direct")]);
++		await harness.session.prompt("direct");
++		expect(seen.slice(-2)).toEqual(["context:large:large", "context_with_system:large:large"]);
++	});
++
+ 	it("routes each request, including retries, while the selection stays virtual", async () => {
+ 		const { harness, requests, reasons, dispatched } = await createRoutedHarness(defaultRoute, {
+ 			settings: { retry: { enabled: true, maxRetries: 3, baseDelayMs: 1 } },

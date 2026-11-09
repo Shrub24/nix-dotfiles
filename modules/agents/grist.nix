@@ -97,8 +97,11 @@ _: {
             Service = {
               Type = "simple";
               ExecStartPre = "${pkgs.podman}/bin/podman pull --quiet ${ociImages.grist}";
+              # The image's user 1001 owns /persist; mapping it to the login user
+              # keeps the bind mount readable by its owner.
               ExecStart = ''
                 ${pkgs.podman}/bin/podman run --rm --replace --name grist \
+                  --userns=keep-id:uid=1001,gid=1001 \
                   -p 127.0.0.1:${toString cfg.port}:${toString webServices.grist.port} \
                   -v %h/.local/share/grist:/persist \
                   --env-file ${config.sops.templates."grist.env".path} \

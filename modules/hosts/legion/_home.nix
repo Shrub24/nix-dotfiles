@@ -6,6 +6,27 @@
   ...
 }:
 {
+  services.pi-bolt-remote-control.enable = true;
+
+  sops.secrets.pi-bolt-tunnel = {
+    sopsFile = ../../../secrets/hosts/legion/pi-bolt-tunnel.json;
+    format = "binary";
+    mode = "0400";
+  };
+
+  systemd.user.services.pi-bolt-remote-control = {
+    Unit.X-Restart-Triggers = [ config.sops.secrets.pi-bolt-tunnel.path ];
+    Service.Environment = [
+      "TUNNEL_CRED_FILE=${config.sops.secrets.pi-bolt-tunnel.path}"
+    ];
+  };
+
+  programs.pi-coding-agent.settings.remoteControl.service.tunnel = {
+    # UUID avoids an account-level API lookup to resolve the tunnel name.
+    name = "e6ab20ef-4c94-44cb-9566-61667b7f8f7f";
+    hostname = "pi.shrublab.xyz";
+  };
+
   sops.templates."aichat.env".content = ''
     OMNIROUTE_API_KEY=${config.sops.placeholder.OMNIROUTE_API_KEY}
   '';
@@ -32,8 +53,9 @@
       administratorEmail = "jhanjeesaurabh@gmail.com";
       organizationSlug = "personal";
     };
+    # Disabled until nixos-unstable carries the oniguruma buildInput (nixpkgs PR 584888).
     aichat = {
-      enable = true;
+      enable = false;
       settings = {
         model = "omniroute:coder-high";
         clients = [
@@ -149,32 +171,5 @@
         };
       };
     };
-  };
-
-  # This machine's external DP-1 and NVIDIA render node; the shared niri
-  # aspect carries neither.
-  wayland.windowManager.niri.settings = {
-    debug."render-drm-device" = "/dev/dri/by-path/pci-0000:01:00.0-render";
-
-    _children = [
-      {
-        workspace = {
-          _args = [ "home" ];
-          open-on-output = "DP-1";
-        };
-      }
-      {
-        workspace = {
-          _args = [ "dev" ];
-          open-on-output = "DP-1";
-        };
-      }
-      {
-        workspace = {
-          _args = [ "mb" ];
-          open-on-output = "DP-1";
-        };
-      }
-    ];
   };
 }

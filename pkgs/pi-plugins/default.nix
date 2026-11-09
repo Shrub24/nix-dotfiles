@@ -5,11 +5,13 @@
   fetchFromGitHub,
   linkFarm,
   writeShellApplication,
+  writeText,
   python3,
   nix,
   piExtensions,
+  piExtensionPlugins,
+  piExtensionLockCandidates,
   piPowerlineFooter,
-  pi-otel,
   piBoltPlugins,
   piBolt,
 }:
@@ -25,6 +27,8 @@ let
     }:
     {
       inherit name version;
+      # An npm archive unpacks under package/, which holds its package.json.
+      manifest = "package/package.json";
       src = fetchurl {
         url = "https://registry.npmjs.org/${name}/-/${lib.last (lib.splitString "/" name)}-${version}.tgz";
         inherit hash;
@@ -32,6 +36,27 @@ let
     };
   # The local plugins come from the same pinned checkout as the runtime ones.
   checkout = name: "${piExtensions}/${name}";
+  # The producer's plugin lock candidates, in this file's recipe shape.
+  upstreamCandidates = lib.mapAttrs (
+    _: candidate:
+    if candidate ? npm then
+      {
+        tarball = npmTarball candidate.npm.name {
+          inherit (candidate.npm) version hash;
+        };
+      }
+    else
+      { inherit (candidate) manifest; }
+  ) piExtensionLockCandidates;
+  # A checkout recipe's manifest is its package.json at the checkout's path, relative to the
+  # pi-extensions root, which the lock reads as a path. Attributes may name another.
+  fromCheckout =
+    name: attrs:
+    {
+      dir = checkout name;
+      manifest = "${name}/package.json";
+    }
+    // attrs;
   # No releases: pinned to a deploy/edge commit that carries @omniroute/pi-agent.
   omnirouteSrc = fetchFromGitHub {
     owner = "Shrub24";
@@ -52,8 +77,8 @@ let
     plugins = {
       tool-repair = {
         tarball = npmTarball "pi-tool-repair" {
-          version = "0.3.9";
-          hash = "sha512-DhNdHn2rNixXk1fxVBwrbri1G1a+TNNWpoLY3V41aU0LJZfztCWmVare2rYFk/wmNdQ+rsrPd3NLBKJ86AS4EA==";
+          version = "0.3.10";
+          hash = "sha512-3lN74Sxvf0ywav0c+DYoWXeuN0m+bZqPO0olHmhwSApiIZQy0gIynWtLypGC71yIfjYxtcMRs0Rk/WPlSNQsrA==";
         };
         entry = "tool-repair.ts";
       };
@@ -66,22 +91,22 @@ let
       };
       rewind = {
         tarball = npmTarball "pi-rewind-hook" {
-          version = "1.8.7";
-          hash = "sha512-5d+X5waUwtfOS9xqQpAnFt34lUSwPGhoekA4C/XisUhZDWYdQ11g8BO4OwCRTFZppmoai37ce/xy9MO7M82kbA==";
+          version = "1.8.8";
+          hash = "sha512-vicXPos9+qcEZsFGrS6amTLQYZWSdw5clCRIbUm5IOVLG1U2wf7uVuurT8tgmQAi4fnk3faztB9VYcS6SqlMgg==";
         };
         entry = "index.ts";
       };
       cache-optimizer = {
         tarball = npmTarball "pi-cache-optimizer" {
-          version = "2.10.4";
-          hash = "sha512-Y0e7RzN7ehK0xN5atreN/jHyCdBNhFI0IwtWGgPn9j7aMPe8xK+tMjmkb8lqlktyRcfzLD6wH8Z4o1CR47w3og==";
+          version = "2.10.5";
+          hash = "sha512-vSaKlCnRMNkAq6q1dY6s9UEy+A6PSRKTCGokm9bUC+/M0MOnP8le3OcbJ3UYgJym1e6GnZfH7f+/caeCsL/dbA==";
         };
         entry = "index.ts";
       };
       context-view = {
         tarball = npmTarball "pi-context-view" {
-          version = "0.7.2";
-          hash = "sha512-i8jtZJA1ovhMLsBHHWE0mB8mzX28Mhm125Zy4QDiD9+bYCgcsYdMzXE7fPnmtx64MB3MNkMIAeMtTrJQ7HtuWQ==";
+          version = "0.8.3";
+          hash = "sha512-gkeblBXXwz0uxhCSWa4RrMU64E3TYHr8vSyM10wcIkOAKaL8zoO6ob4bE9s+KjFfNVZ7WcPClSDnOOo2BjyhUw==";
         };
         entry = "src/index.ts";
       };
@@ -91,8 +116,8 @@ let
       };
       anthropic-auth = {
         tarball = npmTarball "@gotgenes/pi-anthropic-auth" {
-          version = "3.4.3";
-          hash = "sha512-w2WwBxUKY4pLOHYvVdkR39lDrFgRrETIs3Oh5iCK461nL5MhKjW18iBjBD9DkTJlcavKZkrRvRvQnLz9o8DVMg==";
+          version = "3.4.4";
+          hash = "sha512-oWCkPFSa7AkvSju3OrlYu0GTo8Jdqz2OvszJtHj0hzXLw8tErtmPPMYPqK2it3zaXu+Wl2oH8nfpeIUVsqW2Vw==";
         };
         entry = "src/index.ts";
         # Pi-Bolt's own preamble must be shaped too; detection misses it otherwise.
@@ -124,8 +149,8 @@ let
       };
       tool = {
         tarball = npmTarball "@narumitw/pi-tool" {
-          version = "0.3.3";
-          hash = "sha512-+baoJZ8C2B9SR4jkV6K7CNCRkr8up5gSmm1tUfYZ8Z3vDwj+E05Olsh0G2dv8ud1pRxsPrJ+dT9qFUOxNatQRg==";
+          version = "0.4.2";
+          hash = "sha512-ap4mSHkhLQ6v/CYE9SIuZ+fWJiCKHCe9tYlDkgsWq17cMuksXIuBFD3ion8bUg00lq5wJo9gJN3DEXrVoKBfUw==";
         };
         entry = "dist/index.ts";
       };
@@ -147,8 +172,8 @@ let
       };
       ask-user-question = {
         tarball = npmTarball "@juicesharp/rpiv-ask-user-question" {
-          version = "2.13.9";
-          hash = "sha512-vx9CIkRHbzavPr7DFYUjorfaYErAVwurZOs2tKC5kQFv5y05CShlxf3qQ7k67lqvODdz8j/sbMIaj6szgLyCEg==";
+          version = "2.15.0";
+          hash = "sha512-Gm6de5IZF52BaSeh9dnDqJBn821Z5XfJkCmhkCmqTzvNv3SCpSv1mA4Gj5VBcfrSe+xTtWSVQzJwIqJFQHH3Lg==";
         };
         entry = "index.ts";
         # Locale files are source-relative; keep the built-in English fallback.
@@ -160,30 +185,37 @@ let
       };
       todo = {
         tarball = npmTarball "@juicesharp/rpiv-todo" {
-          version = "2.13.9";
-          hash = "sha512-fXuUVU2HlxiUMeDeRTXbSVDPftP+CMGe47nAA5H0BX4YYl7chl1M2fSL1fFQqq5FCcpk5+ZBiQ43tiKvUu97gQ==";
+          version = "2.15.0";
+          hash = "sha512-8WfYssdgQgSWzFNsRzdw5Z6ZJIjO2ecM/YqEzYpR/ore+Hh5aNmafGVy94uFbIofAv2wGGitx5e3J/ucRrViXQ==";
         };
         entry = "index.ts";
-        # The English fallback replaces the optional i18n peer.
-        # A snapshot missing a task subject crashes the renderer on resume, so replay validates task entries.
+        # The English fallback replaces the optional i18n peer. The hygiene hooks prune
+        # completed tasks at the turn boundary and surface the ones still open; the
+        # replacements carry the store file's tab indentation, hence printf.
         patch = ''
+          install -m644 ${./patches/todo-hygiene.ts} plugins/todo/state/hygiene.ts
+          startHook="$(printf '%b' 'pi.on("before_agent_start", async (_event, ctx) => {\n\t\tconst message = openTasksMessage(ctx);\n\t\treturn message ? { message } : undefined;\n\t});\n\n\tpi.on("agent_start", async (_event, ctx) => {')"
+          flushHook="$(printf '%b' 'todoOverlay?.hideCompletedTasksFromPreviousTurn();\n\t\tif (flushCompleted(pi, ctx)) void updateTodoOverlay();')"
+          importHook="$(printf '%b' 'import { replayFromBranch } from "./state/replay.ts";\nimport { flushCompleted, openTasksMessage } from "./state/hygiene.ts";')"
           substituteInPlace plugins/todo/index.ts \
+            --replace-fail 'import { replayFromBranch } from "./state/replay.ts";' "$importHook" \
+            --replace-fail 'pi.on("agent_start", async () => {' "$startHook" \
+            --replace-fail 'todoOverlay?.hideCompletedTasksFromPreviousTurn();' "$flushHook" \
             --replace-fail '@juicesharp/rpiv-i18n/loader' './i18n-loader.ts'
           printf '%s\n' 'export function registerLocalesFromDir() {}' > plugins/todo/i18n-loader.ts
           substituteInPlace plugins/todo/state/i18n-bridge.ts \
             --replace-fail '@juicesharp/rpiv-i18n' './i18n-scope.ts'
           printf '%s\n' 'export function scope() { return (_key: string, fallback: string) => fallback; }' > plugins/todo/state/i18n-scope.ts
-          substituteInPlace plugins/todo/state/replay.ts \
-            --replace-fail 'return Array.isArray(v.tasks) && typeof v.nextId === "number";' \
-            'return Array.isArray(v.tasks) && typeof v.nextId === "number" && v.tasks.every((task) => !!task && typeof task === "object" && typeof (task as { subject?: unknown }).subject === "string");'
         '';
       };
       permission-system = {
         tarball = npmTarball "@gotgenes/pi-permission-system" {
-          version = "41.0.0";
-          hash = "sha512-BJHnj4yrtVMT5A5Tzss+yRhdvRndJSEBMr4j3QGa+T5MxmHof1xTKlVlDA6Xiq3hFQ7LcvTTCxzvXfPW85zftA==";
+          version = "42.0.0";
+          hash = "sha512-imhOymTbnj1iqnJDujqtnp79Su63PyQ+SAP0UqooC2E9yL9HzP/ISYTYkthvhq2aNbwTPBZZSjqI3jBdvmZ7ZQ==";
         };
         entry = "src/index.ts";
+        # jev imports it by name; the link needs this.
+        packageName = "@gotgenes/pi-permission-system";
         # Embed the parser's wasm instead of resolving it next to the source, and
         # skip the `npm root -g` subprocess: there is no global node_modules here.
         patch = ''
@@ -197,58 +229,10 @@ let
             --replace-fail 'return discoverGlobalNodeModulesViaSubprocess();' 'return null;'
         '';
       };
-      vcc = {
-        tarball = npmTarball "@sting8k/pi-vcc" {
-          version = "0.10.2";
-          hash = "sha512-7vTuOaIRZGRnChb+ZWysYtYKsZgF3KFfiJpufBl03q5KZouKAgGUdiAdfTCOM71mTSEL/gUi2+TBsmy1Y0KxYA==";
-        };
-        entry = "index.ts";
-      };
-      herdsman = {
-        dir = checkout "pi-herdsman";
-        # The lock member's manifest, relative to the pi-extensions input. Written
-        # as a path so the updater can combine manifests without a store path
-        # evaluated before the pins moved.
-        manifest = "pi-herdsman/package.json";
-        entry = "extension/index.ts";
-        # Its sibling imports are relative into the staged plugins directory, so
-        # bash-processes has to be staged beside it.
-        dependencies = [ "bash-processes" ];
-        # Children on stock Pi still need the extension path; bundled definitions
-        # must remain readable from disk rather than Bun's virtual filesystem.
-        patch = ''
-          substituteInPlace plugins/herdsman/extension/index.ts \
-            --replace-fail 'const HERDSMAN_EXTENSION_PATH = fileURLToPath(import.meta.url);' 'const HERDSMAN_EXTENSION_PATH = "${checkout "pi-herdsman"}/extension/index.ts";' \
-            --replace-fail '"../../pi-bash-processes/extensions/background-work.ts"' '"../../bash-processes/extensions/background-work.ts"'
-          substituteInPlace plugins/herdsman/extension/advisory-wake.ts \
-            --replace-fail '"../../pi-bash-processes/extensions/wake-consumer.ts"' '"../../bash-processes/extensions/wake-consumer.ts"'
-          substituteInPlace plugins/herdsman/extension/agent-definitions.ts \
-            --replace-fail 'const BUILTIN_AGENT_DIR = fileURLToPath(
-            new URL("./agent-definitions", import.meta.url),
-          );' 'const BUILTIN_AGENT_DIR = "${checkout "pi-herdsman"}/extension/agent-definitions";'
-        '';
-      };
-      tool-renderer = {
-        dir = checkout "pi-tool-renderer";
-        entry = "extensions/tool-renderer.ts";
-        # bash-processes imports it by package name, so the builder links it into
-        # that plugin's node_modules instead of it being staged as a sibling.
-        packageName = "pi-tool-renderer";
-      };
-      output-policy = {
-        dir = checkout "pi-output-policy";
-        entry = "extensions/output-policy.ts";
-      };
-      bash-processes = {
-        dir = checkout "pi-bash-processes";
-        entry = "extensions/background-tasks.ts";
-        dependencies = [ "tool-renderer" ];
-      };
-      jev = {
-        dir = checkout "pi-jev";
+      # Radar's registrar: herdsman imports it by name, and its baseline is the entry its children load from disk.
+      jev = fromCheckout "pi-jev" {
         entry = "extensions/compiled.ts";
-        # Its entry imports permission-system by a path relative to the staged
-        # siblings, so that plugin is staged even where this one is not selected.
+        # Its entry imports the permission system by name.
         dependencies = [ "permission-system" ];
         # Keep both portable entries; the compiled manifest needs one factory.
         patch = ''
@@ -259,17 +243,33 @@ let
           import intent from "./tool-intent.ts";
           export default function jev(pi: ExtensionAPI) { permissions(pi); intent(pi); }
           EOF
+          # A compiled build cannot resolve a deferred specifier.
           substituteInPlace plugins/jev/extensions/gotgenes.ts \
-            --replace-fail 'return import(specifier);' 'return import("../../permission-system/src/service.ts");'
+            --replace-fail 'return import(specifier);' 'return import("@gotgenes/pi-permission-system");'
         '';
       };
-      reqcap = {
-        dir = checkout "pi-reqcap";
-        entry = "extensions/index.ts";
-      };
-      cbmem = {
-        dir = checkout "pi-cbmem";
-        entry = "extensions/cbmem.ts";
+      neuralwatt = {
+        tarball = npmTarball "@aliou/pi-neuralwatt" {
+          version = "0.19.1";
+          hash = "sha512-YpBLw3GC2xRxOvVns9KlLw8F6AAHkcZGEJmaJ0l6juB84STMH6x1LMGbWOcKOiyRzh4eWXa8nKZScz7UwbLYjg==";
+        };
+        entry = "extensions/compiled.ts";
+        # The package ships three entries - provider, quota command, quota warnings -
+        # and a compiled plugin carries one, so this one loads all three.
+        patch = ''
+          cat > plugins/neuralwatt/extensions/compiled.ts <<'EOF'
+          import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+          import commandQuotas from "./command-quotas/index.ts";
+          import provider from "./provider/index.ts";
+          import quotaWarnings from "./quota-warnings/index.ts";
+
+          export default async function neuralwatt(pi: ExtensionAPI) {
+            await provider(pi);
+            await commandQuotas(pi);
+            await quotaWarnings(pi);
+          }
+          EOF
+        '';
       };
       omniroute = {
         dir = "${omnirouteSrc}/@omniroute/pi-agent";
@@ -280,21 +280,6 @@ let
       fork-in = {
         dir = forkInSrc;
         entry = "src/pi.ts";
-      };
-      # Reuse the runtime package's lock-derived dependency closure.
-      otel = {
-        dir = "${pi-otel}";
-        manifest = "pi-otel/package.json";
-        entry = "src/index.ts";
-        # AOT has no source-relative package.json; keep the stock version.
-        patch = ''
-          substituteInPlace plugins/otel/src/version.ts \
-            --replace-fail 'import { readFileSync } from "node:fs";' "" \
-            --replace-fail 'const url = new URL("../package.json", import.meta.url);
-              const pkg = JSON.parse(readFileSync(url, "utf8")) as { version?: string };
-              cached = typeof pkg.version === "string" && pkg.version.length > 0 ? pkg.version : "0.0.0";' \
-            'cached = "${pi-otel.version}";'
-        '';
       };
     };
   };
@@ -315,12 +300,29 @@ let
       inherit (recipe) entry;
       dependencies = builtins.map pluginOf (recipe.dependencies or [ ]);
       postPatch = lib.optionalString (recipe ? patch) (
-        lib.replaceStrings [ "plugins/${id}/" ] [ "" ] recipe.patch
+        lib.replaceStrings [ "plugins/${id}/" ] [ "" ] (
+          if lib.isFunction recipe.patch then recipe.patch { radar = pluginOf "radar"; } else recipe.patch
+        )
       );
     };
 
+  # The plugins pi-extensions builds itself, taken from its published packages by
+  # name rather than re-declared here: a plugin's build identity is its producer's.
+  upstreamOwned = [
+    "bash-processes"
+    "cbmem"
+    "copy-mode"
+    "herdsman"
+    "otel"
+    "output-policy"
+    "radar"
+    "reqcap"
+    "tool-renderer"
+  ];
+  upstreamPlugins = lib.getAttrs upstreamOwned piExtensionPlugins;
+
   pluginOf = id: plugins.${id};
-  plugins = lib.mapAttrs toPlugin recipes.plugins;
+  plugins = upstreamPlugins // lib.mapAttrs toPlugin recipes.plugins;
 
   sources = linkFarm "pi-plugins" (
     lib.mapAttrsToList (id: path: {
@@ -329,31 +331,33 @@ let
     }) plugins
   );
 
-  # Plugins with npm dependencies need a workspace in the lock. bash-processes is absent:
-  # its one dependency is a `workspace:*` sibling the builder links from the recipe's edge.
-  lockMembers = [
-    "ask-user-question"
-    "herdsman"
-    "otel"
-    "permission-system"
-    "todo"
-    "tool"
-  ];
-  # Where each member's manifest comes from, as the updater reads it: a tarball
-  # pin names its package, and a checkout declares the manifest relative to the
-  # pi-extensions input. Read as a path rather than a store path so the lock can
-  # be regenerated in the run that moves the pins.
-  lockMemberSources = lib.concatStringsSep " " (
-    map (
-      id:
-      let
-        recipe = recipes.plugins.${id};
-      in
-      if recipe ? manifest then
-        "${id}=manifest:${recipe.manifest}"
-      else
-        "${id}=npm:${recipe.tarball.name}"
-    ) lockMembers
+  # Every plugin with a manifest or an npm tarball is a lock candidate; the updater keeps the
+  # ones whose manifest declares dependencies. A candidate names its manifest relative to its
+  # source: the pi-extensions root for a checkout, the archive for an npm tarball.
+  lockCandidates = writeText "pi-plugin-lock-candidates.json" (
+    builtins.toJSON (
+      lib.mapAttrsToList
+        (
+          id: recipe:
+          if recipe ? tarball then
+            {
+              inherit id;
+              npm = recipe.tarball.name;
+              manifest = recipe.tarball.manifest;
+              tarball = "${recipe.tarball.src}";
+            }
+          else
+            {
+              inherit id;
+              inherit (recipe) manifest;
+            }
+        )
+        (
+          lib.filterAttrs (_: recipe: recipe ? manifest || recipe ? tarball) (
+            recipes.plugins // upstreamCandidates
+          )
+        )
+    )
   );
 in
 sources.overrideAttrs (_: {
@@ -369,11 +373,11 @@ sources.overrideAttrs (_: {
         # the same run, so pins and lock never disagree in the working copy.
         piBolt.updatePluginLock
       ];
-      # The input the directory-shaped members live in, and the member list: both
-      # are read by the updater so the recipe file is not parsed for them.
+      # The input the checkout manifests live in, and the candidate list: both are read by
+      # the updater so the recipe file is not parsed for them.
       text = ''
         export PI_EXTENSIONS_ROOT=${piExtensions}
-        export PI_LOCK_MEMBERS="${lockMemberSources}"
+        export PI_LOCK_CANDIDATES=${lockCandidates}
         exec python3 ${./update.py}
       '';
     });
@@ -389,7 +393,7 @@ sources.overrideAttrs (_: {
       ];
       text = ''
         export PI_EXTENSIONS_ROOT=${piExtensions}
-        export PI_LOCK_MEMBERS="${lockMemberSources}"
+        export PI_LOCK_CANDIDATES=${lockCandidates}
         exec python3 ${./update.py} --lock-only
       '';
     };

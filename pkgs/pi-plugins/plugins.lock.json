@@ -11,14 +11,60 @@
         "pbplugins/*"
       ]
     },
+    "node_modules/@aliou/pi-neuralwatt": {
+      "resolved": "pbplugins/neuralwatt",
+      "link": true
+    },
+    "node_modules/@aliou/pi-utils-settings": {
+      "version": "0.24.1",
+      "resolved": "https://registry.npmjs.org/@aliou/pi-utils-settings/-/pi-utils-settings-0.24.1.tgz",
+      "integrity": "sha512-yu2H0gWVO7W+Tt4my+bWr9MMPm0vRzf8Dcuegd4cqJY01nxNo63QXLD9HMfi0evk7FTBSL86jW9HTT3yJV2uWQ==",
+      "license": "MIT",
+      "dependencies": {
+        "@aliou/pi-utils-ui": "^0.5.0"
+      },
+      "bin": {
+        "pi-settings-schema": "bin/pi-settings-schema.mjs"
+      },
+      "peerDependencies": {
+        "@earendil-works/pi-coding-agent": ">=1.4.0 <2",
+        "ts-json-schema-generator": ">=2.4.0 <3"
+      },
+      "peerDependenciesMeta": {
+        "@earendil-works/pi-coding-agent": {
+          "optional": true
+        },
+        "ts-json-schema-generator": {
+          "optional": true
+        }
+      }
+    },
+    "node_modules/@aliou/pi-utils-ui": {
+      "version": "0.5.2",
+      "resolved": "https://registry.npmjs.org/@aliou/pi-utils-ui/-/pi-utils-ui-0.5.2.tgz",
+      "integrity": "sha512-sm+xBU6bNk8iobBRw7ndGfnOwHRBWD5SgS+YzIJ+cYh5W7BXQNedYS8VKzSYoP+XrwOb/hHfS6BAfw2hweqAGg==",
+      "license": "MIT",
+      "peerDependencies": {
+        "@earendil-works/pi-coding-agent": ">=0.74.0 <2",
+        "@earendil-works/pi-tui": ">=0.74.0 <2"
+      },
+      "peerDependenciesMeta": {
+        "@earendil-works/pi-coding-agent": {
+          "optional": true
+        },
+        "@earendil-works/pi-tui": {
+          "optional": true
+        }
+      }
+    },
     "node_modules/@gotgenes/pi-permission-system": {
       "resolved": "pbplugins/permission-system",
       "link": true
     },
     "node_modules/@grpc/grpc-js": {
-      "version": "1.14.6",
-      "resolved": "https://registry.npmjs.org/@grpc/grpc-js/-/grpc-js-1.14.6.tgz",
-      "integrity": "sha512-SgC/B3/VZ8lTyOZ4Cwk6f1skWhmkNAaVfiX90qd5u1rRXGKk1//8FTUEN9GvOUq7rfWIqAYkA3CoyumYVpOS6g==",
+      "version": "1.14.7",
+      "resolved": "https://registry.npmjs.org/@grpc/grpc-js/-/grpc-js-1.14.7.tgz",
+      "integrity": "sha512-W4W/fcBMGRVtG6dW2c7cw2mnpS3hvbBd+oQXjh2iYFTZDk1JJmcNqkM5KSaPubQpamlUUurrlb7G1s9NJeERmQ==",
       "license": "Apache-2.0",
       "dependencies": {
         "@grpc/proto-loader": "^0.8.0",
@@ -61,9 +107,9 @@
       "link": true
     },
     "node_modules/@juicesharp/rpiv-config": {
-      "version": "2.13.9",
-      "resolved": "https://registry.npmjs.org/@juicesharp/rpiv-config/-/rpiv-config-2.13.9.tgz",
-      "integrity": "sha512-wCy7w4PNi+9pVD5gsbsIxq6ysdoFKXGPIQfOICyITW/+Jg6OGlFZa/tG99J9OZvTHDM8ZwUvqXNrFRsU6Z8NTQ==",
+      "version": "2.15.0",
+      "resolved": "https://registry.npmjs.org/@juicesharp/rpiv-config/-/rpiv-config-2.15.0.tgz",
+      "integrity": "sha512-S2BAGX4dJjQ2AyNYOEjC6ha04p9f6CdEfmtxpdxzSKrfDMwqIvOjjO9HiHc1IPY7jDY1q2Q8cGCtpIZWV6Y8NQ==",
       "license": "MIT",
       "peerDependencies": {
         "typebox": "*"
@@ -78,11 +124,12 @@
       "link": true
     },
     "node_modules/@narumitw/pi-tui-kit": {
-      "version": "0.60.0",
-      "resolved": "https://registry.npmjs.org/@narumitw/pi-tui-kit/-/pi-tui-kit-0.60.0.tgz",
-      "integrity": "sha512-2QGXp9Od4HzkytCh74K+N9C5BNIhRDifx3gEGQldDjjgRrR4W7SWU3H6e6gxAc5JOUtF2uv1pePRL5buJGrydA==",
+      "version": "0.69.1",
+      "resolved": "https://registry.npmjs.org/@narumitw/pi-tui-kit/-/pi-tui-kit-0.69.1.tgz",
+      "integrity": "sha512-/dUHk99dB26rqUjeln5XZMXcwFkYmeQyQd16+8KUaHDQ/tVJHZKO/H+FEYfy05j+HaujP8OafQlgYDgGaOusdw==",
       "license": "MIT",
       "dependencies": {
+        "diff": "9.0.0",
         "grok-mermaid": "0.2.3",
         "highlight.js": "11.12.0"
       },
@@ -583,9 +630,9 @@
       }
     },
     "node_modules/@opentelemetry/semantic-conventions": {
-      "version": "1.43.0",
-      "resolved": "https://registry.npmjs.org/@opentelemetry/semantic-conventions/-/semantic-conventions-1.43.0.tgz",
-      "integrity": "sha512-eSYWTm620tTk45EKSedaUL8MFYI8hW164hIXsgIHyxu3VobUB3fFCu5t0hQby6OoWRPsG1KkKUG2M5UadiLiVg==",
+      "version": "1.45.0",
+      "resolved": "https://registry.npmjs.org/@opentelemetry/semantic-conventions/-/semantic-conventions-1.45.0.tgz",
+      "integrity": "sha512-aOP45mbcOKbQVvFWfQmgoOPT8R2iwbbbgl83k4CujGV9BrJhFr3qG55MFpwFs4YLabpuW3HhzUY9eQxPlDqaZw==",
       "license": "Apache-2.0",
       "engines": {
         "node": ">=14"
@@ -649,9 +696,9 @@
       "license": "BSD-3-Clause"
     },
     "node_modules/@types/node": {
-      "version": "26.6.5",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-26.6.5.tgz",
-      "integrity": "sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==",
+      "version": "26.6.6",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-26.6.6.tgz",
+      "integrity": "sha512-MzQj+8Kx3XI40OmUAE6Qoh58ZMNstNNMwn2nfd3qWsfe7nDNSqJNzes4njhz6AHwrSHOffSLwXU6yb474Q4aog==",
       "license": "MIT",
       "dependencies": {
         "undici-types": "~8.9.0"
@@ -712,6 +759,15 @@
       "resolved": "https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz",
       "integrity": "sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==",
       "license": "MIT"
+    },
+    "node_modules/diff": {
+      "version": "9.0.0",
+      "resolved": "https://registry.npmjs.org/diff/-/diff-9.0.0.tgz",
+      "integrity": "sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==",
+      "license": "BSD-3-Clause",
+      "engines": {
+        "node": ">=0.3.1"
+      }
     },
     "node_modules/emoji-regex": {
       "version": "8.0.0",
@@ -805,13 +861,17 @@
       "link": true
     },
     "node_modules/pi-radar": {
-      "version": "0.5.1",
-      "resolved": "https://registry.npmjs.org/pi-radar/-/pi-radar-0.5.1.tgz",
-      "integrity": "sha512-VZKxHqehBtIV80ZizTKXeBTQx+q6w2djmFdvvhrNqHQ02N58qc2D6abbTr5QYM6BxfiDVku4TKqnChuwC3yGyA==",
+      "version": "0.15.0",
+      "resolved": "https://registry.npmjs.org/pi-radar/-/pi-radar-0.15.0.tgz",
+      "integrity": "sha512-81PB4aKYts00C3vDrHtofPGTdbOr7dx+IukpnW2+lLkMC5IwQSocAwqlppGrKc0kINDnssgSHjUTU6+WOUndcQ==",
       "license": "Apache-2.0",
       "engines": {
         "node": ">=22.19.0"
       }
+    },
+    "node_modules/pi-tool-renderer": {
+      "resolved": "pbplugins/tool-renderer",
+      "link": true
     },
     "node_modules/protobufjs": {
       "version": "7.6.6",
@@ -966,16 +1026,24 @@
     },
     "pbplugins/ask-user-question": {
       "name": "@juicesharp/rpiv-ask-user-question",
-      "version": "2.13.9",
+      "version": "2.15.0",
       "dependencies": {
-        "@juicesharp/rpiv-config": "^2.13.9"
+        "@juicesharp/rpiv-config": "^2.15.0"
       }
     },
     "pbplugins/herdsman": {
       "name": "pi-herdsman",
       "version": "0.18.0",
       "dependencies": {
-        "pi-radar": "0.5.1"
+        "pi-radar": "0.15.0"
+      }
+    },
+    "pbplugins/neuralwatt": {
+      "name": "@aliou/pi-neuralwatt",
+      "version": "0.19.1",
+      "dependencies": {
+        "@aliou/pi-utils-settings": "^0.24.0",
+        "@aliou/pi-utils-ui": "^0.5.0"
       }
     },
     "pbplugins/otel": {
@@ -1002,25 +1070,32 @@
     },
     "pbplugins/permission-system": {
       "name": "@gotgenes/pi-permission-system",
-      "version": "41.0.0",
+      "version": "42.0.0",
       "dependencies": {
         "tree-sitter-bash": "^0.25.1",
         "web-tree-sitter": "^0.26.9",
-        "zod": "^4.4.3"
+        "zod": "^4.6.7"
       }
     },
     "pbplugins/todo": {
       "name": "@juicesharp/rpiv-todo",
-      "version": "2.13.9",
+      "version": "2.15.0",
       "dependencies": {
-        "@juicesharp/rpiv-config": "^2.13.9"
+        "@juicesharp/rpiv-config": "^2.15.0"
       }
     },
     "pbplugins/tool": {
       "name": "@narumitw/pi-tool",
-      "version": "0.3.3",
+      "version": "0.4.2",
       "dependencies": {
-        "@narumitw/pi-tui-kit": "^0.60.0"
+        "@narumitw/pi-tui-kit": "^0.69.0"
+      }
+    },
+    "pbplugins/tool-renderer": {
+      "name": "pi-tool-renderer",
+      "version": "2.0.9",
+      "dependencies": {
+        "diff": "^9.0.0"
       }
     }
   }

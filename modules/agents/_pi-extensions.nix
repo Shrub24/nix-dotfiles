@@ -1,6 +1,12 @@
 # One row per extension. `source` feeds stock Pi and Pi-Bolt package lists;
 # `path` is for a runtime extension passed directly to managed children. `id`
 # names the compiled recipe and `compiled` names its roles.
+#
+# `@extensions@/<dir>` is the checkout: stock Pi can load it, but it has no
+# `node_modules` and Pi installs nothing for a local path, so a plugin that
+# declares npm dependencies cannot resolve them from there. Those rows name the
+# built plugin (`@recipe@`) instead, whose tree the builder stages the closure
+# into.
 [
   {
     id = "otel";
@@ -8,7 +14,7 @@
       "lead"
       "child"
     ];
-    source = "@package@pi-otel";
+    source = "@recipe@otel";
   }
   {
     id = "web-access";
@@ -26,6 +32,10 @@
     id = "magic-context";
     source = "@package@pi-magic-context";
     path = "@package@pi-magic-context/dist/index.js";
+  }
+  {
+    id = "memtrace";
+    source = "@extensions@/pi-memtrace";
   }
   # Configured once with `/recap-config`: it rewrites its own config by rename.
   {
@@ -78,6 +88,14 @@
     id = "commandcode-provider";
     source = "npm:pi-commandcode-provider";
   }
+  {
+    id = "neuralwatt";
+    compiled = [
+      "lead"
+      "child"
+    ];
+    source = "@recipe@neuralwatt";
+  }
   # Runtime-loaded: its shared proxy daemon runs from the package's own sources,
   # which a compiled payload cannot carry.
   {
@@ -98,13 +116,21 @@
     ];
     source = "npm:@juicesharp/rpiv-todo";
   }
+  # Herdsman's shared Radar registrar: compiled in, with no runtime package of its own.
+  {
+    id = "radar";
+    compiled = [
+      "lead"
+      "child"
+    ];
+  }
   {
     id = "herdsman";
     compiled = [
       "lead"
       "child"
     ];
-    source = "@extensions@/pi-herdsman";
+    source = "@recipe@herdsman";
   }
   {
     id = "cbmem";
@@ -133,12 +159,12 @@
       "lead"
       "child"
     ];
-    source = "@extensions@/pi-bash-processes";
+    source = "@recipe@bash-processes";
   }
   {
     id = "tool-renderer";
     compiled = [ "lead" ];
-    source = "@extensions@/pi-tool-renderer";
+    source = "@recipe@tool-renderer";
   }
   {
     id = "output-policy";

@@ -52,8 +52,9 @@ Home Manager declares each role's files: every store-managed entry of the
 default agent directory is linked into the role unless the role overrides it
 (`settings.json` always; `mcp.json` only when the role declares MCP servers).
 Runtime state the roles must share (`auth.json`, `trust.json`, `mcp-auth.json`,
-`npm`, themes, router, freeflow and extension state) is an explicit out-of-store
-link list. Projects are trusted by default (`defaultProjectTrust = "always"`). Role settings
+`npm`, themes, router and extension state) is an explicit out-of-store
+link list; freeflow's own files share by resolving `PI_FREEFLOW_DATA_DIR` to
+the default agent directory instead. Projects are trusted by default (`defaultProjectTrust = "always"`). Role settings
 are writable activation snapshots; global and role `mcp.json` files are separate
 store-managed configs. Lead and orchestrator sessions use the default
 `~/.pi/agent/sessions`; child sessions stay role-local. Magic Context's hidden

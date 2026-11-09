@@ -79,7 +79,6 @@ in
             [ "@home@" "@extensions@" ]
             [ config.home.homeDirectory "${inputs.pi-extensions}" ]
             value;
-      # A row with no source is compiled-only (pi-vcc).
       loadable = row: (row.load or true) && row ? source;
       runtimeRows = lib.filter (row: loadable row && (row.compiled or [ ]) == [ ]) piExtensionRows;
       packageSource =
@@ -129,30 +128,19 @@ in
         inherit provider;
         enforce = true;
       };
-      goAccount =
-        secret: account:
-        lib.optionalAttrs (sopsSecrets ? ${secret}) {
-          apiKeyFile = sopsSecrets.${secret}.path;
-          quota = codexbarQuota "opencodego" // {
-            inherit account;
-          };
-        };
       haikuCandidate = {
         provider = "anthropic";
         id = "claude-haiku-5-5";
-        cacheTtlMs = 3600000;
         thinkingLevel = "high";
       };
       opencodeDeepseekCandidate = {
         provider = "opencode-go";
         id = "deepseek-v4.1-flash";
-        cacheTtlMs = 10800000;
         thinkingLevel = "medium";
       };
       commandcodeDeepseekCandidate = {
         provider = "commandcode";
         id = "deepseek/deepseek-v4.1-flash";
-        cacheTtlMs = 10800000;
         thinkingLevel = "medium";
       };
 
@@ -197,14 +185,14 @@ in
       workhorseModels = [
         "route/coder"
         "route/cheap"
-        "openai-codex/gpt-6-luna"
+        "openai/gpt-6-luna"
         "omniroute/coder-high"
         "omniroute/budget"
         "omniroute/smart-budget"
       ];
 
       smartModels = [
-        "openai-codex/gpt-6.1-sol"
+        "openai/gpt-6.1-sol"
         "route/smart"
       ];
       # Rendered whole and read-only to the extension. Model lists only restrict;
@@ -220,7 +208,7 @@ in
         modelScopes = {
           allow = workhorseModels ++ [
             "omniroute/explorer"
-            "openai-codex/gpt-6.1-sol"
+            "openai/gpt-6.1-sol"
           ];
           agents = {
             worker.allow = workhorseModels;
@@ -294,13 +282,6 @@ in
         "pi-native-router"
         "powerline-footer"
         "extensions/pi-permission-system"
-      ]
-      ++ map (name: "pi-freeflow${name}") [
-        "-cline-pool.json"
-        "-onboarded"
-        "-opencode-version.json"
-        "-update.json"
-        "-upstream-health.json"
       ];
       roleSettingsFiles = lib.mapAttrs (
         name: settings: json.generate "pi-${name}-settings.json" settings
@@ -309,6 +290,13 @@ in
       piBolt = pkgs.pi-bolt.override {
         plugins = compiledPlugins pkgs.pi-plugins "lead";
         childPlugins = compiledIds "child";
+        # The remote-control service shells out to cloudflared for its tunnel.
+        extraPackages = [ pkgs.cloudflared ];
+        # Freeflow reads its pool back through the role dir, then saves it by
+        # rename; see context/pi-config-ownership.md.
+        extraEnv = {
+          PI_FREEFLOW_DATA_DIR = piAgentDir;
+        };
         inherit
           leadAgentDir
           childAgentDir
@@ -327,7 +315,10 @@ in
       piStock = alias "pi-stock" "${stockPi}/bin/pi";
     in
     {
-      imports = [ ./_pi-mcp.nix ];
+      imports = [
+        ./_pi-mcp.nix
+        inputs.pi-bolt-nix.homeManagerModules.remote-control
+      ];
 
       # Reports every compiled row without a recipe; a missing attribute would name only the first.
       assertions = [
@@ -355,13 +346,13 @@ in
             "anthropic/claude-haiku-5-5"
             "route/explorer"
             "route/coder"
-            "route/budget"
+            "route/cheap"
             "route/smart"
             "route/free"
             "anthropic/claude-opus-5-5"
             "anthropic/claude-sonnet-5-5"
-            "openai-codex/gpt-6-luna"
-            "openai-codex/gpt-6.1-sol"
+            "openai/gpt-6-luna"
+            "openai/gpt-6.1-sol"
           ];
 
           compaction.enabled = false;
@@ -411,8 +402,9 @@ in
             searchPreviewLines = 40;
             bashOutputMode = "opencode";
             bashPreviewLines = 40;
+            bashCollapsedLines = 5;
             renderMutationTools = true;
-            assistantMessageStyle = "agent";
+            assistantMessageStyle = "plain";
             assistantTurnRule = true;
 
             messageStamps = "inline";
@@ -420,7 +412,7 @@ in
             messageStampSeconds = true;
 
             renderBashDiffs = false;
-            renderVcsDiffCommandDiffs = true;
+            renderVcsDiffCommandDiffs = false;
             splitDiffs = false;
             wordDiffHighlights = true;
             shikiDiffs = true;
@@ -435,25 +427,22 @@ in
           };
 
           # Native router: virtual route/<role> models over ordered physical candidates.
-          # Shared settings sit on each provider; accounts are only for providers with several
-          # keys (OpenCode Go). Keys are sops-decrypted files; a missing key fails closed.
+          # Each provider takes one sops-decrypted key file; a missing key fails closed.
           "pi-native-router" = {
             providers = {
-              opencode-go = {
+              opencode-go = lib.optionalAttrs (sopsSecrets ? OPENCODE_API_KEY) {
                 name = "OpenCode Go";
-                accounts = {
-                  go-a = goAccount "OPENCODE_API_KEY" "main";
-                  go-b = goAccount "OPENCODE_API_KEY_HOMELAB" "homelab";
-                  go-c = goAccount "OPENCODE_API_KEY_UNI" "uni";
-                };
+                apiKeyFile = sopsSecrets.OPENCODE_API_KEY.path;
+                quota = codexbarQuota "opencodego";
               };
               commandcode = lib.optionalAttrs (sopsSecrets ? COMMANDCODE_API_KEY) {
                 name = "Command Code";
                 apiKeyFile = sopsSecrets.COMMANDCODE_API_KEY.path;
                 quota = codexbarQuota "commandcode";
               };
-              "openai-codex" = {
-                name = "Codex";
+              openai = {
+                name = "OpenAI";
+                # `openai` is the unified Pi provider; CodexBar still meters that account as `codex`.
                 quota = codexbarQuota "codex";
               };
               anthropic = {
@@ -470,9 +459,8 @@ in
                 commandcodeDeepseekCandidate
                 opencodeDeepseekCandidate
                 {
-                  provider = "openai-codex";
+                  provider = "openai";
                   id = "gpt-6-luna";
-                  cacheTtlMs = 600000;
                   thinkingLevel = "high";
                 }
               ];
@@ -480,17 +468,14 @@ in
                 {
                   provider = "anthropic";
                   id = "claude-sonnet-5-5";
-                  cacheTtlMs = 3600000;
                   thinkingLevel = "medium";
                 }
                 {
-                  provider = "openai-codex";
+                  provider = "openai";
                   id = "gpt-6.1-sol";
-                  cacheTtlMs = 600000;
                   thinkingLevel = "medium";
                 }
               ];
-              # A bare opencode-go candidate expands to every Go account, in declaration order.
               explorer.candidates = [
                 opencodeDeepseekCandidate
                 commandcodeDeepseekCandidate
@@ -500,7 +485,6 @@ in
                 {
                   provider = "opencode-go";
                   id = "mimo-v2.6-flash";
-                  cacheTtlMs = 600000;
                   thinkingLevel = "medium";
                 }
                 opencodeDeepseekCandidate
@@ -567,21 +551,11 @@ in
               position = "left";
             }
             {
+              # The router colours its own pin fallback and peak glyphs inside this entry.
               id = "model";
               statusKey = "native-router-model";
               position = "left";
-            }
-            {
-              id = "route-health";
-              statusKey = "native-router-pin-health";
-              position = "left";
-              color = "warning";
-            }
-            {
-              id = "peak";
-              statusKey = "native-router-peak";
-              position = "left";
-              color = "warning";
+              selfColorize = true;
             }
             {
               id = "thinking";
@@ -590,6 +564,12 @@ in
               icon = "󰧑";
               thinkingTint = true;
               color = "accent";
+            }
+            {
+              id = "resume";
+              statusKey = "native-router-resume";
+              position = "left";
+              color = "warning";
             }
           ];
           powerline.layout = {
@@ -603,9 +583,8 @@ in
               "model"
               "custom:provider"
               "custom:model"
-              "custom:route-health"
-              "custom:peak"
               "custom:thinking"
+              "custom:resume"
               "shell_mode"
               "queue"
               "subagents"
@@ -675,8 +654,17 @@ in
         };
       };
 
+      # Declared here, so `pi-bolt service install` must not be run: it writes
+      # this same unit itself, which fails over the store link. The host that
+      # serves phones sets `enable`; the tunnel is that host's policy.
+      services.pi-bolt-remote-control = {
+        package = piBolt;
+        launcher = "pi-bolt";
+      };
+
       home.packages = [
         claudeCode
+        pkgs.cloudflared
         (lib.hiPrio piBolt)
         piStock
       ];
@@ -695,6 +683,24 @@ in
             ".pi/agent/mcp.json" = {
               text = mcpConfig;
               force = true;
+            };
+            # kitty binds ctrl+shift+p (its kitty_mod+p) to the hints kitten, so Pi's default
+            # app.model.cycleBackward never sees the key there. alt+p is Pi's own Windows default
+            # and is unclaimed in kitty, foot, ghostty and wezterm.
+            ".pi/agent/keybindings.json" = {
+              source = json.generate "pi-keybindings.json" {
+                "app.model.cycleBackward" = "alt+p";
+              };
+              force = true;
+            };
+            # The fetched catalog under-declares openai/gpt-6.1-sol at 272k; the model serves 500k.
+            # modelOverrides is Pi's topmost user layer, applied per model id after built-in and
+            # catalog models are composed, and nothing in Pi writes models.json, so a store link
+            # is safe here. Interactive sessions never refresh the catalog (session start passes
+            # allowNetwork: false), so this is the only place the window can be corrected.
+            ".pi/agent/models.json".source = json.generate "pi-models.json" {
+              "$schema" = "https://pi.dev/schemas/models.schema.json";
+              providers.openai.modelOverrides."gpt-6.1-sol".contextWindow = 500000;
             };
             ".config/rpiv-todo/config.json".source = json.generate "rpiv-todo.json" {
               collapseKey = "ctrl+alt+t";
