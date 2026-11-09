@@ -20,19 +20,31 @@ _: {
           primaryUser.name
         ];
         settings.user.default = primaryUser.name;
+        # Match the desktop's input and pointer setup so the greeter before login
+        # behaves the same way.
+        settings.keyboard = {
+          layout = "au,gb";
+          numlock = true;
+        };
+        settings.cursor.size = 26;
+        settings.appearance = {
+          hide_logo = true;
+          power_buttons_position = "bottom-right";
+        };
+        settings.clock.enabled = true;
+        cursorTheme = {
+          package = pkgs.bibata-cursors;
+          name = "Bibata-Rainbow-Modern";
+        };
         # Appearance-only sync through the greeter's own polkit action; the
         # module renders the rule and enables the pkexec wrapper.
         passwordlessSyncUsers = [ primaryUser.name ];
       };
 
-      # uwsm publishes the session entry; the greeter must not see a second one,
-      # because a hand-rolled niri.desktop sorts before it and wins the default.
       programs.uwsm.enable = true;
-      programs.uwsm.waylandCompositors.niri = {
-        prettyName = "Niri";
-        comment = "A scrollable-tiling Wayland compositor";
-        binPath = "${pkgs.niri}/bin/niri";
-      };
+
+      # Sync's font is resolved through fontconfig, so it must be a system font.
+      fonts.packages = [ pkgs.google-fonts ];
 
       # greetd is the login session, so its PAM stack must unlock gnome-keyring
       # or the desktop session starts with the login keyring locked.

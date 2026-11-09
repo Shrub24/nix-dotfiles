@@ -32,7 +32,42 @@
       # templates in modules/desktop/noctalia-templates.
       builtinTemplates = "${pkgs.noctalia}/share/noctalia/assets/templates";
       localTemplates = ./noctalia-templates;
-      templateHooks = pkgs.noctalia-template-hooks;
+      # Noctalia runs a template's apply.sh after rendering it. Both hooks are
+      # replacements for upstream's, which assume a writable home and an
+      # unmanaged bat config.
+      templateHooks = {
+        # Upstream's bat hook also rewrites ~/.config/bat/config, which is
+        # Nix-rendered here (the theme comes from BAT_THEME), so only the cache
+        # rebuild is left.
+        bat = pkgs.writeShellApplication {
+          name = "noctalia-template-bat";
+          runtimeInputs = [ pkgs.bat ];
+          text = "bat cache --build";
+        };
+
+        # apply.sh runs from a writable copy: upstream's libreoffice hook
+        # assembles its .oxt inside the template dir, read-only in the store.
+        stage = pkgs.writeShellApplication {
+          name = "noctalia-template-stage";
+          runtimeInputs = [
+            pkgs.coreutils
+            pkgs.zip
+          ];
+          text = ''
+            if [ "$#" -ne 1 ]; then
+              echo "usage: noctalia-template-stage <template-dir>" >&2
+              exit 2
+            fi
+            source_dir="$1"
+            build="''${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/template-stage/$(basename "$source_dir")"
+            rm -rf "$build"
+            mkdir -p "$(dirname "$build")"
+            cp -r "$source_dir" "$build"
+            chmod -R u+w "$build"
+            exec bash "$build/apply.sh"
+          '';
+        };
+      };
 
       # Built-in rows: [dir file] from the noctalia package. `script` runs the template's apply.sh; `action` is a Noctalia post action.
       builtinRows = [
@@ -105,27 +140,6 @@
           cmd = "${templateHooks.bat}/bin/noctalia-template-bat";
         }
         {
-          # Upstream's hook writes the theme PNGs and syncs Brave's Preferences;
-          # it only reads the rendered manifest.
-          id = "brave-origin";
-          dir = "brave-origin";
-          file = "manifest.json";
-          out = "$XDG_CACHE_HOME/noctalia/brave-origin-theme/manifest.json";
-          script.args = "{{ mode }}";
-        }
-        {
-          id = "fzf";
-          dir = "fzf";
-          file = "fzf.sh";
-          out = "$XDG_CONFIG_HOME/fzf/themes/noctalia.sh";
-        }
-        {
-          id = "fzf-fish";
-          dir = "fzf";
-          file = "fzf.fish";
-          out = "$XDG_CONFIG_HOME/fzf/themes/noctalia.fish";
-        }
-        {
           id = "feishin";
           dir = "feishin";
           file = "custom.css";
@@ -184,12 +198,6 @@
           dir = "tmux";
           file = "tmux.conf";
           out = "$XDG_CONFIG_HOME/tmux/themes/noctalia.conf";
-        }
-        {
-          id = "vicinae";
-          dir = "vicinae";
-          file = "vicinae.toml";
-          out = "$XDG_DATA_HOME/vicinae/themes/noctalia.toml";
         }
         {
           id = "yazi";
@@ -261,6 +269,16 @@
         templateEntries builtinTemplates builtinRows
         // templateEntries communityTemplates communityRows
         // {
+          # Vendored from Noctalia 5.3.0; Umbriel includes the output (see umbriel.nix).
+          umbriel = {
+            input_path = "${localTemplates}/umbriel.toml";
+            output_path = "$XDG_CONFIG_HOME/umbriel/noctalia.toml";
+          };
+          # Vendored from the community templates; see the header in the file.
+          vicinae = {
+            input_path = "${localTemplates}/vicinae.toml";
+            output_path = "$XDG_DATA_HOME/vicinae/themes/noctalia.toml";
+          };
           # fastfetch's config is the template itself: Noctalia renders the whole file.
           fastfetch = {
             input_path = "${localTemplates}/fastfetch.jsonc";
@@ -280,6 +298,14 @@
             input_path = "${localTemplates}/neovim.lua";
             output_path = "$XDG_CACHE_HOME/noctalia/nvim-palette.lua";
             post_hook = "${pkgs.procps}/bin/pkill -SIGUSR1 -x nvim || true";
+          };
+          # fzf's palette, mapped the way the pi theme maps it: roles rather than the
+          # terminal's ANSI slots, so the selected-row band comes from the surface
+          # scale and the frame from `outline`. fzf re-reads this file per invocation,
+          # so a wallpaper change reaches it without a new shell.
+          fzf = {
+            input_path = "${localTemplates}/fzf.opts";
+            output_path = "$XDG_CONFIG_HOME/fzf/themes/noctalia.opts";
           };
           # Radar's lifecycle roles mapped onto Noctalia's roles; rendered to its own
           # file because Radar's config.toml is Nix-owned.
@@ -307,6 +333,10 @@
       # Not xdg.dataFile, which would store-link the wallpaper. `C` copies the seed only when absent.
       systemd.user.tmpfiles.rules = [
         "d %h/.local/share/wallpapers 0755 - - -"
+        # fzf refuses a missing FZF_DEFAULT_OPTS_FILE; Noctalia overwrites this on
+        # every palette render.
+        "d %h/.config/fzf/themes 0755 - - -"
+        "f %h/.config/fzf/themes/noctalia.opts 0644 - - -"
         "C %h/.local/share/wallpapers/wallpapersden.com_colorful-textured-abstract_3840x2160.jpg 0644 - - - ${wallpaperSeed}"
       ];
 
@@ -463,8 +493,8 @@
             thickness = 38;
             widget_spacing = 8;
             dead_zone.actions = {
-              scroll_up = "exec niri msg action focus-workspace-up";
-              scroll_down = "exec niri msg action focus-workspace-down";
+              scroll_up = "workspace-switch prev";
+              scroll_down = "workspace-switch next";
             };
             start = [
               "group:g3"
@@ -539,7 +569,7 @@
                 foreground = "on_surface";
                 id = "g6";
                 members = [
-                  "active-workspace"
+                  "workspaces"
                   "active_window"
                 ];
                 opacity = 0.06;
@@ -590,9 +620,7 @@
                 foreground = "on_surface";
                 id = "g1";
                 members = [
-                  "screenshot"
                   "elijaharch/wl-screen-mirror:mirror"
-                  "alexander/screen-toolkit:widget"
                 ];
                 opacity = 0.06;
                 padding = 17.0;
@@ -641,16 +669,15 @@
               width = 96;
             };
 
-            active-workspace = {
-              type = "salemsayed/niri-active-workspace:active-workspace";
+            workspaces = {
+              style = "focus_hint";
+              label_source = "name";
+              max_label_chars = 6;
+              show_icons = false;
             };
 
             bar = {
               type = "noctalia/world_clock:bar";
-            };
-
-            widget = {
-              type = "alexander/screen-toolkit:widget";
             };
 
             "salemsayed/codexbar-meter:bar" = {
@@ -679,8 +706,6 @@
               "elijaharch/wl-screen-mirror"
               "noctalia/world_clock"
               "noctalia/notes"
-              "alexander/screen-toolkit"
-              "salemsayed/niri-active-workspace"
               "dotnetrob/cat"
             ];
           };
@@ -696,10 +721,8 @@
       home.packages = [
         pkgs.codexbar
         # Template hook dependencies, resolved through the noctalia daemon's PATH:
-        # `zip` for the libreoffice hook, python3 with Pillow for the brave-origin
-        # hook's PNG generation.
+        # `zip` for the libreoffice hook.
         pkgs.zip
-        (pkgs.python3.withPackages (p: [ p.pillow ]))
         # icefish/phone-connect shells out to gdbus.
         pkgs.glib.bin
         noctaliaGreeterPackage

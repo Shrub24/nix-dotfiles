@@ -13,12 +13,13 @@ _: {
         users = [ config.currentHost.primaryUser.name ];
       };
       # ZMK boards (nice!nano, 1d50:615e): keypeek speaks ZMK Studio RPC over the
-      # board's USB serial and HID.
+      # board's USB serial and HID. The board's BLE identity has no USB vendor or
+      # product, so access to it is matched by modalias and comes with keypeek's
+      # own packaged rule, which the keypeek aspect installs.
       services.udev.extraRules = ''
         SUBSYSTEMS=="usb", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="615e", MODE:="0666"
         KERNEL=="hidraw*", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="615e", MODE:="0666"
         KERNEL=="ttyACM*", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="615e", MODE:="0666"
-        KERNEL=="hidraw*", ATTRS{modalias}=="hid:b0005g0001v00001D50p0000615E", MODE:="0666", TAG+="uaccess"
       '';
       services.logrotate.enable = true;
     };
