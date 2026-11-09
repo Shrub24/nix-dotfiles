@@ -13,36 +13,6 @@ in
       pkgs,
       ...
     }:
-    let
-      # Image preview: only icat's unicode placeholders survive fzf's repaint (in
-      # kitty-family terminals); elsewhere chafa picks the format, symbols as fallback.
-      previewImage = pkgs.writeShellScript "preview-image" ''
-        set -o pipefail
-
-        cols=''${FZF_PREVIEW_COLUMNS:-80}
-        rows=''${FZF_PREVIEW_LINES:-40}
-
-        if test -n "''${KITTY_WINDOW_ID:-}" ||
-          test -n "''${KITTY_PID:-}" ||
-          test -n "''${KITTY_LISTEN_ON:-}" ||
-          test -n "''${HERDR_PANE_ID:-}"; then
-          # --clear drops the previous placement; the trailing reset code arrives
-          # without a newline (fzf reads it as a scroll offset), so it is folded on.
-          if ! {
-            command -v kitten >/dev/null 2>&1 &&
-            kitten icat --clear --transfer-mode=memory --unicode-placeholder \
-              --stdin=no --place="''${cols}x''${rows}@0x0" "$1" \
-              | sed '$d' | sed $'$s/$/\e[m/'
-          }; then
-            chafa -f symbols --size="''${cols}x''${rows}" "$1"
-            echo
-          fi
-        else
-          chafa --size="''${cols}x''${rows}" "$1"
-          echo
-        fi
-      '';
-    in
     {
       home = {
         packages = with pkgs; [
@@ -53,11 +23,9 @@ in
           sd
           fd
           ripgrep
+          jaq
           jq
           yq
-          chafa
-          mediainfo
-          poppler-utils
         ];
 
         shellAliases = {
@@ -117,8 +85,17 @@ in
         fzf = {
           enable = true;
           enableFishIntegration = false;
-          defaultCommand = "fd -LH --exclude .git";
+          # fzf's own walker replaces `fd` here: it lists files and directories, follows
+          # symlinks and includes hidden entries, and fzf picks the path scoring scheme
+          # for it automatically. Skips are the build and cache trees worth never seeing.
           defaultOptions = [
+            "--walker=file,dir,follow,hidden"
+            "--walker-skip=.git,.jj,node_modules,.direnv,result,target,__pycache__,.venv"
+            # One word: Home Manager joins defaultOptions with spaces into
+            # FZF_DEFAULT_OPTS, which fzf splits on whitespace, so a value with a
+            # space becomes a stray argument. Richer ghost text belongs in a
+            # command that passes its own argv.
+            "--ghost=filter"
             "--layout=reverse"
             "--height=~75%"
             "--min-height=10+"
@@ -129,6 +106,10 @@ in
             "--highlight-line"
             "--info=inline-right"
           ];
+          # The palette is rendered by the noctalia aspect into
+          # ~/.config/fzf/themes/noctalia.opts, which the shells point
+          # FZF_DEFAULT_OPTS_FILE at; colours live there, not here, because an
+          # environment value would outrank the file.
         };
         zoxide.enable = true;
         eza = {
@@ -141,45 +122,6 @@ in
           ];
         };
         "pay-respects".enable = true;
-        pistol = {
-          enable = true;
-          associations = [
-            {
-              mime = "text/*";
-              command = "bat --color=always %pistol-filename%";
-            }
-            {
-              mime = "application/json";
-              command = "bat -l json --color=always %pistol-filename%";
-            }
-            {
-              mime = "image/*";
-              command = ''"${previewImage}" "%pistol-filename%"'';
-            }
-            {
-              mime = "application/pdf";
-              command = "pdftotext %pistol-filename% - | bat -l md --color=always --style=plain";
-            }
-            {
-              mime = "audio/*";
-              command = "mediainfo %pistol-filename%";
-            }
-            {
-              mime = "inode/directory";
-              command = "eza --tree --icons --level=2 --color=always %pistol-filename%";
-            }
-            {
-              mime = "inode/symlink";
-              command = "eza -l --color=always --icons %pistol-filename%";
-            }
-            {
-              mime = "inode/*";
-              command = "file -b %pistol-filename%";
-            }
-          ];
-        };
       };
-    }
-
-  ;
+    };
 }

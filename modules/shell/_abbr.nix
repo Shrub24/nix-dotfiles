@@ -180,6 +180,22 @@
     expansion = "journalctl --user -u";
   };
 
+  # ---- Data querying ----
+  # jaq matches jq on the common filters and starts faster; the input flags are
+  # the reason it is here at all, since jq only reads JSON.
+  jq = {
+    expansion = "jaq";
+  };
+  jy = {
+    expansion = "jaq --from yaml .";
+  };
+  jt = {
+    expansion = "jaq --from toml .";
+  };
+  jx = {
+    expansion = "jaq --from xml .";
+  };
+
   # ---- Pipe abbreviations (global/anywhere) ----
   G = {
     expansion = "| grep";

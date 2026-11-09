@@ -118,5 +118,10 @@
           kubernetes.disabled = true;
         };
       };
+
+      # Fish draws the transient prompt on Enter, before the command runs, so the
+      # right side can show when a command was submitted but not how long it took;
+      # the normal prompt's cmd_duration covers that once it finishes.
+      programs.fish.functions.starship_transient_rprompt_func = "starship module time";
     };
 }
