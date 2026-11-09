@@ -13,7 +13,9 @@ return {
 			vim.lsp.enable("jsonls")
 			vim.lsp.enable("yamlls")
 			vim.lsp.enable("marksman")
+			vim.lsp.enable("rumdl")
 			vim.lsp.enable("texlab")
+			vim.lsp.enable("tinymist")
 			vim.lsp.enable("gopls")
 			vim.lsp.enable("helm_ls")
 			vim.lsp.enable("eslint")
@@ -56,8 +58,6 @@ return {
 				"json",
 				"jsonc",
 				"less",
-				"markdown",
-				"markdown.mdx",
 				"scss",
 				"typescript",
 				"typescriptreact",
@@ -88,8 +88,7 @@ return {
 				sh = { "shfmt" },
 				yaml = { "yamlfmt" },
 				python = { "ruff_fix", "ruff_format", "ruff_organize_imports" },
-				markdown = { "prettier", "markdownlint-cli2", "markdown-toc" },
-				["markdown.mdx"] = { "prettier", "markdownlint-cli2", "markdown-toc" },
+				markdown = { "rumdl", "markdown-toc" },
 			}
 			for _, ft in ipairs(prettier_supported) do
 				local list = formatters_by_ft[ft] or {}
@@ -114,14 +113,6 @@ return {
 									return true
 								end
 							end
-						end,
-					},
-					["markdownlint-cli2"] = {
-						condition = function(_, ctx)
-							local diag = vim.tbl_filter(function(d)
-								return d.source == "markdownlint"
-							end, vim.diagnostic.get(ctx.buf))
-							return #diag > 0
 						end,
 					},
 				},

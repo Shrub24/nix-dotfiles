@@ -373,7 +373,10 @@ return {
 				markdown = true,
 			})
 			require("mini.move").setup({})
-			require("mini.hipatterns").setup({})
+			local hipatterns = require("mini.hipatterns")
+			hipatterns.setup({
+				highlighters = { hex_color = hipatterns.gen_highlighter.hex_color() },
+			})
 			-- Mappings: ys{motion}{char} adds, ds{char} deletes, cs{old}{new} replaces;
 			-- visual ys{char} wraps the selection. `cs` shadows the builtin change-sentence.
 			require("mini.surround").setup({

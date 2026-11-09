@@ -1,0 +1,21 @@
+# Matches the output prettier gave markdown, so rumdl can own formatting.
+[global]
+extend-enable = ["MD060"]
+
+[MD004]
+style = "dash"
+
+[MD029]
+style = "ordered"
+
+[MD040]
+enabled = false
+
+[MD049]
+style = "underscore"
+
+[MD050]
+style = "asterisk"
+
+[MD060]
+style = "aligned"

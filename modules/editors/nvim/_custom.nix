@@ -35,6 +35,31 @@ let
     };
 in
 {
+  # Rendered preview in a float, tab or split; not in nixpkgs.
+  md-render-nvim = fromGitHub {
+    owner = "delphinus";
+    repo = "md-render.nvim";
+    rev = "977c8e4fd73bd1656836c87895458a54098920ba"; # v3.9.0
+    hash = "sha256-goOv3ePoMv8anl4MZOGVkz285rtk4eB5oIT6Sm7+wh0=";
+  };
+
+  # Neovim does not ship spell files and would download them on first `set spell`.
+  spell-en = pkgs.runCommand "nvim-spell-en" { } ''
+    mkdir -p $out/spell
+    cp ${
+      pkgs.fetchurl {
+        url = "https://ftp.nluug.nl/pub/vim/runtime/spell/en.utf-8.spl";
+        hash = "sha256-/sq9yUm2o50ywImfolReqyXmPy7QozxK0VEUJjhNMHA=";
+      }
+    } $out/spell/en.utf-8.spl
+    cp ${
+      pkgs.fetchurl {
+        url = "https://ftp.nluug.nl/pub/vim/runtime/spell/en.utf-8.sug";
+        hash = "sha256-W25eYWVYLS/Xob+kH7zoJCxyR2IixV0XwqorqTPJMuw=";
+      }
+    } $out/spell/en.utf-8.sug
+  '';
+
   herdr-nvim = fromGitHub {
     owner = "ChmaraX";
     repo = "herdr-nvim";

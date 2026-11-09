@@ -30,7 +30,7 @@ return {
       require("snacks").setup({
         animate = { enabled = true },
         debug = { enabled = true },
-        image = { enabled = false },
+        image = { enabled = true },
         keymap = { enabled = true },
         lazygit = { enabled = true },
         bigfile = { enabled = true },

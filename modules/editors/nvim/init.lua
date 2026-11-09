@@ -232,7 +232,7 @@ local inline_specs = {
 							module = "blink-ripgrep",
 							name = "Ripgrep",
 							score_offset = -5,
-							opts = { prefix_min_len = 4, backend = "gitgrep-or-ripgrep" },
+							opts = { prefix_min_len = 4, backend = { use = "gitgrep-or-ripgrep" } },
 						},
 					},
 				},
@@ -282,6 +282,7 @@ local groups = {
 	"plugins.repl",
 	"plugins.rust",
 	"plugins.tex",
+	"plugins.typst",
 	"plugins.resession",
 	"plugins.snacks",
 }

@@ -82,6 +82,12 @@ return {
     end,
   },
   {
+    -- jj's diff-editor (ui.diff-editor) and directory diff viewer; needs nui.
+    "hunk.nvim",
+    cmd = { "HunkDiffView", "HunkDiffEditor", "DiffEditor" },
+    on_require = { "hunk" },
+  },
+  {
     "diffview-plus.nvim",
     auto_enable = true,
     cmd = { "DiffviewOpen", "DiffviewFileHistory", "DiffviewClose", "DiffviewToggleFiles" },

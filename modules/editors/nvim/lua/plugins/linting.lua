@@ -14,7 +14,6 @@ return {
 				events = { "BufWritePost", "BufReadPost", "InsertLeave" },
 				linters_by_ft = {
 					fish = { "fish" },
-					markdown = { "markdownlint-cli2" },
 				},
 				linters = {},
 			}

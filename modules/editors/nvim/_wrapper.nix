@@ -33,6 +33,7 @@
     yaml-language-server
     marksman
     texlab
+    tinymist # typst LSP; bundles the typstyle formatter
     gopls
     typos-lsp
     ast-grep
@@ -45,7 +46,15 @@
     yamlfmt
     prettierd
     prettier
-    markdownlint-cli2
+    rumdl # markdown LSP and formatter; config in ~/.config/rumdl
     markdown-toc
+    # md-render: mermaid diagrams and image/video conversion
+    mermaid-cli
+    ffmpeg
+    typst # compile and export
+    # snacks.image math: pdflatex -> PDF, then magick (which shells out to gs) -> PNG
+    imagemagick
+    ghostscript
+    (texliveSmall.withPackages (ps: [ ps.latexmk ]))
   ];
 }

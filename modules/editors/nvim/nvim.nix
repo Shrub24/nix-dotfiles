@@ -17,5 +17,8 @@ in
     { pkgs, ... }:
     {
       home.packages = [ (wrapper.config.wrap { inherit pkgs; }) ];
+
+      # User-level rumdl config, read by the CLI, conform and the LSP alike.
+      xdg.configFile."rumdl/rumdl.toml".source = ./rumdl.toml;
     };
 }

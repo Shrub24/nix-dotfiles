@@ -97,6 +97,7 @@ with pkgs'.vimPlugins;
           sql
           latex
           bibtex
+          typst
           toml
           yaml
 
@@ -208,6 +209,10 @@ with pkgs'.vimPlugins;
     lazy = true;
     data = [ custom.herdr-nvim ];
   };
+  spell = {
+    lazy = false;
+    data = [ custom.spell-en ];
+  };
 
   # --- filetype-scoped -----------------------------------------------------
   repl = {
@@ -223,6 +228,7 @@ with pkgs'.vimPlugins;
       vimtex
       cornelis
       haskell-vim
+      typst-preview-nvim
     ];
   };
 
@@ -266,9 +272,12 @@ with pkgs'.vimPlugins;
     data = [
       noice-nvim
       render-markdown-nvim
-      markdown-preview-nvim
+      custom.md-render-nvim
+      live-preview-nvim
       litee-nvim
       SchemaStore-nvim
+      nvim-highlight-colors
+      hunk-nvim
       ts-comments-nvim
       vim-startuptime
     ];
