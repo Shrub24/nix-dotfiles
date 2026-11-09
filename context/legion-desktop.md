@@ -27,7 +27,8 @@ only screen sharing and Bluetooth.
 
 **Id:** b0def88a-67c6-4a72-a48f-849f1865e359
 **Type:** workaround
-**Status:** needs-review
+**Status:** superseded
+**Superseded by:** a7bc0c00-1557-4205-9ff1-50ca6f0a3399
 **Evidence:** inferred
 **Revisit when:** a re-login after the switch shows the frontend reaching active without the 26 s gap, or the KDE backend starts from somewhere else at session start
 
@@ -55,3 +56,88 @@ the right Settings backend on this desktop.
 **Rejected alternatives:** dropping the KDE backend outright, which loses the Qt file
 dialog that the default chain gives the KDE apps; the removed Arch-era `override.conf` for
 the unit, which set a bogus lowercase variable and was not the cause.
+
+## The file chooser is a terminal backend
+
+**Id:** a7bc0c00-1557-4205-9ff1-50ca6f0a3399
+**Type:** decision
+**Status:** active
+**Evidence:** confirmed
+**Source:** `xdg-desktop-portal` journal, 2026-10-25 and 2026-10-26; portal and KIO state
+read from the running session, 2026-10-28
+**Revisit when:** the terminal chooser cannot express a save dialog, yazi leaves the
+nixpkgs pin, the portal frontend gains a chooser that keeps its own history, or the
+nixpkgs pin reaches termfilechooser 1.5.0 so the local override can go
+**See:** legion-desktop.md#the-kde-portal-backend-stays-out-of-the-frontends-startup-set — b0def88a-67c6-4a72-a48f-849f1865e359 — as of 2026-10-28
+
+`org.freedesktop.impl.portal.FileChooser` resolves to `xdg-desktop-portal-termfilechooser`,
+which runs yazi in kitty and reads the selection back from the file its wrapper writes. The
+KDE backend is gone from both package lists.
+
+**Reason:** the KDE dialog was never reachable. The frontend builds a proxy for every
+interface at its own startup, so naming `kde` for FileChooser started that backend while
+the frontend was still starting, the backend queried the frontend back, and D-Bus gave up
+after 25 s (`Failed to create file chooser proxy: … Timeout was reached`, 2026-10-25 and
+again at the 2026-10-26 startup of the frontend that served the next two and a half days).
+That is the same cycle b0def88a blames on the `default` chain — the per-interface mapping
+alone was enough to trigger it, which is why the workaround never held. Restarting the
+frontend with the backend already up produced the dialog, and it was not worth keeping: no
+Qt style plugin is installed (`kdeglobals` names `widgetStyle=kvantum`, a package this
+machine does not have) and KIO has no reader for GTK's `recently-used.xbel`, so its Recent
+stayed empty beside 377 GTK entries. Neither backend remembered the last folder. yazi
+brings multi-select through `--chooser-file` and frecency through zoxide, and the backend
+supplies the last-folder memory nothing else in the chain has
+(`$XDG_STATE_HOME/xdg-desktop-portal-termfilechooser/last_dir`). The trade: the picker is a
+terminal window, and a save makes the filename part of the yazi session rather than a text
+field.
+
+The pin sits one release ahead of nixpkgs (1.5.0) because that release registers `niri` in
+its portal file and closes a command injection in the wrapper scripts.
+
+**Rejected alternatives:** keep the KDE backend and order its unit before the frontend —
+the two wait on each other whatever the order, since the backend's startup needs a frontend
+that is already answering; use `xdg-desktop-portal-gtk` — no extra backend and a sidebar
+that takes Projects, but no recent folders and no last-folder memory; run
+`kactivitymanagerd` so KDE recents populate — a resident daemon for documents only KDE
+applications register, while the GTK list stays invisible to KIO; use
+`xdg-desktop-portal-termfilepickers` — younger, unpackaged, and it fixes the chooser to its
+own yazi wrappers.
+
+## Screen sharing goes through the umbriel portal
+
+**Id:** 5edc5a10-1c69-4dcc-afb0-56d85ce55d0a
+**Type:** decision
+**Status:** active
+**Evidence:** inferred
+**Source:** portal and PipeWire journals and the Chromium and Vesktop client logs, 2026-11-04 and 2026-11-09; live picker and window state on 2026-11-09
+**Revisit when:** a share fails under umbriel with a format or negotiation error, or the wlr backend gains a picker
+**See:** legion-desktop.md#the-file-chooser-is-a-terminal-backend — a7bc0c00-1557-4205-9ff1-50ca6f0a3399 — as of 2026-11-09
+
+`org.freedesktop.impl.portal.ScreenCast` and `Screenshot` resolve to the umbriel
+portal. `xdg-desktop-portal-wlr` is out of both package lists and out of the generic
+ScreenCast chain, which falls back to gnome then gtk. The `xdg-desktop-portal-wlr`
+config block is gone with it — nothing selected that backend any more.
+
+**Reason:** the umbriel picker is the only one in the chain. It offers screen and
+window tabs, thumbnails and cursor modes, while xdpw in its picker-less mode shares
+exactly one named output and needs a hand-written config to say which. The detour
+through xdpw existed only to work around a failure that was never the portal's.
+
+That failure was misdiagnosed. On 2026-11-04 Chromium inside Vesktop reached the
+picker, selected a source, and died with `PipeWire stream state error: no more input
+formats`; the cause was read as the portal's format offers being too narrow for the
+consumer. The portal's stderr held nothing to support that, and the same Vesktop
+build could not paint its own window at all — its renderer was throwing Vencord
+patch errors (`Cannot read properties of undefined (reading 'get')`). Repairing
+Vencord made screen sharing work under the unchanged umbriel backend, on 2026-11-09.
+So the confirmed half is the outcome: shares work under umbriel, and they failed
+under it while the client's renderer was broken. That the broken renderer caused
+the format rejection is inferred from that sequence, not traced through the
+capturer.
+
+**Rejected alternatives:** keep xdpw as the ScreenCast backend — it works, but with
+no picker it cannot offer a window, a source choice or cursor modes, and it needs
+per-output configuration that names one display; keep it in the package list as a
+fallback — with the mapping moved nothing selects it, so it is an installed backend
+that can never run; leave the xdpw config file in place for the same reason — the
+file outlives the reason it existed.
