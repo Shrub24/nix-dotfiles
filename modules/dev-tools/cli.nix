@@ -2,27 +2,26 @@ _: {
   flake.modules.homeManager.cli =
     {
       config,
-      lib,
       pkgs,
       ...
     }:
     {
       home.packages = with pkgs; [
         # CLI tools
+        mdterm
+        mo-viewer
         btop
         gping
+        gpclient
         hyperfine
         ncdu
         pv
         rsync
         xh
-        glow
         entr
         git-filter-repo
         curlie
         lazydocker
-        lazyjj
-        jj-hunk-tool
         just
         go-task
         mold
@@ -64,12 +63,11 @@ _: {
         whois
         wget
         ttyd
-        bws
+        # bws: disabled until nixpkgs' build works again. Re-enabling means
+        # re-adding it to both hosts' unfree allowlists too.
         # Archive / conversion
         unzip
-        p7zip
         unrar
-        pandoc
         # Misc utilities
         cmatrix
         btdu
@@ -93,18 +91,6 @@ _: {
         xdg-user-dirs
       ];
 
-      # delta owns jj's pager, diff formatter, and merge tool.
-      programs.delta = {
-        enable = true;
-        enableJujutsuIntegration = true;
-        options = {
-          features = "line-numbers";
-          navigate = true;
-        };
-      };
-
-      programs.lazygit.enable = true;
-      programs.yazi.enable = true;
       programs.tealdeer.enable = true;
 
       # Noctalia renders glow/noctalia.json; without pointing glow at it the template
@@ -114,40 +100,5 @@ _: {
         mouse: false
         pager: false
       '';
-
-      programs.jjui.enable = true;
-
-      programs.jujutsu = {
-        enable = true;
-        settings = {
-          user = {
-            name = "Saurabh Jhanjee";
-            email = "jhanjeesaurabh@gmail.com";
-          };
-          ui.editor = "nvim";
-          git.push-new-bookmarks = true;
-          # The default freezes every remote bookmark it does not track, which is
-          # what a wip branch pushed from another machine — or left behind by a
-          # deleted local bookmark — becomes. Carving those out keeps them
-          # rewritable; every other clause is the builtin's, so trunk and tags
-          # stay protected.
-          "revset-aliases"."immutable_heads()" =
-            "trunk() | tags() | untracked_remote_tags() | (untracked_remote_bookmarks() ~ remote_bookmarks('wip/*'))";
-          # lazyjj has no config file; it reads `lazyjj.*` from jj's config. Match the
-          # formatter delta renders with so both panes agree.
-          lazyjj.diff-format = "git";
-          # jjui shells out to jj with JJUI set, so scope delta to that environment —
-          # jj must never page inside a TUI.
-          "--scope" = [
-            {
-              "--when".environments = [ "JJUI" ];
-              ui = {
-                diff-formatter = lib.getExe config.programs.delta.finalPackage;
-                paginate = "never";
-              };
-            }
-          ];
-        };
-      };
     };
 }

@@ -1,7 +1,7 @@
 ---
 name: jj
 description: "Use Jujutsu (jj) for version control in jj-managed repos, including non-interactive hunk/line-level split and squash via jj-hunk-tool. Activate on VCS operations (status, commit, split, squash, absorb, rebase, bookmark, push) when a repo has .jj/, or when HEAD is detached. Read agent safety rules before running jj; prefer jj over git mutations."
-token_cost: 180
+token_cost: 6700
 related: [git]
 keywords:
   [
@@ -29,7 +29,7 @@ allowed-tools: Bash(jj *), Bash(jj-hunk-tool *), Bash(git log *), Bash(git diff 
 
 jj is a Git-compatible VCS with mutable commits and automatic rebasing. You use jj locally; the remote stays plain Git, so GitHub and collaborators see ordinary commits and branches.
 
-**Original skill targeted jj v0.44.0**. `jj-hunk-tool` examples follow [mvzink/jj-hunk-tool](https://github.com/mvzink/jj-hunk-tool); check the installed versions when flags differ.
+**Verified against jj 0.46.0.** `jj-hunk-tool` examples follow [mvzink/jj-hunk-tool](https://github.com/mvzink/jj-hunk-tool); confirm the locals with `jj version` and `jj-hunk-tool --version` before trusting a flag.
 
 ## Agent Safety Rules (Read First)
 
@@ -55,10 +55,10 @@ When running as an automated agent:
    - bare `jj split` (diff editor) — use `jj split -m "..." <filesets>` or `jj-hunk-tool split` instead
    - `jj squash -i` and bare `jj diffedit`
    - `jj-hunk-tool absorb -i` (prompts per hunk)
-   - `jj resolve` (conflict editor) — resolve conflicts by editing files directly
+   - `jj resolve` without `--list` (conflict editor) — list with `jj resolve --list`, resolve by editing files directly
    - any `jj desc` / `jj commit` without `-m`
 
-4. **Verify history mutations.** Use `jj --no-pager status` and inspect the diffs of the *affected revisions* with `jj --no-pager diff --git -r <change-id>`. Status alone cannot confirm the right hunks moved. Check both sides of a split or squash, especially outside `@`.
+4. **Verify history mutations.** Use `jj --no-pager status` and inspect the diffs of the _affected revisions_ with `jj --no-pager diff --git -r <change-id>`. Status alone cannot confirm the right hunks moved. Check both sides of a split or squash, especially outside `@`.
 
 ## Core Mental Model
 
@@ -67,6 +67,7 @@ When running as an automated agent:
 - **Change ID vs Commit ID.** The Change ID (e.g. `tqpwlqmp`) is stable across rewrites — always reference changes by Change ID. The Commit ID (e.g. `3ccf7581`) is a content hash that changes whenever content changes. What you push to Git is the commit; what you track locally is the change.
 - **Branches are bookmarks**, and you only need one when pushing to a remote. Local work is tracked by Change ID.
 - **No detached HEAD.** `jj edit` jumps to any change and keeps working; descendants auto-rebase.
+- **Large new files are skipped.** `snapshot.max-new-file-size` (1 MiB by default) leaves an oversized new file untracked, so it silently never reaches a change; raise the limit and `jj file track` it.
 - **Recovery is strong, not guaranteed.** jj records every command in an operation log, so `jj undo` and `jj op restore` recover most mistakes — including abandons. This is not an absolute "nothing can ever be lost": concurrent operations and garbage collection have edge cases. Verify before you rely on recovery.
 
 ## Detecting / Setting Up a jj Repo
@@ -150,6 +151,10 @@ jj commit -m "message"              # shorthand: describe @ + start a new change
 
 Descriptions support git-style bodies: title line, blank line, then a detailed spec or body.
 
+`jj desc` leaves `@` checked out, so the next edit amends the change you just described and a second concern joins it silently. Being pushed protects nothing: rewriting is allowed whenever the commit is mutable (see [Immutable Changes](#immutable-changes)), and the push afterwards needs no flag. End a change with `jj commit -m` (describe + new in one step), or `jj new` before starting another concern. Recover a folded pair with `jj split -m <msg> <filesets>`, which keeps the named files in the parent change.
+
+After `jj desc -r <id>`, verify with that change ID, not `@` — `@` is the working-copy change and may be a different one.
+
 ### Squashing
 
 Move changes from the current change into its parent:
@@ -170,7 +175,7 @@ jj split -m "Extract validation" src/validation.rs
 jj split -r <change-id> -m "Extract validation" src/validation.rs
 ```
 
-This selects the named files into the **first (parent) change**; unselected edits remain in the original change (now the child). `-m` avoids description-editor prompts. Bare `jj split` invokes an interactive diff editor. **Do not use `jj restore` as a substitute for splitting**: restore discards/replaces content, it doesn't safely preserve both logical halves.
+This selects the named files into the **first (parent) change**; unselected edits remain in the original change (now the child). Each split leaves the remainder as `@`, so repeat it to carve a third and fourth change. `-m` avoids description-editor prompts. Bare `jj split` invokes an interactive diff editor. **Do not use `jj restore` as a substitute for splitting**: restore discards/replaces content, it doesn't safely preserve both logical halves.
 
 ### Partial-file split / targeted squash (`jj-hunk-tool`)
 
@@ -196,7 +201,7 @@ jj-hunk-tool squash <hunk-id> --from @ --into <target-change-id> -u
 
 **Selection and verification contract:**
 
-1. Identify the source revision and intended destination. Read the full source diff and `hunks` output, then `patch` the *exact selection*. Do not guess hunk IDs, assume line numbers are file-relative, or indiscriminately select every hunk.
+1. Identify the source revision and intended destination. Read the full source diff and `hunks` output, then `patch` the _exact selection_. Do not guess hunk IDs, assume line numbers are file-relative, or indiscriminately select every hunk.
 2. Run one targeted mutation, then inspect **both** sides using `jj --no-pager diff --git -r <source-change-id>` and `jj --no-pager diff --git -r <selected-or-target-change-id>`, plus `jj --no-pager log` / `jj st`. Confirm selected edits moved, unrelated edits stayed, and no unexpected conflicts or empty changes appeared.
 3. After any edit or history rewrite, refresh `hunks` before another selection: IDs are content-based but do not authorize stale assumptions. If a selection fails, re-inspect rather than retrying blindly or falling back to destructive `restore`.
 4. Do not use `jj-hunk-tool diffedit` for mixed binary/rename-bearing revisions without a verified fix: older revisions could silently drop such changes. CRLF may also cause patch failures. Prefer native file-level operations or defer uncertain selections rather than forcing a risky edit.
@@ -249,7 +254,7 @@ jj bookmark track main@origin        # follow a remote branch (jj hints when nee
 jj bookmark delete my-feature
 ```
 
-**Push only when the user explicitly asks.** When pushing:
+**Push only when the user explicitly asks.** A rewrite needs no force flag: jj updates the remote once its safety check passes, with `git push --force-with-lease` semantics — it overwrites only if the remote still matches what jj last fetched. When pushing:
 
 ```bash
 jj bookmark move my-feature --to @   # bookmarks don't auto-advance — move it first
@@ -268,32 +273,25 @@ Two consequences of that default decide ordinary work:
 
 - **A tracked remote bookmark is mutable.** Pushing your own branch does not freeze it, so refining it and pushing again is normal.
 - **An untracked remote bookmark is immutable** — a branch pushed from another machine, or one whose local bookmark you deleted. `jj bookmark track <name>@<remote>` is the fix that follows from the model.
+- **Ancestry freezes independently.** A branch already merged into `trunk()` is immutable whatever its tracking, because it is an ancestor of a trunk commit.
 
 Identify the head before reaching for `--ignore-immutable`, which unblocks one rewrite rather than fixing a branch you keep rewriting:
 
 ```bash
-jj config list --include-defaults | grep immutable   # what this repo freezes
+jj config list --include-defaults | grep immutable   # what this setup freezes
 jj --no-pager log -r 'immutable_heads()'             # the heads doing the freezing
 jj --no-pager log -r '<rev> & immutable()'           # is this change under one?
 ```
 
-### Carving out a branch
+### When a config overrides the default
 
-A repo may redefine `immutable_heads()`. The nix dotfiles repo carves out `wip/*` so a wip branch stays rewritable while trunk and tags keep their protection:
+A config may redefine `immutable_heads()`, and it applies machine-wide rather than per repo. Read the definition in force rather than reasoning from the builtin, and treat a refused rewrite as the signal to find what froze it, not to reach for `--ignore-immutable`.
 
-```toml
-[revset-aliases]
-"immutable_heads()" = "trunk() | tags() | untracked_remote_tags() | (untracked_remote_bookmarks() ~ remote_bookmarks('wip/*'))"
-```
-
-Read the definition in force before reasoning from the builtin, and treat the repo's policy as the policy: a refused rewrite is the signal to inspect what froze it, not to unlock it.
-
-Writing such an override:
+If you write one, three things bite:
 
 - `remote_bookmarks([name_pattern], [[remote=]remote_pattern])` takes positional arguments; `remote_bookmarks(pattern='wip/')` fails with `Unexpected keyword argument`.
 - A bare string is not a prefix — `'wip/'` matches nothing, `'wip/*'` matches `wip/scratch`.
-- The alias replaces the builtin outright, so keep `trunk()`, `tags()`, and `untracked_remote_tags()` unless the repo means to unlock them.
-- `remote_bookmarks()` on the left instead of `untracked_remote_bookmarks()` also freezes your own pushed branches, which then need `--ignore-immutable` to amend.
+- Base a carve-out on `remote_bookmarks()`, not `untracked_remote_bookmarks()`. Subtracting from the untracked set leaves every *tracked* branch mutable, which is the builtin behaviour and protects almost nothing.
 
 ## Git Bridge
 
@@ -303,12 +301,21 @@ Writing such an override:
 jj git fetch                   # fetch all branches from the default remote
 jj git fetch --remote <name>   # fetch a specific remote
 jj git fetch -b <branch>       # fetch specific branches
-jj rebase -d main              # rebase current branch onto the updated trunk
+jj rebase -d main              # rebase @ onto the updated trunk
+jj rebase -s <rev> -d <dest>   # rebase one change and its descendants
+jj rebase -b <rev> -o <dest>   # rebase a whole branch, all its heads, onto a new base
+jj rebase -b @ -o main@origin --ignore-immutable   # stack contains pushed changes
 ```
 
 ### Mixing jj and git (colocated repos only)
 
-In a **colocated** repo (`.jj/` and `.git/` both present), jj imports/exports Git on every command, and mixing `jj` and `git` commands is supported — git mutations are detected and incorporated on the next jj command. In a **non-colocated** repo, do NOT use git commands against it.
+In a **colocated** repo (`.jj/` and `.git/` both present), jj synchronises Git's commits, refs and branch pointers on every command, so mixing `jj` and `git` commands is supported — git mutations are detected and incorporated on the next jj command. What it does **not** synchronise is the git index for content it rewrote (`split`, `squash`, `absorb`, `rebase`): anything that reads the index rather than the worktree — `nix build .#attr` (the `.#` Git-tree form), `git show :path`, `git checkout-index` — then resolves the pre-rewrite blobs, while `git status` lists those files as unstaged even though the commit you just made contains them. So after a commit-rewriting command, run `git add -A` before anything that reads the index, and verify a rewritten path by content rather than by status. `git rev-parse HEAD` can also sit at `@-` until `jj new` moves the working copy on, so trust `origin/<branch>` for what is published. In a **non-colocated** repo, do NOT use git commands against it.
+
+```bash
+jj split -m "docs: ..." docs/plan.md
+git add -A                                            # the index still held pre-split blobs
+git show :docs/plan.md | grep -c "<your marker>"      # what .# will actually resolve
+```
 
 For an agent, the safe default is: use `jj` for all mutations, and read-only git (`git log`, `git diff`, `git status`) when convenient. Interleaving git and jj mutations is legal but confusing — avoid it.
 
@@ -340,9 +347,9 @@ Multiple agents work in separate workspaces from the same base, then an integrat
 
 ```bash
 # agent A, workspace ws-a
-jj new main && jj desc -m "feat: part a"
+jj new trunk() && jj desc -m "feat: part a"
 # agent B, workspace ws-b
-jj new main && jj desc -m "feat: part b"
+jj new trunk() && jj desc -m "feat: part b"
 # integrator, later:
 jj new ws-a@ ws-b@ -m "merge a and b"   # merge two changes
 jj new <change1> <change2> ...          # general merge
@@ -350,20 +357,12 @@ jj new <change1> <change2> ...          # general merge
 
 ## Agent Workflow Patterns
 
-### Start next task
-
-```bash
-jj new
-jj desc -m "feat: implement avatar upload"
-# ... code ...
-```
-
 ### Interrupt and resume
 
 Handle an urgent task mid-work without stashing or branch switching:
 
 ```bash
-jj new main                # branch off main for the urgent fix
+jj new trunk()             # branch off trunk for the urgent fix
 # ... do the fix ...
 jj desc -m "fix: critical auth bug"
 jj edit <previous-change>  # jump back; resume where you were
@@ -397,7 +396,7 @@ jj allows committing conflicts and resolving them later:
 jj st   # shows conflicts
 ```
 
-**Resolve conflicts by editing the conflicted files directly** (remove markers, pick content), then run `jj st` to verify resolution. Do not use `jj resolve` — it opens an interactive tool and hangs an agent.
+**Resolve conflicts by editing the conflicted files directly** (remove markers, pick content), then run `jj st` to verify resolution. `jj resolve --list` enumerates them; the interactive `jj resolve` hangs an agent.
 
 ## Template & Revset Gotchas
 
@@ -417,7 +416,7 @@ Templates (`-T`) use jj's own expression language — not JavaScript, not shell 
   jj --no-pager log -r "id1 | id2" -T 'concat(change_id.short(), "\n", description)'
   ```
 
-- **After `jj desc -r <id>`, don't verify with `@`** — `@` is the working-copy change and may not be the change you just edited. Verify with the explicit change ID.
+- **`jj new main` when only a remote `main` exists** — that is a local bookmark, not a remote one. Write `trunk()` or `main@origin`.
 
 ## Common Mistakes
 
@@ -430,6 +429,8 @@ Templates (`-T`) use jj's own expression language — not JavaScript, not shell 
 - Sharing `@` between two workspaces.
 - Creating bookmarks for local-only work — bookmarks are only for pushing.
 - Forcing upfront atomic changes or over-refining trivial edits; when refinement is useful, split/squash/absorb intentionally and verify its effect.
+- `jj desc` on a change and then carrying on editing — the next edit amends that same change. Use `jj commit -m` or `jj new`.
+- Assuming a pushed branch is protected, or that rewriting one needs a force flag — mutability follows tracking and ancestry, and jj force-updates with a lease.
 
 ## Commit Quality Checklist
 
@@ -443,37 +444,37 @@ Before considering work done:
 
 ## Quick Reference
 
-| Action | Command |
-|--------|---------|
-| Detect jj repo | `test -d .jj && echo jj` |
-| Init in git repo | `jj git init --colocate` |
-| View status | `jj st` |
-| View log | `jj --no-pager log` |
-| View diff | `jj --no-pager diff --git` |
-| Describe | `jj desc -m "message"` |
-| Start new change | `jj new -m "message"` |
-| Edit a change | `jj edit <change-id>` |
-| Squash into parent | `jj squash -u` (keep destination message) |
-| Split whole files | `jj split -m "message" <filesets>` |
-| Inspect hunks | `jj-hunk-tool hunks -r @ --compact` |
-| Preview chosen hunks | `jj-hunk-tool patch <hunk-id> -r @` |
-| Split selected hunk/lines | `jj-hunk-tool split <hunk-id> -r @ -m "message"` |
+| Action                         | Command                                                     |
+| ------------------------------ | ----------------------------------------------------------- |
+| Detect jj repo                 | `test -d .jj && echo jj`                                    |
+| Init in git repo               | `jj git init --colocate`                                    |
+| View status                    | `jj st`                                                     |
+| View log                       | `jj --no-pager log`                                         |
+| View diff                      | `jj --no-pager diff --git`                                  |
+| Describe                       | `jj desc -m "message"`                                      |
+| Start new change               | `jj new -m "message"`                                       |
+| Edit a change                  | `jj edit <change-id>`                                       |
+| Squash into parent             | `jj squash -u` (keep destination message)                   |
+| Split whole files              | `jj split -m "message" <filesets>`                          |
+| Inspect hunks                  | `jj-hunk-tool hunks -r @ --compact`                         |
+| Preview chosen hunks           | `jj-hunk-tool patch <hunk-id> -r @`                         |
+| Split selected hunk/lines      | `jj-hunk-tool split <hunk-id> -r @ -m "message"`            |
 | Move hunk into existing change | `jj-hunk-tool squash <hunk-id> --from @ --into <change-id>` |
-| Auto-distribute | `jj absorb` |
-| Discard a change | `jj abandon <change-id>` |
-| Undo last operation | `jj undo` |
-| Operation history | `jj --no-pager op log` |
-| Restore repo state | `jj op restore <op-id>` |
-| Discard file changes | `jj restore <path>` |
-| Create bookmark | `jj bookmark create <name> -r @` |
-| Move bookmark | `jj bookmark move <name> --to @` |
-| Track remote bookmark | `jj bookmark track <name>@<remote>` |
-| See what is immutable | `jj --no-pager log -r 'immutable_heads()'` |
-| Fetch remote | `jj git fetch` |
-| Rebase onto trunk | `jj rebase -d main` |
-| Push bookmark | `jj git push --bookmark <name>` |
-| Push bookmark deletions | `jj git push --deleted` |
-| New workspace | `jj workspace add <path>` |
-| Fix stale working copy | `jj workspace update-stale` |
-| Forget workspace | `jj workspace forget <name>` |
-| Merge changes | `jj new <change1> <change2> -m "merge"` |
+| Auto-distribute                | `jj absorb`                                                 |
+| Discard a change               | `jj abandon <change-id>`                                    |
+| Undo last operation            | `jj undo`                                                   |
+| Operation history              | `jj --no-pager op log`                                      |
+| Restore repo state             | `jj op restore <op-id>`                                     |
+| Discard file changes           | `jj restore <path>`                                         |
+| Create bookmark                | `jj bookmark create <name> -r @`                            |
+| Move bookmark                  | `jj bookmark move <name> --to @`                            |
+| Track remote bookmark          | `jj bookmark track <name>@<remote>`                         |
+| See what is immutable          | `jj --no-pager log -r 'immutable_heads()'`                  |
+| Fetch remote                   | `jj git fetch`                                              |
+| Rebase onto trunk              | `jj rebase -d main`                                         |
+| Push bookmark                  | `jj git push --bookmark <name>`                             |
+| Push bookmark deletions        | `jj git push --deleted`                                     |
+| New workspace                  | `jj workspace add <path>`                                   |
+| Fix stale working copy         | `jj workspace update-stale`                                 |
+| Forget workspace               | `jj workspace forget <name>`                                |
+| Merge changes                  | `jj new <change1> <change2> -m "merge"`                     |

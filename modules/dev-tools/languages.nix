@@ -26,7 +26,7 @@ _: {
           [
             ast-grep
             tree-sitter
-            texliveSmall
+            (texliveSmall.withPackages (ps: [ ps.latexmk ])) # small lacks latexmk
           ]
           ++ cfg.treeSitterGrammars;
 
