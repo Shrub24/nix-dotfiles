@@ -57,7 +57,7 @@ let
       "vscode"
       "code"
       "unrar"
-      "bws"
+      "libfprint-2-tod1-goodix-550a"
     ];
   pkgs = import inputs.nixpkgs {
     inherit system;
@@ -94,14 +94,18 @@ let
     "lsp"
     "nvim"
     "cli"
-    "git"
+    "previews"
+    "fzf-tools"
+    "yazi"
+    "vifm"
+    "vcs"
     "languages"
     "intelli-shell"
     "lazyjournal"
     "mise"
     "direnv"
-    "monique"
-    "niri"
+    "umbriel"
+    "keypeek"
     "nix"
     "noctalia"
     "opencode"
@@ -121,7 +125,6 @@ let
     "mutagen"
     "vicinae"
     "audio"
-    "brave-origin"
     "chromium"
     "credentials"
     "defaults"
@@ -135,6 +138,7 @@ let
     "qmd"
     "web-catalog"
     "shell"
+    "zoxide"
     "fish"
     "starship"
     "zsh"
@@ -148,6 +152,7 @@ let
     "codex"
   ];
   nixosAspects = [
+    "umbriel"
     "current-host"
     "foundation"
     "fish"
@@ -171,6 +176,7 @@ let
     "toggle-kbd"
     "containers"
     "desktop-services"
+    "keypeek"
     "kde-apps"
     "gtk"
     "wireshark"
@@ -245,6 +251,7 @@ in
           { pkgs, ... }:
           {
             imports = map nixosAspect nixosAspects ++ [
+              (nixosAspect "niri")
               currentHostModule
               inputs.home-manager.nixosModules.home-manager
             ];
@@ -285,7 +292,6 @@ in
                   "vicinae"
                   "portals"
                   "fonts"
-                  "monique"
                   "shell"
                   "fish"
                   "zsh"
@@ -295,6 +301,9 @@ in
                   "kitty"
                   "foot"
                   "cli"
+                  "previews"
+                  "yazi"
+                  "vifm"
                   "ssh"
                   "kde-apps"
                   "gtk"
@@ -303,7 +312,6 @@ in
                   "libinput"
                   "zathura"
                   "firefox"
-                  "brave-origin"
                   "defaults"
                   "vscode"
                 ];

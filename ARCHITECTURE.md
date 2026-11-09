@@ -61,7 +61,7 @@ modules/                 ← import-tree scan (the only discovery root)
   ├─ agents/<feature>.nix  one file per feature → homeManager aspect
   ├─ editors/nvim/       nvim.nix publishes the aspect; _*.nix raw modules
   ├─ apps/*.nix           end-user GUI apps (media, zathura, pavucontrol)
-  ├─ apps/browser/*.nix   firefox, chromium, thunderbird, brave-origin — lazy HM enable
+  ├─ apps/browser/*.nix   firefox, chromium, thunderbird — lazy HM enable
   ├─ desktop/*.nix        compositor + shell env (niri, noctalia, monique, vicinae, portals, greeter)
   ├─ foundation/*.nix    boot, network, nixos (base-OS aspects)
   ├─ policy/*.nix        fleet contract + typed topology schema, endpoints, currentHost

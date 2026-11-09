@@ -32,12 +32,7 @@ let
   overlay = import ../../pkgs { inherit inputs system; };
   insecurePackages = [ "firefox-esr-140-bin-unwrapped-140.17.0esr" ];
   unfreePredicate =
-    pkg:
-    builtins.elem (lib.getName pkg) [
-      "unrar"
-      "bws"
-    ]
-    || lib.hasPrefix "firefox-esr-" (lib.getName pkg);
+    pkg: builtins.elem (lib.getName pkg) [ "unrar" ] || lib.hasPrefix "firefox-esr-" (lib.getName pkg);
   pkgsUnfree = import inputs.nixpkgs {
     inherit system;
     overlays = [ overlay ];
@@ -61,13 +56,16 @@ let
     "lsp"
     "nvim"
     "cli"
-    "git"
+    "previews"
+    "fzf-tools"
+    "yazi"
+    "vifm"
+    "vcs"
     "languages"
     "intelli-shell"
     "lazyjournal"
     "mise"
     "direnv"
-    "monique"
     "niri"
     "nix"
     "noctalia"
@@ -83,6 +81,7 @@ let
     "util-apps"
     "defaults"
     "shell"
+    "zoxide"
     "fish"
     "starship"
     "tmux"
@@ -110,6 +109,7 @@ let
     "sops-systemd-activation"
     "tailscale"
     "greeter"
+    "niri"
     "nix"
     "notify"
     "telemetry"

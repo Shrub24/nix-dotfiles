@@ -4,6 +4,9 @@
     {
       environment.systemPackages = [ pkgs.podman-compose ];
 
+      # `registries.registry` only declares a registry; short names need this list.
+      virtualisation.containers.registries.settings."unqualified-search-registries" = [ "docker.io" ];
+
       virtualisation.podman = {
         enable = true;
         dockerCompat = true;

@@ -48,6 +48,9 @@ in
   # Lid close on AC is a no-op; on battery logind keeps its suspend default.
   services.logind.settings.Login.HandleLidSwitchExternalPower = "ignore";
 
+  # The remote-control unit serves paired phones, so it outlives the session.
+  users.users.${primaryUser.name}.linger = true;
+
   # The built-in ITE keyboard (048d:c987); toggle-kbd unbinds this interface.
   programs.toggle-kbd.usbInterface = "3-9:1.0";
 
@@ -68,6 +71,15 @@ in
     syncthing.failure.severity = "warning";
     "snapper-timeline".failure = { };
     "snapper-cleanup".failure = { };
+  };
+
+  # 27c6:550a is not in upstream libfprint; Lenovo's TOD driver provides it.
+  services.fprintd = {
+    enable = true;
+    tod = {
+      enable = true;
+      driver = pkgs.libfprint-2-tod1-goodix-550a;
+    };
   };
 
   # /data deliberately has no snapshot config: it holds only rescue images

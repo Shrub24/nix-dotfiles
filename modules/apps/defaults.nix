@@ -14,10 +14,7 @@ _: {
         "application/x-extension-xhtml" = [ "firefox.desktop" ];
         "x-scheme-handler/http" = [ "firefox.desktop" ];
         "x-scheme-handler/https" = [ "firefox.desktop" ];
-        "x-scheme-handler/chrome" = [
-          "firefox.desktop"
-          "brave-origin.desktop"
-        ];
+        "x-scheme-handler/chrome" = [ "firefox.desktop" ];
 
         "x-scheme-handler/discord" = [ "vesktop.desktop" ];
         "x-scheme-handler/geo" = [ "google-maps-geo-handler.desktop" ];

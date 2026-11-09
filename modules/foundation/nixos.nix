@@ -51,6 +51,14 @@ _: {
         binfmt = true;
       };
 
+      # A recursive file watch holds one mark per directory, so a single desktop
+      # session can exhaust the stock per-user cap and leave every other watcher
+      # failing with ENOSPC.
+      boot.kernel.sysctl = {
+        "fs.inotify.max_user_watches" = 1048576;
+        "fs.inotify.max_user_instances" = 8192;
+      };
+
       users.users.${primaryUser.name} = {
         isNormalUser = true;
         inherit (primaryUser) uid;

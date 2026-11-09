@@ -20,7 +20,6 @@ _:
 
   # REPLACE-ON-INSTALL resume_offset: the swapfile's physical extent, which disko
   # cannot derive — `btrfs inspect-internal map-swapfile -r /swap/swapfile`.
-  boot.initrd.systemd.enable = true;
   boot.kernelParams = [ "resume_offset=REPLACE-ON-INSTALL" ];
   boot.resumeDevice = "/dev/mapper/cryptroot";
 
