@@ -194,14 +194,14 @@ in
       workhorseModels = [
         "route/coder"
         "route/cheap"
-        "openai/gpt-6-luna"
+        "openai-codex/gpt-6-luna"
         "omniroute/coder-high"
         "omniroute/budget"
         "omniroute/smart-budget"
       ];
 
       smartModels = [
-        "openai/gpt-6.1-sol"
+        "openai-codex/gpt-6.2-sol"
         "route/smart"
       ];
       # Rendered whole and read-only to the extension. Model lists only restrict;
@@ -217,7 +217,7 @@ in
         modelScopes = {
           allow = workhorseModels ++ [
             "omniroute/explorer"
-            "openai/gpt-6.1-sol"
+            "openai-codex/gpt-6.2-sol"
           ];
           agents = {
             worker.allow = workhorseModels;
@@ -358,11 +358,13 @@ in
             "route/coder"
             "route/cheap"
             "route/smart"
+            "route/apex"
             "route/free"
             "anthropic/claude-opus-5-5"
             "anthropic/claude-sonnet-5-5"
-            "openai/gpt-6-luna"
-            "openai/gpt-6.1-sol"
+            "openai-codex/gpt-6-luna"
+            "openai-codex/gpt-6.2-sol"
+            "openai-codex/gpt-6.2-astra"
           ];
 
           compaction.enabled = false;
@@ -450,9 +452,8 @@ in
                 apiKeyFile = sopsSecrets.COMMANDCODE_API_KEY.path;
                 quota = codexbarQuota "commandcode";
               };
-              openai = {
-                name = "OpenAI";
-                # `openai` is the unified Pi provider; CodexBar still meters that account as `codex`.
+              openai-codex = {
+                name = "OpenAI Codex";
                 quota = codexbarQuota "codex";
               };
               anthropic = {
@@ -469,21 +470,38 @@ in
                 commandcodeDeepseekCandidate
                 opencodeDeepseekCandidate
                 {
-                  provider = "openai";
+                  provider = "openai-codex";
                   id = "gpt-6-luna";
                   thinkingLevel = "high";
                 }
               ];
               smart.candidates = [
                 {
+                  provider = "openai-codex";
+                  id = "gpt-6.2-sol";
+                  thinkingLevel = "medium";
+                }
+                {
                   provider = "anthropic";
                   id = "claude-sonnet-5-5";
                   thinkingLevel = "medium";
                 }
                 {
-                  provider = "openai";
-                  id = "gpt-6.1-sol";
+                  provider = "opencode-go";
+                  id = "glm-5.3";
                   thinkingLevel = "medium";
+                }
+              ];
+              apex.candidates = [
+                {
+                  provider = "anthropic";
+                  id = "claude-opus-5-5";
+                  thinkingLevel = "high";
+                }
+                {
+                  provider = "openai-codex";
+                  id = "gpt-6.2-astra";
+                  thinkingLevel = "high";
                 }
               ];
               explorer.candidates = [
@@ -703,14 +721,14 @@ in
               };
               force = true;
             };
-            # The fetched catalog under-declares openai/gpt-6.1-sol at 272k; the model serves 500k.
+            # The fetched catalog under-declares openai-codex/gpt-6.2-sol at 272k; the model serves 500k.
             # modelOverrides is Pi's topmost user layer, applied per model id after built-in and
             # catalog models are composed, and nothing in Pi writes models.json, so a store link
             # is safe here. Interactive sessions never refresh the catalog (session start passes
             # allowNetwork: false), so this is the only place the window can be corrected.
             ".pi/agent/models.json".source = json.generate "pi-models.json" {
               "$schema" = "https://pi.dev/schemas/models.schema.json";
-              providers.openai.modelOverrides."gpt-6.1-sol".contextWindow = 500000;
+              providers."openai-codex".modelOverrides."gpt-6.2-sol".contextWindow = 500000;
             };
             ".config/rpiv-todo/config.json".source = json.generate "rpiv-todo.json" {
               collapseKey = "ctrl+alt+t";

@@ -27,7 +27,7 @@ _: {
                 model = "neuralwatt/deepseek-v4.1-flash";
                 fallback_models = [
                   "anthropic/claude-haiku-5-5"
-                  "openai/gpt-6-luna"
+                  "openai-codex/gpt-6-luna"
                 ];
                 thinking_level = "low";
               };
@@ -45,7 +45,7 @@ _: {
                 model = "neuralwatt/deepseek-v4.1-flash-flex";
                 fallback_models = [
                   "anthropic/claude-haiku-5-5"
-                  "openai/gpt-6-luna"
+                  "openai-codex/gpt-6-luna"
                 ];
                 thinking_level = "low";
               };
@@ -59,7 +59,7 @@ _: {
               input_type = "document";
               query_input_type = "query";
             };
-            # 250k is the working baseline and 300k the larger Anthropic models. gpt-6.1-sol serves
+            # 250k is the working baseline and 300k the larger Anthropic models. gpt-6.2-sol serves
             # 500k upstream, but this catalog entry declares 272k, so MC measures usage against that
             # and clamps anything above 90% of it. Unlisted models fall back to
             # execute_threshold_percentage (65%).
@@ -68,9 +68,11 @@ _: {
               "anthropic/claude-sonnet-5-5" = 300000;
               "anthropic/claude-opus-5-5" = 300000;
               "commandcode/deepseek/deepseek-v4.1-flash" = 250000;
-              "openai/gpt-6-luna" = 250000;
-              "openai/gpt-6.1-sol" = 250000;
+              "openai-codex/gpt-6-luna" = 250000;
+              "openai-codex/gpt-6.2-sol" = 250000;
+              "openai-codex/gpt-6.2-astra" = 250000;
               "opencode-go/deepseek-v4.1-flash" = 250000;
+              "opencode-go/glm-5.3" = 250000;
               "opencode-go/mimo-v2.6-flash" = 250000;
             };
             cache_ttl = {
@@ -79,9 +81,11 @@ _: {
               "anthropic/claude-sonnet-5-5" = "1h";
               "anthropic/claude-opus-5-5" = "1h";
               "commandcode/deepseek/deepseek-v4.1-flash" = "3h";
-              "openai/gpt-6-luna" = "2h";
-              "openai/gpt-6.1-sol" = "2h";
+              "openai-codex/gpt-6-luna" = "2h";
+              "openai-codex/gpt-6.2-sol" = "2h";
+              "openai-codex/gpt-6.2-astra" = "2h";
               "opencode-go/deepseek-v4.1-flash" = "3h";
+              "opencode-go/glm-5.3" = "3h";
               "opencode-go/mimo-v2.6-flash" = "10m";
             };
             toast_duration_ms = 500;
