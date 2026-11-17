@@ -97,6 +97,7 @@ let
     "thunderbird"
     "zathura"
     "fractal"
+    "nixbot"
   ];
 
   nixosAspects = [

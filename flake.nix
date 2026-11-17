@@ -97,6 +97,7 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixbot.follows = "nix-fleet/nixbot";
     nixos-boot = {
       url = "github:Melkor333/nixos-boot";
       flake = false;

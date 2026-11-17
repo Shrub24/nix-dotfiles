@@ -119,6 +119,7 @@ let
     "zathura"
     "media"
     "fractal"
+    "nixbot"
     "libreoffice"
     "util-apps"
     "surge"
