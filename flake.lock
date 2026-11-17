@@ -788,6 +788,23 @@
         "url": "file:///home/saurabhj/Projects/dev/custom/nixpkgs"
       }
     },
+    "nixpkgs-fork-codexbar": {
+      "locked": {
+        "lastModified": 1794920825,
+        "narHash": "sha256-8Gj9CnRDAh/sKaeuYC4mMLYHNW9XQ9qT/xzUwETt3/w=",
+        "ref": "refs/heads/codexbar-linux-rebased",
+        "rev": "3908c4a4f26a2a4c373f42b77abec3cc6e92e1f4",
+        "shallow": true,
+        "type": "git",
+        "url": "file:///home/saurabhj/Projects/dev/custom/nixpkgs"
+      },
+      "original": {
+        "rev": "3908c4a4f26a2a4c373f42b77abec3cc6e92e1f4",
+        "shallow": true,
+        "type": "git",
+        "url": "file:///home/saurabhj/Projects/dev/custom/nixpkgs"
+      }
+    },
     "nixpkgs-jactionlint": {
       "locked": {
         "lastModified": 1794915055,
@@ -1121,6 +1138,7 @@
           "nixpkgs"
         ],
         "nixpkgs-fork": "nixpkgs-fork",
+        "nixpkgs-fork-codexbar": "nixpkgs-fork-codexbar",
         "noctalia": "noctalia",
         "pi-bolt-nix": "pi-bolt-nix",
         "pi-extensions": "pi-extensions",

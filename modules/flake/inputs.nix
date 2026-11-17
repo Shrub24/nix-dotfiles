@@ -51,6 +51,9 @@ _: {
     nixpkgs-fork = {
       url = "git+file:///home/saurabhj/Projects/dev/custom/nixpkgs?rev=8ec593ac99f7c500942d218389fa665a8fae6a46&shallow=1";
     };
+    nixpkgs-fork-codexbar = {
+      url = "git+file:///home/saurabhj/Projects/dev/custom/nixpkgs?rev=3908c4a4f26a2a4c373f42b77abec3cc6e92e1f4&shallow=1";
+    };
 
     # Plymouth theme source built by pkgs/nixos-boot (boot.nix selects it).
     nixos-boot = {

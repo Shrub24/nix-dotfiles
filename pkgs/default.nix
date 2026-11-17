@@ -41,7 +41,7 @@ in
   jj-hunk-tool = final.callPackage ./jj-hunk-tool { };
   nixos-boot = final.callPackage ./nixos-boot { src = inputs.nixos-boot; };
   xberg-cli = final.callPackage ./xberg-cli { };
-  codexbar = final.callPackage ./codexbar { };
+  codexbar = inputs.nixpkgs-fork-codexbar.legacyPackages.${system}.codexbar;
   herdr-nvim-zoom = final.callPackage ./herdr-nvim-zoom {
     herdr = inputs.llm-agents.packages.${system}.herdr;
   };

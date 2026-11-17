@@ -7,13 +7,16 @@
 **Status:** needs-review
 **Evidence:** confirmed
 **Source:** approved `adopt-fleet-package-updates` design and package update implementation
-**Verification:** contradicted — the `pi-bolt-nix` flake now owns the Pi-Bolt release, its runtime and the pin, and `pkgs/pi-bolt` carries no `src`/`npmDepsHash`/updater, so the tree registers three owners (Pi plugins, xberg-cli, codexbar), not four
+**Verification:** contradicted — the `pi-bolt-nix` flake now owns the Pi-Bolt release, its runtime and the pin, and `pkgs/pi-bolt` carries no `src`/`npmDepsHash`/updater, so the tree registers two owners (Pi plugins, xberg-cli), not four
 **Revisit when:** nix-update locator behavior or the fleet package-update contract changes
 
 The repository uses nix-fleet's package-update app with one registered owner per
-pin set: Pi plugins, xberg-cli and codexbar. Derived outputs are not
-separate owners. Each source pin is a literal in its owning file so nix-update
-can identify where to write it.
+pin set: Pi plugins and xberg-cli. Derived outputs are not
+separate owners. CodexBar is not an owner: it comes from the
+`nixpkgs-fork-codexbar` input, the derivation proposed upstream in
+NixOS/nixpkgs#581605, whose own update script owns its pins until it merges.
+Each source pin is a literal in its owning file so nix-update can identify
+where to write it.
 
 **Reason:** nix-update locates package sources from the `src` attribute's
 source position and reads release discovery from `pkg.src.urls`. A source
@@ -28,10 +31,7 @@ its pin literals.
 
 **Consequence:** package-specific scripts preserve upstream pin semantics:
 Pi plugins update exact npm versions and two branch-head commits; xberg
-selects its stable release-tag family rather than component tags. Codexbar's
-thin wrapper defaults to standard stable-release discovery and accepts
-`CODEXBAR_UPDATE_VERSION` because the fleet app has no flag passthrough and
-acceptance needs a reproducible exact target.
+selects its stable release-tag family rather than component tags.
 
 **Rejected alternative:** put every pin under one owner or register each npm
 archive separately. A single Pi-Bolt owner would couple unrelated plugin
@@ -104,32 +104,30 @@ component tags needs an anchored, grouped pattern so only the release tags pass.
 **Type:** workaround
 **Status:** active
 **Evidence:** confirmed
-**Source:** failed package-update runs for xberg-cli and codexbar after upstream tags/releases lacked the required Linux archive
-**Verification:** corroborated — xberg-cli waits for release settling; CodexBar selects the newest release with its exact Linux archive; explicit unusable targets refuse before nix-update runs
+**Source:** failed package-update runs for xberg-cli after upstream releases lacked the required Linux archive
+**Verification:** corroborated — xberg-cli waits for release settling; explicit unusable targets refuse before nix-update runs
 **Revisit when:** upstream stops publishing releases before their assets, or another owner shows the same failure
 
 xberg publishes a release before its build assets finish uploading — one release
-exists with zero assets — and a release can be left that way entirely. CodexBar
-has a related failure mode: its `v0.74.0` tag exists, but the release record is
-absent and the expected `CodexBarCLI-v0.74.0-linux-x86_64.tar.gz` returns 404.
+exists with zero assets — and a release can be left that way entirely.
 nix-update rewrites the version attribute before it prefetches the source, so
 following such a tag leaves the pin on a URL that does not resolve, with a
-version and hash that disagree. Both owners require their exact Linux CLI
-archive before calling nix-update and fall back to the previous eligible
-release when it is missing. Xberg additionally waits a day for release assets
-to settle; CodexBar now selects the newest asset-backed release immediately.
+version and hash that disagree. Xberg requires its exact Linux CLI archive
+before calling nix-update, falls back to the previous eligible release when it
+is missing, and waits a day for release assets to settle. CodexBar had the same
+guard while it was packaged here from its release archive; the source build it
+now comes from fetches the tag, not an archive.
 
 **Reason:** the newest version is not evidence that a release is usable, and the
 failure lands after the pin file has already been rewritten. The asset guard
-prevents that failure without delaying CodexBar updates.
+prevents that failure.
 
 **Rejected alternative:** let the run fail and repeat it later. That leaves a
 mismatched version and hash in the tree, so the next evaluation or build fails
 for a reason unrelated to the pin's content.
 
-**Consequence:** `XBERG_UPDATE_VERSION=vX.Y.Z` and
-`CODEXBAR_UPDATE_VERSION=vX.Y.Z` select exact recorded targets, but refuse a tag
-without its archive. `XBERG_UPDATE_SETTLING_HOURS` controls only xberg's
-settling window; CodexBar has no settling delay. Pi-Bolt keeps its separate
+**Consequence:** `XBERG_UPDATE_VERSION=vX.Y.Z` selects an exact recorded
+target, but refuses a tag without its archive. `XBERG_UPDATE_SETTLING_HOURS`
+controls the settling window. Pi-Bolt keeps its separate
 policy: it prefetches its coupled runtime asset before rewriting anything, so it
 cannot half-write.
