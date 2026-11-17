@@ -96,6 +96,7 @@ let
     "firefox"
     "thunderbird"
     "zathura"
+    "fractal"
   ];
 
   nixosAspects = [

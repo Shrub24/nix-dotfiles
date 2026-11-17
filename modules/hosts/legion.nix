@@ -118,6 +118,7 @@ let
     "libinput"
     "zathura"
     "media"
+    "fractal"
     "libreoffice"
     "util-apps"
     "surge"
