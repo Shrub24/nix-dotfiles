@@ -39,7 +39,6 @@ in
       # Runtime extensions come from the home module, not from this output.
       packages.pi-bolt = repoPkgs.pi-bolt.override {
         plugins = compiledPlugins registry "lead";
-        childPlugins = compiledIds "child";
       };
     };
 
@@ -119,7 +118,17 @@ in
           row = extensionRow id;
         in
         if lib.elem "child" (row.compiled or [ ]) then "builtin:${id}" else extensionPath id;
-      childExtensions = map childExtension childExtensionIds;
+      # Herdsman loads herdsman and radar for every worker, so a definition names the rest.
+      childExtensions = lib.unique (
+        map (id: "builtin:${id}") (
+          [
+            "mcp"
+            "codemode"
+          ]
+          ++ lib.subtractLists [ "herdsman" "radar" ] (compiledIds "child")
+        )
+        ++ map childExtension childExtensionIds
+      );
       childExtensionsYaml = lib.concatStringsSep "\n" (map (path: "  - ${path}") childExtensions);
 
       sopsSecrets = (config.sops or { }).secrets or { };
@@ -289,7 +298,6 @@ in
 
       piBolt = pkgs.pi-bolt.override {
         plugins = compiledPlugins pkgs.pi-plugins "lead";
-        childPlugins = compiledIds "child";
         # The remote-control service shells out to cloudflared for its tunnel.
         extraPackages = [ pkgs.cloudflared ];
         # Freeflow reads its pool back through the role dir, then saves it by

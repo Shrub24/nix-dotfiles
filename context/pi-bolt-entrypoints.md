@@ -15,15 +15,22 @@ executable and adds the local `pi-bolt-child` wrapper; `bin/` links to them, and
 `~/.pi/agent/settings.json`. Each Pi-Bolt role has a separate agent directory
 and settings rendered by the payload's `select` from its plugin selection. Managed-child definitions
 name compiled plugins as `builtin:<id>` and keep paths only for runtime
-extensions. The child wrapper remains because Herdsman passes
-`--no-extensions`; it filters duplicate builtin arguments and supplies the
-child's compiled set for that launch.
+extensions. Herdsman passes `--no-extensions` and then exactly the set a
+definition names, plus the worker pair from `PI_HERDSMAN_CHILD_EXTENSIONS`
+(`builtin:herdsman`, `builtin:radar`), which this package sets beside
+`PI_HERDSMAN_CHILD_COMMAND`. The child wrapper only supplies the child role's
+environment: Herdsman no longer passes the lead's `PI_CODING_AGENT_DIR`, so its
+`roles/child` default applies.
 
 **Reason:** upstream launchers pass arguments through unchanged, avoiding the
 subcommand bug caused by prepending flags. Separating the stock package list
 from Pi-Bolt overlays lets `pi-stock` keep its source-based fallback without
 making each Pi-Bolt role's settings serve both loaders. The builtin allowlist
-keeps new compiled plugins opt-in. Keeping launchers beside the executable
+keeps new compiled plugins opt-in; the definitions' generated extension list is
+where a compiled plugin reaches a worker. The wrapper used to drop Herdsman's
+builtin arguments and re-add the whole compiled child set under
+`--no-extensions`, which overrode every definition's exclusions and loaded
+Herdsman and pi-radar a second time from their file paths. Keeping launchers beside the executable
 makes Radar and `doctor` identify this output as one installation.
 
 **Rejected alternatives:** prepending extension flags breaks positional CLI

@@ -4,7 +4,6 @@
   piBolt,
   plugins ? { },
   pluginLock ? null,
-  childPlugins ? [ ],
   leadAgentDir ? null,
   childAgentDir ? null,
   orchestratorAgentDir ? null,
@@ -18,7 +17,6 @@
   # Programs every entrypoint gets, on top of the base runtime inputs.
   extraPackages ? [ ],
 }:
-assert lib.all (id: lib.hasAttr id plugins) childPlugins;
 let
   inherit (piBolt) version;
 
@@ -28,6 +26,10 @@ let
     lib.optionalAttrs (herdsmanDataDir != null) {
       PI_HERDSMAN_DATA_DIR = herdsmanDataDir;
       PI_HERDSMAN_CHILD_COMMAND = "pi-bolt-child";
+      PI_HERDSMAN_CHILD_EXTENSIONS = builtins.toJSON [
+        "builtin:herdsman"
+        "builtin:radar"
+      ];
     }
     // extraEnv;
   launchers = {
@@ -72,19 +74,6 @@ let
   tools = payload.passthru.runtimeInputs ++ [ wl-clipboard ];
   executable = "pi-bolt";
   extraBins = [ "pi" ] ++ lib.optional (orchestratorAgentDir != null) "pi-bolt-orchestrator";
-  builtinArgs = lib.concatMap (id: [
-    "-e"
-    "builtin:${id}"
-  ]);
-  childFlags = lib.concatMapStringsSep " " lib.escapeShellArg (
-    builtinArgs (
-      [
-        "mcp"
-        "codemode"
-      ]
-      ++ childPlugins
-    )
-  );
   childAgentDirEnv = lib.optionalString (childAgentDir != null) ''
     export PI_CODING_AGENT_DIR="''${PI_CODING_AGENT_DIR:-${lib.escapeShellArg childAgentDir}}"
   '';
@@ -97,52 +86,13 @@ let
     '') extraEnv
   );
 
-  duplicateArms =
-    lib.concatMapStringsSep " | " (id: "builtin:${id}") (
-      [
-        "mcp"
-        "codemode"
-      ]
-      ++ childPlugins
-    )
-    + ") ;;";
-
   execPayload = "exec ${placeholder "out"}/lib/pi-bolt/pi";
   childEntrypoint = ''
-    args=()
-    # Restore the child's compiled subset only when Herdsman disables discovery.
-    has_no_extensions=
-    for arg in "$@"; do
-      case "$arg" in -ne | --no-extensions) has_no_extensions=1 ;; esac
-    done
-    while [ $# -gt 0 ]; do
-      case "$1" in
-      -e | --extension)
-        if [ $# -lt 2 ]; then
-          echo "pi-bolt-child: $1 needs a path" >&2
-          exit 2
-        fi
-        case "''${2,,}" in
-        ${duplicateArms}
-        *) args+=("$1" "$2") ;;
-        esac
-        shift 2
-        ;;
-      *)
-        args+=("$1")
-        shift
-        ;;
-      esac
-    done
     ${childAgentDirEnv}
     ${herdsmanDataDirEnv}
     ${extraEnvLines}
     export PATH=${lib.makeBinPath tools}:$PATH
-    if [ -n "$has_no_extensions" ]; then
-      ${execPayload} ${childFlags} "''${args[@]}"
-    else
-      ${execPayload} "''${args[@]}"
-    fi
+    ${execPayload} "$@"
   '';
 in
 stdenv.mkDerivation {
@@ -151,7 +101,7 @@ stdenv.mkDerivation {
   meta.position = "${__curPos.file}:${toString __curPos.line}";
 
   passthru = {
-    inherit payload childPlugins;
+    inherit payload;
   };
 
   dontUnpack = true;
