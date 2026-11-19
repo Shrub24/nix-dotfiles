@@ -774,34 +774,32 @@
       "locked": {
         "lastModified": 1793449459,
         "narHash": "sha256-Db72COM4Or11VYopjqFAHbSMEjTk18x6BpFcdxdiOKQ=",
-        "ref": "refs/heads/mo-viewer-1.7.0",
+        "owner": "Shrub24",
+        "repo": "nixpkgs",
         "rev": "8ec593ac99f7c500942d218389fa665a8fae6a46",
-        "shallow": true,
-        "type": "git",
-        "url": "file:///home/saurabhj/Projects/dev/custom/nixpkgs"
+        "type": "github"
       },
       "original": {
+        "owner": "Shrub24",
+        "repo": "nixpkgs",
         "rev": "8ec593ac99f7c500942d218389fa665a8fae6a46",
-        "shallow": true,
-        "type": "git",
-        "url": "file:///home/saurabhj/Projects/dev/custom/nixpkgs"
+        "type": "github"
       }
     },
     "nixpkgs-fork-codexbar": {
       "locked": {
         "lastModified": 1794920825,
         "narHash": "sha256-8Gj9CnRDAh/sKaeuYC4mMLYHNW9XQ9qT/xzUwETt3/w=",
-        "ref": "refs/heads/codexbar-linux-rebased",
+        "owner": "Shrub24",
+        "repo": "nixpkgs",
         "rev": "3908c4a4f26a2a4c373f42b77abec3cc6e92e1f4",
-        "shallow": true,
-        "type": "git",
-        "url": "file:///home/saurabhj/Projects/dev/custom/nixpkgs"
+        "type": "github"
       },
       "original": {
+        "owner": "Shrub24",
+        "repo": "nixpkgs",
         "rev": "3908c4a4f26a2a4c373f42b77abec3cc6e92e1f4",
-        "shallow": true,
-        "type": "git",
-        "url": "file:///home/saurabhj/Projects/dev/custom/nixpkgs"
+        "type": "github"
       }
     },
     "nixpkgs-libxml2": {
@@ -1479,14 +1477,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1793371145,
-        "narHash": "sha256-yD2sZ0uuV8S681d60VoULEdTnzqg/wJjVd1s+DS7N2A=",
-        "path": "/home/saurabhj/Projects/vicinae-extensions",
-        "type": "path"
+        "lastModified": 1795108653,
+        "narHash": "sha256-PCZN6Dhfc0Xr74sQKXb+qdyQGi8iaxp3kPk58/1xzHQ=",
+        "owner": "Shrub24",
+        "repo": "vicinae-extensions",
+        "rev": "1fe7a9aa8c15646e5f0646b68c9c655fb3455ff7",
+        "type": "github"
       },
       "original": {
-        "path": "/home/saurabhj/Projects/vicinae-extensions",
-        "type": "path"
+        "owner": "Shrub24",
+        "repo": "vicinae-extensions",
+        "type": "github"
       }
     },
     "wrappers": {
