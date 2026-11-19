@@ -30,7 +30,7 @@
 
 ## C
 
-- [ci-fleet-build.md](ci-fleet-build.md) — why the fleet build targets a non-VM aggregate pinned to a commit, and why validate keeps no second builder
+- [ci-fleet-build.md](ci-fleet-build.md) — why the retired Actions pipeline targeted a non-VM aggregate pinned to a commit and kept no second builder; superseded by the federated nixbot CI
 
 - [hermes-agent-pin.md](hermes-agent-pin.md) — why hermes-agent is pinned to an unmerged upstream PR head, and when to return it to the default branch
 

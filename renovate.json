@@ -6,14 +6,7 @@
   "prConcurrentLimit": 5,
   "automerge": false,
   "schedule": ["before 6am on monday"],
-  "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["before 6am on monday"]
-  },
-  "enabledManagers": ["nix", "github-actions", "custom.regex"],
-  "nix": {
-    "enabled": true
-  },
+  "enabledManagers": ["custom.regex"],
   "customManagers": [
     {
       "customType": "regex",
@@ -38,34 +31,6 @@
     }
   ],
   "packageRules": [
-    {
-      "description": "The hermes-agent input is pinned to a release tag in its declaration; the custom regex manager owns that pin, so the nix manager must not also rewrite the locked input.",
-      "matchManagers": ["nix"],
-      "matchDepNames": ["hermes-agent"],
-      "enabled": false
-    },
-    {
-      "description": "The vicinae and noctalia inputs supply the Home Manager module for a package nixpkgs builds. Their pins follow pkgs.<name>.version, so they must not be bumped on their own schedule.",
-      "matchManagers": ["nix"],
-      "matchDepNames": ["vicinae", "noctalia"],
-      "enabled": false
-    },
-    {
-      "description": "A nix-fleet bump is the fleet's baseline update: it moves the shared pins (nixpkgs, flake-parts, import-tree, treefmt-nix) as one change.",
-      "matchManagers": ["nix"],
-      "matchDepNames": ["nix-fleet"],
-      "groupName": "nix-fleet baseline"
-    },
-    {
-      "description": "Shared pins are owned by Shrub24/nix-fleet; updating them here would let the two repositories drift apart.",
-      "matchManagers": ["nix"],
-      "matchDepNames": ["nixpkgs", "flake-parts", "import-tree", "treefmt-nix"],
-      "enabled": false
-    },
-    {
-      "matchManagers": ["nix"],
-      "groupName": "nix flake inputs"
-    },
     {
       "matchManagers": ["custom.regex"],
       "groupName": "OCI image refs",
