@@ -242,11 +242,14 @@ in
 
     flake.nixosConfigurations.legion = nixosConfiguration;
 
-    flake.checks.${system} = {
-      nixos-system = nixosConfiguration.config.system.build.toplevel;
+    flake.checks.${system}.nixos-system = nixosConfiguration.config.system.build.toplevel;
 
+    perSystem = _: {
+      # Manual VM gates: out of `checks`, because the merge builds and pins the
+      # checks closure's cache-root, and out of `packages`, because it would
+      # carry them there too. Reach them through the justfile.
       # VM boot gate: catches module-system conflicts that eval-only misses.
-      vm-desktop = pkgsUnfree.testers.runNixOSTest {
+      legacyPackages.vm-tests-legion.vm-desktop = pkgsUnfree.testers.runNixOSTest {
         name = "vm-desktop";
         nodes.legion =
           { pkgs, ... }:
@@ -343,7 +346,8 @@ in
         '';
       };
 
-      vm-skeleton-boot = pkgs.testers.runNixOSTest {
+      # Headless skeleton: the same composition without a display.
+      legacyPackages.vm-tests-legion.vm-skeleton-boot = pkgs.testers.runNixOSTest {
         name = "vm-skeleton-boot";
         nodes.legion = {
           imports = map nixosAspect nixosAspects ++ [ currentHostModule ];

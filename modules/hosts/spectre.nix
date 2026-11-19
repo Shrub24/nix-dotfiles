@@ -181,12 +181,12 @@ in
 
     flake.nixosConfigurations.${hostId} = nixosConfiguration;
 
-    flake.checks.${system} = {
-      nixos-spectre = nixosConfiguration.config.system.build.toplevel;
+    flake.checks.${system}.nixos-spectre = nixosConfiguration.config.system.build.toplevel;
 
-      # Boot-level gate for the composition: eval-only checking has proven
-      # insufficient here. Headless — the point is that it boots.
-      vm-spectre-boot = pkgsUnfree.testers.runNixOSTest {
+    perSystem = _: {
+      # Manual VM gate: out of `checks`, whose cache-root the merge builds and
+      # pins. Headless — the point is that it boots.
+      legacyPackages.vm-tests-spectre.vm-spectre-boot = pkgsUnfree.testers.runNixOSTest {
         name = "vm-spectre-boot";
         nodes.spectre = {
           imports = map nixosAspect nixosAspects ++ [
