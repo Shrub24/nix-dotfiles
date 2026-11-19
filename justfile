@@ -1,6 +1,6 @@
 vm-desktop:
     #!/usr/bin/env fish
-    nix build .#checks.x86_64-linux.vm-desktop.driverInteractive
+    nix build .#legacyPackages.x86_64-linux.vm-tests-legion.vm-desktop.driverInteractive
     if not set -q WAYLAND_DISPLAY
       echo "vm-desktop requires a Wayland session" >&2
       exit 1
