@@ -1,5 +1,10 @@
 # CI fleet build
 
+> **Superseded (2026-11-19).** Every entry below describes the GitHub Actions
+> pipeline this repository no longer runs; the fleet's federated nixbot CI
+> replaced it (see ARCHITECTURE.md → Verification). They are kept for the
+> reasoning they record.
+
 ## Fleet build targets the non-VM aggregate
 
 **Id:** 7bbc3cdd-841d-41a5-be91-ee15835dec49
@@ -50,7 +55,7 @@ Neither repository file supplies a script: validation and promotion use the acti
 **Reason:** a bundled action is the revision the caller pinned, so a consumer tracks one SHA instead of a SHA plus two drifting copies. Automatic promotion is acceptable because a candidate is built and validated before it can land, and a nixpkgs bump that passes both is a bump nobody would have rejected by hand.
 **Revisit when:** a caller needs behaviour the bundled actions do not expose, or a candidate lands that a reviewer would have refused.
 
-Before this pipeline can promote, the App, its `automation` environment secret and `AUTOMATION_APP_ID`/`AUTOMATION_APP_SLUG` need to exist. The `update-candidate` ruleset is deliberately absent until one candidate has validated and promoted by hand; `docs/runbooks/enable-candidate-pipeline.md` holds the steps.
+Before this pipeline could promote, the App, its `automation` environment secret and `AUTOMATION_APP_ID`/`AUTOMATION_APP_SLUG` needed to exist, and the `update-candidate` ruleset was added only after one candidate had validated and promoted by hand.
 
 ## Retention pins the fleet's cache-root aggregate
 
