@@ -9,7 +9,8 @@
 
 **Id:** 7bbc3cdd-841d-41a5-be91-ee15835dec49
 **Type:** decision
-**Status:** active
+**Status:** superseded
+**Superseded by:** none — the fleet's federated nixbot CI retired this repository's Actions pipeline; its reasoning is recorded in nix-fleet, not here
 **Evidence:** confirmed
 **Source:** nix-fleet `docs/runbooks/consumer-adoption.md` (Path A) and `.github/workflows/build-push-cache.yml` at the revision this repository's flake locks
 
@@ -27,7 +28,8 @@ Renovate owns the `nix-fleet` flake input and this workflow pin, as separate pul
 
 **Id:** 0c3e2a51-6f7d-4b8e-9a3c-2d5e8f1b7a40
 **Type:** decision
-**Status:** active
+**Status:** superseded
+**Superseded by:** none — the fleet's federated nixbot CI retired this repository's Actions pipeline; its reasoning is recorded in nix-fleet, not here
 **Evidence:** confirmed
 **Source:** `.github/workflows/validate.yml` before this change; nix-fleet runbook section 1 and `docs/contracts/update-candidates.md`
 
@@ -41,7 +43,8 @@ Renovate owns the `nix-fleet` flake input and this workflow pin, as separate pul
 
 **Id:** 1ad0c35a-f1ba-44a2-bd81-f27079083b91
 **Type:** decision
-**Status:** active
+**Status:** superseded
+**Superseded by:** none — the fleet's federated nixbot CI retired this repository's Actions pipeline; its reasoning is recorded in nix-fleet, not here
 **Evidence:** confirmed
 **Source:** nix-fleet `docs/contracts/update-candidates.md` (consumer adoption and policy sections); `renovate.json`
 
@@ -61,7 +64,8 @@ Before this pipeline could promote, the App, its `automation` environment secret
 
 **Id:** af1d8c00-3f3a-4217-945d-d20ea9b0abb7
 **Type:** decision
-**Status:** active
+**Status:** superseded
+**Superseded by:** none — the fleet's federated nixbot CI retired this repository's Actions pipeline; its reasoning is recorded in nix-fleet, not here
 **Evidence:** confirmed
 **Source:** nix-fleet `modules/flake/cache-root.nix`, `docs/contracts/ci.md` (retention) and `docs/contracts/update-candidates.md` (promotion inputs)
 
