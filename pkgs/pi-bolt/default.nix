@@ -11,7 +11,6 @@
   extraEnv ? { },
   runtimeShell,
   python3,
-  applyPatches,
   # The one program Pi looks for in PATH and would otherwise download.
   wl-clipboard,
   # Programs every entrypoint gets, on top of the base runtime inputs.
@@ -52,17 +51,10 @@ let
   };
   payload =
     (
-      (piBolt.override (args: {
-        source = args.source // {
-          outPath = applyPatches {
-            name = "pi-bolt-request-model-source";
-            src = args.source.outPath;
-            patches = [ ./patches/context-request-model.patch ];
-          };
-        };
+      (piBolt.override {
         jit = true;
         maxAotCandidateBytecodeSize = 500000;
-      })).withPlugins
+      }).withPlugins
         (_: builtins.attrValues plugins)
     ).override
       {

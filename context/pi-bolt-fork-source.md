@@ -43,3 +43,17 @@ published runtime mints the branch's own stamp and needs no relaxation.
 **History:** the input existed once before, for `fix/weak-render-owners`, and was
 dropped when that fix reached release 1.0.9. The constraint that returned it is the
 same one recorded then: following a fork branch moves the runtime with it.
+
+## The request-model change is carried as a fork branch, not a patch over the source
+
+**Id:** 2f38deb5-ad4e-44b4-8cce-0b7fc5be44fc
+**Type:** decision
+**Status:** active
+**Evidence:** confirmed
+**Source:** nixbot build 3 of Shrub24/nix-dotfiles, 2026-11-19 — "cannot build pi-bolt-request-model-source.drv^out during evaluation because the option 'allow-import-from-derivation' is disabled"
+
+`pi-bolt-source` follows `github:Shrub24/Pi-Bolt/request-model`: `bolt-v1.2.1` plus one commit carrying the change that forwards the resolved request model to context handlers (earendil-works/pi#10318). It replaced an `applyPatches` derivation swapped in as `source.outPath` in `pkgs/pi-bolt/default.nix`.
+
+**Reason:** Pi-Bolt.nix reads the source during evaluation — `VERSION`, the workspace lockfile, and the `builtins.path` filters in `nix/source.nix` — so any derivation in the source's place is import-from-derivation, and the fleet's CI evaluates with it disabled. A fork branch keeps the source a plain input. Every file the branch carries is identical to the old patched output, which differed only by four `.orig` files `patch` left behind.
+**Alternatives:** keep the patch and allow import-from-derivation for this repository, which breaks the fleet's build-free evaluation; patch inside Pi-Bolt.nix's build derivations, which it has no argument for.
+**Revisit when:** Pi exposes the request model natively (drop the branch and the follow), or a Pi-Bolt release is pinned — the branch must then be rebased onto it.

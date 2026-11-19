@@ -111,7 +111,14 @@
     };
     pi-bolt-nix = {
       url = "github:Shrub24/Pi-Bolt.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        pi-bolt-source.follows = "pi-bolt-source";
+      };
+    };
+    pi-bolt-source = {
+      url = "github:Shrub24/Pi-Bolt/request-model";
+      flake = false;
     };
     pi-extensions = {
       url = "github:Shrub24/pi-extensions";

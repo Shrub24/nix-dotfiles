@@ -43,6 +43,16 @@ _: {
     pi-bolt-nix = {
       url = "github:Shrub24/Pi-Bolt.nix";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.pi-bolt-source.follows = "pi-bolt-source";
+    };
+
+    # The compiled source: the pinned release plus the request-model change
+    # (earendil-works/pi#10318), carried as a fork branch so the source is a
+    # plain input. A patched derivation in its place is read during evaluation,
+    # which the fleet's CI refuses.
+    pi-bolt-source = {
+      url = "github:Shrub24/Pi-Bolt/request-model";
+      flake = false;
     };
 
     # Shrub24/nixpkgs fork carrying packages pending upstream review. No follows:
