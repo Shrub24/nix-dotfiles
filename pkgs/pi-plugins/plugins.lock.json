@@ -7,9 +7,7 @@
     "": {
       "name": "pi-bolt-plugins",
       "version": "0.0.0",
-      "workspaces": [
-        "pbplugins/*"
-      ]
+      "workspaces": ["pbplugins/*"]
     },
     "node_modules/@aliou/pi-neuralwatt": {
       "resolved": "pbplugins/neuralwatt",
