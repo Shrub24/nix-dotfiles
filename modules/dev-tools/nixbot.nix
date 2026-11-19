@@ -22,9 +22,8 @@
 
       # `nbo` picks a server by matching the checkout's origin remote against
       # each entry's remotes patterns (host/owner/repo, shell wildcards).
-      xdg.configFile."nixbot/hosts.toml".source =
-        (pkgs.formats.toml { }).generate "nixbot-hosts.toml" {
-          "https://nixbot.shrublab.xyz".remotes = [ "github.com/Shrub24/*" ];
-        };
+      xdg.configFile."nixbot/hosts.toml".source = (pkgs.formats.toml { }).generate "nixbot-hosts.toml" {
+        "https://nixbot.shrublab.xyz".remotes = [ "github.com/Shrub24/*" ];
+      };
     };
 }
