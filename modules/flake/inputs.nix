@@ -45,14 +45,14 @@ _: {
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Local nixpkgs fork carrying packages pending upstream review. No follows:
+    # Shrub24/nixpkgs fork carrying packages pending upstream review. No follows:
     # its packages build against the fork's own pins, so the derivation under test
     # is the one proposed upstream.
     nixpkgs-fork = {
-      url = "git+file:///home/saurabhj/Projects/dev/custom/nixpkgs?rev=8ec593ac99f7c500942d218389fa665a8fae6a46&shallow=1";
+      url = "github:Shrub24/nixpkgs/8ec593ac99f7c500942d218389fa665a8fae6a46";
     };
     nixpkgs-fork-codexbar = {
-      url = "git+file:///home/saurabhj/Projects/dev/custom/nixpkgs?rev=3908c4a4f26a2a4c373f42b77abec3cc6e92e1f4&shallow=1";
+      url = "github:Shrub24/nixpkgs/3908c4a4f26a2a4c373f42b77abec3cc6e92e1f4";
     };
 
     # Plymouth theme source built by pkgs/nixos-boot (boot.nix selects it).
@@ -90,7 +90,7 @@ _: {
     # Vicinae extensions and the capture CLI they front; behaviour and the
     # launcher surface that presents it version together there.
     vicinae-extensions = {
-      url = "path:/home/saurabhj/Projects/vicinae-extensions";
+      url = "github:Shrub24/vicinae-extensions";
       inputs.nixpkgs.follows = "nixpkgs";
       # The extensions build against the launcher that serves them, not a second
       # checkout of their own; following it also carries its nixpkgs.

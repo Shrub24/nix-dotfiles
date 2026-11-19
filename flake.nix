@@ -103,8 +103,8 @@
       flake = false;
     };
     nixpkgs.follows = "nix-fleet/nixpkgs";
-    nixpkgs-fork.url = "git+file:///home/saurabhj/Projects/dev/custom/nixpkgs?rev=8ec593ac99f7c500942d218389fa665a8fae6a46&shallow=1";
-    nixpkgs-fork-codexbar.url = "git+file:///home/saurabhj/Projects/dev/custom/nixpkgs?rev=3908c4a4f26a2a4c373f42b77abec3cc6e92e1f4&shallow=1";
+    nixpkgs-fork.url = "github:Shrub24/nixpkgs/8ec593ac99f7c500942d218389fa665a8fae6a46";
+    nixpkgs-fork-codexbar.url = "github:Shrub24/nixpkgs/3908c4a4f26a2a4c373f42b77abec3cc6e92e1f4";
     noctalia = {
       url = "github:noctalia-dev/noctalia/v5.4.1";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -142,7 +142,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     vicinae-extensions = {
-      url = "path:/home/saurabhj/Projects/vicinae-extensions";
+      url = "github:Shrub24/vicinae-extensions";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         vicinae.follows = "vicinae";
