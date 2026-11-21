@@ -20,6 +20,8 @@ _: {
         SUBSYSTEMS=="usb", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="615e", MODE:="0666"
         KERNEL=="hidraw*", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="615e", MODE:="0666"
         KERNEL=="ttyACM*", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="615e", MODE:="0666"
+        # Moondrop MM3A: WebHID tuning tool; uaccess avoids a world-writable node.
+        KERNEL=="hidraw*", ATTRS{idVendor}=="35d8", ATTRS{idProduct}=="012e", TAG+="uaccess"
       '';
       services.logrotate.enable = true;
     };
