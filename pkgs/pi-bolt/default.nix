@@ -52,6 +52,8 @@ let
   payload =
     (
       (piBolt.override {
+        # Forwards the resolved request model to context handlers (earendil-works/pi#10318).
+        patches = [ ./patches/request-model.patch ];
         jit = true;
         maxAotCandidateBytecodeSize = 500000;
       }).withPlugins

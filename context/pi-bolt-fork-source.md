@@ -48,7 +48,8 @@ same one recorded then: following a fork branch moves the runtime with it.
 
 **Id:** 2f38deb5-ad4e-44b4-8cce-0b7fc5be44fc
 **Type:** decision
-**Status:** active
+**Status:** superseded
+**Superseded by:** 8ba502cc-7ca6-48e9-8a89-11a1e4dd999c
 **Evidence:** confirmed
 **Source:** nixbot build 3 of Shrub24/nix-dotfiles, 2026-11-19 — "cannot build pi-bolt-request-model-source.drv^out during evaluation because the option 'allow-import-from-derivation' is disabled"
 
@@ -56,4 +57,18 @@ same one recorded then: following a fork branch moves the runtime with it.
 
 **Reason:** Pi-Bolt.nix reads the source during evaluation — `VERSION`, the workspace lockfile, and the `builtins.path` filters in `nix/source.nix` — so any derivation in the source's place is import-from-derivation, and the fleet's CI evaluates with it disabled. A fork branch keeps the source a plain input. Every file the branch carries is identical to the old patched output, which differed only by four `.orig` files `patch` left behind.
 **Alternatives:** keep the patch and allow import-from-derivation for this repository, which breaks the fleet's build-free evaluation; patch inside Pi-Bolt.nix's build derivations, which it has no argument for.
-**Revisit when:** Pi exposes the request model natively (drop the branch and the follow), or a Pi-Bolt release is pinned — the branch must then be rebased onto it.
+**Revisit when:** superseded — Pi-Bolt.nix gained a `patches` argument applied inside its workspace build, the second alternative above.
+
+## The request-model change is a patch passed through Pi-Bolt.nix's `patches`
+
+**Id:** 8ba502cc-7ca6-48e9-8a89-11a1e4dd999c
+**Type:** decision
+**Status:** active
+**Evidence:** confirmed
+**Source:** Pi-Bolt.nix `nix/pi-bolt.nix` and `nix/workspace.nix` (`patches`); a payload built with `pkgs/pi-bolt/patches/request-model.patch` carries `requestModel` in its workspace and compiled executable, the unpatched build does not
+
+`pkgs/pi-bolt/default.nix` passes `patches = [ ./patches/request-model.patch ]` to the payload; the source is the release `pi-bolt-nix` pins, with no follow. The patch is the `Shrub24/Pi-Bolt/request-model` commit, unchanged.
+
+**Reason:** Pi-Bolt.nix applies `patches` in the workspace derivation's patch phase, after evaluation has read `VERSION`, the manifests and the lock from the unpatched input, so the fleet's build-free evaluation still holds, and there is no branch to rebase on each release.
+**Consequence:** the patch may touch only the files the workspace builds from, minus `package.json` and `package-lock.json`; anything else fails its patch phase. A release that conflicts with it fails the build at that phase.
+**Revisit when:** Pi exposes the request model natively (earendil-works/pi#10318): drop the patch.
