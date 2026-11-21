@@ -32,10 +32,6 @@
       url = "github:nix-community/disko/latest";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    fenix = {
-      url = "github:nix-community/fenix/monthly";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     fish-abbreviation-tips = {
       url = "github:Gazorby/fish-abbreviation-tips";
       flake = false;
@@ -66,7 +62,6 @@
       url = "github:Shrub24/keypeek";
       inputs = {
         crane.follows = "crane";
-        fenix.follows = "fenix";
         nixpkgs.follows = "nixpkgs";
       };
     };
@@ -111,14 +106,7 @@
     };
     pi-bolt-nix = {
       url = "github:Shrub24/Pi-Bolt.nix";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        pi-bolt-source.follows = "pi-bolt-source";
-      };
-    };
-    pi-bolt-source = {
-      url = "github:Shrub24/Pi-Bolt/request-model";
-      flake = false;
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     pi-extensions = {
       url = "github:Shrub24/pi-extensions";

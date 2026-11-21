@@ -25,6 +25,34 @@ let
   compiledIds = variant: map (row: row.id) (compiledRows variant);
 in
 {
+  # The plugin set is consumed through its flake output — per-plugin packages,
+  # or `overlays.default` for the whole set. It builds against Pi-Bolt.nix, so
+  # its input follows ours: one builder, one release, for the plugins and for
+  # the payload that compiles them in.
+  flake-file.inputs.pi-extensions = {
+    url = "github:Shrub24/pi-extensions";
+    inputs.nixpkgs.follows = "nixpkgs";
+    inputs.pi-bolt-nix.follows = "pi-bolt-nix";
+  };
+  flake-file.inputs.pi-powerline-footer = {
+    url = "github:Shrub24/pi-powerline-footer";
+    flake = false;
+  };
+  flake-file.inputs.magic-context = {
+    url = "github:Shrub24/magic-context/master";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+  flake-file.inputs.pi-bolt-nix = {
+    url = "github:Shrub24/Pi-Bolt.nix";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  # codexbar's fork pin: Shrub24/nixpkgs branch backing the open upstream
+  # Linux-support PR (NixOS/nixpkgs#581605), feeding the router's quota source.
+  # No follows — its packages build against the fork's own pins, so the
+  # derivation under test is the one proposed upstream.
+  flake-file.inputs.nixpkgs-fork-codexbar.url = "github:Shrub24/nixpkgs/3908c4a4f26a2a4c373f42b77abec3cc6e92e1f4";
+
   perSystem =
     {
       pkgs,

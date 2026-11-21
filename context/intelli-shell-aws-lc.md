@@ -4,7 +4,8 @@
 
 **Id:** 90afd705-9c0d-4998-842e-5bfd6f5cd55d
 **Type:** workaround
-**Status:** active
+**Status:** superseded
+**Superseded:** nix-fleet's nixpkgs pin (0bb82723, 2026-11-19) passed the fix, so the override was dropped from `pkgs/default.nix`.
 **Evidence:** confirmed
 **Source:** nixpkgs PR #584630 (intelli-shell: add missing dependency on aws-lc,
 merged 2026-11-07T21:42Z as `84c6277e`); nixpkgs `cargo-setup-hook.sh` sets

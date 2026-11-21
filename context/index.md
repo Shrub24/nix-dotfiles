@@ -54,7 +54,7 @@
 
 ## I
 
-- [intelli-shell-aws-lc.md](intelli-shell-aws-lc.md) — why intelli-shell carries a buildInputs override until the nixpkgs pin moves
+- [intelli-shell-aws-lc.md](intelli-shell-aws-lc.md) — why intelli-shell carried a buildInputs override until the nixpkgs pin passed the fix (superseded; the override is gone)
 
 ## J
 

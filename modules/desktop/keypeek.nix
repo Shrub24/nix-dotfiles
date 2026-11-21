@@ -1,5 +1,14 @@
 { inputs, ... }:
 {
+  # The fork carries the package assets (desktop entry, icon, udev rule) and
+  # the Home Manager module this repository configures. Its Rust build follows
+  # the shared crane toolchain.
+  flake-file.inputs.keypeek = {
+    url = "github:Shrub24/keypeek";
+    inputs.nixpkgs.follows = "nixpkgs";
+    inputs.crane.follows = "crane";
+  };
+
   flake.modules.homeManager.keypeek =
     { ... }:
     {
@@ -7,9 +16,6 @@
 
       programs.keypeek = {
         enable = true;
-        # The service is what reads the generated INI (`--config`), and it is the
-        # only mode that keeps settings declarative: the interactive settings UI
-        # writes state, so it stays off the service's own instance.
         service.enable = true;
         settings = {
           size = 75;
@@ -39,8 +45,6 @@
     {
       imports = [ inputs.keypeek.nixosModules.default ];
 
-      # ZMK BLE boards have no USB identity, so the packaged rule matches modalias;
-      # USB access for the same board is declared in the desktop-services aspect.
       programs.keypeek.bleUdev.enable = true;
     };
 }

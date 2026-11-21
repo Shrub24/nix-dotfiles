@@ -4,6 +4,16 @@
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
+  # The extensions and the capture CLI they front; behaviour and the launcher
+  # surface that presents it version together here.
+  flake-file.inputs.vicinae-extensions = {
+    url = "github:Shrub24/vicinae-extensions";
+    inputs.nixpkgs.follows = "nixpkgs";
+    # The extensions build against the launcher that serves them, not a second
+    # checkout of their own; following it also carries its nixpkgs.
+    inputs.vicinae.follows = "vicinae";
+  };
+
   flake.modules.homeManager.vicinae =
     { pkgs, ... }:
     {

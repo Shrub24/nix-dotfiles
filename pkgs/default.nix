@@ -2,7 +2,7 @@
   inputs,
   system,
 }:
-final: _prev:
+final: _:
 let
   # Pi-Bolt's own package and plugin scope, on the nixpkgs this repository
   # follows: the base set extended with the flake's overlay, not the set built
@@ -34,10 +34,6 @@ in
   };
   nix-search-tv-fzf = final.callPackage ./nix-search-tv-fzf { };
   mo-viewer = inputs.nixpkgs-fork.legacyPackages.${system}.mo-viewer;
-  # Upstream fix, hours younger than our nixpkgs pin; see context/intelli-shell-aws-lc.md.
-  intelli-shell = _prev.intelli-shell.overrideAttrs (old: {
-    buildInputs = old.buildInputs ++ [ final.aws-lc ];
-  });
   jj-hunk-tool = final.callPackage ./jj-hunk-tool { };
   nixos-boot = final.callPackage ./nixos-boot { src = inputs.nixos-boot; };
   xberg-cli = final.callPackage ./xberg-cli { };

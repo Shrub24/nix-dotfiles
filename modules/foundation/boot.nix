@@ -1,4 +1,10 @@
 _: {
+  # Plymouth theme source built by pkgs/nixos-boot; this aspect selects it.
+  flake-file.inputs.nixos-boot = {
+    url = "github:Melkor333/nixos-boot";
+    flake = false;
+  };
+
   # Boot stays native (boot.loader.*/boot.initrd.* in the host's _hardware.nix).
   flake.modules.nixos.boot =
     { lib, pkgs, ... }:

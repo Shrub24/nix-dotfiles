@@ -1,4 +1,9 @@
 _: {
+  # mo-viewer's fork pin: Shrub24/nixpkgs branch backing the open upstream bump
+  # PR (NixOS/nixpkgs#581409). No follows — its packages build against the
+  # fork's own pins, so the derivation under test is the one proposed upstream.
+  flake-file.inputs.nixpkgs-fork.url = "github:Shrub24/nixpkgs/8ec593ac99f7c500942d218389fa665a8fae6a46";
+
   flake.modules.homeManager.cli =
     {
       config,
